@@ -1,0 +1,22 @@
+variables:
+  GIT_STRATEGY: clone
+
+stages:
+  - prepare
+  - unit_tests
+  - pylint
+
+prepare:
+  stage: prepare
+  script:
+    - pip3 install -r requirements.txt
+
+unit_tests:
+  stage: unit_tests
+  script:
+    - tools/run_tests.py
+
+pylint:
+  stage: pylint
+  script:
+    - tools/run_pylint.py

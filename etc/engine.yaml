@@ -1,0 +1,76 @@
+# tessia engine configuration file
+
+# database configuration
+db:
+  # location of the database (in sqlalchemy format)
+  url: postgresql://engine:engine@localhost/engine
+  # enable the flag below if you want all sql from sqlalchemy logged
+  debug: False
+
+# authentication subsystem
+auth:
+  realm: authentication realm
+  # only ldap or free are supported at the moment
+  login_method: ldap
+  # whether to allow users to be automatically added to engine's database
+  # when the login subsystem authenticates them
+  allow_user_auto_create: false
+  # ldap configuration
+  ldap:
+    host: _ldap_server
+    port: 636
+    ssl: true
+    # username for connection with ldap server, comment out for anonymous connection
+    #username: user
+    # password for connection with ldap server
+    #password: pwd
+    # time to wait for ldap operations to complete
+    #timeout: 10
+    user_base: ou=people,o=company.com
+    # this is combined with the login attribute to perform the ldap query
+    user_filter: (objectclass=inetOrgPerson)
+    user_attributes:
+      # which attribute contains the user's full name, defaults to 'cn'
+      fullname: cn
+      # which attribute contains the user's login, defaults to 'mail'
+      login: mail
+      # optional - which attribute contains the user's job title,
+      # uncomment or set to null if your ldap does not provide such info
+      title: title
+    # use group_filter to enable group based access, one or more groups can be specified following ldap filter syntax
+    group_filter: (&(cn=tessia-users)(objectclass=groupOfUniqueNames))
+    # if group_filter is specified a group_base is necessary
+    group_base: ou=group,o=company.com
+    # if group_filter is specified enter which attribute defines the user's membership in the group entry
+    group_membership_attr: uniquemember
+
+# logging configuration - usually it is not necessary to touch this section,
+# but if you feel the need to do so logging is highly customizable as the engine
+# uses a hierarchy of loggers according to python recommended usage.
+log:
+  version: 1
+  disable_existing_loggers: false
+  formatters:
+    default: {format: '%(asctime)s|%(levelname)s|%(filename)s(%(lineno)s)|%(message)s'}
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: default
+      level: INFO
+      stream: ext://sys.stderr
+    ldap:
+      class: tessia_engine.log.CreateDirRotatingFileHandler
+      formatter: default
+      level: INFO
+      filename: /var/log/tessia-engine/ldap.log
+      maxBytes: 70000000
+      backupCount: 3
+  loggers:
+    tessia_engine:
+      handlers: [console]
+      level: DEBUG
+    tessia_engine.auth.ldap:
+      # it will be logged to console too by propagation
+      handlers: [ldap]
+      level: DEBUG
+

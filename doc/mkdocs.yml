@@ -1,0 +1,30 @@
+# directory where doc files are located
+docs_dir: .
+# where to store output files
+site_dir: ../build/html
+# TODO: create tessia logo
+#site_favicon: favicon.ico
+# enable permalinks for each header
+markdown_extensions:
+    - toc:
+        permalink: True
+# css/html theme
+theme: cosmo
+site_name: Tessia
+repo_url: https://gitlab.com/tessia-project/tessia-engine
+#copyright: TBD
+pages:
+- Home: 'index.md'
+- Users:
+    - Client installation: 'users/client_install.md'
+    - Client usage: 'users/client_usage.md'
+    - Rest-like API: 'users/api.md'
+- Admins:
+    - Installation: 'admins/install.md'
+- Developers:
+    - Coding guidelines: 'developers/coding_guidelines.md'
+    - Development process: 'developers/dev_process.md'
+    - Unit tests: 'developers/unit_tests.md'
+    - Working with documentation: 'developers/documentation.md'
+    - Database considerations: 'developers/database.md'
+    - Continous Integration: 'developers/continuous_integration.md'

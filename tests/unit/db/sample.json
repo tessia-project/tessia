@@ -1,0 +1,280 @@
+{
+    "Project": [
+        {
+            "name": "Department x",
+            "avatar": null,
+            "desc": "Description of Department x"
+        }
+    ],
+    "User": [
+        {
+            "name": "Name of user x_0",
+            "admin": true,
+            "title": "Title of user x_0",
+            "restricted": false,
+            "login": "user_x_0@domain.com"
+        }
+    ],
+    "UserKey": [
+        {
+            "user": "user_x_0@domain.com",
+            "key_id": "c129600154774d14972dc6815b9a31ec",
+            "key_secret": "51203bad07c04fefbd1ed41ea7afe0b9"
+        }
+    ],
+    "UserRole": [
+        {
+            "project": "Department x",
+            "user": "user_x_0@domain.com",
+            "role": "User"
+        }
+    ],
+    "System": [
+        {
+            "name": "cpc0",
+            "desc": "CPC for project Department x",
+            "state": "AVAILABLE",
+            "modifier": "user_x_0@domain.com",
+            "type": "cpc",
+            "hostname": "cpc-0.domain.com",
+            "project": "Department x",
+            "model": "ZEC12_H20",
+            "owner": "user_x_0@domain.com"
+        },
+        {
+            "owner": "user_x_0@domain.com",
+            "desc": "- LPAR 0 for user user_x_0@domain.com",
+            "model": "ZEC12_H20",
+            "modifier": "user_x_0@domain.com",
+            "hypervisor": "cpc0",
+            "hostname": "lpar0.domain.com",
+            "state": "AVAILABLE",
+            "type": "lpar",
+            "name": "lpar0",
+            "project": "Department x"
+        }
+    ],
+    "NetZone": [
+        {
+            "modifier": "user_x_0@domain.com",
+            "name": "cpc0",
+            "project": "Department x",
+            "desc": "Network zone for CPC cpc0",
+            "owner": "user_x_0@domain.com"
+        }
+    ],
+    "Subnet": [
+        {
+            "name": "cpc0 shared",
+            "dns_2": "10.1.0.3",
+            "zone": "cpc0",
+            "address": "10.1.0.0/16",
+            "modifier": "user_x_0@domain.com",
+            "desc": "Shared subnet of cpc0",
+            "vlan": 1801,
+            "project": "Department x",
+            "gateway": "10.1.0.1",
+            "dns_1": "10.1.0.2",
+            "owner": "user_x_0@domain.com"
+        }
+    ],
+    "IpAddress": [
+        {
+            "address": "10.1.0.4",
+            "desc": null,
+            "modifier": "user_x_0@domain.com",
+            "project": "Department x",
+            "subnet": "cpc0 shared",
+            "owner": "user_x_0@domain.com"
+        }
+    ],
+    "SystemIface": [
+        {
+            "name": "external osa",
+            "osname": "enccwf500",
+            "attributes":
+                "{'layer2': True, 'devicenr': '0xf500,0xf501,0xf502'}",
+            "ip_address": "cpc0 shared/10.1.0.4",
+            "type": "OSA",
+            "mac_address": "26:8d:db:b1:12:b2",
+            "system": "cpc0"
+        }
+    ],
+    "StorageServer": [
+        {
+            "username": null,
+            "name": "DSK8_x_0",
+            "password": null,
+            "fw_level": null,
+            "modifier": "user_x_0@domain.com",
+            "type": "ECKD-SCSI",
+            "hostname": null,
+            "project": "Department x",
+            "desc": "- Storage *ECKD-SCSI* beloging to Department x",
+            "model": "DS8800",
+            "owner": "user_x_0@domain.com"
+        }
+    ],
+    "StoragePool": [
+        {
+            "name": "Pool for system lpar0",
+            "used_size": 40000,
+            "desc": "- Storage pool for creating qcow2 images",
+            "attributes": "{'chunksize': '512'}",
+            "total_size": 40000,
+            "modifier": "user_x_0@domain.com",
+            "type": "LVM_VG",
+            "project": "Department x",
+            "system": "lpar0",
+            "owner": "user_x_0@domain.com"
+        }
+    ],
+    "StorageVolume": [
+        {
+            "specs": "{}",
+            "server": "DSK8_x_0",
+            "type": "ECKD",
+            "system": "cpc0",
+            "owner": "user_x_0@domain.com",
+            "desc": "- DASD disk for regression tests",
+            "volume_id": "1800",
+            "part_table": {
+                "type": "msdos",
+                "table": [
+                    {
+                        "type": "primary",
+                        "fs": "ext4",
+                        "size": 8000,
+                        "mo": null,
+                        "mp": "/"
+                    },
+                    {
+                        "type": "primary",
+                        "fs": "swap",
+                        "size": 2000,
+                        "mo": null,
+                        "mp": null
+                    }
+                ]
+            },
+            "modifier": "user_x_0@domain.com",
+            "system_attributes": "{}",
+            "project": "Department x",
+            "size": 10000
+        },
+        {
+            "specs": "{}",
+            "server": "DSK8_x_0",
+            "type": "ECKD",
+            "system": "lpar0",
+            "owner": "user_x_0@domain.com",
+            "desc": "- DASD disk for regression tests",
+            "volume_id": "1801",
+            "part_table": {
+                "type": "msdos",
+                "table": [
+                    {
+                        "type": "primary",
+                        "fs": "ext4",
+                        "size": 8000,
+                        "mo": null,
+                        "mp": "/"
+                    },
+                    {
+                        "type": "primary",
+                        "fs": "swap",
+                        "size": 2000,
+                        "mo": null,
+                        "mp": null
+                    }
+                ]
+            },
+            "modifier": "user_x_0@domain.com",
+            "system_attributes": "{}",
+            "project": "Department x",
+            "size": 10000,
+            "pool": "Pool for system lpar0"
+        }
+    ],
+    "LogicalVolume": [
+        {
+            "pool": "Pool for system lpar0",
+            "specs": "{'thin': true}",
+            "type": "QCOW2",
+            "system": "lpar0",
+            "owner": "user_x_0@domain.com",
+            "name": "spare image",
+            "desc": "- QCOW2 image for use in kvm guest",
+            "part_table": {
+                "type": "msdos",
+                "table": [
+                    {
+                        "type": "primary",
+                        "fs": "ext4",
+                        "size": 17000,
+                        "mo": null,
+                        "mp": "/"
+                    },
+                    {
+                        "type": "primary",
+                        "fs": "swap",
+                        "size": 3000,
+                        "mo": null,
+                        "mp": null
+                    }
+                ]
+            },
+            "modifier": "user_x_0@domain.com",
+            "system_attributes": "{}",
+            "project": "Department x",
+            "size": 20000
+        }
+    ],
+    "SystemProfile": [
+        {
+            "name": "default cpc0",
+            "default": true,
+            "cpu": 2,
+            "credentials": "{}",
+            "system": "cpc0",
+            "memory": 1024
+        },
+        {
+            "cpu": 2,
+            "credentials": "{'username': 'root', 'password': 'somepasswd'}",
+            "name": "default lpar0",
+            "default": true,
+            "memory": 1024,
+            "system": "lpar0",
+            "hypervisor_profile": "cpc0/default cpc0",
+            "operating_system": "rhel7.0"
+        }
+    ],
+    "StorageVolumeProfileAssociation": [
+        {
+            "volume": "DSK8_x_0/1800",
+            "profile": "cpc0/default cpc0"
+        }
+    ],
+    "SystemIfaceProfileAssociation": [
+        {
+            "iface": "cpc0/external osa",
+            "profile": "cpc0/default cpc0"
+        }
+    ],
+    "LogicalVolumeProfileAssociation": [
+        {
+            "volume": "Pool for system lpar0/spare image",
+            "profile": "lpar0/default lpar0"
+        }
+    ],
+    "OperatingSystem": [
+        {
+            "name": "rhel7.0",
+            "major": "7",
+            "minor": "0",
+            "desc": "RHEL 7.0 GA"
+        }
+    ]
+}
+

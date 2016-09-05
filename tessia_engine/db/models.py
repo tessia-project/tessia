@@ -25,6 +25,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import validates
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.schema import MetaData
 from sqlalchemy.schema import UniqueConstraint
@@ -34,6 +35,7 @@ from sqlalchemy.types import Boolean
 from sqlalchemy.types import DateTime
 from sqlalchemy.types import Integer
 from sqlalchemy.types import LargeBinary
+from sqlalchemy.types import SmallInteger
 from sqlalchemy.types import String
 from tessia_engine.db.exceptions import AssociationError
 
@@ -1741,3 +1743,153 @@ class LogicalVolume(CommonMixin, ResourceMixin, BASE):
     # __repr__()
 
 # LogicalVolume
+
+class SchedulerRequest(CommonMixin, BASE):
+    """A request submitted to the job scheduler"""
+
+    __tablename__ = 'scheduler_requests'
+
+    requester_id = Column(
+        Integer, ForeignKey('users.id'), index=True, nullable=False)
+
+    # user can create a new job, change existing one, cancel an enqueued job
+    # state machine wrapper also submits a request to finish the job
+    action_type = Column(String, nullable=False)
+
+    # job is filled by scheduler when the requests is processed and job is
+    # created
+    job_id = Column(Integer, ForeignKey('scheduler_jobs.id'), index=True)
+
+    # job type refers to the type of state machine to use
+    job_type = Column(String, nullable=False)
+
+    time_slot = Column(String, nullable=False, default='DEFAULT')
+
+    # period in minutes after job is considered to have timed out
+    timeout = Column(Integer, default=0)
+
+    # the date when request was submitted
+    submit_date = Column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False)
+
+    # the date when the requester wants the job to be started
+    start_date = Column(DateTime(timezone=False))
+
+    # parameters are passed to the state machine parser which returns to the
+    # scheduler which resources are to be used
+    parameters = Column(String, nullable=False)
+
+    # priority defines order
+    priority = Column(SmallInteger, nullable=False, default=0)
+
+    # request state
+    state = Column(String, nullable=False, default='PENDING')
+
+    # messages about the request result
+    result = Column(String, nullable=True)
+
+    # define constants to be globally used
+    ACTION_CANCEL = 'CANCEL'
+    ACTION_SUBMIT = 'SUBMIT'
+    ACTIONS = (ACTION_CANCEL, ACTION_SUBMIT)
+    SLOT_DEFAULT = 'DEFAULT'
+    SLOT_NIGHT = 'NIGHT'
+    SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
+    STATE_COMPLETED = 'COMPLETED'
+    STATE_FAILED = 'FAILED'
+    STATE_PENDING = 'PENDING'
+    STATES = (STATE_COMPLETED, STATE_FAILED, STATE_PENDING)
+
+    @validates(('action_type', 'time_slot', 'state'))
+    def validate(self, key, value):
+        """
+        Simple validator
+        """
+        if key == 'action_type' and value not in self.ACTIONS:
+            raise ValueError("Invalid action type '{}'".format(value))
+
+        elif key == 'time_slot' and value not in self.SLOTS:
+            raise ValueError("Invalid time slot type '{}'".format(value))
+
+        elif key == 'state' and value not in self.STATES:
+            raise ValueError("Invalid state '{}'".format(value))
+
+        return value
+    # validate_action_type()
+
+# SchedulerRequest
+
+class SchedulerJob(CommonMixin, BASE):
+    """A scheduler request accepted for execution"""
+
+    __tablename__ = 'scheduler_jobs'
+
+    requester_id = Column(
+        Integer, ForeignKey('users.id'), index=True, nullable=False)
+
+    # priority defines order
+    priority = Column(SmallInteger, nullable=False, default=0)
+
+    # job type refers to the type of state machine to use
+    job_type = Column(String, nullable=False)
+
+    # default or nightslot
+    time_slot = Column(String, nullable=False)
+
+    state = Column(String, nullable=False)
+    pid = Column(Integer)
+
+    # opted for a json field instead of a denormalized table 'job_resources'
+    # because of the following reasons:
+    # - faster access to information in the same row instead of having to
+    # query another table (which has a lot of rows) and build the dictionary
+    # - avoid the need to delete old entries from the table (not really a big
+    # issue since this have to be done for the requests and jobs table anyway)
+    # the field has the format:
+    # {'exclusive': [{'name': 'resource1', 'type': 'system'}],
+    # 'shared': [{'name': 'resource2', 'type': 'system'}]}
+    resources = Column(postgresql.JSONB)
+
+    # description is returned by the state machine parser
+    description = Column(String, nullable=False)
+
+    # submit date comes from the request
+    submit_date = Column(DateTime(timezone=False), nullable=False)
+
+    # filled by scheduler when state machine starts
+    start_date = Column(DateTime(timezone=False), nullable=False)
+
+    # filled by scheduler when state machine informs it has finished
+    end_date = Column(DateTime(timezone=False), nullable=False)
+
+    # messages about the job result
+    result = Column(String)
+
+    # define constants to be globally used
+    SLOT_DEFAULT = 'DEFAULT'
+    SLOT_NIGHT = 'NIGHT'
+    SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
+    STATE_CANCELED = 'CANCELED'
+    STATE_CLEANINGUP = 'CLEANINGUP'
+    STATE_COMPLETED = 'COMPLETED'
+    STATE_FAILED = 'FAILED'
+    STATE_RUNNING = 'RUNNING'
+    STATE_WAITING = 'WAITING'
+    STATES = (STATE_CANCELED, STATE_CLEANINGUP, STATE_COMPLETED, STATE_FAILED,
+              STATE_RUNNING, STATE_WAITING)
+
+    @validates(('time_slot', 'state'))
+    def validate(self, key, value):
+        """
+        Simple validator
+        """
+        if key == 'time_slot' and value not in self.SLOTS:
+            raise ValueError("Invalid time slot type '{}'".format(value))
+
+        elif key == 'state' and value not in self.STATES:
+            raise ValueError("Invalid state '{}'".format(value))
+
+        return value
+    # validate_action_type()
+
+# SchedulerJob

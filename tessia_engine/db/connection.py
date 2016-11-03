@@ -110,8 +110,7 @@ class _DbManager(object):
         except KeyError:
             raise RuntimeError('No database configuration found')
 
-        debug_mode = config_dict['db'].get('debug', False)
-        engine = create_engine(db_url, echo=debug_mode)
+        engine = create_engine(db_url)
         session = scoped_session(sessionmaker(bind=engine))
 
         # patch the models base to provide a convenient query attribute

@@ -28,6 +28,20 @@ import logging
 #
 # CONSTANTS AND DEFINITIONS
 #
+MODE_SHARED = 'shared'
+MODE_EXCLUSIVE = 'exclusive'
+MODES = (MODE_SHARED, MODE_EXCLUSIVE)
+
+# TODO: specific string for type of list element
+# i.e. {'exclusive': ['system.guest01', 'volume.disk01'], 'shared':
+# ['system.lpar01']}
+RESOURCES_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        MODE_EXCLUSIVE: {'type': 'array'},
+        MODE_SHARED: {'type': 'array'},
+    }
+}
 
 #
 # CODE
@@ -45,7 +59,46 @@ class ResourcesManager(object):
     # __init__()
 
     @staticmethod
-    def _enqueue_job(queue, job):
+    def _job_should_go_first(job, other_job):
+
+        # job has a start date, check the start date of the
+        # other job
+        if job.start_date is not None:
+
+            # job has an earlier start date, it should go first
+            if job.start_date < other_job.start_date:
+                return True
+            # job has a later start date, it should go later
+            elif job.start_date > other_job.start_date:
+                return False
+
+            # the else case means both jobs have the same
+            # start date, more checks will be done below
+
+        # job has no start date, but the other one has,
+        # it should go later
+        elif other_job.start_date is not None:
+            return False
+
+        # at this point, either both jobs have no start date or both jobs
+        # have the same start date, so we have to check other parameters
+        # to decide who goes first
+
+        # job has higher priority, it should go first
+        if job.priority < other_job.priority:
+            return True
+        # job has lower priority, it should go later
+        elif job.priority > other_job.priority:
+            return False
+
+        # jobs have same priority but new job was submitted first: comes
+        # first
+        if job.submit_date < other_job.submit_date:
+            return True
+
+        return False
+
+    def _enqueue_job(self, queue, job):
         """
         Enqueue the passed job in the provided resource queue at the correct
         position.
@@ -61,32 +114,11 @@ class ResourcesManager(object):
             None
         """
         queue_length = len(queue)
-        if queue == 0:
-            queue.append(job)
-            return
 
         i = 0
         while i < queue_length:
 
-            # a job in the queue has start date: compare them
-            if queue[i].start_time is not None:
-                # new job has no date or date greater than existing one: move
-                # to next position
-                if (job.start_time is not None and
-                        job.start_time < queue[i].start_time):
-                    break
-            # new job has a start time and queued job doesn't: new job comes
-            # first
-            elif job.start_time is not None:
-                break
-
-            # new job has higher priority: make it come before existing job
-            if job.priority < queue[i].priority:
-                break
-
-            # jobs have same priority but new job was submitted first: comes
-            # first
-            if job.submit_date < queue[i].submit_date:
+            if self._job_should_go_first(job, queue[i]):
                 break
 
             # check the next position in queue
@@ -102,13 +134,13 @@ class ResourcesManager(object):
         Return the queues of the resources associated with the passed job
         """
         queues = []
-        for res_mode in ('exclusive', 'shared'):
+        for res_mode in MODES:
             for resource in job.resources.get(res_mode, []):
                 queue = self._wait_queues[job.time_slot].get(resource)
                 # no queue yet for this resource: create an empty one
                 if queue is None:
-                    self._queues[job.time_slot][res_key] = []
-                    queue = self._queues[job.time_slot][resource]
+                    self._wait_queues[job.time_slot][resource] = []
+                    queue = self._wait_queues[job.time_slot][resource]
 
                 queues.append(queue)
 
@@ -123,13 +155,19 @@ class ResourcesManager(object):
         if job.state != SchedulerJob.STATE_WAITING:
             return False
 
+        # start time not reached yet
+        if (job.start_date is not None
+                and job.start_date > datetime.datetime.utcnow()):
+            self._logger.debug("start date not reached")
+            return False
+
         # check if any active job is using a resource needed by the
         # candidate job
 
         # exclusive resources conflict with active jobs in exclusive and shared
         # modes
-        for resource in job.resources.get('exclusive', []):
-            for mode in ('exclusive', 'shared'):
+        for resource in job.resources.get(MODE_EXCLUSIVE, []):
+            for mode in MODES:
                 active_job = self._active_jobs[mode].get(resource)
                 # a resource is in use: report conflict
                 if active_job is not None:
@@ -143,8 +181,8 @@ class ResourcesManager(object):
                     return False
 
         # shared resources conflict with active jobs only in exclusive mode
-        for resource in job.resources.get('shared', []):
-            active_job = self._active_jobs['exclusive'].get(resource)
+        for resource in job.resources.get(MODE_SHARED, []):
+            active_job = self._active_jobs[MODE_EXCLUSIVE].get(resource)
             # a resource is in use: report conflict
             if active_job is not None:
                 self._logger.debug(
@@ -167,47 +205,36 @@ class ResourcesManager(object):
             return False
 
         # job has start time which was not reached yet: cannot run
-        if (job.start_time is not None and
-                job.start_time < datetime.now() - timedelta(minutes=1)):
+        if (job.start_date is not None and
+                job.start_date > datetime.datetime.utcnow()):
             self._logger.debug(
                 'Job %s cannot start: start date not reached yet')
             return False
 
         # check if candidate job is in first position on all resource queues
         for wait_queue in self._get_wait_queues(job):
-            queue_len = len(queue)
-            # this is not expected to happen but in case a queue is empty it
-            # means no conflicts with any other job would occur
-            if queue_len == 0:
-                continue
 
-            # candidate job is the in first position: verify the next queue
-            if wait_queue[0].id == job.id:
-                continue
+            for other_job in wait_queue:
 
-            # next job has a start date: check if the timeout of the
-            # candidate job would fit a time slot before the start time of the
-            # next job in the queue
-            if wait_queue[0].start_time is not None:
-                # job has no timeout: it cannot be started since we don't know
-                # when it will end
-                if job.timeout == 0:
+                if other_job.id == job.id:
+                    # it's this job's turn for this resource,
+                    # check the next resource queue
+                    break
+
+                if other_job.start_date is not None:
+
+                    if job.timeout == 0:
+                        return False
+
+                    end_date = (datetime.datetime.utcnow()
+                                + timedelta(minutes=job.timeout+5))
+
+                    if end_date >= wait_queue[0].start_date:
+                        return False
+                # the other job has no start date that so it will have to
+                # be scheduled before this one
+                else:
                     return False
-
-                end_date = datetime.now() + timedelta(minutes=job.timeout+5)
-                if end_date >= queue[i].start_time:
-                    return False
-
-            # timeout of candidate job fits before first job with start time,
-            # now check if there isn't another job without start time that
-            # comes first
-            i = 1
-            while i <= queue_len and wait_queue[i].start_time is not None:
-                i += 1
-
-            # another job without start time comes first: candidate cannot run
-            if wait_queue[i].id != job.id:
-                return False
 
         return True
     # can_start()
@@ -218,15 +245,14 @@ class ResourcesManager(object):
         """
         if job.state in (SchedulerJob.STATE_CLEANINGUP,
                          SchedulerJob.STATE_RUNNING):
-            for res_mode in ('exclusive', 'shared'):
+            for res_mode in MODES:
                 for resource in job.resources.get(res_mode, []):
                     self._active_jobs[res_mode][resource] = job
 
         elif job.state == SchedulerJob.STATE_WAITING:
             for wait_queue in self._get_wait_queues(job):
                 # enqueue job in the correct position
-                position = self._enqueue_job(wait_queue, job)
-
+                self._enqueue_job(wait_queue, job)
         else:
             raise ValueError(
                 "Job {} in invalid state '{}'".format(job.id, job.state))
@@ -236,7 +262,7 @@ class ResourcesManager(object):
         """
         Remove a given job from the active listing
         """
-        for mode in ('exclusive', 'shared'):
+        for mode in MODES:
             for resource in job.resources.get(mode, []):
                 active_job = self._active_jobs[mode].get(resource)
                 if active_job is not None and active_job.id == job.id:
@@ -255,9 +281,27 @@ class ResourcesManager(object):
                     found = i
                     break
             if found is not None:
-                wait_queue.pop(i)
+                wait_queue.pop(found)
+                # TODO: remove queue if empty!!
 
     # wait_pop()
+
+    def __str__(self):
+        representation = []
+
+        representation.append('Wait queues :')
+        for time_slot in SchedulerJob.SLOTS:
+            representation.append('slot {}'.format(time_slot))
+            representation.append(str(self._wait_queues[time_slot]))
+
+        representation.append('Active queues:')
+
+        for mode in MODES:
+            representation.append('Mode {}'.format(mode))
+            representation.append(str(self._active_jobs[mode]))
+
+        return '\n'.join(representation)
+    # __str__
 
     def reset(self):
         """
@@ -269,7 +313,7 @@ class ResourcesManager(object):
             self._wait_queues[time_slot] = {}
 
         # jobs that are currently running
-        self._active_jobs = {'exclusive': {}, 'shared': {}}
+        self._active_jobs = {MODE_EXCLUSIVE: {}, MODE_SHARED: {}}
     # reset()
 
 # ResourcesManager

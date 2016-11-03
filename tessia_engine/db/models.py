@@ -1749,6 +1749,18 @@ class SchedulerRequest(CommonMixin, BASE):
 
     __tablename__ = 'scheduler_requests'
 
+    # define constants to be globally used
+    ACTION_CANCEL = 'CANCEL'
+    ACTION_SUBMIT = 'SUBMIT'
+    ACTIONS = (ACTION_CANCEL, ACTION_SUBMIT)
+    SLOT_DEFAULT = 'DEFAULT'
+    SLOT_NIGHT = 'NIGHT'
+    SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
+    STATE_COMPLETED = 'COMPLETED'
+    STATE_FAILED = 'FAILED'
+    STATE_PENDING = 'PENDING'
+    STATES = (STATE_COMPLETED, STATE_FAILED, STATE_PENDING)
+
     requester_id = Column(
         Integer, ForeignKey('users.id'), index=True, nullable=False)
 
@@ -1766,11 +1778,10 @@ class SchedulerRequest(CommonMixin, BASE):
     time_slot = Column(String, nullable=False, default='DEFAULT')
 
     # period in minutes after job is considered to have timed out
-    timeout = Column(Integer, default=0)
+    timeout = Column(Integer, default=0, nullable=False)
 
     # the date when request was submitted
-    submit_date = Column(
-        DateTime(timezone=False), server_default=func.now(), nullable=False)
+    submit_date = Column(DateTime(timezone=False), nullable=False)
 
     # the date when the requester wants the job to be started
     start_date = Column(DateTime(timezone=False))
@@ -1783,22 +1794,10 @@ class SchedulerRequest(CommonMixin, BASE):
     priority = Column(SmallInteger, nullable=False, default=0)
 
     # request state
-    state = Column(String, nullable=False, default='PENDING')
+    state = Column(String, nullable=False, default=STATE_PENDING)
 
     # messages about the request result
     result = Column(String, nullable=True)
-
-    # define constants to be globally used
-    ACTION_CANCEL = 'CANCEL'
-    ACTION_SUBMIT = 'SUBMIT'
-    ACTIONS = (ACTION_CANCEL, ACTION_SUBMIT)
-    SLOT_DEFAULT = 'DEFAULT'
-    SLOT_NIGHT = 'NIGHT'
-    SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
-    STATE_COMPLETED = 'COMPLETED'
-    STATE_FAILED = 'FAILED'
-    STATE_PENDING = 'PENDING'
-    STATES = (STATE_COMPLETED, STATE_FAILED, STATE_PENDING)
 
     @validates(('action_type', 'time_slot', 'state'))
     def validate(self, key, value):
@@ -1850,6 +1849,8 @@ class SchedulerJob(CommonMixin, BASE):
     # 'shared': [{'name': 'resource2', 'type': 'system'}]}
     resources = Column(postgresql.JSONB)
 
+    parameters = Column(String, nullable=False)
+
     # description is returned by the state machine parser
     description = Column(String, nullable=False)
 
@@ -1857,13 +1858,15 @@ class SchedulerJob(CommonMixin, BASE):
     submit_date = Column(DateTime(timezone=False), nullable=False)
 
     # filled by scheduler when state machine starts
-    start_date = Column(DateTime(timezone=False), nullable=False)
+    start_date = Column(DateTime(timezone=False))
 
     # filled by scheduler when state machine informs it has finished
-    end_date = Column(DateTime(timezone=False), nullable=False)
+    end_date = Column(DateTime(timezone=False))
 
     # messages about the job result
     result = Column(String)
+
+    timeout = Column(Integer, default=0, nullable=False)
 
     # define constants to be globally used
     SLOT_DEFAULT = 'DEFAULT'
@@ -1877,6 +1880,11 @@ class SchedulerJob(CommonMixin, BASE):
     STATE_WAITING = 'WAITING'
     STATES = (STATE_CANCELED, STATE_CLEANINGUP, STATE_COMPLETED, STATE_FAILED,
               STATE_RUNNING, STATE_WAITING)
+
+    def __repr__(self):
+        """Object representation"""
+        return "<Job (id='{}')>".format(self.id)
+    # __repr__()
 
     @validates(('time_slot', 'state'))
     def validate(self, key, value):

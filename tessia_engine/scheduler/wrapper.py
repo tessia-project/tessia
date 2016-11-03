@@ -12,13 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Module to handle state machine output,
+signals and result reports.
+"""
 
 #
 # IMPORTS
 #
 from datetime import datetime
 from tessia_engine import state_machines
-from tessia_engine.db.connection import SESSION
 
 import os
 import signal
@@ -40,6 +43,11 @@ CANCEL_SIGNALS = (
 
 # format used to save the end date as string
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S:%f'
+
+RESULT_CANCELED = -1
+RESULT_CANCELED_TIMEOUT = -2
+
+WORKER_COMM = 'tessia-worker'
 
 #
 # CODE
@@ -71,86 +79,22 @@ class MachineWrapper(object):
         # test end
         self._result_file = '{}/.{}'.format(
             self._run_dir, os.path.basename(self._run_dir))
-        # flag to tell the handler for cleanup timeout whether the job failed
-        # because of a timeout or canceled
-        self._timeout = False
     # __init__()
 
-    def _fork(self):
-        """
-        Fork a separate process to run the state machine. A double fork is made
-        to prevent the process from becoming a zombie (it would have to be
-        waited by the parent process to avoid that) and from accidentally
-        acquiring a controlling terminal.
-        """
-        # create the job's directory and log file before forking, otherwise
-        # if it fails in the forked process we wouldn't know what happened
-        # these can raise exceptions if permissions are not correct
-        os.makedirs(self._run_dir, exist_ok=True)
-        log_file = open('{}/output'.format(self._run_dir), 'wb')
-
-        # use a pipe to allow the grandchild to inform scheduler of its pid
-        pipe_read, pipe_write = os.pipe()
-        pipe_read = os.fdopen(pipe_read, 'r')
-        pipe_write = os.fdopen(pipe_write, 'w')
-        pid = os.fork()
-
-        # parent
-        if pid != 0:
-            log_file.close()
-            pipe_write.close()
-            os.waitpid(pid, 0)
-            executor_pid = pipe_read.read()
-            pipe_read.close()
-            return executor_pid
-
-        # child
-        pipe_read.close()
-        pid = os.fork()
-        if pid != 0:
-            log_file.close()
-            # write the grandchild pid to the pipe to inform scheduler process
-            pipe_write.write(str(pid))
-            pipe_write.close()
-            # kill the child process so that the grandchild gets re-parented
-            # and thus do not become a zombie later
-            os._exit(0)
-
-        # grandchild - here we are in the state machine process
-
-        # close fds we don't want to use
-        pipe_write.close()
-        sys.stdin.close()
-
-        # redirect all its output to the appropriate log file
-        sys.stdout.flush()
-        os.dup2(log_file.fileno(), sys.stdout.fileno())
-        sys.stderr.flush()
-        os.dup2(log_file.fileno(), sys.stderr.fileno())
-
-        # change command line so that our process can be spotted in the process
-        # list
-        with os.open('/proc/self/task/{}/comm'.format(pid), 'w') as comm_file:
-            # comm file gets truncated to 15-bytes + null terminator
-            comm_file.write('tessia-{}'.format(self._job_type))
-
-        # change the current working directory of the process so that
-        # it can then create any files there
-        os.chdir(self._run_dir)
-
-        return 0
-    # _fork()
-
     def _handle_cancel(self, *args, **kwargs):
-        # replace the handler and give some time for the machine to finish
-        signal.signal(signal.SIGALRM, self._handle_cleanup_timeout)
-        signal.alarm(CLEANUP_TIME)
+        try:
+            signal.alarm(0)
+            # replace the handler and give some time for the machine to finish
+            signal.signal(signal.SIGALRM, self._handle_cleanup_timeout)
+            signal.alarm(CLEANUP_TIME)
 
-        # ask the machine to clean up
-        self._machine.cleanup()
-
-        self._write_result(1)
-        sys.exit(1)
+            # ask the machine to clean up
+            self._machine.cleanup()
+        finally:
+            try:
+                self._write_result(RESULT_CANCELED)
+            finally:
+                os._exit(1) # pylint: disable=protected-access
     # _handle_cancel()
 
     def _handle_cleanup_timeout(self, *args, **kwargs):
@@ -158,29 +102,14 @@ class MachineWrapper(object):
         Handles the signal which occurs when the cleanup routine in machine
         times out while executing
         """
-        print('warning: clean up timed out and did not complete')
-        if self._timeout:
-            # -1 is interpreted by the scheduler as timed out
-            ret = -1
-        else:
-            ret = 1
-        self._write_result(ret)
-        sys.exit(1)
+        try:
+            print('warning: clean up timed out and did not complete')
+        finally:
+            try:
+                self._write_result(RESULT_CANCELED_TIMEOUT)
+            finally:
+                os._exit(1) # pylint: disable=protected-access
     # _handle_cleanup_timeout()
-
-    def _handle_timeout(self, *args, **kwargs):
-        # replace the handler and give some time for the machine to finish
-        signal.signal(signal.SIGALRM, self._handle_cleanup_timeout)
-        signal.alarm(CLEANUP_TIME)
-        self._timeout = True
-
-        # ask the machine to clean up
-        self._machine.cleanup()
-
-        # -1 is interpreted by the scheduler as timed out
-        self._write_result(-1)
-        sys.exit(1)
-    # _handle_timeout()
 
     def _write_result(self, ret_code):
         """
@@ -193,11 +122,22 @@ class MachineWrapper(object):
     # _write_result()
 
     def start(self):
-        pid = self._fork()
-        # return the pid to scheduler
-        if pid != 0:
-            return pid
+        """
+        Redirect the process outputs, setup signals and
+        start the state machine.
+        """
+        os.makedirs(self._run_dir, exist_ok=True)
+        log_file = open('{}/output'.format(self._run_dir), 'wb')
+        sys.stdout.flush()
+        os.dup2(log_file.fileno(), sys.stdout.fileno())
+        sys.stderr.flush()
+        os.dup2(log_file.fileno(), sys.stderr.fileno())
 
+        with open('/proc/self/comm', 'w') as comm_file:
+            # comm file gets truncated to 15-bytes + null terminator
+            comm_file.write('tessia-worker')
+
+        os.chdir(self._run_dir)
         # here we are in the forked process and can start the machine
         self._machine = state_machines.MACHINES[self._job_type](
             self._job_params)
@@ -207,7 +147,8 @@ class MachineWrapper(object):
             signal.signal(signal_type, self._handle_cancel)
 
         # sigalarm occurs if test timeout was reached
-        signal.signal(signal.SIGALRM, self._handle_timeout)
+        # TODO: add timeout to request/job models
+        # signal.signal(signal.SIGALRM, self._handle_timeout)
 
         try:
             ret = self._machine.start()

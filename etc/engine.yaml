@@ -4,8 +4,6 @@
 db:
   # location of the database (in sqlalchemy format)
   url: postgresql://engine:engine@localhost/engine
-  # enable the flag below if you want all sql from sqlalchemy logged
-  debug: False
 
 # authentication subsystem
 auth:
@@ -74,3 +72,5 @@ log:
       handlers: [ldap]
       level: DEBUG
 
+scheduler:
+  jobs_dir: /var/tessia/jobs_dir

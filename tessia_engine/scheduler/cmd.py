@@ -19,6 +19,7 @@
 from tessia_engine.config import CONF
 
 import argparse
+import multiprocessing
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -51,4 +52,5 @@ def main():
 # main()
 
 if __name__ == '__main__':
+    multiprocessing.set_start_method('forkserver')
     main()

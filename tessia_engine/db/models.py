@@ -860,6 +860,7 @@ class OperatingSystem(CommonMixin, BASE):
     major = Column(String, nullable=False)
     minor = Column(String)
     desc = Column(String)
+    repository_rel = relationship("Repository", uselist=False)
 
     def __repr__(self):
         """Object representation"""
@@ -868,6 +869,27 @@ class OperatingSystem(CommonMixin, BASE):
     # __repr__()
 
 # OperatingSystem
+
+class Repository(CommonMixin, BASE):
+    """A repository for an supported operating system"""
+    # Not all operating systems have repositories
+    # that is why we put this information in other table.
+    __tablename__ = "repositories"
+
+    url = Column(String, unique=True, nullable=False)
+    # the path in the repo to the kernel and initrd
+    kernel = Column(String)
+    initrd = Column(String)
+    cmdline = Column(String)
+    operating_system_id = Column(Integer, ForeignKey('operating_systems.id'), index=True)
+
+    operating_system_rel = relationship("OperatingSystem", uselist=False)
+
+    def __repr__(self):
+        """Object representation"""
+        return "<Repository(url='{}')".format(self.url)
+    # __repr__()
+# Repository
 
 class SystemProfile(CommonMixin, BASE):
     """A system activation profile"""
@@ -1004,6 +1026,21 @@ class SystemProfile(CommonMixin, BASE):
         return "<SystemProfile(name='{}'>".format(self.name)
     # __repr__()
 # SystemProfile
+
+class Template(CommonMixin, BASE):
+    __tablename__ = "templates"
+
+    name = Column(String, primary_key=True)
+    content = Column(String)
+    template_type = Column(String)
+
+    desc = Column(String)
+
+    def __repr__(self):
+        """Object representation"""
+        return "<Template(name='{}'>".format(self.name)
+    # __repr__()
+# Template
 
 class SystemIfaceProfileAssociation(BASE):
     """Represents a system iface associated with a system activation profile"""

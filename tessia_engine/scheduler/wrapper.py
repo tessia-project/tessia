@@ -13,8 +13,7 @@
 # limitations under the License.
 
 """
-Module to handle state machine output,
-signals and result reports.
+Module to handle state machine output, signals and result reports.
 """
 
 #
@@ -44,10 +43,15 @@ CANCEL_SIGNALS = (
 # format used to save the end date as string
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S:%f'
 
+# exit codes
 RESULT_CANCELED = -1
 RESULT_CANCELED_TIMEOUT = -2
+RESULT_TIMEOUT = -3
+RESULT_SUCCESS = 0
 
-WORKER_COMM = 'tessia-worker'
+# string to be used in process comm to identify it as a tessia job in the list
+# of processes
+WORKER_COMM = 'tessia-job'
 
 #
 # CODE
@@ -79,9 +83,16 @@ class MachineWrapper(object):
         # test end
         self._result_file = '{}/.{}'.format(
             self._run_dir, os.path.basename(self._run_dir))
+        # flag used to tell handler_cleanup_timeout whether the job failed
+        # because of a timeout or because it was canceled
+        self._timeout = False
     # __init__()
 
     def _handle_cancel(self, *args, **kwargs):
+        """
+        Action executed when a cancel signal (see CANCEL_SIGNALS) is received.
+        Performs a cleanup, writes the result to the result file and exits.
+        """
         try:
             signal.alarm(0)
             # replace the handler and give some time for the machine to finish
@@ -90,11 +101,12 @@ class MachineWrapper(object):
 
             # ask the machine to clean up
             self._machine.cleanup()
+        except: # pylint: disable=bare-except
+            # print the exception to stderr
+            sys.excepthook(*sys.exc_info())
         finally:
-            try:
-                self._write_result(RESULT_CANCELED)
-            finally:
-                os._exit(1) # pylint: disable=protected-access
+            self._write_result(RESULT_CANCELED)
+            os._exit(1) # pylint: disable=protected-access
     # _handle_cancel()
 
     def _handle_cleanup_timeout(self, *args, **kwargs):
@@ -102,18 +114,40 @@ class MachineWrapper(object):
         Handles the signal which occurs when the cleanup routine in machine
         times out while executing
         """
-        try:
-            print('warning: clean up timed out and did not complete')
-        finally:
-            try:
-                self._write_result(RESULT_CANCELED_TIMEOUT)
-            finally:
-                os._exit(1) # pylint: disable=protected-access
+        print('warning: clean up timed out and did not complete')
+        if self._timeout:
+            ret = RESULT_TIMEOUT
+        else:
+            ret = RESULT_CANCELED_TIMEOUT
+        self._write_result(ret)
+        os._exit(1) # pylint: disable=protected-access
     # _handle_cleanup_timeout()
+
+    def _handle_timeout(self, *args, **kwargs):
+        try:
+            signal.alarm(0)
+            # replace the handler and give some time for the machine to finish
+            signal.signal(signal.SIGALRM, self._handle_cleanup_timeout)
+            signal.alarm(CLEANUP_TIME)
+            self._timeout = True
+
+            # ask the machine to clean up
+            self._machine.cleanup()
+
+        except: # pylint: disable=bare-except
+            # print the exception to stderr
+            sys.excepthook(*sys.exc_info())
+        finally:
+            self._write_result(RESULT_TIMEOUT)
+            os._exit(1) # pylint: disable=protected-access
+    # _handle_timeout()
 
     def _write_result(self, ret_code):
         """
         Write the result file with exit code and end time
+
+        Args:
+            ret_code (int): the exit code to be written in result file
         """
         with open(self._result_file, 'w') as result_file:
             result_file.write('{}\n{}\n'.format(
@@ -123,8 +157,8 @@ class MachineWrapper(object):
 
     def start(self):
         """
-        Redirect the process outputs, setup signals and
-        start the state machine.
+        Redirect the process outputs, setup signals and start the state
+        machine
         """
         os.makedirs(self._run_dir, exist_ok=True)
         log_file = open('{}/output'.format(self._run_dir), 'wb')
@@ -135,7 +169,7 @@ class MachineWrapper(object):
 
         with open('/proc/self/comm', 'w') as comm_file:
             # comm file gets truncated to 15-bytes + null terminator
-            comm_file.write('tessia-worker')
+            comm_file.write(WORKER_COMM)
 
         os.chdir(self._run_dir)
         # here we are in the forked process and can start the machine
@@ -147,15 +181,14 @@ class MachineWrapper(object):
             signal.signal(signal_type, self._handle_cancel)
 
         # sigalarm occurs if test timeout was reached
-        # TODO: add timeout to request/job models
+        # TODO: enable timeout feature
         # signal.signal(signal.SIGALRM, self._handle_timeout)
 
         try:
             ret = self._machine.start()
         # we still need to write the results file before exiting therefore any
         # exception needs to be caught
-        # pylint: disable=bare-except
-        except:
+        except: # pylint: disable=bare-except
             # print the exception to stderr
             sys.excepthook(*sys.exc_info())
             # set exit code to error

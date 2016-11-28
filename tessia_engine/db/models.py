@@ -1752,13 +1752,16 @@ class SchedulerRequest(CommonMixin, BASE):
     # define constants to be globally used
     ACTION_CANCEL = 'CANCEL'
     ACTION_SUBMIT = 'SUBMIT'
+    # action types
     ACTIONS = (ACTION_CANCEL, ACTION_SUBMIT)
     SLOT_DEFAULT = 'DEFAULT'
     SLOT_NIGHT = 'NIGHT'
+    # time slots
     SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
     STATE_COMPLETED = 'COMPLETED'
     STATE_FAILED = 'FAILED'
     STATE_PENDING = 'PENDING'
+    # request states
     STATES = (STATE_COMPLETED, STATE_FAILED, STATE_PENDING)
 
     requester_id = Column(
@@ -1869,8 +1872,10 @@ class SchedulerJob(CommonMixin, BASE):
     timeout = Column(Integer, default=0, nullable=False)
 
     # define constants to be globally used
+    # time slots
     SLOT_DEFAULT = 'DEFAULT'
     SLOT_NIGHT = 'NIGHT'
+    # time slots
     SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
     STATE_CANCELED = 'CANCELED'
     STATE_CLEANINGUP = 'CLEANINGUP'
@@ -1878,6 +1883,7 @@ class SchedulerJob(CommonMixin, BASE):
     STATE_FAILED = 'FAILED'
     STATE_RUNNING = 'RUNNING'
     STATE_WAITING = 'WAITING'
+    # jobs states
     STATES = (STATE_CANCELED, STATE_CLEANINGUP, STATE_COMPLETED, STATE_FAILED,
               STATE_RUNNING, STATE_WAITING)
 

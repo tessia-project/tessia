@@ -62,14 +62,19 @@ class Looper(object):
     """
     def __init__(self):
         """
-        Constructor
+        Constructor, sets the fork method for the jobs (workers) and internal
+        variables.
         """
-
-        # Ensure that the startup script properly set up the
-        # start method in the main module.
-        if multiprocessing.get_start_method() != 'forkserver':
-            raise RuntimeError(
-                'Multiprocessing start method was not properly setup')
+        try:
+            multiprocessing.set_start_method('forkserver')
+        except RuntimeError:
+            # start method might have been already used: ensure it was set to
+            # the correct mode
+            start_method = multiprocessing.get_start_method()
+            if start_method != 'forkserver':
+                raise RuntimeError(
+                    'Multiprocessing mode must be forkserver but was set to '
+                    '{}'.format(start_method))
 
         try:
             self._jobs_dir = CONF.get_config()['scheduler']['jobs_dir']
@@ -82,17 +87,39 @@ class Looper(object):
         self._resources_man = resources_manager.ResourcesManager()
         # dict with state machine parsers keyed by name
         self._machines = state_machines.MACHINES
-
+        # store our working directory to be used for validation of job's
+        # processes
         self._cwd = os.getcwd()
-
+        # db session
         self._session = MANAGER.session
+        # mapping of allowed request actions and their methods
+        self._request_methods = {
+            SchedulerRequest.ACTION_CANCEL: self._cancel_job,
+            SchedulerRequest.ACTION_SUBMIT: self._submit_job,
+        }
 
-        self.should_stop = lambda: False
+        # handle the signals for graceful termination
+        signal.signal(signal.SIGHUP, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+        signal.signal(signal.SIGINT, self._signal_handler)
+        # signal handler will set flag to False to make looper gracefully stop
+        self._should_run = True
+
+        # init resources manager with information from jobs
+        self._init_manager()
     # __init__()
 
-    def _check_process_and_kill(self, request, job):
+    def _cancel_active_job(self, request, job):
+        """
+        Receive a request to stop a job that is still active (running or
+        cleanup state) and update the job and request entries accordingly.
+
+        Args:
+            request (SchedulerRequest): request's model instance
+            job (SchedulerJob): job's model instance
+        """
         # pid ended or does not belong to this job: post process job and
-        # mark request as failed since job already ended
+        # mark request as failed since job had already ended
         process_state = self._validate_pid(job)
         if process_state == PROCESS_DEAD:
             self._post_process_job(job)
@@ -100,20 +127,20 @@ class Looper(object):
             request.result = 'Job has ended while processing request'
             self._session.commit()
             return
+        # we don't know if the process is still alive or belong to a non tessia
+        # job: don't send signal, and keep trying the request until the real
+        # state of the process is known
         elif process_state == PROCESS_UNKNOWN:
-            # we don't know if the process is still alive, and the pid
-            # could belong to a process not related to a tessia job
-            # so we don't send signal, and keep trying the request until
-            # the real state of the process is known
-            self._logger.info(
-                "Job in process in unknown state, waiting to execute request")
+            self._logger.warning(
+                "Job %s process is in unknown state, delaying request "
+                "execution", job.id)
             self._session.commit()
             return
 
         # This is slightly unsafe since between checking the pid and this
         # call the pid could have been recycled.
 
-        # job is running: stop state machine first
+        # job is running: send a signal to stop state machine
         if job.state == SchedulerJob.STATE_RUNNING:
             # ask state machine process to die gracefully. Later we collect all
             # jobs in clean up state that pid has finished and mark them as
@@ -123,11 +150,11 @@ class Looper(object):
             request.result = 'OK'
             job.state = SchedulerJob.STATE_CLEANINGUP
             job.result = 'Job canceled by user; cleaning up'
+            self._session.commit()
         # job is in clean up phase: force kill it
         # we might consider in future to use a FORCECANCEL request type
         # to be more explicit
         else:
-            assert job.state == SchedulerJob.STATE_CLEANINGUP
             # there is a slight chance that the process does not die after a
             # sigkill, this can happen if it is in the middle of a syscall that
             # never ends (uninterruptible sleep) possibly due to some buggy io
@@ -142,19 +169,26 @@ class Looper(object):
             job.state = SchedulerJob.STATE_CANCELED
             job.result = 'Job forcefully canceled by user while in cleanup'
             job.end_date = datetime.utcnow()
+            self._session.commit()
             # remove job from resources manager
             self._resources_man.active_pop(job)
-
-        self._session.commit()
+    # _cancel_active_job()
 
     def _cancel_job(self, request):
         """
         Cancel the job specified in the request. If the job is running, stop it
         first.
+
+        Args:
+            request (SchedulerRequest): request's model instance
         """
         job = self._session.query(SchedulerJob).filter(
-            SchedulerJob.id == request.job_id).one_or_none()
+            SchedulerJob.id == request.job_id).one()
 
+        # target job does not exist: request fails. This is very unlikely to
+        # occur as the job id is a FK constraint in the request table which
+        # means requests with invalid job ids cannot be submitted in the first
+        # place
         if job is None:
             request.state = SchedulerRequest.STATE_FAILED
             request.result = 'Specified job not found'
@@ -163,16 +197,17 @@ class Looper(object):
 
         if job.state in (SchedulerJob.STATE_RUNNING,
                          SchedulerJob.STATE_CLEANINGUP):
-            self._check_process_and_kill(request, job)
+            self._cancel_active_job(request, job)
+
         # job already over: mark request as invalid
         elif job.state in (SchedulerJob.STATE_FAILED,
                            SchedulerJob.STATE_COMPLETED):
             request.state = SchedulerRequest.STATE_FAILED
             request.result = 'Cannot cancel job because it already ended'
             self._session.commit()
+
         # job is still waiting for execution: just update entry in database
-        else:
-            assert job.state == SchedulerJob.STATE_WAITING
+        elif job.state == SchedulerJob.STATE_WAITING:
             request.state = SchedulerRequest.STATE_COMPLETED
             request.result = 'OK'
             job.state = SchedulerJob.STATE_CANCELED
@@ -180,6 +215,12 @@ class Looper(object):
             self._session.commit()
             # remove job from resources manager
             self._resources_man.wait_pop(job)
+
+        # job in unknown state: don't know what to do
+        else:
+            request.state = SchedulerRequest.STATE_FAILED
+            request.result = 'Job is in an unknown state'
+            self._session.commit()
 
     # _cancel_job()
 
@@ -204,9 +245,21 @@ class Looper(object):
         return False
     # _has_resources()
 
+    def _signal_handler(self, *args, **kwargs):
+        """
+        Receives a stop signal (SIGTERM, SIGINT) and set the appropriate flag
+        to let the looper knows it has to die.
+        """
+        self._logger.info('Signal caught: waiting for scheduler to exit...')
+        self._should_run = False
+    # _signal_handler()
+
     def _submit_job(self, request):
         """
         Process a request and register a new job for execution
+
+        Args:
+            request (SchedulerRequest): request's model instance
         """
         # get the appropriate machine parser based on specified job type
         try:
@@ -214,6 +267,13 @@ class Looper(object):
         except KeyError:
             request.state = SchedulerRequest.STATE_FAILED
             request.result = "Invalid job type '{}'".format(request.job_type)
+            self._session.commit()
+            return
+        # should never happen
+        except AttributeError:
+            request.state = SchedulerRequest.STATE_FAILED
+            request.result = (
+                'Internal error, parser not found for the job type')
             self._session.commit()
             return
 
@@ -276,7 +336,7 @@ class Looper(object):
         self._resources_man.reset()
 
         # get the list of jobs still waiting for execution
-        waiting_jobs = self._session.query(SchedulerJob).filter(
+        waiting_jobs = SchedulerJob.query.filter(
             SchedulerJob.state == SchedulerJob.STATE_WAITING
         ).order_by(
             SchedulerJob.submit_date.asc()
@@ -291,7 +351,7 @@ class Looper(object):
             self._resources_man.enqueue(job)
 
         # get the list of active jobs
-        active_jobs = self._session.query(SchedulerJob).filter(
+        active_jobs = SchedulerJob.query.filter(
             SchedulerJob.state.in_(
                 [SchedulerJob.STATE_CLEANINGUP, SchedulerJob.STATE_RUNNING])
         ).all()
@@ -307,15 +367,14 @@ class Looper(object):
             if self._has_resources(job):
                 self._resources_man.enqueue(job)
 
-        self._session.commit()
     # _init_manager()
 
     def _finish_jobs(self):
         """
-        Update state of all jobs finished
+        Update state of active jobs that have finished
         """
         # get the list of active jobs
-        active_jobs = self._session.query(SchedulerJob).filter(
+        active_jobs = SchedulerJob.query.filter(
             SchedulerJob.state.in_(
                 [SchedulerJob.STATE_CLEANINGUP, SchedulerJob.STATE_RUNNING])
         ).all()
@@ -332,13 +391,14 @@ class Looper(object):
             if self._has_resources(job):
                 self._resources_man.active_pop(job)
 
-        self._session.commit()
-
     # _finish_jobs()
 
     def _post_process_job(self, job):
         """
-        Update job entry according to the result of its process
+        Update job state according to the result of its process
+
+        Args:
+            job (SchedulerJob): job's model instance
         """
         job_dir = '{}/{}'.format(self._jobs_dir, job.id)
         results_file_name = '{}/.{}'.format(job_dir, job.id)
@@ -358,33 +418,40 @@ class Looper(object):
             self._session.commit()
             return
 
-        # 0 return code: mark job as finished successfully
-        if ret_code == 0:
+        # success return code: mark job as finished successfully
+        if ret_code == wrapper.RESULT_SUCCESS:
             job.state = SchedulerJob.STATE_COMPLETED
             job.result = 'Job finished successfully'
+        # job timed out: mark as failed
+        elif ret_code == wrapper.RESULT_TIMEOUT:
+            job.state = SchedulerJob.STATE_FAILED
+            job.result = 'Job aborted due to timeout'
+        # job canceled by user: mark as canceled
         elif ret_code == wrapper.RESULT_CANCELED:
             job.state = SchedulerJob.STATE_CANCELED
-            job.result = 'Job canceled'
+            job.result = 'Job canceled by user'
+        # job timed out while cleaning up: mark as canceled and report the
+        # timeout
         elif ret_code == wrapper.RESULT_CANCELED_TIMEOUT:
             job.state = SchedulerJob.STATE_CANCELED
             job.result = 'Job canceled and cleanup timed out'
+        # unknown error code: execution failed
         else:
             job.state = SchedulerJob.STATE_FAILED
             job.result = 'Job ended with error exit code'
 
         job.end_date = end_date
         self._session.commit()
-
     # _post_process_job()
 
     def _start_jobs(self):
         """
-        Loop on waiting jobs and try to start them
+        Process waiting jobs and try to start them
         """
         self._logger.info('Trying to start waiting jobs')
 
         # get the list of jobs still waiting for execution
-        pending_jobs = self._session.query(SchedulerJob).filter(
+        pending_jobs = SchedulerJob.query.filter(
             SchedulerJob.state == SchedulerJob.STATE_WAITING
         ).all()
 
@@ -399,14 +466,21 @@ class Looper(object):
             try:
                 process = multiprocessing.Process(
                     target=spawner.spawn,
-                    args=(
-                        job_dir, job.job_type, job.parameters))
+                    args=(job_dir, job.job_type, job.parameters))
 
                 process.start()
 
             except multiprocessing.ProcessError as exc:
                 self._logger.warning(
                     'Failed to start job %s: %s', job.id, str(exc))
+                job.state = SchedulerJob.STATE_FAILED
+                job.result = 'Job failed to start'
+                current_date = datetime.utcnow()
+                job.start_date = current_date
+                job.end_date = current_date
+                self._session.commit()
+                # remove from queue since it won't be scheduled anymore
+                self._resources_man.wait_pop(job)
                 continue
 
             # update job in database to reflect new state
@@ -421,88 +495,88 @@ class Looper(object):
 
             self._resources_man.wait_pop(job)
 
-        self._session.commit()
-
     # _start_jobs()
 
     def _validate_pid(self, job):
-        # True is running, False is dead
+        """
+        Verify the state of the job's process (whether it still belongs to a
+        tessia job or died).
 
-        self._logger.info('Checking pid of job %s', job.id)
+        Args:
+            job (SchedulerJob): job instance
+
+        Returns:
+            int: one of the PROCESS_* constants
+        """
+        self._logger.debug('Checking pid %s of job %s', job.pid, job.id)
 
         inexistent_pid_msg = 'Job {} has inexistent pid {}'.format(
+            job.id, job.pid)
+        no_permission_msg = 'Job {} has inaccessible pid {}'.format(
             job.id, job.pid)
 
         try:
             # the read comm will include a newline, so strip it
             with open('/proc/{}/comm'.format(job.pid), 'r') as comm_file:
                 proc_comm = comm_file.read().strip()
-
-        # permission error in case the pid is recycled and
-        # the file is created with unaccessible permissions
-        except (FileNotFoundError, PermissionError):
-            self._logger.warning(inexistent_pid_msg)
+        except FileNotFoundError:
+            self._logger.debug(inexistent_pid_msg)
+            return PROCESS_DEAD
+        # permission error in case the pid is recycled and the file is created
+        # with inaccessible permissions
+        except PermissionError:
+            self._logger.debug(no_permission_msg)
             return PROCESS_DEAD
 
-        self._logger.info('Process comm is %s', proc_comm)
+        self._logger.debug('Process comm is %s', proc_comm)
+        comm_ok = bool(proc_comm == wrapper.WORKER_COMM)
 
+        # verify through the current working directory if the process belongs
+        # to the correct job
         proc_cwd_file = '/proc/{}/cwd'.format(job.pid)
-
         try:
             proc_cwd = os.readlink(proc_cwd_file)
-        except (FileNotFoundError, PermissionError):
-            self._logger.warning(inexistent_pid_msg)
+        except FileNotFoundError:
+            self._logger.debug(inexistent_pid_msg)
+            return PROCESS_DEAD
+        # permission error in case the pid is recycled and the file is created
+        # with inaccessible permissions
+        except PermissionError:
+            self._logger.debug(no_permission_msg)
             return PROCESS_DEAD
 
-        self._logger.info('Process cwd is %s', proc_cwd)
-
-        comm_ok = False
-
-        if proc_comm == wrapper.WORKER_COMM:
-            comm_ok = True
-
-        cwd_ok = False
-
-        if os.path.basename(proc_cwd) == str(job.id):
-            cwd_ok = True
+        self._logger.debug('Process cwd is %s', proc_cwd)
+        cwd_ok = bool(os.path.basename(proc_cwd) == str(job.id))
 
         # Process had time to change its comm and cwd, and they are
-        # both correct, process seems to be running
+        # both correct: consider process as running
         if comm_ok and cwd_ok:
-            self._logger.info('Process is running with cwd and comm correct.')
+            self._logger.debug('Process is running with cwd and comm correct.')
             return PROCESS_RUNNING
 
-        # cwd was set correctly but not the comm, this can't happen
-        # since the worker processes set the comm first.
-        if not comm_ok and cwd_ok:
-            self._logger.warning(
-                'Process set cwd before comm, something is wrong!')
-
-        # At this point we don't know if the process is correct, it might not
-        # had had time to change it's comm, and then its cwd
-
-        # The starting cwd of the worker process is the same as the looper's
-        # cwd, so if the cwd is neither the final worker process cwd nor the
-        # looper cwd, it must be another process
+        # At this point we don't know for sure if the process is correct, it
+        # might not have had time to change its comm or cwd. However we know
+        # that the starting cwd of the worker process is the same as the
+        # looper's cwd so if the process' cwd is neither the final worker
+        # process cwd nor looper's then it must be another process
         if not cwd_ok and proc_cwd != self._cwd:
-            self._logger.info(
+            self._logger.warning(
                 'Process did not start with looper cwd, assuming dead')
             return PROCESS_DEAD
 
-        # In any other case we can't be sure, so assume the process is running,
-        # and it will eventually either die or change its cwd/comm
-        self._logger.info(
+        # for now assume the process is running and it will eventually either
+        # die or change its cwd/comm
+        self._logger.warning(
             'Process has not yet set comm and cwd: unknown state.')
         return PROCESS_UNKNOWN
+    # _validate_pid()
 
     def _process_pending_requests(self):
-        request_methods = {
-            SchedulerRequest.ACTION_CANCEL: self._cancel_job,
-            SchedulerRequest.ACTION_SUBMIT: self._submit_job,
-        }
-
+        """
+        Collect the pending requests from the table and process them.
+        """
         pending_requests = (
-            self._session.query(SchedulerRequest).filter(
+            SchedulerRequest.query.filter(
                 SchedulerRequest.state == SchedulerRequest.STATE_PENDING)
             .order_by(
                 SchedulerRequest.submit_date.asc()
@@ -510,7 +584,7 @@ class Looper(object):
 
         for request in pending_requests:
             try:
-                method = request_methods[request.action_type]
+                method = self._request_methods[request.action_type]
             # request is invalid: mark it as failed
             except KeyError:
                 self._logger.warning(
@@ -521,39 +595,34 @@ class Looper(object):
             # valid request: execute the specified action
             else:
                 method(request)
+    # _process_pending_requests()
 
-        self._session.commit()
-
-    def start(self, sleep_time=0.1):
+    def loop(self, sleep_time=0.5):
         """
         Starts the main scheduling loop.
+
+        Args:
+            sleep_time (int): interval to wait between each loop
         """
-        with open('/proc/self/comm', 'w') as comm_file:
-            # comm file gets truncated to 15-bytes + null terminator
-            comm_file.write('tessia-looper')
-
         try:
-            # init resources manager with information from jobs
-            self._init_manager()
-
-            while not self.should_stop():
-                # TODO: scheduler is running too fast
-                time.sleep(sleep_time)
+            while self._should_run:
+                # finish any active jobs
+                self._finish_jobs()
 
                 self._process_pending_requests()
 
-                self._finish_jobs()
-
+                # try to schedule jobs in pending state
                 self._start_jobs()
 
-                self._logger.info(self._resources_man)
+                self._logger.debug(self._resources_man)
+                # TODO: scheduler is running too fast
+                time.sleep(sleep_time)
 
         except:
             self._session.rollback()
-            self._logger.warning(
+            self._logger.error(
                 "Caught exception in scheduler, exiting...", exc_info=True)
             raise
 
-    # start()
-
+    # loop()
 # Looper

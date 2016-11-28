@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Command line entry point for the scheduler daemon
+"""
 
 #
 # IMPORTS
@@ -19,7 +22,6 @@
 from tessia_engine.config import CONF
 
 import argparse
-import multiprocessing
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -48,9 +50,8 @@ def main():
     # import the app late to make sure all logging is configured first
     from tessia_engine.scheduler.looper import Looper
     daemon = Looper()
-    daemon.start()
+    daemon.loop()
 # main()
 
 if __name__ == '__main__':
-    multiprocessing.set_start_method('forkserver')
     main()

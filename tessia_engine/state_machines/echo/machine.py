@@ -68,7 +68,8 @@ class EchoMachine(BaseMachine):
             content (str): the content to be parsed
 
         Returns:
-            dict containing resources allocated and list of messages to be echoed
+            dict: containing resources allocated and list of messages to be
+                  echoed
 
         Raises:
             SyntaxError: if content is in wrong format
@@ -119,7 +120,8 @@ class EchoMachine(BaseMachine):
                     seconds = int(fields[1])
                 except ValueError:
                     raise SyntaxError(
-                        'SLEEP argument must be a number at line {}'.format(i+1))
+                        'SLEEP argument must be a number at line {}'.format(
+                            i+1))
 
                 ret['commands'].append(['sleep', seconds])
 
@@ -135,8 +137,8 @@ class EchoMachine(BaseMachine):
         The state machine itself which processes the instructions and executes
         them.
 
-        Args:
-            content (str): the instructions to be parsed
+        Returns:
+            int: exit code
         """
         for cmd in self._params['commands']:
             if cmd[0] == 'echo':

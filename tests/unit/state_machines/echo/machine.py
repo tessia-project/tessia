@@ -73,8 +73,8 @@ class TestEcho(TestCase):
 
         # check the executor method
         echo_obj = machine.EchoMachine(content)
-        result = echo_obj.start()
-        self.assertEqual(result, 0)
+        ret_code = echo_obj.start()
+        self.assertEqual(ret_code, 0)
         mock_print.assert_has_calls([
             call('Hello world!'),
             call('Testing a more long message to see if it works...')

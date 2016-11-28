@@ -63,7 +63,6 @@ class TestConnection(TestCase):
         config = {
             'db': {
                 'url': 'postgresql://user:passwd@localhost/engine',
-                'debug': True,
             }
         }
         mock_conf.get_config.return_value = config
@@ -85,7 +84,7 @@ class TestConnection(TestCase):
 
         # verify that module behaved as expected
         mock_create.assert_called_with(
-            config['db']['url'], echo=config['db']['debug'])
+            config['db']['url'])
         mock_session_maker.assert_called_with(bind=sentinel.sa_engine)
         mock_scoped_session.assert_called_with(
             mock_session_maker.return_value)

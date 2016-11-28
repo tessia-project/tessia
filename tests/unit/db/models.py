@@ -124,7 +124,14 @@ class DbUnit(object):
         mock_conf.get_config.return_value = conf
 
         # make sure it's a new connection and not one from a previous test
-        connection.MANAGER._conn = None # pylint: disable=protected-access
+        # pylint: disable=protected-access
+        connection.MANAGER._conn = None
+        for class_entry in models.BASE._decl_class_registry.values():
+            if isinstance(class_entry, type):
+                if hasattr(class_entry, 'query_class'):
+                    del class_entry.query_class
+                if hasattr(class_entry, 'query'):
+                    del class_entry.query
         # session can be used by consumers
         cls.session = connection.MANAGER.session
 

@@ -391,6 +391,8 @@ class Looper(object):
             if self._has_resources(job):
                 self._resources_man.active_pop(job)
 
+        self._session.commit()
+
     # _finish_jobs()
 
     def _post_process_job(self, job):
@@ -405,13 +407,23 @@ class Looper(object):
 
         try:
             with open(results_file_name, 'r') as results_file:
-                results = results_file.readlines()
-                ret_code = int(results[0].strip())
-                end_date = datetime.strptime(results[1].strip(),
-                                             wrapper.DATE_FORMAT)
+                results_lines = results_file.readlines()
+
+            results = iter(results_lines)
+
+            ret_code = int(next(results).strip())
+
+            cleanup_code = None
+
+            if len(results_lines) > 2:
+                cleanup_code = int(next(results).strip())
+
+            end_date = datetime.strptime(next(results).strip(),
+                                         wrapper.DATE_FORMAT)
         except Exception as exc:
-            self._logger.warning('Reading of result file for job %s: %s',
-                                 job.id, str(exc))
+            self._logger.warning(
+                'Reading of result file for job %s: %s failed',
+                job.id, str(exc))
             job.state = SchedulerJob.STATE_FAILED
             job.result = 'Job ended in unknown state'
             job.end_date = datetime.utcnow()
@@ -421,25 +433,37 @@ class Looper(object):
         # success return code: mark job as finished successfully
         if ret_code == wrapper.RESULT_SUCCESS:
             job.state = SchedulerJob.STATE_COMPLETED
-            job.result = 'Job finished successfully'
-        # job timed out: mark as failed
-        elif ret_code == wrapper.RESULT_TIMEOUT:
+            result = 'Job finished successfully.'
+        elif (ret_code == wrapper.RESULT_CANCELED
+              or ret_code == wrapper.RESULT_TIMEOUT):
+
+            job.state = SchedulerJob.STATE_CANCELED
+
+            if ret_code == wrapper.RESULT_CANCELED:
+                result = 'Job canceled.'
+            else:
+                assert ret_code == wrapper.RESULT_TIMEOUT
+                result = 'Job timed out.'
+
+            if cleanup_code is None:
+                # Job was already cleaning up before being interrupted.
+                result += " Normal cleanup was interrupted."
+            elif cleanup_code == wrapper.RESULT_TIMEOUT:
+                result += " Cleanup timed out."
+            elif cleanup_code == wrapper.RESULT_EXCEPTION:
+                result += " Cleanup failed abnormally."
+            elif cleanup_code == wrapper.RESULT_SUCCESS:
+                result += " Cleanup completed."
+            else:
+                result += " Cleanup ended with error exit code."
+        elif ret_code == wrapper.RESULT_EXCEPTION:
             job.state = SchedulerJob.STATE_FAILED
-            job.result = 'Job aborted due to timeout'
-        # job canceled by user: mark as canceled
-        elif ret_code == wrapper.RESULT_CANCELED:
-            job.state = SchedulerJob.STATE_CANCELED
-            job.result = 'Job canceled by user'
-        # job timed out while cleaning up: mark as canceled and report the
-        # timeout
-        elif ret_code == wrapper.RESULT_CANCELED_TIMEOUT:
-            job.state = SchedulerJob.STATE_CANCELED
-            job.result = 'Job canceled and cleanup timed out'
-        # unknown error code: execution failed
+            result = 'Job failed abnormally.'
         else:
             job.state = SchedulerJob.STATE_FAILED
-            job.result = 'Job ended with error exit code'
+            result = 'Job ended with error exit code'
 
+        job.result = result
         job.end_date = end_date
         self._session.commit()
     # _post_process_job()
@@ -466,7 +490,9 @@ class Looper(object):
             try:
                 process = multiprocessing.Process(
                     target=spawner.spawn,
-                    args=(job_dir, job.job_type, job.parameters))
+                    args=(
+                        job_dir, job.job_type, job.parameters,
+                        job.timeout))
 
                 process.start()
 
@@ -595,6 +621,8 @@ class Looper(object):
             # valid request: execute the specified action
             else:
                 method(request)
+
+        self._session.commit()
     # _process_pending_requests()
 
     def loop(self, sleep_time=0.5):

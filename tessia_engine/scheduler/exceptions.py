@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Spawner used to start the workers (jobs' processes)
+Module containing the exceptions used by the scheduler and wrapper modules.
 """
 
 #
@@ -27,19 +27,9 @@ Spawner used to start the workers (jobs' processes)
 #
 # CODE
 #
-def spawn(job_dir, job_type, job_parameters, timeout):
-    """
-    Creates the wrapped state machine instance and starts it.
 
-    Args:
-        job_dir (str): filesystem path to the directory used for the job
-        job_type (str): the type of state machine to use
-        job_parameters (str): parameters to pass to the state machine
-        timeout (int): job timeout in seconds
-    """
-    from tessia_engine.scheduler import wrapper
+class WrapperTimeout(BaseException):
+    pass
 
-    wrapped_machine = wrapper.MachineWrapper(
-        job_dir, job_type, job_parameters, timeout)
-    wrapped_machine.start()
-# spawn()
+class WrapperCanceled(BaseException):
+    pass

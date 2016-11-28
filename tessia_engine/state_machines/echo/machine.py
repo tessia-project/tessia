@@ -45,11 +45,27 @@ class EchoMachine(BaseMachine):
         self._params = self.parse(params)
     # __init__()
 
+    def _execute_commands(self, commands):
+        for cmd in commands:
+            if cmd[0] == 'echo':
+                print(cmd[1])
+            elif cmd[0] == 'sleep':
+                sleep(cmd[1])
+            elif cmd[0] == 'return':
+                return cmd[1]
+            elif cmd[0] == 'raise':
+                raise RuntimeError
+
+        return 0
+
     def cleanup(self):
         """
         See base class docstring
         """
-        print('cleanup done')
+        if self._params['cleanup_commands']:
+            self.cleaning_up = True
+            return self._execute_commands(self._params['cleanup_commands'])
+        return 0
     # cleanup()
 
     @staticmethod
@@ -63,13 +79,17 @@ class EchoMachine(BaseMachine):
         ECHO Hello world!
         SLEEP 50
         ECHO Test ended.
+        CLEANUP
+        ECHO cleanup started
+        SLEEP 2
+        ECHO cleanup done
 
         Args:
             content (str): the content to be parsed
 
         Returns:
-            dict: containing resources allocated and list of messages to be
-                  echoed
+            dict: containing resources allocated and list of commands
+                  to be executed
 
         Raises:
             SyntaxError: if content is in wrong format
@@ -79,7 +99,11 @@ class EchoMachine(BaseMachine):
             'resources': {'shared': [], 'exclusive': []},
             'description': MACHINE_DESCRIPTION,
             'commands': [],
+            'cleanup_commands': []
         }
+
+        cleanup = False
+        commands = ret['commands']
 
         lines = content.split('\n')
         for i in range(0, len(lines)):
@@ -89,7 +113,15 @@ class EchoMachine(BaseMachine):
             if len(fields) == 0:
                 continue
 
-            if fields[0].lower() == 'use':
+            if fields[0].lower() == 'cleanup':
+                cleanup = True
+                commands = ret['cleanup_commands']
+            elif fields[0].lower() == 'use':
+
+                if cleanup:
+                    raise SyntaxError(
+                        'USE statement in cleanup section.')
+
                 # syntax check
                 if len(fields) < 3:
                     raise SyntaxError(
@@ -109,22 +141,39 @@ class EchoMachine(BaseMachine):
                     raise SyntaxError(
                         'Wrong number of arguments in ECHO statement at line '
                         '{}'.format(i+1))
-                ret['commands'].append(['echo', ' '.join(fields[1:])])
+
+                commands.append(['echo', ' '.join(fields[1:])])
 
             elif fields[0].lower() == 'sleep':
                 if len(fields) != 2:
                     raise SyntaxError(
-                        'Wrong number of arguments in SLEEP statement at line '
+                        'Wrong number of arguments in '
+                        'SLEEP statement at line '
                         '{}'.format(i+1))
                 try:
                     seconds = int(fields[1])
                 except ValueError:
                     raise SyntaxError(
-                        'SLEEP argument must be a number at line {}'.format(
-                            i+1))
+                        'SLEEP argument must be a number at line {}'
+                        .format(i+1))
 
-                ret['commands'].append(['sleep', seconds])
+                commands.append(['sleep', seconds])
+            elif fields[0].lower() == 'return':
+                if len(fields) != 2:
+                    raise SyntaxError(
+                        'Wrong number of arguments in RETURN '
+                        'statement at line '
+                        '{}'.format(i+1))
+                try:
+                    ret_value = int(fields[1])
+                except ValueError:
+                    raise SyntaxError(
+                        'RETURN argument must be a number at line {}'
+                        .format(i+1))
 
+                commands.append(['return', ret_value])
+            elif fields[0].lower() == 'raise':
+                commands.append(['raise'])
             else:
                 raise SyntaxError('Invalid command {} at line {}'.format(
                     fields[0], i+1))
@@ -139,14 +188,17 @@ class EchoMachine(BaseMachine):
 
         Returns:
             int: exit code
-        """
-        for cmd in self._params['commands']:
-            if cmd[0] == 'echo':
-                print(cmd[1])
-            elif cmd[0] == 'sleep':
-                sleep(cmd[1])
 
-        return 0
+        Args:
+        """
+
+        ret = self._execute_commands(self._params['commands'])
+        ret_cleanup = self.cleanup()
+
+        if ret_cleanup == 0:
+            return ret
+        else:
+            return ret_cleanup
     # start()
 
 # EchoMachine

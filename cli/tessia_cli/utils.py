@@ -23,10 +23,18 @@ from potion_client.exceptions import ItemNotFound
 from tessia_cli.config import CONF
 
 import click
+import time
 
 #
 # CONSTANTS AND DEFINITIONS
 #
+REQUEST_WAIT_TIMEOUT = 60
+REQUEST_TIMEOUT_MSG = (
+    "Warning: the scheduler did not process our request in a reasonable time. "
+    "This might or might not indicate a problem, depending on the scheduler "
+    "load. You can still follow the progress of the request with the "
+    "'req-show' command."
+)
 
 #
 # CODE
@@ -225,3 +233,50 @@ def version_verify(logger, response, silent=False):
 
     return True
 # version_verify()
+
+def wait_scheduler(client, arg_dict):
+    """
+    Helper function to submit a request and give user feedback while waiting
+    for it to be processed by the scheduler.
+    """
+    item = client.JobRequests()
+    for key, value in arg_dict.items():
+        setattr(item, key, value)
+    req_id = item.save()
+    click.echo('\nRequest #{} submitted, waiting for scheduler to process it '
+               '(Ctrl+C to stop waiting) ...'.format(req_id))
+
+    timeout = time.time() + REQUEST_WAIT_TIMEOUT
+    had_timeout = False
+    with click.progressbar(length=100, show_eta=False, empty_char=' ',
+                           label='processing job') as widget_bar:
+        cur_length = 0
+        while True:
+            time.sleep(2)
+            item = fetch_item(
+                client.JobRequests,
+                {'request_id': req_id},
+                'unexpected error, the request was not found.')
+            if item.state == 'COMPLETED' or item.state == 'FAILED':
+                widget_bar.update(100)
+                break
+            elif cur_length < 90:
+                cur_length += 10
+                widget_bar.update(10)
+            elif time.time() >= timeout:
+                had_timeout = True
+                break
+
+    if had_timeout:
+        click.echo('\n' + REQUEST_TIMEOUT_MSG)
+    elif item.state == 'COMPLETED':
+        if arg_dict['action_type'] == 'SUBMIT':
+            click.echo('Request accepted; job id is #{}'.format(item.job_id))
+        else:
+            click.echo('Request accepted; job canceled.')
+    elif item.state == 'FAILED':
+        raise click.ClickException('request failed, reason is: {}'.format(
+            item.result))
+
+    return item.job_id
+# wait_scheduler()

@@ -168,6 +168,41 @@ class TestLdapLoginManager(TestCase):
             exc_info=empty_exc)
     # test_auth_conn_fail()
 
+    def test_auth_empty_list(self):
+        """
+        Verify if module correctly treats responses with empty lists as
+        attributes
+        """
+        # prepare search mock
+        self.mock_conn.search.return_value = True
+        # bind operation
+        self.mock_conn.bind.return_value = True
+        # response to the search and bind calls
+        self.mock_conn.response.__len__.return_value = 1
+        fake_resp = {
+            'attributes': {
+                'mail': ['baruser@foo.com'],
+                'cn': ['Bar User', 'Baruser'],
+                'title': [],
+            },
+            'type': 'searchResEntry',
+            'dn': 'uid=000000000,c=de,ou=base,o=foo.com',
+        }
+        self.mock_conn.response.__getitem__.return_value = fake_resp
+
+        # perform action
+        ldap_manager = ldap.MANAGER()
+
+        # validate response
+        check_resp = {
+            'login': fake_resp['attributes']['mail'][0],
+            'fullname': fake_resp['attributes']['cn'][0],
+            'title': '',
+        }
+        self.assertEqual(
+            check_resp, ldap_manager.authenticate('baruser', 'barpwd'))
+    # test_auth_empty_list()
+
     def test_auth_no_group(self):
         """
         Test a successful authentication without group filter

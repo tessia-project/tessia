@@ -250,7 +250,7 @@ def part_show(volume_id, **kwargs):
         ]
         rows.append(row)
 
-    click.echo('\nPartition table type: {}\n'.format(
+    click.echo('\nPartition table type: {}'.format(
         part_table.get('type', 'undefined')))
     print_ver_table(PART_FIELDS, rows)
 # part_show()

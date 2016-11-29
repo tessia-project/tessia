@@ -22,6 +22,7 @@ Module to handle state machine output, signals and result reports.
 from datetime import datetime
 from tessia_engine import state_machines
 
+import builtins
 import os
 import signal
 import sys
@@ -166,6 +167,14 @@ class MachineWrapper(object):
         os.dup2(log_file.fileno(), sys.stdout.fileno())
         sys.stderr.flush()
         os.dup2(log_file.fileno(), sys.stderr.fileno())
+
+        # replace the original print by one that always performs flush
+        # so that output goes directly to the file
+        orig_print = builtins.print
+        def new_print(*args, **kwargs):
+            """Print function with auto-flush"""
+            orig_print(*args, **kwargs, flush=True)
+        builtins.print = new_print
 
         with open('/proc/self/comm', 'w') as comm_file:
             # comm file gets truncated to 15-bytes + null terminator

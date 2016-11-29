@@ -116,7 +116,8 @@ class Looper(object):
 
         Args:
             request (SchedulerRequest): request's model instance
-            job (SchedulerJob): job's model instance
+            job (SchedulerJob): job's model instance with state RUNNING or
+                                CLEANINGUP
         """
         # pid ended or does not belong to this job: post process job and
         # mark request as failed since job had already ended
@@ -155,6 +156,7 @@ class Looper(object):
         # we might consider in future to use a FORCECANCEL request type
         # to be more explicit
         else:
+            # state must be CLEANINGUP here
             # there is a slight chance that the process does not die after a
             # sigkill, this can happen if it is in the middle of a syscall that
             # never ends (uninterruptible sleep) possibly due to some buggy io
@@ -183,7 +185,7 @@ class Looper(object):
             request (SchedulerRequest): request's model instance
         """
         job = self._session.query(SchedulerJob).filter(
-            SchedulerJob.id == request.job_id).one()
+            SchedulerJob.id == request.job_id).one_or_none()
 
         # target job does not exist: request fails. This is very unlikely to
         # occur as the job id is a FK constraint in the request table which
@@ -201,7 +203,8 @@ class Looper(object):
 
         # job already over: mark request as invalid
         elif job.state in (SchedulerJob.STATE_FAILED,
-                           SchedulerJob.STATE_COMPLETED):
+                           SchedulerJob.STATE_COMPLETED,
+                           SchedulerJob.STATE_CANCELED):
             request.state = SchedulerRequest.STATE_FAILED
             request.result = 'Cannot cancel job because it already ended'
             self._session.commit()
@@ -220,6 +223,7 @@ class Looper(object):
         else:
             request.state = SchedulerRequest.STATE_FAILED
             request.result = 'Job is in an unknown state'
+            self._logger.error('Missing state branch in cancel_job')
             self._session.commit()
 
     # _cancel_job()

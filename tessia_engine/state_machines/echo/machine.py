@@ -45,7 +45,8 @@ class EchoMachine(BaseMachine):
         self._params = self.parse(params)
     # __init__()
 
-    def _execute_commands(self, commands):
+    @staticmethod
+    def _execute_commands(commands):
         for cmd in commands:
             if cmd[0] == 'echo':
                 print(cmd[1])

@@ -44,6 +44,7 @@ FAKE_JOBS_DIR = '/tmp/test-looper/jobs-dir'
 # CODE
 #
 # pylint: disable=protected-access
+# pylint: disable=too-many-public-methods
 class TestLooper(TestCase):
     """
     Unit test for the looper module
@@ -341,7 +342,8 @@ class TestLooper(TestCase):
             [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
     # _patch_dead_process_bad_cwd()
 
-    def _patch_dead_process_no_comm(self, ret_code, end_time):
+    def _patch_dead_process_no_comm(
+            self, ret_code, end_time, cleanup_code=None):
         """
         Patch with mocks to simulate the case where job's process died because
         /proc/$pid/comm does not exist.
@@ -349,11 +351,20 @@ class TestLooper(TestCase):
         Args:
             ret_code (int): return code to include in results file
             end_time (str): end date to include in results file
+            cleanup_code (int): cleanup code to include in results file
         """
         # contents of result file
+
+        if cleanup_code is not None:
+            readlines_return = (
+                [str(ret_code), str(cleanup_code),
+                 end_time.strftime(wrapper.DATE_FORMAT)])
+        else:
+            readlines_return = (
+                [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
+
         self._mock_open.return_value.__enter__.return_value.readlines. \
-        return_value = (
-            [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
+        return_value = readlines_return
 
         # mock the open function to failed on first call (no /proc/$pid/comm)
         # and return a result file on second call.
@@ -601,6 +612,14 @@ class TestLooper(TestCase):
         self._looper.loop()
         self.assertEqual(job.state, job.STATE_FAILED)
 
+        # process died by seeing comm cannot be read and result job failed
+        # with an exception
+        job = self._make_alive_job()
+        self._patch_dead_process_noread_comm(
+            wrapper.RESULT_EXCEPTION, datetime.utcnow())
+        self._looper.loop()
+        self.assertEqual(job.state, job.STATE_FAILED)
+
         # process died by seeing cwd points to inexistent directory and result
         # is job completed
         job = self._make_alive_job()
@@ -622,11 +641,47 @@ class TestLooper(TestCase):
         self._looper.loop()
         self.assertEqual(job.state, job.STATE_CANCELED)
 
-        # process died by seeing cwd is wrong and cleanup after cancelation
-        # timed out
+        # process died by seeing cwd is wrong and the job was in
+        # the process of a normal cleanup
         job = self._make_alive_job()
         self._patch_dead_process_bad_cwd(
-            wrapper.RESULT_CANCELED_TIMEOUT, datetime.utcnow())
+            wrapper.RESULT_CANCELED, datetime.utcnow())
+        self._looper.loop()
+        self.assertEqual(job.state, job.STATE_CANCELED)
+
+        # process died by seeing /proc/comm was not there, the job was
+        # canceled and the cleanup routine timed out
+        job = self._make_alive_job()
+        self._patch_dead_process_no_comm(
+            wrapper.RESULT_CANCELED, datetime.utcnow(),
+            cleanup_code=wrapper.RESULT_TIMEOUT)
+        self._looper.loop()
+        self.assertEqual(job.state, job.STATE_CANCELED)
+
+        # process died by seeing /proc/comm was not there, the job was
+        # canceled and the cleanup routine failed with an exit code
+        job = self._make_alive_job()
+        self._patch_dead_process_no_comm(
+            wrapper.RESULT_CANCELED, datetime.utcnow(),
+            cleanup_code=2)
+        self._looper.loop()
+        self.assertEqual(job.state, job.STATE_CANCELED)
+
+        # process died by seeing /proc/comm was not there, the job was
+        # canceled and the cleanup routine failed with an exception
+        job = self._make_alive_job()
+        self._patch_dead_process_no_comm(
+            wrapper.RESULT_CANCELED, datetime.utcnow(),
+            cleanup_code=wrapper.RESULT_EXCEPTION)
+        self._looper.loop()
+        self.assertEqual(job.state, job.STATE_CANCELED)
+
+        # process died by seeing /proc/comm was not there, the job
+        # timed out and the cleanup routine was successful
+        job = self._make_alive_job()
+        self._patch_dead_process_no_comm(
+            wrapper.RESULT_TIMEOUT, datetime.utcnow(),
+            cleanup_code=wrapper.RESULT_SUCCESS)
         self._looper.loop()
         self.assertEqual(job.state, job.STATE_CANCELED)
     # test_finish_jobs_dead_process()
@@ -946,5 +1001,75 @@ class TestLooper(TestCase):
         self.assertEqual(
             request.result, 'Cannot cancel job because it already ended')
     # test_cancel_finished_job()
+
+    def test_cancel_bad_state(self):
+        """
+        Submit a request to cancel a job that has an unknown state.
+        """
+        job = self._make_job(['A'], [], self._requester,
+                             state='ASDF')
+        self._session.add(job)
+        self._session.flush()
+
+        # create cancel request
+        request = self._make_request(
+            self._make_resources([], []),
+            self._requester, action_type=SchedulerRequest.ACTION_CANCEL)
+        request.job_id = job.id
+        self._session.add(request)
+        self._session.commit()
+
+        # let looper process request
+        self._looper.loop()
+
+        # validate state and result
+        self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
+        self.assertEqual(
+            request.result, 'Job is in an unknown state')
+
+    def test_submit_bad_attribute(self):
+        """
+        Submit a job with a state machine without a parse attribute.
+        """
+        request = self._make_request(
+            self._make_resources([], []),
+            self._requester,
+            commit=True)
+
+        # Patch the returned state machine to None, which will cause
+        # None.parse to raise an AttributeError
+        echo_patcher = patch.dict(
+            looper.state_machines.MACHINES, {'echo': None})
+        echo_patcher.start()
+        self.addCleanup(echo_patcher.stop)
+
+        self._looper.loop()
+
+        self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
+        self.assertRegex(request.result.lower(), 'parser not found')
+
+    def test_signal_handler(self):
+        """
+        Exercise the looper's signal handler.
+        """
+
+        # Manually call the handler set for the signal,
+        # since ther is no public interface that eventually calls it.
+        call = looper.signal.signal.call_args
+
+        self.assertIsNotNone(call)
+
+        # signal should have been called with e.g. signal(SIGINT, handler),
+        signum = call[0][0]
+        handler = call[0][1]
+
+        import signal
+
+        # According to the doc the stack frame can be None in a signal handler.
+        # The looper handler doesn't use the stack frame anyways.
+        handler(signum, None)
+
+        # Check if the looper was asked to stop by the signal handler.
+        self.assertFalse(self._looper._should_run)
 
 # TestLooper

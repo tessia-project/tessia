@@ -302,7 +302,10 @@ class LdapLoginManager(BaseLoginManager):
                         ldap_key))
 
             if isinstance(value, list):
-                value = value[0]
+                if len(value) > 0:
+                    value = value[0]
+                else:
+                    value = ''
             user_attrs[key] = value
 
         # save the dn (distiguished name) for further operations

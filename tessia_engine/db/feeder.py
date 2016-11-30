@@ -27,6 +27,8 @@ from tessia_engine.db import models
 #
 INSERT_ORDER = [
     'OperatingSystem',
+    'Repository',
+    'Template',
     'IfaceType',
     'Role',
     'RoleAction',

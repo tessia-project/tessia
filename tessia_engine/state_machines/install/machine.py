@@ -22,6 +22,7 @@ State machine that performs the installation of Linux Distros.
 #pylint: disable=import-error
 from tessia_baselib.common.ssh.client import SshClient
 from tessia_baselib.hypervisors import Hypervisor
+# TODO: put tessia_baselib as a dependency for the projet
 #pylint: enable=import-error
 from jsonschema import validate
 from socket import inet_ntoa
@@ -30,12 +31,14 @@ from tessia_engine.config import Config
 # Import SESSION so there is connection to the Database
 from tessia_engine.db.connection import MANAGER
 #pylint: enable=unused-import
-from tessia_engine.db.models import SystemProfile, Template, SystemIface
+from tessia_engine.db.models import System, SystemIface, SystemProfile, Template
 from tessia_engine.state_machines.base import BaseMachine
 from time import sleep
 
+import crypt
 import jinja2
 import json
+import os
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -51,7 +54,8 @@ INSTALL_REQ_PARAMS_SCHEMA = {
     "required": [
         "template",
         "profile"
-    ]
+    ],
+    "additionalProperties": False
 }
 #
 # CODE
@@ -76,13 +80,14 @@ class InstallMachine(BaseMachine):
             params (str): A string containing a json in the format:
             {
                 "template": "<name of the template>",
-                "profile": "<name of the profile>"}
+                "profile": "<system_name>[/<name of the profile>]"
             }
         """
         super(InstallMachine, self).__init__(params)
 
         self._autofile_url = None
         self._autofile_path = None
+        self._autofile_name = None
         self._hyp_type = None
         self._hyp_user = None
         self._hyp_pwd = None
@@ -95,6 +100,8 @@ class InstallMachine(BaseMachine):
 
         # Create the first connection
         MANAGER.session()
+        # The content of the request is validated in the parse method.
+        # so it is not checked here.
         params = json.loads(params)
         # In this case we don't call static method parse because we have more
         # information to fetch from the database, besides the required
@@ -110,9 +117,42 @@ class InstallMachine(BaseMachine):
         template = jinja2.Template(self._template)
 
         autofile_content = template.render(config=self._config)
+
+        # Write the autofile for usage during installation
+        # by the distro installer.
         with open(self._autofile_path, "w") as autofile:
             autofile.write(autofile_content)
+        # Write the autofile in the directory that the state machine
+        # is executed.
+        with open("./" + self._autofile_name, "w") as autofile:
+            autofile.write(autofile_content)
     # _create_autofile()
+
+    @staticmethod
+    def _get_profile(profile_param):
+        """
+        Get a SystemProfile instance based on the profile_param
+        passed in the request parameters.
+
+        Args:
+            profile_param (str): Identifier for a profile in the format
+                                 <system_name>[/<profile_name>]
+
+        Returns:
+            SystemProfile: a SystemProfile instance.
+        """
+        if profile_param.find("/") != -1:
+            system_name, profile_name = profile_param.split("/")
+            profile = SystemProfile.query.filter_by(
+                name=profile_name, system=system_name).one()
+        else:
+            system_name = profile_param
+            system = System.query.filter_by(name=system_name).one()
+            profile = SystemProfile.query.filter_by(
+                system_id=system.id, default=True).one()
+
+        return profile
+    # _get_profile()
 
     def _parse_config(self, params):
         """
@@ -123,7 +163,7 @@ class InstallMachine(BaseMachine):
             params (dict): a dictionary containing the following information:
                {
                    "template": "<name of the template>",
-                   "profile": "<name of the profile>"
+                   "profile": "<system_name>[/<name of the profile>]"
                }
         """
         ret = {
@@ -136,6 +176,8 @@ class InstallMachine(BaseMachine):
                 "default_iface": None,
                 "repo_url": None,
                 "hostname": None,
+                "credentials": None,
+                "sha512rootpwd": None,
                 "parameters": {
                     "boot_method": "network",
                     "boot_options": {
@@ -154,12 +196,21 @@ class InstallMachine(BaseMachine):
         self._template_type = template.template_type
 
         # Get the guest information from the profile
-        profile_name = params.get("profile")
-        profile = SystemProfile.query.filter_by(name=profile_name).one()
+        profile_param = params.get("profile")
+
+        # Check which format the profile parameter is using
+        profile = self._get_profile(profile_param)
+
         ret["cpu"] = profile.cpu
         ret["memory"] = profile.memory
         ret["guest_name"] = profile.system_rel.name
         ret["parameters"]["hostname"] = profile.system_rel.hostname
+
+        # Get the credentials in the form:
+        # {"username: "username", "password": "passwd"}
+        ret["parameters"]["credentials"] = profile.credentials
+        ret["parameters"]["sha512rootpwd"] = (
+            crypt.crypt(profile.credentials["password"]))
 
         # Get the credentials for the hypervisor
         hyper_profile = profile.hypervisor_profile_rel
@@ -170,7 +221,7 @@ class InstallMachine(BaseMachine):
         # Get the type of Hypervisor to be used in tessia-baselib
         # maybe there is an inconsistency between hypervisor type and
         # system type in tessia-baselib.
-        self._hyp_type = profile.system_rel.type_rel.name
+        self._hyp_type = profile.system_rel.type_rel.name.lower()
         self._hyp_name = hyper_profile.system_rel.name
         self._hyp_hostname = hyper_profile.system_rel.hostname
 
@@ -206,12 +257,12 @@ class InstallMachine(BaseMachine):
             ret.get("parameters").get("parameters").get("boot_options"))
 
         config = Config.get_config()
-        autofile_name = profile.system_rel.name + "-" + profile.name
+        self._autofile_name = profile.system_rel.name + "-" + profile.name
 
         self._autofile_url = (config.get("install_machine").get("url") + "/"
-                              + autofile_name)
+                              + self._autofile_name)
         self._autofile_path = (config.get("install_machine").get("www_dir")
-                               + "/" + autofile_name)
+                               + "/" + self._autofile_name)
 
         self._update_boot_options(profile, gateway_iface, self._autofile_url,
                                   boot_options)
@@ -412,11 +463,12 @@ class InstallMachine(BaseMachine):
         timeout_trials = [5, 10, 20, 40]
 
         ssh_client = SshClient()
-
+        params = self._config["parameters"]
         for timeout in timeout_trials:
             try:
-                ssh_client.login(self._config["parameters"]["hostname"],
-                                 user="root", passwd="")
+                ssh_client.login(params["hostname"],
+                                 passwd=params["credentials"]["password"],
+                                 user=params["credentials"]["username"])
                 return ssh_client
             except ConnectionError:
                 print("Connection not available yet."
@@ -430,7 +482,14 @@ class InstallMachine(BaseMachine):
         """
         See base class docstring
         """
-        print('cleanup done')
+        # Delete the autofile if it exists.
+        if os.path.exists(self._autofile_path):
+            try:
+                os.remove(self._autofile_path)
+            except OSError:
+                print("Unable to delete the autofile during cleanup.")
+                return 1
+        return 0
     # cleanup()
 
     @staticmethod
@@ -440,7 +499,7 @@ class InstallMachine(BaseMachine):
             params(str): A string containing a json in the format:
                {
                    "template": "<name of the template>",
-                   "profile": "<name of the profile>"
+                   "profile": "<system_name>[/<name of the profile>]"
                }
 
         Returns:
@@ -463,10 +522,11 @@ class InstallMachine(BaseMachine):
         except Exception as exc:
             raise SyntaxError("Invalid request parameters") from exc
 
-        profile_name = params.get("profile")
-        system_profile = SystemProfile.query.filter_by(
-            name=profile_name).one()
-        system = system_profile.system_rel
+        profile_param = params.get("profile")
+
+        # Check which format the profile parameter is using
+        profile = InstallMachine._get_profile(profile_param)
+        system = profile.system_rel
 
         # The system being installed is considered a exclusive resource
         ret.get("resources").get("exclusive").append(system.name)

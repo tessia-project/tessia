@@ -881,9 +881,35 @@ class Repository(CommonMixin, BASE):
     kernel = Column(String)
     initrd = Column(String)
     cmdline = Column(String)
-    operating_system_id = Column(Integer, ForeignKey('operating_systems.id'), index=True)
+    operating_system_id = Column(Integer,
+                                 ForeignKey('operating_systems.id'),
+                                 index=True)
 
     operating_system_rel = relationship("OperatingSystem", uselist=False)
+
+    @hybrid_property
+    def operating_system(self):
+        """Get the name of the operating system linked to this repo"""
+        return self.operating_system_rel.name
+    # operating_system()
+
+    @operating_system.setter
+    def operating_system(self, value):
+        """Used to set the operating based on the name"""
+        if value == '' or value is None:
+            self.operating_system_id = None
+            return
+        oper_system = OperatingSystem.query.filter_by(name=value).one_or_none()
+        if oper_system is None:
+            raise AssociationError(
+                self.__class__, "operating_system", OperatingSystem, "name",
+                "value")
+        self.operating_system_id = oper_system.id
+
+    @operating_system.expression
+    def operating_system(cls):
+        """Expression used for performing queries"""
+        return OperatingSystem.name
 
     def __repr__(self):
         """Object representation"""
@@ -1028,9 +1054,10 @@ class SystemProfile(CommonMixin, BASE):
 # SystemProfile
 
 class Template(CommonMixin, BASE):
+    """A template for a InstallMachine"""
     __tablename__ = "templates"
 
-    name = Column(String, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
     content = Column(String)
     template_type = Column(String)
 
@@ -1038,7 +1065,7 @@ class Template(CommonMixin, BASE):
 
     def __repr__(self):
         """Object representation"""
-        return "<Template(name='{}'>".format(self.name)
+        return "<Template(name='{}')>".format(self.name)
     # __repr__()
 # Template
 

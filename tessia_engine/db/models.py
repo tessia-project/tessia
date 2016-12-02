@@ -856,16 +856,16 @@ class OperatingSystem(CommonMixin, BASE):
 
     __tablename__ = 'operating_systems'
 
-    name = Column(String, unique=True, nullable=False)
-    major = Column(String, nullable=False)
-    minor = Column(String)
-    desc = Column(String)
+    type = Column(String, nullable=False, index=True)
+    major = Column(Integer, nullable=False)
+    minor = Column(Integer, nullable=False)
+    desc = Column(String, nullable=False)
     repository_rel = relationship("Repository", uselist=False)
 
     def __repr__(self):
         """Object representation"""
-        return "<OperatingSystem(name='{}', major='{}', minor='{}')>".format(
-            self.name, self.major, self.minor)
+        return "<OperatingSystem(type='{}', major='{}', minor='{}')>".format(
+            self.type, self.major, self.minor)
     # __repr__()
 
 # OperatingSystem
@@ -889,22 +889,17 @@ class Repository(CommonMixin, BASE):
 
     @hybrid_property
     def operating_system(self):
-        """Get the name of the operating system linked to this repo"""
+        """Defines the os attribute pointing to os's name"""
         return self.operating_system_rel.name
-    # operating_system()
 
     @operating_system.setter
     def operating_system(self, value):
-        """Used to set the operating based on the name"""
-        if value == '' or value is None:
-            self.operating_system_id = None
-            return
-        oper_system = OperatingSystem.query.filter_by(name=value).one_or_none()
-        if oper_system is None:
+        """Defines what to do when assigment occurs for the attribute"""
+        match = OperatingSystem.query.filter_by(name=value).one_or_none()
+        if match is None:
             raise AssociationError(
-                self.__class__, "operating_system", OperatingSystem, "name",
-                "value")
-        self.operating_system_id = oper_system.id
+                self.__class__, 'os', OperatingSystem, 'name', value)
+        self.operating_system_id = match.id
 
     @operating_system.expression
     def operating_system(cls):
@@ -913,7 +908,8 @@ class Repository(CommonMixin, BASE):
 
     def __repr__(self):
         """Object representation"""
-        return "<Repository(url='{}')".format(self.url)
+        return "<Template(name='{}', os='{}')>".format(
+            self.name, self.os_rel.name)
     # __repr__()
 # Repository
 
@@ -1059,13 +1055,36 @@ class Template(CommonMixin, BASE):
 
     name = Column(String, unique=True, nullable=False)
     content = Column(String)
-    template_type = Column(String)
-
+    operating_system_id = Column(
+        Integer, ForeignKey('operating_systems.id'), index=True)
     desc = Column(String)
+
+    # relationships
+    operating_system_rel = relationship("OperatingSystem", uselist=False)
+
+    @hybrid_property
+    def operating_system(self):
+        """Defines the os attribute pointing to os's name"""
+        return self.operating_system_rel.name
+
+    @operating_system.setter
+    def operating_system(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = OperatingSystem.query.filter_by(name=value).one_or_none()
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'os', OperatingSystem, 'name', value)
+        self.operating_system_id = match.id
+
+    @operating_system.expression
+    def operating_system(cls):
+        """Expression used for performing queries"""
+        return OperatingSystem.name
 
     def __repr__(self):
         """Object representation"""
-        return "<Template(name='{}')>".format(self.name)
+        return "<Template(name='{}', os='{}')>".format(
+            self.name, self.os_rel.name)
     # __repr__()
 # Template
 

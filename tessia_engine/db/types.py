@@ -34,6 +34,10 @@ IFACE_TYPES = [
     'OVS_VPORT,Openvswitch virtual port',
 ]
 
+OPERATING_SYSTEMS = [
+    'RHEL,7,2,RHEL 7.2 GA'
+]
+
 ROLES = [
     'Restricted user,Control owned resources only',
     'User,Control owned resources and create new systems',
@@ -159,6 +163,22 @@ def get_iface_types():
 
     return {'IfaceType': data}
 # get_iface_types()
+
+def get_oses():
+    """
+    Create the supported operating systems
+    """
+    data = []
+    for row in OPERATING_SYSTEMS:
+        row = row.split(',', 4)
+        data.append({
+            'type': row[0],
+            'major': row[1],
+            'minor': row[2],
+            'desc': row[3]}
+        )
+
+    return {'OperatingSystem': data}
 
 def get_roles():
     """

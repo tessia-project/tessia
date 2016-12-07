@@ -21,6 +21,7 @@ The main module containing the daemon processing the job requests
 #
 from datetime import datetime
 from jsonschema import validate
+from tessia_engine import state_machines
 from tessia_engine.config import CONF
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import SchedulerRequest
@@ -28,7 +29,6 @@ from tessia_engine.db.models import SchedulerJob
 from tessia_engine.scheduler import resources_manager
 from tessia_engine.scheduler import spawner
 from tessia_engine.scheduler import wrapper
-from tessia_engine import state_machines
 
 import logging
 import multiprocessing
@@ -108,6 +108,11 @@ class Looper(object):
         # init resources manager with information from jobs
         self._init_manager()
     # __init__()
+
+    def _refresh_and_expunge(self, job):
+        self._session.refresh(job)
+        self._session.expunge(job)
+        return job
 
     def _cancel_active_job(self, request, job):
         """
@@ -299,6 +304,13 @@ class Looper(object):
             self._session.commit()
             return
 
+        if not self._resources_man.validate_resources(resources):
+            request.state = SchedulerRequest.STATE_FAILED
+            request.result = (
+                'Invalid resources. A resource appears twice.')
+            self._session.commit()
+            return
+
         # create job object
         new_job = SchedulerJob(
             requester_id=request.requester_id,
@@ -315,8 +327,12 @@ class Looper(object):
             timeout=request.timeout
         )
 
-        # enqueue job
-        self._resources_man.enqueue(new_job)
+        if not self._resources_man.can_enqueue(new_job):
+            request.state = SchedulerRequest.STATE_FAILED
+            request.result = (
+                'Job would conflict with another scheduled job.')
+            self._session.commit()
+            return
 
         # save to job table
         self._session.add(new_job)
@@ -330,6 +346,11 @@ class Looper(object):
         request.result = 'OK'
 
         self._session.commit()
+
+        # enqueue job
+
+        self._resources_man.enqueue(
+            self._refresh_and_expunge(new_job))
 
     # _submit_job()
 
@@ -352,7 +373,8 @@ class Looper(object):
                     'Job %s has no resources associated', job.id)
                 continue
 
-            self._resources_man.enqueue(job)
+            self._resources_man.enqueue(
+                self._refresh_and_expunge(job))
 
         # get the list of active jobs
         active_jobs = SchedulerJob.query.filter(
@@ -369,7 +391,8 @@ class Looper(object):
                 continue
 
             if self._has_resources(job):
-                self._resources_man.enqueue(job)
+                self._resources_man.set_active(
+                    self._refresh_and_expunge(job))
 
     # _init_manager()
 
@@ -518,12 +541,11 @@ class Looper(object):
             job.state = SchedulerJob.STATE_RUNNING
             job.result = 'Job is running'
             job.start_date = datetime.utcnow()
-
-            self._resources_man.enqueue(job)
-
             self._session.commit()
 
+            self._refresh_and_expunge(job)
             self._resources_man.wait_pop(job)
+            self._resources_man.set_active(job)
 
     # _start_jobs()
 

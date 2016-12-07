@@ -38,9 +38,19 @@ class TestEcho(TestCase):
     Unit test for the machine module of the echo state machine.
     """
 
-    @patch.object(machine, 'print')
-    @patch.object(machine, 'sleep')
-    def test_good_content(self, mock_sleep, mock_print):
+    def setUp(self):
+        """
+        Prepare the necessary mocks at the beginning of each testcase.
+        """
+        patcher = patch.object(machine, 'print', autospect=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+        patcher = patch.object(machine, 'sleep', autospect=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_good_content(self):
         """
         Test the methods with valid content.
         """
@@ -52,6 +62,7 @@ class TestEcho(TestCase):
             'ECHO Hello world!',
             'ECHO Testing a more long message to see if it works...',
             'SLEEP 20',
+            'RETURN 0',
         )
         content = '\n'.join(lines)
         # check the parser method
@@ -67,7 +78,8 @@ class TestEcho(TestCase):
             [
                 ['echo', 'Hello world!'],
                 ['echo', 'Testing a more long message to see if it works...'],
-                ['sleep', 20]
+                ['sleep', 20],
+                ['return', 0]
             ]
         )
 
@@ -75,13 +87,166 @@ class TestEcho(TestCase):
         echo_obj = machine.EchoMachine(content)
         ret_code = echo_obj.start()
         self.assertEqual(ret_code, 0)
-        mock_print.assert_has_calls([
+        machine.print.assert_has_calls([
             call('Hello world!'),
             call('Testing a more long message to see if it works...')
         ])
-        mock_sleep.assert_has_calls([call(20)])
+        machine.sleep.assert_has_calls([call(20)])
 
     # test_good_content()
+
+    def test_no_return(self):
+        """
+        Test a normal execution that doesn't return.
+        """
+        lines = (
+            'ECHO Hello world!',
+            'SLEEP 20'
+        )
+        content = '\n'.join(lines)
+
+        echo_obj = machine.EchoMachine(content)
+        ret_code = echo_obj.start()
+
+        self.assertEqual(ret_code, 0)
+
+    def test_ok_cleanup(self):
+        """
+        Test a normal with a cleanup that succeeds.
+        """
+        lines = (
+            'ECHO Hello world!',
+            'SLEEP 20',
+            'RETURN 1',
+            'CLEANUP',
+            'RETURN 0'
+        )
+        content = '\n'.join(lines)
+
+        echo_obj = machine.EchoMachine(content)
+        ret_code = echo_obj.start()
+
+        self.assertEqual(ret_code, 1)
+
+    def test_bad_cleanup(self):
+        """
+        Test a normal with a cleanup that fails.
+        """
+        lines = (
+            'ECHO Hello world!',
+            'SLEEP 20',
+            'RETURN 1',
+            'CLEANUP',
+            'RETURN 2'
+        )
+        content = '\n'.join(lines)
+
+        echo_obj = machine.EchoMachine(content)
+        ret_code = echo_obj.start()
+
+        self.assertEqual(ret_code, 2)
+
+    def test_raise(self):
+        """
+        Test raising an exception from the state machine.
+        """
+        lines = (
+            'ECHO Hello world!',
+            'RAISE',
+        )
+        content = '\n'.join(lines)
+
+        echo_obj = machine.EchoMachine(content)
+
+        with self.assertRaises(RuntimeError):
+            echo_obj.start()
+
+    def test_parse_errors(self):
+        """
+        Test the handling of various syntax errors
+        in the machine parameters.
+        """
+
+        # USE in cleanup section
+        lines = (
+            'CLEANUP',
+            'USE EXCLUSIVE guest01'
+        )
+        content = '\n'.join(lines)
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    'USE statement in cleanup section'):
+            machine.EchoMachine.parse(content)
+
+        # Wrong number of arguments in USE section
+        lines = (
+            'USE EXCLUSIVE',
+        )
+        content = '\n'.join(lines)
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    'Wrong number of arguments in USE'):
+            machine.EchoMachine.parse(content)
+
+        # Bad mode in USE command
+        lines = (
+            'USE EXCLUSHARED guest01',
+        )
+        content = '\n'.join(lines)
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    'Invalid mode.*USE statement'):
+            machine.EchoMachine.parse(content)
+
+        # Wrong number of arguments in echo
+        lines = (
+            'ECHO',
+        )
+        content = '\n'.join(lines)
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    'Wrong number of arguments in ECHO'):
+            machine.EchoMachine.parse(content)
+
+        # Wrong number of arguments in sleep
+        lines = (
+            'SLEEP',
+        )
+        content = '\n'.join(lines)
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    'Wrong number of arguments in SLEEP'):
+            machine.EchoMachine.parse(content)
+
+        # Non-number sleep time
+        lines = (
+            'SLEEP TWO',
+        )
+        content = '\n'.join(lines)
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    'SLEEP argument must be a number'):
+            machine.EchoMachine.parse(content)
+
+        # Wrong number of arguments in return
+        lines = (
+            'RETURN',
+        )
+        content = '\n'.join(lines)
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    'Wrong number of arguments in RETURN'):
+            machine.EchoMachine.parse(content)
+
+        # Non-int return code
+        lines = (
+            'RETURN ZERO',
+        )
+        content = '\n'.join(lines)
+
+        with self.assertRaisesRegex(SyntaxError,
+                                    'RETURN argument must be a number'):
+            machine.EchoMachine.parse(content)
 
     def test_invalid_command(self):
         """

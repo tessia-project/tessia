@@ -43,6 +43,8 @@ RESOURCES_SCHEMA = {
     }
 }
 
+GRACE_SECONDS = 300 # five minutes
+
 #
 # CODE
 #
@@ -51,6 +53,7 @@ class ResourcesManager(object):
     A helper class to manage operations related to the queues of resources
     used by jobs
     """
+
     def __init__(self):
         """
         Constructor, creates logger instance and initialize queues to empty
@@ -67,9 +70,7 @@ class ResourcesManager(object):
         representation = []
 
         representation.append('Wait queues:')
-        for time_slot in SchedulerJob.SLOTS:
-            representation.append('slot {}'.format(time_slot))
-            representation.append(str(self._wait_queues[time_slot]))
+        representation.append(str(self._wait_queues))
 
         representation.append('Active queues:')
 
@@ -80,8 +81,109 @@ class ResourcesManager(object):
         return '\n'.join(representation)
     # __str__()
 
+    def _can_start_in_queue(self, job, resource, mode, queue):
+        self._logger.debug(
+            'Checking right position for job %s in queue of resource %s',
+            job.id, resource)
+
+        fits_before = False
+
+        if len(queue) == 0:
+            self._logger.error(
+                "Job %s not present in its own wait queue for resource %s",
+                job.id,
+                resource)
+            return False
+
+        first_job = queue[0][0]
+
+        # Candidate job has no start date and can finish executing
+        # before the start date of the first job (if any). It can also
+        # execute withou conflict with any other jobs with start dates in
+        # the queue since they are ordered by start date. We set a flag
+        # to ignore these jobs as we traverse the queue. Jobs without a
+        # start date still need to be checked.
+        if job.start_date is None and first_job.start_date is not None:
+
+            # Job has a finite timeout.
+            if job.timeout > 0:
+                end_date = (datetime.utcnow() +
+                            timedelta(seconds=(job.timeout + GRACE_SECONDS)))
+
+                # Job can finish before the first job.
+                if end_date < first_job.start_date:
+                    fits_before = True
+
+        for other_job, other_mode in queue:
+
+            # None of the jobs in the queue before the candidate job prevent
+            # it from executing.
+            if other_job.id == job.id:
+                return True
+
+            # We already decided that the candidate job
+            # can start and finish before the earliest starting
+            # job with a start date, check the next one in the queue.
+            if fits_before and other_job.start_date is not None:
+                continue
+
+            # Modes do not conflict, check the next job in the queue.
+            if mode == MODE_SHARED and other_mode == MODE_SHARED:
+                continue
+
+            return False
+
+        # Should not happen, indicates can_start was called on an invalid job.
+        self._logger.error(
+            "Job %s not present in its own wait queue for resource %s",
+            job.id,
+            resource)
+        return False
+
     @staticmethod
-    def _enqueue_job(queue, job):
+    def _check_overlap(start_a, start_b, timeout_a, timeout_b):
+        """
+        Check if two job intervals would overlap.
+
+        Args:
+            start_a, start_b (datetime.datetime): start times of the intervals
+            timeout_a, timeout_b (int): duation in seconds of the intervals
+                                        0 means an infinite interval
+
+        Returns:
+            True if there is an overlap, False otherwise.
+        Raises:
+        """
+
+        # Add grace seconds to account for processing time.
+        end_a = start_a + timedelta(seconds=(timeout_a + GRACE_SECONDS))
+        end_b = start_b + timedelta(seconds=(timeout_b + GRACE_SECONDS))
+
+        # Both intervals are infinite, they must overlap.
+        if timeout_a == 0 and timeout_b == 0:
+            return True
+        # Interval A is infinite, if it starts before B ends
+        # there is an overlap.
+        elif timeout_a == 0:
+            if start_a <= end_b:
+                return True
+        # Interval B is infinite, if it starts before A ends
+        # there is an overlap.
+        elif timeout_b == 0:
+            if start_b <= end_a:
+                return True
+        # Neither interval is infinite.
+        else:
+            # There is an overlap iff A starts before B ends and ends after
+            # B starts, since the end of A must be greater than the start of A.
+            if start_a <= end_b:
+                if end_a >= start_b:
+                    return True
+
+        return False
+
+    @staticmethod
+    def _enqueue_job(queue, job, mode):
         """
         Enqueue the passed job in the provided resource queue at the correct
         position.
@@ -89,6 +191,7 @@ class ResourcesManager(object):
         Args:
             queue (list): the queue of the passed resource
             job (SchedulerJob): job to be enqueued
+            mode (str): mode with which to insert this job in this queue
 
         Returns:
             int: position in queue where new job was added
@@ -97,13 +200,9 @@ class ResourcesManager(object):
             None
         """
         position = 0
-        for position in range(0, len(queue)+1):
+        for position in range(0, len(queue)):
 
-            try:
-                queue_job = queue[position]
-            # means the job has no precedence and comes last in the queue
-            except IndexError:
-                break
+            queue_job = queue[position][0]
 
             # new job has a start date: check the start date of the queued job
             if job.start_date is not None:
@@ -142,36 +241,152 @@ class ResourcesManager(object):
             # first
             if job.submit_date < queue_job.submit_date:
                 break
+        else:
+            position = len(queue)
 
-        queue.insert(position, job)
+        queue.insert(position, (job, mode))
 
         return position
     # _enqueue_job()
 
-    def _get_wait_queues(self, job):
+    def _get_wait_queues(self, job, create=True):
         """
         Return the queues of the resources associated with the passed job
 
         Args:
             job (SchedulerJob): job's model instance
+            create (bool): create queues if not already present
 
         Returns:
-            list: job queues of each resource in form
-                  [resource_name, job_queue]
+            list: all job queues of each resource in form
+                  (resource_name, ressource_mode, job_queue),
+                  if create is True, or
+                  already existing queues if create is False
         """
         queues = []
         for res_mode in MODES:
             for resource in job.resources.get(res_mode, []):
-                queue = self._wait_queues[job.time_slot].get(resource)
+                queue = self._wait_queues.get(resource)
                 # no queue yet for this resource: create an empty one
-                if queue is None:
-                    self._wait_queues[job.time_slot][resource] = []
-                    queue = self._wait_queues[job.time_slot][resource]
+                if queue is None and create:
+                    self._wait_queues[resource] = []
+                    queue = self._wait_queues[resource]
 
-                queues.append((resource, queue))
+                if queue is not None:
+                    queues.append((resource, res_mode, queue))
 
         return queues
     # _get_wait_queues()
+
+    def active_pop(self, job):
+        """
+        Remove a given job from the active listing
+
+        Args:
+            job (SchedulerJob): job's model instance
+        """
+        for resource in job.resources.get(MODE_EXCLUSIVE, []):
+            assert self._active_jobs[MODE_EXCLUSIVE][resource].id == job.id
+            del self._active_jobs[MODE_EXCLUSIVE][resource]
+
+        for resource in job.resources.get(MODE_SHARED, []):
+            del self._active_jobs[MODE_SHARED][resource][job.id]
+
+            if len(self._active_jobs[MODE_SHARED][resource]) == 0:
+                del self._active_jobs[MODE_SHARED][resource]
+
+    # active_pop()
+
+    def can_enqueue(self, job):
+        """
+        Check if the job can be inserted in the wait queues without
+        overlapping with other jobs that have a start time.
+
+        A job with no start time cannot conflict with other jobs since
+        it will be started when possible.
+
+        Args:
+            job (SchedulerJob):  job to check
+        Returns:
+            True if the job has no start date or if it has a start date
+                 and doesn't conflict with other jobs with start dates.
+            False if the job has a start date and overlaps with other
+                  jobs using the same resources (with non-shareable modes).
+        Raises:
+        """
+
+        # Job has no start date, it cannot conflict with other jobs
+        # with a start date.
+        if job.start_date is None:
+            return True
+
+        # Job with a start date should not have an infinite timeout.
+        if job.timeout == 0:
+            return False
+
+        now = datetime.utcnow()
+
+        start_date = job.start_date
+
+        # Expired start date, assume the job will be scheduled now.
+        if job.start_date < now:
+            start_date = now
+
+        # Check if any active jobs would prevent this job from executing.
+        for resource in job.resources.get(MODE_EXCLUSIVE, []):
+
+            exclusive_job = self._active_jobs[MODE_EXCLUSIVE].get(resource)
+
+            if exclusive_job is not None:
+                if self._check_overlap(start_date, exclusive_job.start_date,
+                                       job.timeout, exclusive_job.timeout):
+                    return False
+
+            shared_jobs = self._active_jobs[MODE_SHARED].get(resource)
+
+            if shared_jobs is not None:
+                for shared_job in shared_jobs.values():
+                    if self._check_overlap(start_date, shared_job.start_date,
+                                           job.timeout, shared_job.timeout):
+                        return False
+
+        for resource in job.resources.get(MODE_SHARED, []):
+            exclusive_job = self._active_jobs[MODE_EXCLUSIVE].get(resource)
+
+            if exclusive_job is not None:
+                if self._check_overlap(start_date, exclusive_job.start_date,
+                                       job.timeout, exclusive_job.timeout):
+                    return False
+
+        # Go through all of the resource queues of the candidate job
+        # to check for overlaps with other waiting jobs that use the
+        # same resources.
+        for _, mode, queue in self._get_wait_queues(job, create=False):
+
+            # Check all the jobs with starting times in this resource queue.
+            for other_job, other_mode in queue:
+
+                # No more jobs with start date on this queue, check the
+                # next resource queue.
+                if other_job.start_date is None:
+                    break
+
+                # No conflict because both jobs use the resource in
+                # shared mode, check the next job in this queue.
+                if other_mode == MODE_SHARED and mode == MODE_SHARED:
+                    continue
+
+                other_start_date = other_job.start_date
+
+                if other_start_date < now:
+                    other_start_date = now
+
+                if self._check_overlap(start_date, other_start_date,
+                                       job.timeout, other_job.timeout):
+                    return False
+
+        return True
+    # can_enqueue()
 
     def can_start(self, job):
         """
@@ -185,7 +400,9 @@ class ResourcesManager(object):
             bool: True if job is the next, False otherwise
         """
         if job.state != SchedulerJob.STATE_WAITING:
-            self._logger.debug(
+            # Log as error since this should not be called on a job with an
+            # invalid state.
+            self._logger.error(
                 'Job %s cannot start: has wrong state %s', job.id, job.state)
             return False
 
@@ -202,30 +419,43 @@ class ResourcesManager(object):
         # exclusive resources conflict with active jobs in exclusive and shared
         # modes
         for resource in job.resources.get(MODE_EXCLUSIVE, []):
-            for mode in MODES:
-                active_job = self._active_jobs[mode].get(resource)
-                # a resource is in use: report conflict
-                if active_job is not None:
-                    self._logger.debug(
-                        'Job %s cannot start: needs exclusive use of resource '
-                        '%s but in %s use by active job %s',
-                        job.id,
-                        resource,
-                        mode,
-                        active_job.id)
-                    return False
+
+            exclusive_job = self._active_jobs[MODE_EXCLUSIVE].get(resource)
+
+            if exclusive_job is not None:
+                self._logger.debug(
+                    'Job %s cannot start: needs exclusive use of resource '
+                    '%s but in exclusive use by active job %s',
+                    job.id,
+                    resource,
+                    exclusive_job.id)
+
+                return False
+
+            shared_jobs = self._active_jobs[MODE_SHARED].get(resource)
+
+            if shared_jobs is not None:
+                # the dict can't be empty since if it is we delete it in
+                # active_pop
+                self._logger.debug(
+                    'Job %s cannot start: needs exclusive use of resource '
+                    '%s but in shared use by active jobs',
+                    job.id,
+                    resource)
+
+                return False
 
         # shared resources conflict with active jobs only in exclusive mode
         for resource in job.resources.get(MODE_SHARED, []):
-            active_job = self._active_jobs[MODE_EXCLUSIVE].get(resource)
+            exclusive_job = self._active_jobs[MODE_EXCLUSIVE].get(resource)
             # a resource is in use: report conflict
-            if active_job is not None:
+            if exclusive_job is not None:
                 self._logger.debug(
                     'Job %s cannot start: needs shared use of resource '
                     '%s but in exclusive use by active job %s',
                     job.id,
                     resource,
-                    active_job.id)
+                    exclusive_job.id)
                 return False
 
         # TODO: add support to nightslots
@@ -239,60 +469,12 @@ class ResourcesManager(object):
                 job.time_slot)
             return False
 
-        # check if candidate job has the right position on all resource queues
-        for resource, wait_queue in self._get_wait_queues(job):
-
-            self._logger.debug(
-                'Checking right position for job %s in queue of resource %s',
-                job.id, resource)
-
-            # candidate job is in first position: it has the right to go, now
-            # verify the next queue
-            if wait_queue[0].id == job.id:
-                self._logger.debug('Job can start: it is first in queue')
-                continue
-
-            # candidate job has no start date but first job does: allowable
-            # situation as long as the timeout of the candidate job would
-            # fit in a time slot before the start time of the next job, so
-            # we check it
-            if job.start_date is None and wait_queue[0].start_date is not None:
-                # job has no timeout: it cannot be started since we don't know
-                # when it will end
-                if job.timeout == 0:
-                    self._logger.debug(
-                        'Job cannot start: has no timeout to determine end '
-                        'date')
-                    return False
-
-                end_date = datetime.utcnow() + timedelta(minutes=job.timeout+5)
-                # candidate job would finish after the start of first job:
-                # cannot execute
-                if end_date >= wait_queue[0].start_date:
-                    self._logger.debug(
-                        'Job cannot start: end date would overlap with start '
-                        'date of first job in queue')
-                    return False
-
-                # timeout of candidate job fits before first job with start
-                # date,
-                # now check if there isn't another job with no start date that
-                # comes first
-                i = 0
-                for i in range(0, len(wait_queue)):
-                    if wait_queue[i].start_date is None:
-                        break
-                if wait_queue[i].id == job.id:
-                    self._logger.debug(
-                        'Job can start: it fits before first job with start '
-                        'date')
-                    continue
-
-            # any other case means job does not have the right position yet in
-            # this queue
-            self._logger.debug(
-                'Job cannot start: does not have right position')
-            return False
+        # Check if candidate job has the right position on all resource queues.
+        for resource, mode, queue in self._get_wait_queues(job):
+            if not self._can_start_in_queue(job, resource, mode, queue):
+                self._logger.debug(
+                    'Job cannot start: does not have right position')
+                return False
 
         self._logger.debug(
             'Job %s can start: has right position in all queues', job.id)
@@ -309,35 +491,78 @@ class ResourcesManager(object):
         Raises:
             ValueError: in case job has a unknown state
         """
-        if job.state in (SchedulerJob.STATE_CLEANINGUP,
-                         SchedulerJob.STATE_RUNNING):
-            for res_mode in MODES:
-                for resource in job.resources.get(res_mode, []):
-                    self._active_jobs[res_mode][resource] = job
-
-        elif job.state == SchedulerJob.STATE_WAITING:
-            for _, wait_queue in self._get_wait_queues(job):
-                # enqueue job in the correct position
-                self._enqueue_job(wait_queue, job)
-        else:
+        if job.state != SchedulerJob.STATE_WAITING:
             raise ValueError(
                 "Job {} in invalid state '{}'".format(job.id, job.state))
+
+        for _, mode, wait_queue in self._get_wait_queues(job):
+            # enqueue job in the correct position
+            self._enqueue_job(wait_queue, job, mode)
     # enqueue()
 
-    def active_pop(self, job):
+    def reset(self):
         """
-        Remove a given job from the active listing
+        Reset all queues to empty state
+        """
+        self._wait_queues = {}
+
+        # jobs that are currently running
+        self._active_jobs = {MODE_EXCLUSIVE: {}, MODE_SHARED: {}}
+    # reset()
+
+    def set_active(self, job):
+        """
+        Set job as active. This prevents other jobs with conflicting
+        resources from starting.
 
         Args:
-            job (SchedulerJob): job's model instance
+            job (SchedulerJob)
+        Returns:
+        Raises:
         """
-        for mode in MODES:
-            for resource in job.resources.get(mode, []):
-                active_job = self._active_jobs[mode].get(resource)
-                if active_job is not None and active_job.id == job.id:
-                    self._active_jobs[mode].pop(resource)
+        if job.state not in (SchedulerJob.STATE_CLEANINGUP,
+                             SchedulerJob.STATE_RUNNING):
+            raise ValueError(
+                "Job {} in invalid state '{}'".format(job.id, job.state))
 
-    # active_pop()
+        for resource in job.resources.get(MODE_EXCLUSIVE, []):
+            assert self._active_jobs[MODE_EXCLUSIVE].get(resource) is None
+            self._active_jobs[MODE_EXCLUSIVE][resource] = job
+
+        for resource in job.resources.get(MODE_SHARED, []):
+
+            if self._active_jobs[MODE_SHARED].get(resource) is None:
+                self._active_jobs[MODE_SHARED][resource] = {}
+
+            self._active_jobs[MODE_SHARED][resource][job.id] = job
+    # set_active()
+
+    @staticmethod
+    def validate_resources(resources):
+        """
+        Check if any resources appear twice (in the same mode
+        or in two different modes).
+
+        Some parts of the resource manager assume resources appear
+        only once, so this needs to be checked before enqueuing jobs.
+
+        Args:
+            resources (dict): resources dictionnary
+        Returns:
+            True if there are no duplicates in all the mode lists
+            False otherwise (indicates unsafe dictionnary)
+        Raises:
+        """
+        all_resources = set()
+
+        for mode in MODES:
+            for resource in resources.get(mode, []):
+                if resource in all_resources:
+                    return False
+                all_resources.add(resource)
+
+        return True
+    # validate_resources()
 
     def wait_pop(self, job):
         """
@@ -346,29 +571,20 @@ class ResourcesManager(object):
         Args:
             job (SchedulerJob): job's model instance
         """
-        for _, wait_queue in self._get_wait_queues(job):
-            found = None
-            for i in range(0, len(wait_queue)):
-                if wait_queue[i].id == job.id:
-                    found = i
-                    break
-            if found is not None:
-                wait_queue.pop(found)
-                # TODO: remove queue if empty!!
+        for resource, _, wait_queue in self._get_wait_queues(job):
+
+            i = 0
+            while (i < len(wait_queue)
+                   and wait_queue[i][0].id != job.id):
+                i += 1
+
+            # i must be such that i != len(wait_queue) since we obtained
+            # the wait_queue from _get_wait_queues, which implies the
+            # job must be present.
+            wait_queue.pop(i)
+            if len(wait_queue) == 0:
+                del self._wait_queues[resource]
 
     # wait_pop()
-
-    def reset(self):
-        """
-        Reset all queues to empty state
-        """
-        self._wait_queues = {}
-        # keep one set of queues for each type of time slot
-        for time_slot in SchedulerJob.SLOTS:
-            self._wait_queues[time_slot] = {}
-
-        # jobs that are currently running
-        self._active_jobs = {MODE_EXCLUSIVE: {}, MODE_SHARED: {}}
-    # reset()
 
 # ResourcesManager

@@ -47,36 +47,30 @@ ROLES = [
 ROLE_ACTIONS = [
     # User
     'User,SYSTEMS,CREATE',
-    'User,STORAGE_VOLUMES,USE',
+    'User,SUBNETS,CREATE',
+    'User,NET_ZONES,CREATE',
     'User,STORAGE_POOLS,CREATE',
     'User,LOGICAL_VOLUMES,CREATE',
-    'User,IP_ADDRESSES,USE',
     # Privileged user
     # first, create the same privileges as 'User'
     'Privileged user,SYSTEMS,CREATE',
-    'Privileged user,STORAGE_VOLUMES,USE',
+    'Privileged user,SUBNETS,CREATE',
+    'Privileged user,NET_ZONES,CREATE',
     'Privileged user,STORAGE_POOLS,CREATE',
     'Privileged user,LOGICAL_VOLUMES,CREATE',
-    'Privileged user,IP_ADDRESSES,USE',
-    # now the additional ones to allow using other users' systems
-    'Privileged user,SYSTEMS,USE',
+    # now the additional ones to allow managing other users' systems
     'Privileged user,SYSTEMS,UPDATE',
-    'Privileged user,STORAGE_POOLS,USE',
     'Privileged user,STORAGE_POOLS,UPDATE',
-    'Privileged user,LOGICAL_VOLUMES,USE',
     'Privileged user,LOGICAL_VOLUMES,UPDATE',
     # Project admin
     # first, the same privileges as 'Privileged user'
     'Project admin,SYSTEMS,CREATE',
-    'Project admin,STORAGE_VOLUMES,USE',
+    'Project admin,SUBNETS,CREATE',
+    'Project admin,NET_ZONES,CREATE',
     'Project admin,STORAGE_POOLS,CREATE',
     'Project admin,LOGICAL_VOLUMES,CREATE',
-    'Project admin,IP_ADDRESSES,USE',
-    'Project admin,SYSTEMS,USE',
     'Project admin,SYSTEMS,UPDATE',
-    'Project admin,STORAGE_POOLS,USE',
     'Project admin,STORAGE_POOLS,UPDATE',
-    'Project admin,LOGICAL_VOLUMES,USE',
     'Project admin,LOGICAL_VOLUMES,UPDATE',
     # additional ones to allow managing the resources
     'Project admin,SYSTEMS,DELETE',
@@ -86,23 +80,18 @@ ROLE_ACTIONS = [
     'Hardware admin,IP_ADDRESSES,CREATE',
     'Hardware admin,IP_ADDRESSES,DELETE',
     'Hardware admin,IP_ADDRESSES,UPDATE',
-    'Hardware admin,IP_ADDRESSES,USE',
     'Hardware admin,NET_ZONES,CREATE',
     'Hardware admin,NET_ZONES,DELETE',
     'Hardware admin,NET_ZONES,UPDATE',
-    'Hardware admin,NET_ZONES,USE',
     'Hardware admin,STORAGE_SERVERS,CREATE',
     'Hardware admin,STORAGE_SERVERS,DELETE',
     'Hardware admin,STORAGE_SERVERS,UPDATE',
-    'Hardware admin,STORAGE_SERVERS,USE',
     'Hardware admin,STORAGE_VOLUMES,CREATE',
     'Hardware admin,STORAGE_VOLUMES,DELETE',
     'Hardware admin,STORAGE_VOLUMES,UPDATE',
-    'Hardware admin,STORAGE_VOLUMES,USE',
     'Hardware admin,SUBNETS,CREATE',
     'Hardware admin,SUBNETS,DELETE',
     'Hardware admin,SUBNETS,UPDATE',
-    'Hardware admin,SUBNETS,USE',
     'Hardware admin,SYSTEMS,CREATE',
     'Hardware admin,SYSTEMS,DELETE',
     'Hardware admin,SYSTEMS,UPDATE',
@@ -115,7 +104,7 @@ STORAGE_POOL_TYPES = [
 ]
 
 STORAGE_SERVER_TYPES = [
-    'ECKD-SCSI,Storage serving eckd/scsi disks',
+    'DASD-FCP,Storage serving dasd/fcp disks',
     'ISCSI,iSCSI server',
     'NFS,NFS server',
 ]
@@ -147,8 +136,9 @@ SYSTEM_STATES = [
 ]
 
 VOLUME_TYPES = [
-    'ECKD,ECKD disk type',
-    'SCSI,SCSI disk type',
+    'DASD,DASD disk type',
+    'FCP,FCP-SCSI disk type',
+    'ISCSI,ISCSI disk type',
     'RAW,RAW (loopback file)',
     'QCOW2,Compressed file format',
     'LVM,LVM Logical Volume',

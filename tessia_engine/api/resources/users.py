@@ -63,7 +63,7 @@ class UserResource(SecureResource):
         login = fields.String(
             title=DESC['login'], description=DESC['login'])
         name = fields.String(
-            title=DESC['login'], description=DESC['login'])
+            title=DESC['name'], description=DESC['name'])
         title = fields.String(
             title=DESC['title'], description=DESC['title'], nullable=True)
         restricted = fields.Boolean(

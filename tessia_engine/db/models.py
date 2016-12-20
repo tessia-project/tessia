@@ -39,6 +39,10 @@ from sqlalchemy.types import SmallInteger
 from sqlalchemy.types import String
 from tessia_engine.db.exceptions import AssociationError
 
+import ipaddress
+import json
+import os
+
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -87,6 +91,36 @@ class CommonMixin(object):
         super().__init__(*args, **kwargs)
     # __init__()
 # CommonMixin
+
+class SchemaMixin(object):
+    """
+    Helper mixin to provide json-schema validation capability
+    """
+    _SCHEMA_FOLDER = '{}/schemas'.format(
+        os.path.dirname(os.path.abspath(__file__)))
+    _cache = {}
+
+    @classmethod
+    def get_schema(cls, field_name):
+        """
+        Return the json-schema for the field specified, or None if no schema is
+        defined.
+        """
+        if not hasattr(cls, field_name):
+            raise ValueError("Field '{}' not part of model".format(field_name))
+
+        if field_name not in cls._cache:
+            file_path = '{}/{}/{}.json'.format(
+                cls._SCHEMA_FOLDER, cls.__tablename__, field_name)
+            try:
+                with open(file_path) as file_fd:
+                    cls._cache[field_name] = json.loads(file_fd.read())
+            except FileNotFoundError:
+                cls._cache[field_name] = None
+
+        return cls._cache[field_name]
+    # get_schema()
+# SchemaMixin
 
 class User(CommonMixin, BASE):
     """Represents a user on the application"""
@@ -363,6 +397,7 @@ class ResourceMixin(object):
         return relationship(
             'User', uselist=False, lazy='joined', innerjoin=True,
             primaryjoin=lambda: self.modifier_id == User.id)
+
     @hybrid_property
     def modifier(self):
         """Defines the modifier attribute pointing to modifier's login"""
@@ -493,6 +528,36 @@ class Subnet(CommonMixin, ResourceMixin, BASE):
         """Object representation"""
         return "<Subnet(name='{}', zone='{}')>".format(self.name, self.zone)
     # __repr__()
+
+    @validates('address', 'gateway', 'dns_1', 'dns_2')
+    def validate_ip(self, key, value):
+        """
+        Verify if ip addresses/networks are in correct format.
+
+        Args:
+            key (str): field name
+            value (any): field's value
+
+        Raises:
+            ValueError: in case field's value is invalid
+
+        Returns:
+            str: field's value to populate row
+        """
+        if value is None:
+            return
+        try:
+            if key == 'address':
+                address_obj = ipaddress.ip_network(value, strict=True)
+            else:
+                address_obj = ipaddress.ip_address(value)
+        except ValueError as exc:
+            raise ValueError("<({})=({})> ({})".format(key, value, str(exc)))
+
+        # conversion to str normalizes different mask formats used
+        return str(address_obj)
+    # validate_ip()
+
 # Subnet
 
 class IpAddress(CommonMixin, ResourceMixin, BASE):
@@ -705,6 +770,8 @@ class System(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def hypervisor(self):
         """Defines the hypervisor attribute pointing to system's name"""
+        if self.hypervisor_rel is None:
+            return None
         return self.hypervisor_rel.name
 
     @hypervisor.setter
@@ -828,6 +895,8 @@ class SystemProfile(CommonMixin, BASE):
     @hybrid_property
     def hypervisor_profile(self):
         """Defines the profile attribute as system_name/profile_name"""
+        if self.hypervisor_profile_rel is None:
+            return None
         return '{}/{}'.format(
             self.hypervisor_profile_rel.system,
             self.hypervisor_profile_rel.name)
@@ -907,6 +976,8 @@ class SystemProfile(CommonMixin, BASE):
     @hybrid_property
     def operating_system(self):
         """Defines the operating system attribute pointing to os name"""
+        if self.operating_system_rel is None:
+            return None
         return self.operating_system_rel.name
 
     @operating_system.setter
@@ -1051,6 +1122,9 @@ class SystemIface(CommonMixin, BASE):
     profiles_rel = relationship(
         'SystemProfile',
         uselist=True,
+        # This is important: prevents sqlalchemy from issuing a delete to
+        # the associated entry in the other table
+        passive_deletes='all',
         secondary='profiles_system_ifaces')
 
     # ip_address relationship section
@@ -1059,6 +1133,8 @@ class SystemIface(CommonMixin, BASE):
     @hybrid_property
     def ip_address(self):
         """Defines the ip_address attribute as subnet_name/ip_address"""
+        if self.ip_address_rel is None:
+            return None
         return '{}/{}'.format(
             self.ip_address_rel.subnet, self.ip_address_rel.address)
 
@@ -1268,6 +1344,8 @@ class StoragePool(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def system(self):
         """Defines the system attribute pointing to system's name"""
+        if self.system_rel is None:
+            return None
         return self.system_rel.name
 
     @system.setter
@@ -1407,7 +1485,7 @@ class StorageVolumeProfileAssociation(BASE):
 
 # StorageVolumeProfileAssociation
 
-class StorageVolume(CommonMixin, ResourceMixin, BASE):
+class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
     """A volume from a storage server"""
 
     __tablename__ = 'storage_volumes'
@@ -1429,6 +1507,9 @@ class StorageVolume(CommonMixin, ResourceMixin, BASE):
     profiles_rel = relationship(
         'SystemProfile',
         uselist=True,
+        # This is important: prevents sqlalchemy from issuing a delete to
+        # the associated entry in the other table
+        passive_deletes='all',
         secondary='profiles_storage_volumes')
 
     # type relationship section
@@ -1485,6 +1566,8 @@ class StorageVolume(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def system(self):
         """Defines the system attribute pointing to system's name"""
+        if self.system_rel is None:
+            return None
         return self.system_rel.name
 
     @system.setter
@@ -1511,6 +1594,8 @@ class StorageVolume(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def pool(self):
         """Defines the pool attribute pointing to pool's name"""
+        if self.pool_rel is None:
+            return None
         return self.pool_rel.name
 
     @pool.setter
@@ -1660,6 +1745,9 @@ class LogicalVolume(CommonMixin, ResourceMixin, BASE):
     profiles_rel = relationship(
         'SystemProfile',
         uselist=True,
+        # This is important: prevents sqlalchemy from issuing a delete to
+        # the associated entry in the other table
+        passive_deletes='all',
         secondary='profiles_logical_volumes')
 
     # type relationship section
@@ -1692,6 +1780,8 @@ class LogicalVolume(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def system(self):
         """Defines the system attribute pointing to system's name"""
+        if self.system_rel is None:
+            return None
         return self.system_rel.name
 
     @system.setter

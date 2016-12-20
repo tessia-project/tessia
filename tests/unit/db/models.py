@@ -389,7 +389,7 @@ class TestModels(TestCase):
                 {
                     'rel_name': 'type_rel',
                     'attr_name': 'type',
-                    'value': 'ECKD-SCSI',
+                    'value': 'DASD-FCP',
                 },
             ],
             self.models.StoragePool: [
@@ -420,7 +420,7 @@ class TestModels(TestCase):
                 {
                     'rel_name': 'type_rel',
                     'attr_name': 'type',
-                    'value': 'ECKD',
+                    'value': 'DASD',
                 },
                 {
                     'rel_name': 'server_rel',

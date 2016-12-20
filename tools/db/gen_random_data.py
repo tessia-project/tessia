@@ -459,10 +459,10 @@ def create_storage(data):
         dep_id = chr(ord('x') + i)
         server_by_dep[dep_id] = {}
 
-        # add ECKD-SCSI entry
+        # add DASD-FCP entry
         server = {'name': 'DSK8_{}_{}'.format(dep_id, i)}
         server['hostname'] = None
-        server['type'] = 'ECKD-SCSI'
+        server['type'] = 'DASD-FCP'
         server['model'] = 'DS8800'
         if i == 0:
             server['fw_level'] = None
@@ -475,9 +475,9 @@ def create_storage(data):
         server['modifier'] = 'user_{}_2@domain.com'.format(dep_id)
         # let date be created at insert time
         server['desc'] = (
-            '- Storage *ECKD-SCSI* beloging to Department ' + dep_id)
+            '- Storage *DASD-FCP* beloging to Department ' + dep_id)
         storage_servers.append(server)
-        server_by_dep[dep_id]['ECKD-SCSI'] = server
+        server_by_dep[dep_id]['DASD-FCP'] = server
 
         # add iSCSI entry
         server = server.copy()
@@ -509,9 +509,9 @@ def create_storage(data):
     kvm_logical_volume = False
     scsi_specs_template = (
         "{'multipath': true, 'paths': ["
-        "{'devno': '0.0.1800', 'wwpns': ['0x5005076300C213e5', "
-        "'0x5005076300C213e9']}, {'devno': '0.0.1900', 'wwpns': ["
-        "'0x5005076300C213e9']}]}"),
+        "{'devno': '0.0.1800', 'wwpns': ['5005076300C213e5', "
+        "'5005076300C213e9']}, {'devno': '0.0.1900', 'wwpns': ["
+        "'5005076300C213e9']}]}"),
     storage_volumes = []
     prof_storage_volumes_assoc = []
     storage_pools = []
@@ -540,9 +540,9 @@ def create_storage(data):
             # create eckd with root and swap
             volume = {
                 'volume_id': '%x' % (0x1800 + disk_counter),
-                'server': servers['ECKD-SCSI']['name'],
+                'server': servers['DASD-FCP']['name'],
                 'system': system['name'],
-                'type': 'ECKD',
+                'type': 'DASD',
                 'size': 10000,
                 'part_table': {
                     'type': 'msdos',
@@ -569,8 +569,8 @@ def create_storage(data):
             # create scsi with /home partition
             volume = volume.copy()
             volume['volume_id'] = '%x' % (0x1022400000000000 + disk_counter)
-            volume['server'] = servers['ECKD-SCSI']['name']
-            volume['type'] = 'SCSI'
+            volume['server'] = servers['DASD-FCP']['name']
+            volume['type'] = 'FCP'
             volume['size'] = 20000
             volume['part_table'] = {
                 'type': 'msdos',
@@ -631,9 +631,9 @@ def create_storage(data):
                 # create 2 x scsi and add to the storage pool
                 volume = {
                     'volume_id': '%x' % (0x1022400000000000 + disk_counter),
-                    'server': servers['ECKD-SCSI']['name'],
+                    'server': servers['DASD-FCP']['name'],
                     'system': system['name'],
-                    'type': 'SCSI',
+                    'type': 'FCP',
                     'pool': pool['name'],
                     'size': scsi_size,
                     'part_table': {
@@ -735,9 +735,9 @@ def create_storage(data):
                 # create scsi for root and swap
                 volume = {
                     'volume_id': '%x' % (0x1022400000000000 + disk_counter),
-                    'server': servers['ECKD-SCSI']['name'],
+                    'server': servers['DASD-FCP']['name'],
                     'system': system['name'],
-                    'type': 'SCSI',
+                    'type': 'FCP',
                     'size': 20000,
                     'part_table': {
                         'type': 'msdos',
@@ -767,8 +767,8 @@ def create_storage(data):
                 # create eckd for /home
                 volume = volume.copy()
                 volume['volume_id'] = '%x' % (0x1800 + disk_counter)
-                volume['server'] = servers['ECKD-SCSI']['name']
-                volume['type'] = 'ECKD'
+                volume['server'] = servers['DASD-FCP']['name']
+                volume['type'] = 'DASD'
                 volume['size'] = 10000
                 volume['part_table'] = {
                     'type': 'msdos',

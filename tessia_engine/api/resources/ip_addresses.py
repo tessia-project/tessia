@@ -20,8 +20,11 @@ Resource definition
 # IMPORTS
 #
 from flask_potion import fields
+from tessia_engine.api.exceptions import BaseHttpError, ItemNotFoundError
 from tessia_engine.api.resources.secure_resource import SecureResource
-from tessia_engine.db.models import IpAddress
+from tessia_engine.db.models import IpAddress, Subnet
+
+import ipaddress
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -80,4 +83,92 @@ class IpAddressResource(SecureResource):
         subnet = fields.String(
             title=DESC['subnet'], description=DESC['subnet'])
 
+    @staticmethod
+    def _assert_address(address, subnet):
+        """
+        Assert that address is a valid ip address.
+
+        Args:
+            address (str): ip address
+            subnet (str): subnet's address
+
+        Raises:
+            BaseHttpError: in case provided address is invalid
+
+        Returns:
+            None
+        """
+        try:
+            address_obj = ipaddress.ip_address(address)
+        except ValueError as exc:
+            msg = "The value '{}={}' is invalid: {}".format(
+                'address', address, str(exc))
+            raise BaseHttpError(code=400, msg=msg)
+
+        subnet_obj = ipaddress.ip_network(subnet, strict=True)
+        if address_obj not in subnet_obj.hosts():
+            msg = ("The value 'address={}' is invalid: ip not within "
+                   "subnet address range".format(address))
+            raise BaseHttpError(code=400, msg=msg)
+    # _assert_address()
+
+    def _fetch_subnet(self, name):
+        """
+        Helper method to fetch a subnet instance.
+
+        Args:
+            name (str): subnet's name
+
+        Raises:
+            ItemNotFoundError: in case instance is not in db
+
+        Returns:
+            Subnet: db's instance
+        """
+        try:
+            subnet = Subnet.query.filter_by(name=name).one()
+        except:
+            raise ItemNotFoundError('subnet', name, self.Schema)
+
+        return subnet
+    # _fetch_subnet()
+
+    def do_create(self, properties):
+        """
+        Overriden method to perform sanity check on the address provided.
+        See parent class for complete docstring.
+        """
+        self._assert_address(
+            properties['address'],
+            self._fetch_subnet(properties['subnet']).address
+        )
+
+        return super().do_create(properties)
+    # do_create()
+
+    def do_update(self, properties, id):
+        # pylint: disable=invalid-name,redefined-builtin
+        """
+        Overriden method to perform sanity check on the address provided.
+        See parent class for complete docstring.
+        """
+        # address changed: validate it
+        if 'address' in properties:
+            # subnet was changed: fetch from database
+            if 'subnet' in properties:
+                subnet = self._fetch_subnet(properties['subnet']).address
+            # subnet not changed: refer to current association
+            else:
+                subnet = self.manager.read(id).subnet_rel.address
+            # verify if ip address is valid and fits subnet's range
+            self._assert_address(properties['address'], subnet)
+        # subnet changed: validate if address is still within range
+        elif 'subnet' in properties:
+            subnet = self._fetch_subnet(properties['subnet']).address
+            address = self.manager.read(id).address
+            # verify if ip address is valid and fits subnet's range
+            self._assert_address(address, subnet)
+
+        return super().do_update(properties, id)
+    # do_update()
 # IpAddressResource

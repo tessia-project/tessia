@@ -261,7 +261,6 @@ def part_show(volume_id, **kwargs):
               help="volume id in the form server-name/volume-id")
 @click.option('--size', required=True, help="volume size (i.e. 10gb)")
 @click.option('--type', required=True, help="volume type (see vol-types)")
-@click.option('--system', help="assign volume to this system")
 @click.option('--pool', help="assign volume to this storage pool")
 @click.option('--specs', help="volume specification (json)")
 @click.option('--project', help="project owning volume")
@@ -321,7 +320,6 @@ def vol_del(vol_id):
 @click.option('--size',
               help="volume size (i.e. 10gb)")
 @click.option('--type', help="volume type (see vol-types)")
-@click.option('--system', help="assign volume to this system")
 @click.option('--pool', help="assign volume to this storage pool")
 @click.option('--specs', help="volume specification (json)")
 @click.option('--owner', help="volume's owner login")

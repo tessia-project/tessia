@@ -341,7 +341,7 @@ class ItemNotFoundError(BaseHttpError):
     """
     Error used when some expected row was not found in database
     """
-    MSG = "No item found with value '{}' for field '{}'"
+    MSG = "No associated item found with value '{}' for field '{}'"
 
     def __init__(self, column, value, resource, headers=None):
         """

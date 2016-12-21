@@ -19,7 +19,7 @@ Package initializer which defines the machine name and its class
 #
 # IMPORTS
 #
-from tessia_engine.state_machines.install.machine import InstallMachine
+from tessia_engine.state_machines.install.machine import AutoInstallMachine
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -28,4 +28,4 @@ from tessia_engine.state_machines.install.machine import InstallMachine
 #
 # CODE
 #
-MACHINE = InstallMachine
+MACHINE = AutoInstallMachine

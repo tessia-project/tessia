@@ -51,19 +51,21 @@ class PlatLpar(PlatBase):
         """
         # repository related information
         repo = self._os.repository_rel
-        kernel_uri = os.path.join(repo.url, repo.kernel)
-        initrd_uri = os.path.join(repo.url, repo.initrd)
+        kernel_uri = os.path.join(repo.url, "./" + repo.kernel)
+        initrd_uri = os.path.join(repo.url, "./" + repo.initrd)
 
         params = {
+            "cpc_name": self._hyp_model.name.upper(),
             "boot_params": {
                 "boot_method": "network",
                 "kernel_url": kernel_uri,
                 "initrd_url": initrd_uri,
                 "cmdline": kargs,
-                "mac": self._gw_iface['mac'],
+                "mac": self._gw_iface['mac_addr'],
                 "ip": self._gw_iface['ip'],
+                "mask": self._gw_iface["mask"],
                 "gateway": self._gw_iface['gateway'],
-                "device": self._gw_iface['attributes']['devicenr'],
+                "device": self._gw_iface['attributes']['devicenr'].split(",")[0].lstrip("0x"),
             }
         }
 
@@ -83,11 +85,14 @@ class PlatLpar(PlatBase):
         password = system_profile.credentials['password']
 
         ssh_client = SshClient()
-        ssh_client.login(hostname, user, password, None)
+        ssh_client.login(hostname, user=user, passwd=password,
+                         timeout=10)
         shell = ssh_client.open_shell()
         try:
             shell.run('reboot', timeout=10)
         except TimeoutError:
             pass
+        shell.close()
+        ssh_client.logoff()
     # reboot()
 # PlatKvm

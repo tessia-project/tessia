@@ -1,0 +1,60 @@
+#version=DEVEL
+# System authorization information
+auth --enableshadow --passalgo=sha512
+sshpw --username=root {{config["credentials"]["password"]}} --plaintext
+# Use network installation
+url --url="{{config["repos"][0]}}"
+repo --name="Server-HighAvailability" --baseurl={{config["repos"][0]}}/addons/HighAvailability
+repo --name="Server-ResilientStorage" --baseurl={{config["repos"][0]}}/addons/ResilientStorage
+# Use graphical install
+graphical
+# Run the Setup Agent on first boot
+firstboot --enable
+
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+
+# Network information
+{% for iface in config["ifaces"] %}
+network  --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["stable_osname"]}} --ip={{iface["ip"]}} --netmask={{iface["mask"]}} --noipv6 --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}} {% endif %}
+{% endfor %}
+network  --hostname={{config["hostname"]}}
+
+# Root password
+rootpw --iscrypted {{config["sha512rootpwd"]}}
+# System timezone
+timezone America/New_York
+# System bootloader configuration
+{% for volume in config["svols"] %}
+{% if volume["is_root"] %}
+bootloader --append=" crashkernel=auto" --location=mbr --boot-drive={{volume["system_attributes"]["device"]}}
+{% endif %}
+# Partition clearing information
+clearpart --all --initlabel --drives={{volume["system_attributes"]["device"]}}
+# Disk partitioning information
+{% for entry in volume["part_table"]["table"] %}
+part {{entry["mp"]}} --fstype="{{entry["fs"]}}" --ondisk={{volume["system_attributes"]["device"]}} --size={{entry["size"]}} {% if entry.get("mo") %} --fsoptions="{{entry["mo"]}}" {% endif %}
+{% endfor %}
+{% endfor %}
+%packages
+@^minimal
+@core
+kexec-tools
+
+%end
+
+%addon com_redhat_kdump --enable --reserve-mb='auto'
+
+%end
+
+{% if not config["is_kvm"] %}
+%post
+{% for iface in config["ifaces"] %}
+sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["stable_osname"]}}
+echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["stable_osname"]}}
+mv /etc/sysconfig/network-scripts/ifcfg-{{iface["stable_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
+%end
+{% endfor %}
+{% endif %}

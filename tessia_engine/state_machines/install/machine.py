@@ -30,6 +30,7 @@ from tessia_engine.state_machines.install.sm_anaconda import SmAnaconda
 from tessia_engine.state_machines.install.sm_autoyast import SmAutoyast
 
 import json
+import logging
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -84,6 +85,7 @@ class AutoInstallMachine(BaseMachine):
         # Create the first connection
         MANAGER.session()
 
+        self._logger = logging.getLogger(__name__)
         # The content of the request is validated in the parse method.
         # so it is not checked here.
         self._params = json.loads(params)
@@ -106,35 +108,34 @@ class AutoInstallMachine(BaseMachine):
         # get the os entry in db
         os_entry = self._get_os(template_entry, self._params.get('os'))
         # get the profile entry in db
-        prof_entry = self._get_profile(self._params)
+        prof_entry = self._get_profile(self._params.get("profile"))
         try:
-            sm_class = SUPPORTED_DISTROS[os_entry.name]
+            sm_class = SUPPORTED_DISTROS[os_entry.type]
         except KeyError:
             msg = 'OS {} is not supported by this install machine'.format(
                 os_entry.desc)
             raise RuntimeError(msg)
-        return sm_class(prof_entry, os_entry, template_entry)
+        return sm_class(os_entry, prof_entry, template_entry)
     # _create_machine()
 
-    @staticmethod
-    def _get_os(template, os_name=None):
+    def _get_os(self, template, os_name=None):
         """
         Return the OS type to be used for the installation
         """
         # os not specified: use the default associated with the template
         if os_name is None:
-            os_entry = template.operating_system_rel
+            return template.operating_system_rel
         # os specified by user: override one defined in database and issue a
         # warning
-        else:
-            os_entry = OperatingSystem.query.filter_by(
-                name=os_name.upper()).one_or_none()
-            if os_entry is None:
-                raise RuntimeError('OS {} not found'.format(
-                    os_name))
-            if os_entry != template.operating_system_rel:
-                print('warning: custom OS specified by user, template might '
-                      'not work properly. Use at your own RISK!')
+        os_entry = OperatingSystem.query.filter_by(
+            name=os_name.upper()).one_or_none()
+        if os_entry is None:
+            raise RuntimeError('OS {} not found'.format(
+                os_name))
+        if os_entry != template.operating_system_rel:
+            self._logger.warning('warning: custom OS specified by user,'
+                                 ' template might not work properly.'
+                                 ' Use at your own RISK!')
 
         return os_entry
     # _get_os()

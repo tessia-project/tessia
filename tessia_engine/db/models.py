@@ -855,11 +855,13 @@ class OperatingSystem(CommonMixin, BASE):
     """A supported operating system"""
 
     __tablename__ = 'operating_systems'
-
-    type = Column(String, nullable=False, index=True)
+    name = Column(String, unique=True, index=True)
+    type = Column(String, nullable=False)
     major = Column(Integer, nullable=False)
     minor = Column(Integer, nullable=False)
     desc = Column(String, nullable=False)
+    # The template for the cmdline
+    cmdline = Column(String)
     repository_rel = relationship("Repository", uselist=False)
 
     def __repr__(self):
@@ -880,7 +882,6 @@ class Repository(CommonMixin, BASE):
     # the path in the repo to the kernel and initrd
     kernel = Column(String)
     initrd = Column(String)
-    cmdline = Column(String)
     operating_system_id = Column(Integer,
                                  ForeignKey('operating_systems.id'),
                                  index=True)
@@ -1049,7 +1050,7 @@ class SystemProfile(CommonMixin, BASE):
     # __repr__()
 # SystemProfile
 
-class Template(CommonMixin, BASE):
+class Template(CommonMixin, ResourceMixin, BASE):
     """A template for a InstallMachine"""
     __tablename__ = "templates"
 
@@ -1057,7 +1058,6 @@ class Template(CommonMixin, BASE):
     content = Column(String)
     operating_system_id = Column(
         Integer, ForeignKey('operating_systems.id'), index=True)
-    desc = Column(String)
 
     # relationships
     operating_system_rel = relationship("OperatingSystem", uselist=False)

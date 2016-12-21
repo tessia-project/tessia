@@ -22,12 +22,14 @@ Base state machine for auto installation of operating systems
 from socket import inet_ntoa
 from sqlalchemy.orm.exc import NoResultFound
 from tessia_engine.config import Config
+from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import SystemIface
 from tessia_engine.state_machines.install.plat_lpar import PlatLpar
 from tessia_engine.state_machines.install.plat_kvm import PlatKvm
 
 import abc
 import jinja2
+import logging
 import os
 
 #
@@ -54,8 +56,9 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         self._os = os_entry
         self._profile = profile_entry
-        self._template = profile_entry
+        self._template = template_entry
         self._system = profile_entry.system_rel
+        self._logger = logging.getLogger(__name__)
 
         # the network iface used as gateway
         # TODO: check gateway_iface early (before job is started)
@@ -92,11 +95,11 @@ class SmBase(metaclass=abc.ABCMeta):
         # the path and url for the auto file
         config = Config.get_config()
         autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
+        # TODO: use os.path.join instead
         self._autofile_url = (config.get("install_machine").get("url") + "/"
                               + autofile_name)
         self._autofile_path = (config.get("install_machine").get("www_dir")
                                + "/" + autofile_name)
-
         # set during collect_info state
         self._info = None
     # __init__()
@@ -124,8 +127,11 @@ class SmBase(metaclass=abc.ABCMeta):
         Returns:
             dict: a dictionary containing the parsed information.
         """
-        result = {"attributes": iface.attributes}
+        attributes = iface.attributes
+        result = {"attributes": attributes}
+        result["type"] = iface.type
         result["ip"] = iface.ip_address_rel.address
+        result["mac_addr"] = iface.mac_address
         cidr_addr = iface.ip_address_rel.subnet_rel.address
         result["subnet"], cidr_prefix = cidr_addr.split("/")
         # We need to convert the network mask from the cidr prefix format
@@ -134,6 +140,7 @@ class SmBase(metaclass=abc.ABCMeta):
             ((0xffffffff << (32 - int(cidr_prefix)))
              & 0xffffffff).to_bytes(4, byteorder="big")
         )
+        result["cidr_prefix"] = cidr_prefix
         result["osname"] = iface.osname
         result["is_gateway"] = gateway_iface
         if gateway_iface:
@@ -159,10 +166,9 @@ class SmBase(metaclass=abc.ABCMeta):
         result = {}
         # TODO: remove the following remap between the Information in the
         # tessia-engine database and the tessia_baselib.
-        remap = {"ECKD": "DASD", "SCSI": "SCSI"}
 
         disk_type = storage_vol.type_rel.name
-        result["disk_type"] = remap[disk_type]
+        result["disk_type"] = disk_type
         result["volume_id"] = storage_vol.volume_id
         result["system_attributes"] = storage_vol.system_attributes
         result["specs"] = storage_vol.specs
@@ -179,10 +185,20 @@ class SmBase(metaclass=abc.ABCMeta):
 
     def init(self):
         """
-        Initialization, currently is nop
+        Initialization, clean the current OS in the SystemProfile.
         """
-        pass
+        self._profile.operating_system_id = None
+        MANAGER.session.add(self._profile)
+        MANAGER.session.commit()
     # init()
+
+    def check_installation(self):
+        """
+        Check if the installation was correctly performed.
+        """
+        # Each distro will have its own implementation
+        pass
+    # check_installation()
 
     def cleanup(self):
         """
@@ -192,7 +208,8 @@ class SmBase(metaclass=abc.ABCMeta):
             try:
                 os.remove(self._autofile_path)
             except OSError:
-                print("warning: unable to delete the autofile during cleanup.")
+                self._logger.warning("unable to delete the autofile during"
+                                     " cleanup.")
                 return 1
         return 0
     # cleanup()
@@ -214,10 +231,10 @@ class SmBase(metaclass=abc.ABCMeta):
             info['svols'].append(self._parse_svol(svol))
         for iface in self._profile.system_ifaces_rel:
             info['ifaces'].append(self._parse_iface(
-                iface, iface.osname is self._gw_iface['osname']))
+                iface, iface.osname == self._gw_iface['osname']))
 
         # TODO: allow usage of additional repositories
-        repo_url = self._profile.operating_system_rel.repository_rel.url
+        repo_url = self._os.repository_rel.url
         info['repos'].append(repo_url)
 
         self._info = info
@@ -227,7 +244,7 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Fill the template and create the autofile in the target location
         """
-        print("info: generating autofile")
+        self._logger.info("generating autofile")
         template = jinja2.Template(self._template.content)
 
         autofile_content = template.render(config=self._info)
@@ -243,19 +260,30 @@ class SmBase(metaclass=abc.ABCMeta):
             autofile.write(autofile_content)
     # create_autofile()
 
+    def post_install(self):
+        """
+        Perform post installation activities.
+        """
+        # Change the operating system in the profile.
+        self._profile.operating_system_id = self._os.id
+        MANAGER.session.add(self._profile)
+        MANAGER.session.commit()
+
+        self.cleanup()
+    # post_install()
+
     def target_boot(self):
         """
         Performs the boot of the target system to initiate the installation
         """
-        self._platform.target_boot(
-            self._profile, self._os, self._get_kargs())
+        self._platform.boot(self._get_kargs())
     # target_boot()
 
     def target_reboot(self):
         """
         Performs a reboot of the target system after installation is done
         """
-        self._platform.target_reboot(self._profile)
+        self._platform.reboot(self._profile)
     # target_reboot()
 
     def wait_install(self):
@@ -271,24 +299,28 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Start the states' transition.
         """
-        print('new state: init')
+        self._logger.info('new state: init')
         self.init()
 
-        print('new state: collect_info')
+        self._logger.info('new state: collect_info')
         self.collect_info()
 
-        print('new state: create_autofile')
+        self._logger.info('new state: create_autofile')
         self.create_autofile()
 
-        print('new state: target_boot')
+        self._logger.info('new state: target_boot')
         self.target_boot()
 
-        print('new state: wait_install')
+        self._logger.info('new state: wait_install')
         self.wait_install()
 
-        print('new state: target_reboot')
+        self._logger.info('new state: target_reboot')
         self.target_reboot()
 
-        print('new state: cleanup')
-        self.cleanup()
+        self._logger.info('new state: check_installation')
+        self.check_installation()
+
+        self._logger.info('new state: post_install')
+        self.post_install()
     # start()
+# SmBase

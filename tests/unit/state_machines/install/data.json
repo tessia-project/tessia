@@ -1,150 +1,95 @@
 {
-	"OperatingSystem": [
-		{
-			"name": "rhel7.2",
-			"major": "7",
-			"minor": "2",
-			"desc": "RHEL 7.2 GA"
-		}
-	],
-	"Repository": [
-		{
-			"operating_system": "rhel7.2",
-			"url": "http://installserver.domain.com/redhat/s390x/RHEL7.2/DVD/",
-			"kernel": "/images/kernel.img",
-			"initrd": "/images/initrd.img",
-			"cmdline": "ro ramdisk_size=40000 inst.repo={repo} ip={ip}::{gateway}:{cidr_prefix}:{hostname}:{iface_name}:none nameserver={nameserver} inst.sshd inst.vnc inst.vncpassword=123456 inst.ks={autofile}"
-		}
-	],
-	"Template": [
-		{
-			"template_type": "RHEL",
-			"content": null,
-			"name": "RHEL7.2",
-			"desc": "Template for RHEL 7.2"
-		}
-	],
-	"Project": [
-        {
-            "name": "Department x",
-            "avatar": null,
-            "desc": "Description of Department x"
-        }
-    ],
-    "User": [
-        {
-            "name": "Name of user x_0",
-            "admin": true,
-            "title": "Title of user x_0",
-            "restricted": false,
-            "login": "user_x_0@domain.com"
-        }
-    ],
-    "UserKey": [
-        {
-            "user": "user_x_0@domain.com",
-            "key_id": "c129600154774d14972dc6815b9a31ec",
-            "key_secret": "51203bad07c04fefbd1ed41ea7afe0b9"
-        }
-    ],
-    "UserRole": [
-        {
-            "project": "Department x",
-            "user": "user_x_0@domain.com",
-            "role": "User"
-        }
-    ],
     "System": [
         {
-            "name": "cpc0",
-            "desc": "CPC for project Department x",
+            "name": "CPC3",
+            "desc": "CPC for project Default Project",
             "state": "AVAILABLE",
-            "modifier": "user_x_0@domain.com",
+            "modifier": "tessia-admin@domain.com",
             "type": "cpc",
-            "hostname": "cpc-0.domain.com",
-            "project": "Department x",
+            "hostname": "hmcserver.domain.com",
+            "project": "Default Project",
             "model": "ZEC12_H20",
-            "owner": "user_x_0@domain.com"
+            "owner": "tessia-admin@domain.com"
         },
         {
-            "owner": "user_x_0@domain.com",
-            "desc": "- LPAR 0 for user user_x_0@domain.com",
+            "owner": "tessia-admin@domain.com",
+            "desc": "- LPAR 0 for user tessia-admin@domain.com",
             "model": "ZEC12_H20",
-            "modifier": "user_x_0@domain.com",
-            "hypervisor": "cpc0",
-            "hostname": "cpc3lp55.domain.com",
+            "modifier": "tessia-admin@domain.com",
+            "hypervisor": "CPC3",
+            "hostname": "CPC3LP55.domain.com",
             "state": "AVAILABLE",
             "type": "lpar",
-            "name": "cpc3lp55",
-            "project": "Department x"
+            "name": "CPC3LP55",
+            "project": "Default Project"
         },
 		{
-            "owner": "user_x_0@domain.com",
+            "owner": "tessia-admin@domain.com",
             "desc": "KVM Guest",
             "model": "ZGENERIC",
-            "modifier": "user_x_0@domain.com",
-            "hypervisor": "cpc3lp55",
+            "modifier": "tessia-admin@domain.com",
+            "hypervisor": "CPC3LP55",
             "hostname": "kvm054.domain.com",
             "state": "AVAILABLE",
             "type": "kvm",
             "name": "kvm054",
-            "project": "Department x"
+            "project": "Default Project"
         }
     ],
     "NetZone": [
         {
-            "modifier": "user_x_0@domain.com",
-            "name": "cpc0",
-            "project": "Department x",
-            "desc": "Network zone for CPC cpc0",
-            "owner": "user_x_0@domain.com"
+            "modifier": "tessia-admin@domain.com",
+            "name": "CPC3",
+            "project": "Default Project",
+            "desc": "Network zone for CPC CPC3",
+            "owner": "tessia-admin@domain.com"
         }
     ],
     "Subnet": [
         {
-            "name": "cpc0 shared",
+            "name": "CPC3 shared",
             "dns_2": null,
-            "zone": "cpc0",
+            "zone": "CPC3",
             "address": "192.168.160.0/22",
-            "modifier": "user_x_0@domain.com",
-            "desc": "Shared subnet of cpc0",
+            "modifier": "tessia-admin@domain.com",
+            "desc": "Shared subnet of CPC3",
             "vlan": 1801,
-            "project": "Department x",
+            "project": "Default Project",
             "gateway": "192.168.160.1",
             "dns_1": "192.168.200.241",
-            "owner": "user_x_0@domain.com"
+            "owner": "tessia-admin@domain.com"
         }
     ],
     "IpAddress": [
         {
             "address": "192.168.161.225",
             "desc": null,
-            "modifier": "user_x_0@domain.com",
-            "project": "Department x",
-            "subnet": "cpc0 shared",
-            "owner": "user_x_0@domain.com"
+            "modifier": "tessia-admin@domain.com",
+            "project": "Default Project",
+            "subnet": "CPC3 shared",
+            "owner": "tessia-admin@domain.com"
         },
 		{
             "address": "192.168.160.54",
             "desc": null,
-            "modifier": "user_x_0@domain.com",
-            "project": "Department x",
-            "subnet": "cpc0 shared",
-            "owner": "user_x_0@domain.com"
+            "modifier": "tessia-admin@domain.com",
+            "project": "Default Project",
+            "subnet": "CPC3 shared",
+            "owner": "tessia-admin@domain.com"
         }
     ],
     "SystemIface": [
         {
             "name": "external osa",
-            "osname": "enccwf500",
+            "osname": "eth01",
             "attributes": {
 				"layer2": true,
 				"devicenr": "0xf500,0xf501,0xf502"
 			},
-            "ip_address": "cpc0 shared/192.168.161.225",
+            "ip_address": "CPC3 shared/192.168.161.225",
             "type": "OSA",
-            "mac_address": "26:8d:db:b1:12:b2",
-            "system": "cpc3lp55"
+            "mac_address": "02:57:55:00:76:00",
+            "system": "CPC3LP55"
         },
 		{
 			"name": "external macvtap",
@@ -152,7 +97,7 @@
 			"attributes": {
 				"libvirt": "    <interface type='direct'>      <mac address='02:57:52:01:ff:01'/>      <source dev='eth0' mode='bridge'/>      <model type='virtio'/>      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0xf500'/>    </interface>"
 			},
-			"ip_address": "cpc0 shared/192.168.160.54",
+			"ip_address": "CPC3 shared/192.168.160.54",
 			"type": "KVM_LIBVIRT",
 			"mac_address": "02:57:52:01:ff:01",
 			"system": "kvm054"
@@ -164,79 +109,82 @@
             "name": "DSK7K16",
             "password": null,
             "fw_level": null,
-            "modifier": "user_x_0@domain.com",
-            "type": "ECKD-SCSI",
+            "modifier": "tessia-admin@domain.com",
+            "type": "DASD-FCP",
             "hostname": null,
-            "project": "Department x",
-            "desc": "- Storage *ECKD-SCSI* beloging to Department x",
+            "project": "Default Project",
+            "desc": "- Storage *DASD-FCP* beloging to Default Project",
             "model": "DS8800",
-            "owner": "user_x_0@domain.com"
+            "owner": "tessia-admin@domain.com"
         }
     ],
     "StoragePool": [
         {
-            "name": "Pool for system cpc3lp55",
+            "name": "Pool for system CPC3LP55",
             "used_size": 40000,
             "desc": "- Storage pool for creating qcow2 images",
             "attributes": "{'chunksize': '512'}",
             "total_size": 40000,
-            "modifier": "user_x_0@domain.com",
+            "modifier": "tessia-admin@domain.com",
             "type": "LVM_VG",
-            "project": "Department x",
-            "system": "cpc3lp55",
-            "owner": "user_x_0@domain.com"
+            "project": "Default Project",
+            "system": "CPC3LP55",
+            "owner": "tessia-admin@domain.com"
         }
     ],
     "StorageVolume": [
         {
             "specs": "{}",
             "server": "DSK7K16",
-            "type": "ECKD",
-            "system": "cpc3lp55",
-            "owner": "user_x_0@domain.com",
+            "type": "DASD",
+            "system": "CPC3LP55",
+            "owner": "tessia-admin@domain.com",
             "desc": "- DASD disk for regression tests",
-            "volume_id": "1800",
+            "volume_id": "3961",
             "part_table": {
                 "type": "msdos",
                 "table": [
                     {
                         "type": "primary",
                         "fs": "ext4",
-                        "size": 8000,
+                        "size": 4000,
                         "mo": null,
                         "mp": "/"
                     },
                     {
                         "type": "primary",
                         "fs": "swap",
-                        "size": 2000,
+                        "size": 100,
                         "mo": null,
                         "mp": null
                     }
                 ]
             },
-            "modifier": "user_x_0@domain.com",
-            "system_attributes": "{}",
-            "project": "Department x",
+            "modifier": "tessia-admin@domain.com",
+            "system_attributes": {
+				"device": "/dev/disk/by-path/ccw-0.0.3961"
+			},
+            "project": "Default Project",
             "size": 10000
         },
 		{
             "specs": {
 				"adapters": [
+
 					{
 						"devno": "0.0.1800",
 						"wwpns": [
-							"100207630503c1ae"
+							"100207630508c1ae"
 						]
 					}
 				],
 				"multipath": true
 			},
             "server": "DSK7K16",
-            "type": "SCSI",
+            "type": "FCP",
             "system": "kvm054",
-            "owner": "user_x_0@domain.com",
-            "desc": "SCSI DISK",
+            "owner": "tessia-admin@domain.com",
+            "desc": "FCP-SCSI DISK",
             "volume_id": "1024400000000000",
             "part_table": {
 				"type": "msdos",
@@ -257,23 +205,71 @@
 					}
 				]
 			},
-            "modifier": "user_x_0@domain.com",
+            "modifier": "tessia-admin@domain.com",
             "system_attributes": {
-				"device": "vda",
+				"device": "/dev/disk/by-path/ccw-0.0.1800-zfcp-0x100207630508c1ae\\:0x1024400000000000",
 				"libvirt": "    <disk type='block' device='disk'>      <driver name='qemu' type='raw'/>      <source dev='/dev/mapper/11002076305aac1a0000000000002400'/>      <target dev='vda' bus='virtio'/>      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0001'/>    </disk>"
 			},
-            "project": "Department x",
+            "project": "Default Project",
+            "size": 4095
+        },
+		{
+            "specs": {
+				"adapters": [
+					{
+						"devno": "0.0.1800",
+						"wwpns": [
+							"100207630503c1ae"
+						]
+					}
+				],
+				"multipath": true
+			},
+            "server": "DSK7K16",
+            "type": "FCP",
+            "system": "kvm054",
+            "owner": "tessia-admin@domain.com",
+            "desc": "FCP-SCSI DISK",
+            "volume_id": "1024400100000000",
+            "part_table": {
+				"type": "msdos",
+				"table": [
+					{
+						"fs": "ext4",
+						"mo": null,
+						"mp": "/",
+						"size": 4000,
+						"type": "primary"
+					},
+					{
+						"fs": "swap",
+						"mo": null,
+						"mp": "swap",
+						"size": 95,
+						"type": "primary"
+					}
+				]
+			},
+            "modifier": "tessia-admin@domain.com",
+            "system_attributes": {
+				"device": "vda",
+				"libvirt": "    <disk type='block' device='disk'>      <driver name='qemu' type='raw'/>      <source dev='/dev/mapper/11002076305aac1a0000000000002401'/>      <target dev='vda' bus='virtio'/>      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0001'/>    </disk>"
+			},
+            "project": "Default Project",
             "size": 4095
         }
     ],
     "SystemProfile": [
         {
-            "name": "default cpc0",
+            "name": "default CPC3",
             "default": true,
-            "cpu": 2,
-            "credentials": "{}",
-            "system": "cpc0",
-            "memory": 1024
+            "cpu": 4,
+            "credentials": {
+				"username": "hmcuser",
+				"password": "hmcpasswd"
+			},
+            "system": "CPC3",
+            "memory": 4096
         },
         {
             "cpu": 2,
@@ -281,12 +277,31 @@
 				"username": "root",
 				"password": "somepasswd"
 			},
-            "name": "default_cpc3lp55",
+            "name": "default_CPC3LP55",
             "default": true,
-            "memory": 1024,
-            "system": "cpc3lp55",
-            "hypervisor_profile": "cpc0/default cpc0",
-            "operating_system": "rhel7.2"
+            "memory": 4096,
+            "system": "CPC3LP55",
+            "hypervisor_profile": "CPC3/default CPC3",
+            "operating_system": "rhel7.2",
+			"parameters": {
+				"gateway_iface": "external osa"
+			}
+        },
+		{
+            "cpu": 2,
+            "credentials": {
+				"username": "root",
+				"password": "somepasswd"
+			},
+            "name": "default_CPC3LP55_SCSI",
+            "default": true,
+            "memory": 4096,
+            "system": "CPC3LP55",
+            "hypervisor_profile": "CPC3/default CPC3",
+            "operating_system": "rhel7.2",
+			"parameters": {
+				"gateway_iface": "external osa"
+			}
         },
 		{
             "cpu": 2,
@@ -298,7 +313,7 @@
             "default": true,
             "memory": 1024,
             "system": "kvm054",
-            "hypervisor_profile": "cpc3lp55/default_cpc3lp55",
+            "hypervisor_profile": "CPC3LP55/default_CPC3LP55",
             "operating_system": "rhel7.2",
 			"parameters": {
 				"gateway_iface": "external macvtap"
@@ -307,18 +322,26 @@
     ],
     "StorageVolumeProfileAssociation": [
         {
-            "volume": "DSK7K16/1800",
-            "profile": "cpc3lp55/default_cpc3lp55"
+            "volume": "DSK7K16/3961",
+            "profile": "CPC3LP55/default_CPC3LP55"
+        },
+		{
+            "volume": "DSK7K16/1024400000000000",
+            "profile": "CPC3LP55/default_CPC3LP55_SCSI"
         },
         {
-            "volume": "DSK7K16/1024400000000000",
+            "volume": "DSK7K16/1024400100000000",
             "profile": "kvm054/kvm_kvm054_install"
         }
     ],
     "SystemIfaceProfileAssociation": [
         {
-            "iface": "cpc3lp55/external osa",
-            "profile": "cpc3lp55/default_cpc3lp55"
+            "iface": "CPC3LP55/external osa",
+            "profile": "CPC3LP55/default_CPC3LP55"
+        },
+		{
+            "iface": "CPC3LP55/external osa",
+            "profile": "CPC3LP55/default_CPC3LP55_SCSI"
         },
 		{
             "iface": "kvm054/external macvtap",

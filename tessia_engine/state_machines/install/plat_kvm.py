@@ -50,8 +50,8 @@ class PlatKvm(PlatBase):
         """
         # repository related information
         repo = self._os.repository_rel
-        kernel_uri = os.path.join(repo.url, repo.kernel)
-        initrd_uri = os.path.join(repo.url, repo.initrd)
+        kernel_uri = os.path.join(repo.url, './' + repo.kernel)
+        initrd_uri = os.path.join(repo.url, './' + repo.initrd)
 
         params = {
             "boot_method": "network",

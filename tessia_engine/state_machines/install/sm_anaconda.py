@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Machine for auto installation of Anaconda based operating systems
+Machine for auto installation of Anaconda based operating systems.
 """
 
 #
@@ -24,6 +24,8 @@ from tessia_engine.state_machines.install.sm_base import SmBase
 from time import sleep
 
 import crypt
+import jinja2
+import logging
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -41,7 +43,18 @@ class SmAnaconda(SmBase):
         Constructor
         """
         super().__init__(os_entry, profile_entry, template_entry)
+        self._logger = logging.getLogger(__name__)
     # __init__()
+
+    def _add_stable_osname(self, iface):
+        attributes = iface["attributes"]
+        devicenr = attributes.get("devicenr").split(",")
+        # The control read device number is used to create a
+        # stable device name for OSA network interfaces.
+        cr_devicenr = devicenr[0]
+        iface["cr_devicenr"] = cr_devicenr
+        iface["stable_osname"] = ("enccw0.0." +
+                                  cr_devicenr.lstrip("0x"))
 
     def collect_info(self):
         """
@@ -51,9 +64,15 @@ class SmAnaconda(SmBase):
         super().collect_info()
 
         # add our specific bits
+        self._info["credentials"] = self._profile.credentials
         self._info["sha512rootpwd"] = crypt.crypt(
             self._profile.credentials["password"])
         self._info['hostname'] = self._system.hostname
+        self._info['is_kvm'] = self._profile.system_rel.type == "KVM"
+
+        for iface in self._info["ifaces"]:
+            if iface["type"] == "OSA":
+                self._add_stable_osname(iface)
     # collect_info()
 
     def _get_kargs(self):
@@ -71,21 +90,29 @@ class SmAnaconda(SmBase):
         gateway_ip = self._gw_iface['gateway']
         iface_osname = self._gw_iface['osname']
         nameserver = self._gw_iface['dns_1']
+        cidr_prefix = self._gw_iface['cidr_prefix']
+        iface_attributes = self._gw_iface['attributes']
+        is_kvm = self._profile.system_rel.type == "KVM"
 
-        cmdline = repo.cmdline.format(
-            repo=repo_url, ip=ip_addr, gateway=gateway_ip,
-            hostname=hostname, iface_name=iface_osname,
-            nameserver=nameserver, autofile=self._autofile_url)
+        template_cmdline = jinja2.Template(self._os.cmdline)
+
+        cmdline = (
+            template_cmdline.render(repo=repo_url, ip=ip_addr,
+                                    cidr_prefix=cidr_prefix,
+                                    gateway=gateway_ip, hostname=hostname,
+                                    iface_osname=iface_osname,
+                                    nameserver=nameserver, is_kvm=is_kvm,
+                                    iface_attributes=iface_attributes,
+                                    autofile=self._autofile_url,
+                                    config=self._info))
 
         return cmdline
     # _get_kargs()
 
-    def wait_install(self):
+    def _get_ssh_client(self):
         """
-        Waits for the installation, this method periodically checks the
-        /tmp/anaconda.log file in the system and looks for a string that
-        indicates that the process has finished. There is a timeout of 10
-        minutes.
+        Auxiliary method to get a ssh connection to the target system
+        being installed.
         """
         timeout_trials = [5, 10, 20, 40]
 
@@ -93,36 +120,75 @@ class SmAnaconda(SmBase):
         hostname = self._profile.system_rel.hostname
         user = self._profile.credentials['username']
         password = self._profile.credentials['password']
+
         for timeout in timeout_trials:
             try:
-                ssh_client.login(hostname, user, password)
+                ssh_client.login(hostname, user=user, passwd=password)
+                return ssh_client
             except ConnectionError:
-                print("warning: connection not available yet, "
-                      "retrying in {} seconds.".format(timeout))
+                self._logger.warning("connection not available yet, "
+                                     "retrying in %d seconds.", timeout)
                 sleep(timeout)
 
+        raise ConnectionError("Error while connecting to the target system")
+    # _get_ssh_client()
+
+    def check_installation(self):
+        """
+        Makes sure that the installation was successfully completed.
+        """
+        ssh_client = self._get_ssh_client()
         shell = ssh_client.open_shell()
-        timeout_installation = 600
-        frequency_check = 10
+
+        ret, out = shell.run("echo 1")
+        if ret != 0:
+            raise RuntimeError("Unable to connect to the system.")
+
+        shell.close()
+        ssh_client.logoff()
+    # check_installation()
+
+    def wait_install(self):
+        """
+        Waits for the installation. This method periodically checks the
+        /tmp/anaconda.log file in the system and looks for a string that
+        indicates that the process has finished. There is a timeout of 10
+        minutes.
+        """
+        ssh_client = self._get_ssh_client()
+        shell = ssh_client.open_shell()
+
+        cmd_read_line = "tail -n +{} /tmp/anaconda.log"
         termination_string = "Thread Done: AnaConfigurationThread"
         initial_line = 1
-        cmd_read_line = "tail -n +{} /tmp/anaconda.log"
+
+        timeout_installation = 600
+        frequency_check = 10
         elapsed_time = 0
+
         # Performs successive calls to tail to extract the end of the file
         # from a previous start point.
+        success = False
         while elapsed_time < timeout_installation:
             ret, out = shell.run(cmd_read_line.format(initial_line))
             if ret != 0:
-                print("Error while reading the installation log.")
-                return False
+                self._logger.error("Error while reading the installation log.")
+                return success
             lines = out.split("\n")
+
             if len(lines) > 1 or lines[0] != "":
                 initial_line += len(lines)
-                print(out)
+                self._logger.info(out)
+
             if out.find(termination_string) != -1:
-                return True
+                success = True
+                break
+
             sleep(frequency_check)
             elapsed_time += frequency_check
-    # wait_install()
 
+        shell.close()
+        ssh_client.logoff()
+        return success
+    # wait_install()
 # SmAnaconda

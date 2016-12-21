@@ -28,7 +28,6 @@ from tessia_engine.db import models
 INSERT_ORDER = [
     'OperatingSystem',
     'Repository',
-    'Template',
     'IfaceType',
     'Role',
     'RoleAction',
@@ -43,6 +42,7 @@ INSERT_ORDER = [
     'User',
     'UserKey',
     'UserRole',
+    'Template',
     'System',
     'NetZone',
     'Subnet',
@@ -76,7 +76,10 @@ def db_insert(data):
     Raises:
         None
     """
-
+    # Since we can start by trying to feed an object that needs to query the
+    # database to fullfill some property, we need to create a session so that
+    # the "query" property is created in every object of the model.
+    MANAGER.session()
     for model_name in INSERT_ORDER:
         model_class = getattr(models, model_name)
         for row in data.get(model_name, []):

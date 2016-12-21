@@ -59,7 +59,7 @@ class PlatBase(metaclass=abc.ABCMeta):
         self._gw_iface = gw_iface
 
         # TODO: normalize names between baselib and engine to get rid of this
-        hyp_type = self._hyp_model.type_rel.name.lower()
+        hyp_type = self._guest_prof.system_rel.type_rel.name.lower()
         try:
             self._hyp_type = HYP_TYPES_BASELIB[hyp_type]
         except KeyError:
@@ -99,12 +99,9 @@ class PlatBase(metaclass=abc.ABCMeta):
     def _jsonify_svol(svol_entry):
 
         result = {}
-        # TODO: remove the following remap between the Information in the
-        # tessia-engine database and the tessia_baselib.
-        remap = {"ECKD": "DASD", "SCSI": "SCSI"}
 
         disk_type = svol_entry.type_rel.name
-        result["disk_type"] = remap[disk_type]
+        result["disk_type"] = disk_type
         result["volume_id"] = svol_entry.volume_id
         result["system_attributes"] = svol_entry.system_attributes
         result["specs"] = svol_entry.specs
@@ -137,7 +134,7 @@ class PlatBase(metaclass=abc.ABCMeta):
         # basic information
         cpu = self._guest_prof.cpu
         memory = self._guest_prof.memory
-        guest_name = self._guest_prof.name
+        guest_name = self._guest_prof.system_rel.name
 
         # prepare entries in the format expected by tessia_baselib
         svols = []
@@ -148,12 +145,15 @@ class PlatBase(metaclass=abc.ABCMeta):
             ifaces.append(self._jsonify_iface(iface))
 
         # parameters argument, see tessia_baselib schema for details
-        params = {
-            'ifaces': ifaces,
-            'storage_volumes': svols,
-            'parameters': self._get_start_params(kargs),
-        }
-
+        if self._guest_prof.system_rel.type == "KVM":
+            params = {
+                'ifaces': ifaces,
+                'storage_volumes': svols,
+                'parameters': self._get_start_params(kargs),
+            }
+        else:
+            params = self._get_start_params(kargs)
+            
         self._hyp_obj.start(guest_name, cpu, memory, params)
     # boot()
 

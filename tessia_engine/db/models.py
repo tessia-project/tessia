@@ -1778,10 +1778,10 @@ class SchedulerRequest(CommonMixin, BASE):
     # job type refers to the type of state machine to use
     job_type = Column(String, nullable=False)
 
-    time_slot = Column(String, nullable=False, default='DEFAULT')
+    time_slot = Column(String, nullable=False, default=SLOT_DEFAULT)
 
     # period in minutes after job is considered to have timed out
-    timeout = Column(Integer, default=0, nullable=False)
+    timeout = Column(Integer, nullable=False, default=0)
 
     # the date when request was submitted
     submit_date = Column(DateTime(timezone=False), nullable=False)
@@ -1791,7 +1791,7 @@ class SchedulerRequest(CommonMixin, BASE):
 
     # parameters are passed to the state machine parser which returns to the
     # scheduler which resources are to be used
-    parameters = Column(String, nullable=False)
+    parameters = Column(String, nullable=False, default='')
 
     # priority defines order
     priority = Column(SmallInteger, nullable=False, default=0)
@@ -1802,22 +1802,56 @@ class SchedulerRequest(CommonMixin, BASE):
     # messages about the request result
     result = Column(String, nullable=True)
 
-    @validates(('action_type', 'time_slot', 'state'))
-    def validate(self, key, value):
+    @validates('action_type', 'time_slot', 'state')
+    def validate_enum(self, key, value):
         """
-        Simple validator
+        Simple validator, enforces enum behavior.
+
+        Args:
+            key (str): field name
+            value (any): field's value
+
+        Raises:
+            ValueError: in case field's value is not one of allowed values
+
+        Returns:
+            any: field's value to populate row
         """
         if key == 'action_type' and value not in self.ACTIONS:
-            raise ValueError("Invalid action type '{}'".format(value))
+            raise ValueError("Invalid <(action_type)=({})>".format(value))
 
         elif key == 'time_slot' and value not in self.SLOTS:
-            raise ValueError("Invalid time slot type '{}'".format(value))
+            raise ValueError("Invalid <(time_slot)=({})>".format(value))
 
         elif key == 'state' and value not in self.STATES:
-            raise ValueError("Invalid state '{}'".format(value))
+            raise ValueError("Invalid <(state)=({})>".format(value))
 
         return value
-    # validate_action_type()
+    # validate_enum()
+
+    # requester relationship section
+    requester_rel = relationship(
+        'User', uselist=False, lazy='joined', innerjoin=True)
+
+    @hybrid_property
+    def requester(self):
+        """Defines the requester attribute pointing to requester's login"""
+        return self.requester_rel.login
+
+    @requester.setter
+    def requester(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = User.query.filter_by(login=value).one_or_none()
+        # related entry does not exist: report error
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'requester', User, 'login', value)
+        self.requester_id = match.id
+
+    @requester.expression
+    def requester(cls):
+        """Expression used for performing queries"""
+        return User.login
 
 # SchedulerRequest
 
@@ -1825,6 +1859,22 @@ class SchedulerJob(CommonMixin, BASE):
     """A scheduler request accepted for execution"""
 
     __tablename__ = 'scheduler_jobs'
+
+    # define constants to be globally used
+    # time slots
+    SLOT_DEFAULT = 'DEFAULT'
+    SLOT_NIGHT = 'NIGHT'
+    # time slots
+    SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
+    STATE_CANCELED = 'CANCELED'
+    STATE_CLEANINGUP = 'CLEANINGUP'
+    STATE_COMPLETED = 'COMPLETED'
+    STATE_FAILED = 'FAILED'
+    STATE_RUNNING = 'RUNNING'
+    STATE_WAITING = 'WAITING'
+    # jobs states
+    STATES = (STATE_CANCELED, STATE_CLEANINGUP, STATE_COMPLETED, STATE_FAILED,
+              STATE_RUNNING, STATE_WAITING)
 
     requester_id = Column(
         Integer, ForeignKey('users.id'), index=True, nullable=False)
@@ -1836,7 +1886,7 @@ class SchedulerJob(CommonMixin, BASE):
     job_type = Column(String, nullable=False)
 
     # default or nightslot
-    time_slot = Column(String, nullable=False)
+    time_slot = Column(String, nullable=False, default=SLOT_DEFAULT)
 
     state = Column(String, nullable=False)
     pid = Column(Integer)
@@ -1871,39 +1921,57 @@ class SchedulerJob(CommonMixin, BASE):
 
     timeout = Column(Integer, default=0, nullable=False)
 
-    # define constants to be globally used
-    # time slots
-    SLOT_DEFAULT = 'DEFAULT'
-    SLOT_NIGHT = 'NIGHT'
-    # time slots
-    SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
-    STATE_CANCELED = 'CANCELED'
-    STATE_CLEANINGUP = 'CLEANINGUP'
-    STATE_COMPLETED = 'COMPLETED'
-    STATE_FAILED = 'FAILED'
-    STATE_RUNNING = 'RUNNING'
-    STATE_WAITING = 'WAITING'
-    # jobs states
-    STATES = (STATE_CANCELED, STATE_CLEANINGUP, STATE_COMPLETED, STATE_FAILED,
-              STATE_RUNNING, STATE_WAITING)
-
     def __repr__(self):
         """Object representation"""
         return "<Job (id='{}')>".format(self.id)
     # __repr__()
 
-    @validates(('time_slot', 'state'))
-    def validate(self, key, value):
+    @validates('time_slot', 'state')
+    def validate_enum(self, key, value):
         """
-        Simple validator
+        Simple validator, enforces enum behavior.
+
+        Args:
+            key (str): field name
+            value (any): field's value
+
+        Raises:
+            ValueError: in case field's value is not one of allowed values
+
+        Returns:
+            any: field's value to populate row
         """
         if key == 'time_slot' and value not in self.SLOTS:
-            raise ValueError("Invalid time slot type '{}'".format(value))
+            raise ValueError("Invalid <(time_slot)=({})>".format(value))
 
         elif key == 'state' and value not in self.STATES:
-            raise ValueError("Invalid state '{}'".format(value))
+            raise ValueError("Invalid <(state)=({})>".format(value))
 
         return value
-    # validate_action_type()
+    # validate_enum()
+
+    # requester relationship section
+    requester_rel = relationship(
+        'User', uselist=False, lazy='joined', innerjoin=True)
+
+    @hybrid_property
+    def requester(self):
+        """Defines the requester attribute pointing to requester's login"""
+        return self.requester_rel.login
+
+    @requester.setter
+    def requester(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = User.query.filter_by(login=value).one_or_none()
+        # related entry does not exist: report error
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'requester', User, 'login', value)
+        self.requester_id = match.id
+
+    @requester.expression
+    def requester(cls):
+        """Expression used for performing queries"""
+        return User.login
 
 # SchedulerJob

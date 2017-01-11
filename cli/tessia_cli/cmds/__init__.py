@@ -22,6 +22,7 @@ Root group to which all commands are attached
 from tessia_cli.client import Client
 from tessia_cli.cmds.conf import conf
 from tessia_cli.cmds.conf import key_gen
+from tessia_cli.cmds.job import job
 from tessia_cli.cmds.system import system
 from tessia_cli.cmds.perm import perm
 from tessia_cli.config import CONF
@@ -40,6 +41,7 @@ import sys
 #
 CMDS = [
     conf,
+    job,
     net,
     perm,
     storage,

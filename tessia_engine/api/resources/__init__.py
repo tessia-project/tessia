@@ -21,6 +21,8 @@ Expose the API resources
 #
 from tessia_engine.api.resources.iface_types import IfaceTypeResource
 from tessia_engine.api.resources.ip_addresses import IpAddressResource
+from tessia_engine.api.resources.job_requests import JobRequestResource
+from tessia_engine.api.resources.jobs import JobResource
 from tessia_engine.api.resources.net_zones import NetZoneResource
 from tessia_engine.api.resources.projects import ProjectResource
 from tessia_engine.api.resources.users import UserResource
@@ -44,6 +46,8 @@ from tessia_engine.api.resources.volume_types import VolumeTypeResource
 RESOURCES = [
     IfaceTypeResource,
     IpAddressResource,
+    JobRequestResource,
+    JobResource,
     NetZoneResource,
     ProjectResource,
     StorageServerTypeResource,

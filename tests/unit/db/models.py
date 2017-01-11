@@ -19,6 +19,7 @@ Unit test for the sqlalchemy models module
 #
 # IMPORTS
 #
+from datetime import datetime
 from sqlalchemy import event
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.sqlite.base import SQLiteDialect
@@ -187,6 +188,28 @@ class TestModels(TestCase):
         """
         DbUnit.create_db()
         cls.models = models
+
+        # add the scheduler entries as they are not part of the sample file
+        request = cls.models.SchedulerRequest(
+            requester="user_x_0@domain.com",
+            action_type=cls.models.SchedulerRequest.ACTION_SUBMIT,
+            job_type="echo",
+            parameters="",
+            submit_date=datetime.utcnow()
+        )
+        DbUnit.session.add(request)
+        job = cls.models.SchedulerJob(
+            requester="user_x_0@domain.com",
+            job_type="echo",
+            state=cls.models.SchedulerJob.STATE_COMPLETED,
+            resources={"exclusive": "A", "shared": "B"},
+            parameters="",
+            description="test",
+            submit_date=datetime.utcnow()
+        )
+        DbUnit.session.add(job)
+        DbUnit.session.commit()
+
     # setUpClass()
 
     def test_repr(self):
@@ -223,8 +246,8 @@ class TestModels(TestCase):
             None
         """
         # create a map with all relations to be tested
-        relation_map = {
-            self.models.RoleAction: [
+        relation_map = [
+            (self.models.RoleAction, [
                 {
                     # the relationship name in the model
                     'rel_name': 'role_rel',
@@ -233,8 +256,8 @@ class TestModels(TestCase):
                     # the value of the field
                     'value': 'User',
                 },
-            ],
-            self.models.UserRole: [
+            ]),
+            (self.models.UserRole, [
                 {
                     # the relationship name in the model
                     'rel_name': 'user_rel',
@@ -259,8 +282,8 @@ class TestModels(TestCase):
                     # the value of the field
                     'value': 'Department x',
                 },
-            ],
-            self.models.UserKey: [
+            ]),
+            (self.models.UserKey, [
                 {
                     # the relationship name in the model
                     'rel_name': 'user_rel',
@@ -269,8 +292,8 @@ class TestModels(TestCase):
                     # the value of the field
                     'value': 'user_x_0@domain.com',
                 }
-            ],
-            self.models.NetZone: [
+            ]),
+            (self.models.NetZone, [
                 {
                     'rel_name': 'modifier_rel',
                     'attr_name': 'modifier',
@@ -286,36 +309,36 @@ class TestModels(TestCase):
                     'attr_name': 'project',
                     'value': 'Department x',
                 },
-            ],
-            self.models.Subnet: [
+            ]),
+            (self.models.Subnet, [
                 {
                     'rel_name': 'zone_rel',
                     'attr_name': 'zone',
                     'value': 'cpc0',
                 },
-            ],
-            self.models.IpAddress: [
+            ]),
+            (self.models.IpAddress, [
                 {
                     'rel_name': 'subnet_rel',
                     'attr_name': 'subnet',
                     'value': 'cpc0 shared',
                 },
-            ],
-            self.models.SystemType: [
+            ]),
+            (self.models.SystemType, [
                 {
                     'rel_name': 'arch_rel',
                     'attr_name': 'arch',
                     'value': 's390x',
                 },
-            ],
-            self.models.SystemModel: [
+            ]),
+            (self.models.SystemModel, [
                 {
                     'rel_name': 'arch_rel',
                     'attr_name': 'arch',
                     'value': 's390x',
                 },
-            ],
-            self.models.System: [
+            ]),
+            (self.models.System, [
                 {
                     'rel_name': 'model_rel',
                     'attr_name': 'model',
@@ -337,8 +360,8 @@ class TestModels(TestCase):
                     'attr_name': 'type',
                     'value': 'CPC',
                 },
-            ],
-            self.models.SystemProfile: [
+            ]),
+            (self.models.SystemProfile, [
                 {
                     'self': True,
                     'rel_name': 'hypervisor_profile_rel',
@@ -355,8 +378,8 @@ class TestModels(TestCase):
                     'attr_name': 'operating_system',
                     'value': 'rhel7.0',
                 },
-            ],
-            self.models.SystemIfaceProfileAssociation: [
+            ]),
+            (self.models.SystemIfaceProfileAssociation, [
                 {
                     'rel_name': 'iface_rel',
                     'attr_name': 'iface',
@@ -367,8 +390,8 @@ class TestModels(TestCase):
                     'attr_name': 'profile',
                     'value': 'cpc0/default cpc0',
                 },
-            ],
-            self.models.SystemIface: [
+            ]),
+            (self.models.SystemIface, [
                 {
                     'rel_name': 'ip_address_rel',
                     'attr_name': 'ip_address',
@@ -384,15 +407,15 @@ class TestModels(TestCase):
                     'attr_name': 'system',
                     'value': 'cpc0',
                 },
-            ],
-            self.models.StorageServer: [
+            ]),
+            (self.models.StorageServer, [
                 {
                     'rel_name': 'type_rel',
                     'attr_name': 'type',
                     'value': 'ECKD-SCSI',
                 },
-            ],
-            self.models.StoragePool: [
+            ]),
+            (self.models.StoragePool, [
                 {
                     'rel_name': 'type_rel',
                     'attr_name': 'type',
@@ -403,8 +426,8 @@ class TestModels(TestCase):
                     'attr_name': 'system',
                     'value': 'lpar0',
                 },
-            ],
-            self.models.StorageVolumeProfileAssociation: [
+            ]),
+            (self.models.StorageVolumeProfileAssociation, [
                 {
                     'rel_name': 'volume_rel',
                     'attr_name': 'volume',
@@ -415,8 +438,8 @@ class TestModels(TestCase):
                     'attr_name': 'profile',
                     'value': 'cpc0/default cpc0',
                 },
-            ],
-            self.models.StorageVolume: [
+            ]),
+            (self.models.StorageVolume, [
                 {
                     'rel_name': 'type_rel',
                     'attr_name': 'type',
@@ -437,8 +460,8 @@ class TestModels(TestCase):
                     'attr_name': 'pool',
                     'value': 'Pool for system lpar0',
                 },
-            ],
-            self.models.LogicalVolumeProfileAssociation: [
+            ]),
+            (self.models.LogicalVolumeProfileAssociation, [
                 {
                     'rel_name': 'volume_rel',
                     'attr_name': 'volume',
@@ -449,8 +472,8 @@ class TestModels(TestCase):
                     'attr_name': 'profile',
                     'value': 'lpar0/default lpar0',
                 },
-            ],
-            self.models.LogicalVolume: [
+            ]),
+            (self.models.LogicalVolume, [
                 {
                     'rel_name': 'type_rel',
                     'attr_name': 'type',
@@ -466,10 +489,24 @@ class TestModels(TestCase):
                     'attr_name': 'pool',
                     'value': 'Pool for system lpar0',
                 },
-            ],
-        }
+            ]),
+            (self.models.SchedulerRequest, [
+                {
+                    'rel_name': 'requester_rel',
+                    'attr_name': 'requester',
+                    'value': 'user_x_0@domain.com',
+                },
+            ]),
+            (self.models.SchedulerJob, [
+                {
+                    'rel_name': 'requester_rel',
+                    'attr_name': 'requester',
+                    'value': 'user_x_0@domain.com',
+                },
+            ]),
+        ]
 
-        for model, relations in relation_map.items():
+        for model, relations in relation_map:
             for rel_map in relations:
 
                 model_col = getattr(model, rel_map['attr_name'])
@@ -529,5 +566,67 @@ class TestModels(TestCase):
 
 
     # test_relations()
+
+    def test_validators(self):
+        """
+        Exercise the models' validators
+        """
+        # enum validation for jobs
+        for invalid_field in ('time_slot', 'state'):
+            regex = r'Invalid <\({field}\)=\(invalid_{field}\)>'.format(
+                field=invalid_field)
+            with self.assertRaisesRegex(ValueError, regex):
+                kwargs = {
+                    'requester': 'user_x_0@domain.com',
+                    'job_type': 'echo',
+                    'resources': {"exclusive": "A", "shared": "B"},
+                    'parameters': '',
+                    'description': 'test',
+                    'submit_date': datetime.utcnow()
+                }
+                kwargs[invalid_field] = 'invalid_{}'.format(invalid_field)
+                job = self.models.SchedulerJob(**kwargs)
+                DbUnit.session.add(job)
+                DbUnit.session.commit()
+            # return db session to clean state
+            DbUnit.session.rollback()
+
+        # get a valid job to allow requests to be created in next step
+        job = self.models.SchedulerJob.query.first()
+
+        # enum validation for requests
+        for invalid_field in ('action_type', 'time_slot', 'state'):
+            regex = r'Invalid <\({field}\)=\(invalid_{field}\)>'.format(
+                field=invalid_field)
+            with self.assertRaisesRegex(ValueError, regex):
+                kwargs = {
+                    'requester': 'user_x_0@domain.com',
+                    'job_id': job.id,
+                    'submit_date': datetime.utcnow()
+                }
+                kwargs[invalid_field] = 'invalid_{}'.format(invalid_field)
+                # not testing action_type field: set cancel as the default
+                # since action_type must be always specified
+                if invalid_field != 'action_type':
+                    kwargs['action_type'] = (
+                        self.models.SchedulerRequest.ACTION_CANCEL)
+
+                request = self.models.SchedulerRequest(**kwargs)
+                DbUnit.session.add(request)
+                DbUnit.session.commit()
+            # return db session to clean state
+            DbUnit.session.rollback()
+
+        # confirm that cancel requests must only specify action and job types
+        request = self.models.SchedulerRequest(
+            requester="user_x_0@domain.com",
+            action_type=self.models.SchedulerRequest.ACTION_CANCEL,
+            job_type='',
+            submit_date=datetime.utcnow(),
+            job_id=job.id,
+        )
+        DbUnit.session.add(request)
+        DbUnit.session.commit()
+    # test_validators()
 
 # TestModels

@@ -1,0 +1,121 @@
+{
+    "definitions": {
+        "partition": {
+            "required": [
+                "mp",
+                "size",
+                "fs",
+                "type",
+                "mo"
+            ],
+            "type": "object",
+            "properties": {
+                "mp": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "pattern": "^/[a-f0-9A-Z/]*$"
+                },
+                "size": {
+                    "type": "number"
+                },
+                "fs": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "enum": [
+                        "ext2",
+                        "ext3",
+                        "ext4",
+                        "btrfs",
+                        "reiserfs",
+                        "swap"
+                    ]
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "primary",
+                        "extended",
+                        "logical"
+                    ]
+                },
+                "mo": {
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            }
+        }
+    },
+    "properties": {
+        "type": {
+            "type": "string",
+            "enum": [
+                "msdos",
+                "gpt"
+            ]
+        },
+        "table": {
+            "type": "array",
+            "items": {
+                "required": [
+                    "mp",
+                    "size",
+                    "fs",
+                    "type",
+                    "mo"
+                ],
+                "type": "object",
+                "properties": {
+                    "mp": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "pattern": "^/[a-zf0-9A-Z/]*$"
+                    },
+                    "size": {
+                        "type": "number"
+                    },
+                    "fs": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "ext2",
+                            "ext3",
+                            "ext4",
+                            "btrfs",
+                            "reiserfs",
+                            "swap"
+                        ]
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "primary",
+                            "extended",
+                            "logical"
+                        ]
+                    },
+                    "mo": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "type": "object",
+    "required": [
+        "type",
+        "table"
+    ]
+}

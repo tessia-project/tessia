@@ -65,7 +65,7 @@ class SystemModelResource(SecureResource):
         name = fields.String(
             title=DESC['name'], description=DESC['name'])
         arch = fields.String(
-            title=DESC['arch'], description=DESC['arch'], enum=['s390x'])
+            title=DESC['arch'], description=DESC['arch'])
         model = fields.String(
             title=DESC['model'], description=DESC['model'])
         submodel = fields.String(

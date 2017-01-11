@@ -1,0 +1,45 @@
+{
+    "oneOf": [
+        {
+            "title": "FCP",
+            "type": "object",
+            "properties": {
+                "multipath": {
+                    "type": "boolean"
+                },
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "devno": {
+                                "type": "string",
+                                "pattern": "^(([a-fA-F0-9]\\.){2})?[a-fA-F0-9]{4}$"
+                            },
+                            "wwpns": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "minItems": 1
+                            }
+                        },
+                        "required": [
+                            "devno",
+                            "wwpns"
+                        ]
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "multipath",
+                "paths"
+            ]
+        },
+        {
+            "title": "Others, at the moment not specified",
+            "type": "null"
+        }
+    ]
+}

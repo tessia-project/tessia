@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Unit test for net_zones resource module
+Unit test for ip_addresses resource module
 """
 
 #
@@ -22,6 +22,9 @@ Unit test for net_zones resource module
 from tests.unit.api.resources.secure_resource import TestSecureResource
 from tessia_engine.db import models
 
+import ipaddress
+import json
+
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -29,26 +32,30 @@ from tessia_engine.db import models
 #
 # CODE
 #
-class TestNetZone(TestSecureResource):
+class TestIpAddress(TestSecureResource):
     """
-    Validates the NetZone resource
+    Validates the IpAddress resource
     """
     # entry point for resource in api
-    RESOURCE_URL = '/net-zones'
+    RESOURCE_URL = '/ip-addresses'
     # model associated with this resource
-    RESOURCE_MODEL = models.NetZone
+    RESOURCE_MODEL = models.IpAddress
 
     @classmethod
     def _entry_gen(cls):
         """
         Generator for producing new entries for database insertion.
         """
-        index = 0
+        # the ip must match the 'cpc0 shared' entry pre-populated by DbUnit
+        network_obj = ipaddress.ip_network('10.1.0.0/16')
+        # starts at 5 because sample entry uses previous ips
+        index = 5
         while True:
             data = {
                 'project': cls._db_entries['Project'][0]['name'],
-                'desc': '- Zone with some *markdown*',
-                'name': 'new-zone {}'.format(index)
+                'desc': '- Ip address with some *markdown*',
+                'address': str(network_obj[index]),
+                'subnet': 'cpc0 shared',
             }
             index += 1
             yield data
@@ -59,13 +66,7 @@ class TestNetZone(TestSecureResource):
         Exercise the scenario where a user with permissions creates an item
         by specifying all possible fields.
         """
-        logins = [
-            'user_user@domain.com',
-            'user_privileged@domain.com',
-            'user_project_admin@domain.com',
-            'user_hw_admin@domain.com',
-            'user_admin@domain.com'
-        ]
+        logins = ['user_hw_admin@domain.com', 'user_admin@domain.com']
 
         self._test_add_all_fields_many_roles(logins)
     # test_add_all_fields_many_roles()
@@ -77,6 +78,9 @@ class TestNetZone(TestSecureResource):
         """
         logins = [
             'user_restricted@domain.com',
+            'user_user@domain.com',
+            'user_privileged@domain.com',
+            'user_project_admin@domain.com',
         ]
 
         self._test_add_all_fields_no_role(logins)
@@ -90,19 +94,9 @@ class TestNetZone(TestSecureResource):
         # the fields to be omitted and their expected values on response
         pop_fields = [
             ('desc', None),
-            ('project', self._db_entries['Project'][0]['name']),
         ]
         self._test_add_mandatory_fields('user_hw_admin@domain.com', pop_fields)
     # test_add_mandatory_fields()
-
-    def test_add_missing_field(self):
-        """
-        Test if api correctly reports error when a mandatory field is missing
-        during creation.
-        """
-        pop_fields = ['name']
-        self._test_add_missing_field('user_hw_admin@domain.com', pop_fields)
-    # test_add_missing_field()
 
     def test_add_mandatory_fields_as_admin(self):
         """
@@ -112,13 +106,22 @@ class TestNetZone(TestSecureResource):
         self._test_add_mandatory_fields_as_admin('user_admin@domain.com')
     # test_add_mandatory_fields_as_admin()
 
+    def test_add_missing_field(self):
+        """
+        Test if api correctly reports error when a mandatory field is missing
+        during creation.
+        """
+        pop_fields = ['address', 'subnet']
+        self._test_add_missing_field('user_hw_admin@domain.com', pop_fields)
+    # test_add_missing_field()
+
     def test_add_update_conflict(self):
         """
         Test two scenarios:
-        1- add an item with a name that already exists
-        2- update an item to a name that already exists
+        1- add an item with an address/subnet combination that already exists
+        2- update an item to a combination that already exists
         """
-        self._test_add_update_conflict('user_hw_admin@domain.com', 'name')
+        self._test_add_update_conflict('user_hw_admin@domain.com', 'address')
     # test_update_conflict()
 
     def test_add_update_wrong_field(self):
@@ -126,13 +129,96 @@ class TestNetZone(TestSecureResource):
         Test if api correctly reports error when invalid values are used for
         a field during creation and update.
         """
+        error_re = "^The value '{}={}' is invalid: .*$"
         # specify fields with wrong types
         wrong_data = [
-            ('name', 5),
+            (
+                'address',
+                'something wrong',
+                error_re.format('address', 'something wrong'),
+            ),
+            (
+                'address',
+                '192.256.0.1',
+                error_re.format('address', '192.256.0.1'),
+            ),
             ('desc', False),
+            ('desc', 5),
+            ('project', 5),
+            ('project', True),
+            ('owner', False),
+            ('owner', 5),
+            ('subnet', 5),
+            ('subnet', None),
+            ('subnet', True),
         ]
         self._test_add_update_wrong_field(
             'user_hw_admin@domain.com', wrong_data)
+
+        # test special cases where address is valid but not within subnet's
+        # address range
+        data = next(self._get_next_entry)
+
+        def validate_resp(resp, address):
+            """Helper validator"""
+            self.assertEqual(resp.status_code, 400) # pylint: disable=no-member
+            msg = (
+                "The value 'address={}' is invalid: ip not within "
+                "subnet address range".format(address)
+            )
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(msg, body['message'])
+        # validate_resp()
+
+        # exercise a creation
+        data['address'] = '192.168.1.5'
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+        validate_resp(resp, data['address'])
+
+        # exercise update, create an item with good values first
+        item = self._create_many_entries('user_hw_admin@domain.com', 1)[0][0]
+
+        # 1- only update the address, subnet doesn't change
+        update_fields = {
+            'id': item['id'],
+            'address': '192.168.1.5',
+        }
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        validate_resp(resp, update_fields['address'])
+
+        # 2- update both, create a target subnet first
+        subnet = models.Subnet(
+            address='172.10.0.0/24',
+            gateway=None,
+            dns_1=None,
+            dns_2=None,
+            vlan=None,
+            zone='cpc0',
+            name='some_subnet',
+            owner='user_hw_admin@domain.com',
+            modifier='user_hw_admin@domain.com',
+            project=self._db_entries['Project'][0]['name'],
+            desc='some description'
+        )
+        self.db.session.add(subnet)
+        self.db.session.commit()
+        # set the update data
+        update_fields['subnet'] = subnet.name
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        validate_resp(resp, update_fields['address'])
+
+        # 3- only update the subnet, address doesn't change
+        update_fields.pop('address')
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        validate_resp(resp, item['address'])
+
+        # clean up subnet entry
+        self.db.session.delete(subnet)
+        self.db.session.commit()
     # test_add_update_wrong_field()
 
     def test_del_many_roles(self):
@@ -147,30 +233,6 @@ class TestNetZone(TestSecureResource):
         ]
         self._test_del_many_roles(combos)
     # test_del_many_roles()
-
-    def test_del_has_dependent(self):
-        """
-        Try to delete an item which has a subnet associated with it.
-        """
-        entry = self._create_many_entries(
-            'user_hw_admin@domain.com', 1)[0][0]
-
-        dep_subnet = models.Subnet(
-            name="some_subnet",
-            zone=entry['name'],
-            address="192.168.0.0/24",
-            modifier="user_hw_admin@domain.com",
-            desc="",
-            vlan=1801,
-            project=self._db_entries['Project'][0]['name'],
-            gateway=None,
-            dns_1=None,
-            dns_2=None,
-            owner="user_hw_admin@domain.com"
-        )
-        self._test_del_has_dependent(
-            'user_hw_admin@domain.com', entry['id'], dep_subnet)
-    # test_del_has_dependent()
 
     def test_del_invalid_id(self):
         """
@@ -228,13 +290,34 @@ class TestNetZone(TestSecureResource):
         """
         Test basic filtering capabilities
         """
+        # a subnet has to be created first so that association works
+        subnet = models.Subnet(
+            address='10.1.0.0/24',
+            gateway=None,
+            dns_1=None,
+            dns_2=None,
+            vlan=None,
+            zone='cpc0',
+            name='some_subnet_for_filter',
+            owner='user_hw_admin@domain.com',
+            modifier='user_hw_admin@domain.com',
+            project=self._db_entries['Project'][0]['name'],
+            desc='some description'
+        )
+        self.db.session.add(subnet)
+        self.db.session.commit()
+
         filter_values = {
             'owner': 'user_user@domain.com',
             'project': self._db_entries['Project'][1]['name'],
-            'name': 'some_name_for_filter',
-            'desc': 'some_desc_for_filter',
+            # use a high address to avoid conflict with previous entries
+            'address': '10.1.0.255',
+            'subnet': subnet.name
         }
         self._test_list_filtered('user_hw_admin@domain.com', filter_values)
+
+        self.db.session.delete(subnet)
+        self.db.session.commit()
     # test_list_filtered()
 
     def test_update_valid_fields(self):
@@ -242,11 +325,29 @@ class TestNetZone(TestSecureResource):
         Exercise the update of existing objects when correct format and
         writable fields are specified.
         """
+        # a subnet has to be created first so that association works
+        subnet = models.Subnet(
+            address='172.10.0.0/24',
+            gateway=None,
+            dns_1=None,
+            dns_2=None,
+            vlan=None,
+            zone='cpc0',
+            name='some_subnet_for_filter',
+            owner='user_hw_admin@domain.com',
+            modifier='user_hw_admin@domain.com',
+            project=self._db_entries['Project'][0]['name'],
+            desc='some description'
+        )
+        self.db.session.add(subnet)
+        self.db.session.commit()
+
         update_fields = {
-            'name': 'some_name',
+            'address': '172.10.0.1',
             'owner': 'user_user@domain.com',
             'project': self._db_entries['Project'][1]['name'],
             'desc': 'some_desc',
+            'subnet': subnet.name
         }
 
         # combinations owner/updater
@@ -261,17 +362,28 @@ class TestNetZone(TestSecureResource):
             ('user_privileged@domain.com', 'user_privileged@domain.com'),
             ('user_project_admin@domain.com', 'user_project_admin@domain.com'),
         ]
-
         self._test_update_valid_fields(
             'user_hw_admin@domain.com', combos, update_fields)
+
+        self.db.session.delete(subnet)
+        self.db.session.commit()
     # test_update_valid_fields()
+
+    def test_update_assoc_error(self):
+        """
+        Try to update a FK field to a value that has no entry in the associated
+        table.
+        """
+        self._test_update_assoc_error(
+            'user_admin@domain.com', 'subnet', 'some_subnet')
+    # test_update_assoc_error()
 
     def test_update_no_role(self):
         """
         Try to update with a user without an appropriate role to do so.
         """
         update_fields = {
-            'name': 'this_should_not_work',
+            'address': '10.1.0.255',
         }
         logins = [
             'user_restricted@domain.com',
@@ -282,4 +394,5 @@ class TestNetZone(TestSecureResource):
         self._test_update_no_role(
             'user_hw_admin@domain.com', logins, update_fields)
     # test_update_no_role()
-# TestNetZone
+
+# TestIpAddress

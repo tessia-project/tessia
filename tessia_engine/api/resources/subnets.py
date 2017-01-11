@@ -20,8 +20,11 @@ Resource definition
 # IMPORTS
 #
 from flask_potion import fields
+from tessia_engine.api.exceptions import BaseHttpError
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import Subnet
+
+import ipaddress
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -71,13 +74,13 @@ class SubnetResource(SecureResource):
         # we set both
         name = fields.String(
             title=DESC['name'], description=DESC['name'])
-        address = fields.Uri(
+        address = fields.String(
             title=DESC['address'], description=DESC['address'])
-        gateway = fields.Uri(
+        gateway = fields.String(
             title=DESC['gateway'], description=DESC['gateway'], nullable=True)
-        dns_1 = fields.Uri(
+        dns_1 = fields.String(
             title=DESC['dns_1'], description=DESC['dns_1'], nullable=True)
-        dns_2 = fields.Uri(
+        dns_2 = fields.String(
             title=DESC['dns_2'], description=DESC['dns_2'], nullable=True)
         vlan = fields.PositiveInteger(
             title=DESC['vlan'], description=DESC['vlan'], nullable=True)
@@ -94,5 +97,137 @@ class SubnetResource(SecureResource):
         # relations
         zone = fields.String(
             title=DESC['zone'], description=DESC['zone'])
+
+    @staticmethod
+    def _assert_address(address, field_name, network=False):
+        """
+        Assert that address is a valid ip address.
+
+        Args:
+            address (str): network or ip address
+            field_name (str): field name to report in case of error
+            network (bool): whether it is a network address
+
+        Raises:
+            BaseHttpError: in case provided address is invalid
+
+        Returns:
+            None
+        """
+        if address is None:
+            return
+        try:
+            if network:
+                ipaddress.ip_network(address, strict=True)
+            else:
+                ipaddress.ip_address(address)
+        except ValueError as exc:
+            msg = "The value '{}={}' is invalid: {}".format(
+                field_name, address, str(exc))
+            raise BaseHttpError(code=400, msg=msg)
+    # _assert_address()
+
+    @staticmethod
+    def _assert_gw_range(address, gateway, gw_changed):
+        """
+        Assert that gateway is a valid ip address (i.e. contained in subnet's
+        address range)
+
+        Args:
+            address (str): network ip address
+            gateway (str): gateway ip address
+            gw_changed (bool): whether the gateway is being changed or not
+
+        Raises:
+            BaseHttpError: in case provided gateway ip is invalid
+
+        Returns:
+            None
+        """
+        if gateway is None:
+            return
+
+        address_obj = ipaddress.ip_network(address, strict=True)
+        gw_obj = ipaddress.ip_address(gateway)
+
+        # ip within subnet range: nothing to do
+        if gw_obj in address_obj.hosts():
+            return
+
+        if gw_changed:
+            msg = ("The value 'gateway={}' is invalid: ip not within "
+                   "subnet address range".format(gateway))
+        else:
+            msg = (
+                "The value 'address={}' is invalid: 'gateway={}' must be "
+                "updated too to match new address range".format(
+                    address, gateway)
+            )
+
+        raise BaseHttpError(code=400, msg=msg)
+    # _assert_gw_range()
+
+    def do_create(self, properties):
+        """
+        Overriden method to perform sanity checks on the address and gateway
+        combinations. See parent class for complete docstring.
+        """
+        for field in ('dns_1', 'dns_2'):
+            value = properties.get(field)
+            self._assert_address(value, field)
+
+        # verify if address is a valid ip
+        self._assert_address(
+            properties['address'], 'address', network=True)
+
+        # gateway specified: perform validation
+        if 'gateway' in properties:
+            gateway = properties['gateway']
+            # check if it's a valid ip
+            self._assert_address(gateway, 'gateway')
+            # validate it's within the subnet address range
+            self._assert_gw_range(properties['address'], gateway, True)
+
+        return super().do_create(properties)
+    # do_create()
+
+    def do_update(self, properties, id):
+        # pylint: disable=invalid-name,redefined-builtin
+        """
+        Overriden method to perform sanity checks on the address and gateway
+        combinations. See parent class for complete docstring.
+        """
+        for field in ('dns_1', 'dns_2'):
+            value = properties.get(field)
+            self._assert_address(value, field)
+
+        # network address changed: verify new value
+        if 'address' in properties:
+            address = properties['address']
+            # validate it is a valid network ip
+            self._assert_address(address, 'address', network=True)
+
+            # gateway changed: validate new value and subnet range
+            if 'gateway' in properties:
+                gateway = properties['gateway']
+                self._assert_address(gateway, 'gateway')
+                self._assert_gw_range(address, gateway, True)
+            # gateway not changed: check if gateway is still valid for new
+            # network address
+            else:
+                gateway = self.manager.read(id).gateway
+                self._assert_gw_range(address, gateway, False)
+
+        # gateway changed: verify new value and if it fits the subnet's
+        # address range
+        elif 'gateway' in properties:
+            gateway = properties['gateway']
+            self._assert_address(gateway, 'gateway')
+            # retrieve existing address value
+            address = self.manager.read(id).address
+            self._assert_gw_range(address, gateway, True)
+
+        return super().do_update(properties, id)
+    # do_update()
 
 # SubnetResource

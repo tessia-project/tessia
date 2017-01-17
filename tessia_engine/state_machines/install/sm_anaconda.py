@@ -46,15 +46,27 @@ class SmAnaconda(SmBase):
         self._logger = logging.getLogger(__name__)
     # __init__()
 
-    def _add_stable_osname(self, iface):
-        attributes = iface["attributes"]
-        devicenr = attributes.get("devicenr").split(",")
-        # The control read device number is used to create a
-        # stable device name for OSA network interfaces.
-        cr_devicenr = devicenr[0]
-        iface["cr_devicenr"] = cr_devicenr
-        iface["stable_osname"] = ("enccw0.0." +
-                                  cr_devicenr.lstrip("0x"))
+    @staticmethod
+    def _add_systemd_osname(iface):
+        """
+        Determine and add a key to the iface dict representing the kernel
+        device name used by the installer for the given network interface
+
+        Args:
+            iface (dict): network interface information dict
+
+        Returns:
+            None
+        """
+        devicenr = iface['attributes']["devicenr"].split(",")
+        # The control read device number is used to create a predictable
+        # device name for OSA network interfaces (for details see
+        # https://www.freedesktop.org/wiki/Software/systemd/
+        # PredictableNetworkInterfaceNames/)
+        iface["systemd_osname"] = (
+            "enccw0.0.{}".format(devicenr[0].lstrip("0x"))
+        )
+    # _add_systemd_osname()
 
     def collect_info(self):
         """
@@ -68,11 +80,10 @@ class SmAnaconda(SmBase):
         self._info["sha512rootpwd"] = crypt.crypt(
             self._profile.credentials["password"])
         self._info['hostname'] = self._system.hostname
-        self._info['is_kvm'] = self._profile.system_rel.type == "KVM"
 
         for iface in self._info["ifaces"]:
             if iface["type"] == "OSA":
-                self._add_stable_osname(iface)
+                self._add_systemd_osname(iface)
     # collect_info()
 
     def _get_kargs(self):
@@ -82,29 +93,16 @@ class SmAnaconda(SmBase):
         Returns:
             str: kernel cmdline string
         """
-        repo = self._os.repository_rel
-
-        repo_url = repo.url
         hostname = self._profile.system_rel.hostname
-        ip_addr = self._gw_iface['ip']
-        gateway_ip = self._gw_iface['gateway']
-        iface_osname = self._gw_iface['osname']
-        nameserver = self._gw_iface['dns_1']
-        cidr_prefix = self._gw_iface['cidr_prefix']
-        iface_attributes = self._gw_iface['attributes']
-        is_kvm = self._profile.system_rel.type == "KVM"
 
         template_cmdline = jinja2.Template(self._os.cmdline)
 
-        cmdline = (
-            template_cmdline.render(repo=repo_url, ip=ip_addr,
-                                    cidr_prefix=cidr_prefix,
-                                    gateway=gateway_ip, hostname=hostname,
-                                    iface_osname=iface_osname,
-                                    nameserver=nameserver, is_kvm=is_kvm,
-                                    iface_attributes=iface_attributes,
-                                    autofile=self._autofile_url,
-                                    config=self._info))
+        cmdline = template_cmdline.render(
+            repo=self._repo.url,
+            gw_iface=self._gw_iface,
+            hostname=hostname,
+            autofile=self._autofile_url,
+            config=self._info)
 
         return cmdline
     # _get_kargs()
@@ -125,7 +123,7 @@ class SmAnaconda(SmBase):
             try:
                 ssh_client.login(hostname, user=user, passwd=password)
                 return ssh_client
-            except ConnectionError:
+            except (ConnectionError, ConnectionResetError):
                 self._logger.warning("connection not available yet, "
                                      "retrying in %d seconds.", timeout)
                 sleep(timeout)
@@ -140,7 +138,7 @@ class SmAnaconda(SmBase):
         ssh_client = self._get_ssh_client()
         shell = ssh_client.open_shell()
 
-        ret, out = shell.run("echo 1")
+        ret = shell.run("echo 1")
         if ret != 0:
             raise RuntimeError("Unable to connect to the system.")
 

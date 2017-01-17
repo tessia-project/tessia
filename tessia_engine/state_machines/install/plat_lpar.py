@@ -21,8 +21,7 @@ Module to deal with operations on LPARs
 #
 from tessia_baselib.common.ssh.client import SshClient
 from tessia_engine.state_machines.install.plat_base import PlatBase
-
-import os
+from urllib.parse import urljoin
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -35,10 +34,6 @@ class PlatLpar(PlatBase):
     """
     Handling for KVM guests
     """
-    def __init__(self, hyp_profile, guest_profile, os_entry, gw_iface):
-        super().__init__(hyp_profile, guest_profile, os_entry, gw_iface)
-    # __init__()
-
     def _get_start_params(self, kargs):
         """
         Return the start parameters specific to LPAR
@@ -50,12 +45,12 @@ class PlatLpar(PlatBase):
             dict: in format expected by tessia_baselibs' parameters option
         """
         # repository related information
-        repo = self._os.repository_rel
-        kernel_uri = os.path.join(repo.url, "./" + repo.kernel)
-        initrd_uri = os.path.join(repo.url, "./" + repo.initrd)
+        repo = self._repo
+        kernel_uri = urljoin(repo.url + '/', repo.kernel.strip('/'))
+        initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
 
         params = {
-            "cpc_name": self._hyp_model.name.upper(),
+            "cpc_name": self._hyp_system.name.upper(),
             "boot_params": {
                 "boot_method": "network",
                 "kernel_url": kernel_uri,
@@ -65,7 +60,8 @@ class PlatLpar(PlatBase):
                 "ip": self._gw_iface['ip'],
                 "mask": self._gw_iface["mask"],
                 "gateway": self._gw_iface['gateway'],
-                "device": self._gw_iface['attributes']['devicenr'].split(",")[0].lstrip("0x"),
+                "device": self._gw_iface['attributes']['devicenr'].split(
+                    ",")[0].lstrip("0x"),
             }
         }
 
@@ -88,11 +84,8 @@ class PlatLpar(PlatBase):
         ssh_client.login(hostname, user=user, passwd=password,
                          timeout=10)
         shell = ssh_client.open_shell()
-        try:
-            shell.run('reboot', timeout=10)
-        except TimeoutError:
-            pass
+        shell.run('nohup reboot &>/dev/null &', ignore_ret=True)
         shell.close()
         ssh_client.logoff()
     # reboot()
-# PlatKvm
+# PlatLpar

@@ -862,7 +862,7 @@ class OperatingSystem(CommonMixin, BASE):
     desc = Column(String, nullable=False)
     # The template for the cmdline
     cmdline = Column(String)
-    repository_rel = relationship("Repository", uselist=False)
+    repository_rel = relationship("Repository", uselist=True)
 
     def __repr__(self):
         """Object representation"""

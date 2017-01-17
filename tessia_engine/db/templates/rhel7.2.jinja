@@ -1,4 +1,3 @@
-#version=DEVEL
 # System authorization information
 auth --enableshadow --passalgo=sha512
 sshpw --username=root {{config["credentials"]["password"]}} --plaintext
@@ -18,7 +17,7 @@ lang en_US.UTF-8
 
 # Network information
 {% for iface in config["ifaces"] %}
-network  --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["stable_osname"]}} --ip={{iface["ip"]}} --netmask={{iface["mask"]}} --noipv6 --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}} {% endif %}
+network  --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["systemd_osname"]}} --ip={{iface["ip"]}} --netmask={{iface["mask"]}} --noipv6 --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}} {% endif %}
 {% endfor %}
 network  --hostname={{config["hostname"]}}
 
@@ -49,12 +48,12 @@ kexec-tools
 
 %end
 
-{% if not config["is_kvm"] %}
+{% if config["system_type"] != "KVM" %}
 %post
 {% for iface in config["ifaces"] %}
-sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["stable_osname"]}}
-echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["stable_osname"]}}
-mv /etc/sysconfig/network-scripts/ifcfg-{{iface["stable_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
+sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
+echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
+mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
 %end
 {% endfor %}
 {% endif %}

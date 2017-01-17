@@ -26,6 +26,7 @@ from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import SystemIface
 from tessia_engine.state_machines.install.plat_lpar import PlatLpar
 from tessia_engine.state_machines.install.plat_kvm import PlatKvm
+from urllib.parse import urljoin
 
 import abc
 import jinja2
@@ -60,6 +61,12 @@ class SmBase(metaclass=abc.ABCMeta):
         self._system = profile_entry.system_rel
         self._logger = logging.getLogger(__name__)
 
+        # TODO: allow usage of multiple/additional repositories
+        try:
+            self._repo = self._os.repository_rel[0]
+        except IndexError:
+            raise RuntimeError('No repository available for the specified OS')
+
         # the network iface used as gateway
         # TODO: check gateway_iface early (before job is started)
         try:
@@ -90,16 +97,16 @@ class SmBase(metaclass=abc.ABCMeta):
             self._profile.hypervisor_profile_rel,
             self._profile,
             self._os,
+            self._repo,
             self._gw_iface)
 
         # the path and url for the auto file
         config = Config.get_config()
         autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
-        # TODO: use os.path.join instead
-        self._autofile_url = (config.get("install_machine").get("url") + "/"
-                              + autofile_name)
-        self._autofile_path = (config.get("install_machine").get("www_dir")
-                               + "/" + autofile_name)
+        self._autofile_url = urljoin(
+            config["install_machine"]["url"], autofile_name)
+        self._autofile_path = os.path.join(
+            config["install_machine"]["www_dir"], autofile_name)
         # set during collect_info state
         self._info = None
     # __init__()
@@ -127,20 +134,18 @@ class SmBase(metaclass=abc.ABCMeta):
         Returns:
             dict: a dictionary containing the parsed information.
         """
-        attributes = iface.attributes
-        result = {"attributes": attributes}
+        result = {"attributes": iface.attributes}
         result["type"] = iface.type
         result["ip"] = iface.ip_address_rel.address
         result["mac_addr"] = iface.mac_address
         cidr_addr = iface.ip_address_rel.subnet_rel.address
-        result["subnet"], cidr_prefix = cidr_addr.split("/")
+        result["subnet"], result["mask_bits"] = cidr_addr.split("/")
         # We need to convert the network mask from the cidr prefix format
         # to an ip mask format.
         result["mask"] = inet_ntoa(
-            ((0xffffffff << (32 - int(cidr_prefix)))
+            ((0xffffffff << (32 - int(result["mask_bits"])))
              & 0xffffffff).to_bytes(4, byteorder="big")
         )
-        result["cidr_prefix"] = cidr_prefix
         result["osname"] = iface.osname
         result["is_gateway"] = gateway_iface
         if gateway_iface:
@@ -196,7 +201,7 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Check if the installation was correctly performed.
         """
-        # Each distro will have its own implementation
+        # Each operating system will have its own implementation
         pass
     # check_installation()
 
@@ -223,6 +228,7 @@ class SmBase(metaclass=abc.ABCMeta):
             'ifaces': [],
             'repos': [],
             'svols': [],
+            'system_type': self._profile.system_rel.type
         }
 
         # iterate over all available volumes and ifaces and filter data for
@@ -233,9 +239,7 @@ class SmBase(metaclass=abc.ABCMeta):
             info['ifaces'].append(self._parse_iface(
                 iface, iface.osname == self._gw_iface['osname']))
 
-        # TODO: allow usage of additional repositories
-        repo_url = self._os.repository_rel.url
-        info['repos'].append(repo_url)
+        info['repos'].append(self._repo.url)
 
         self._info = info
     # collect_info()

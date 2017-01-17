@@ -38,8 +38,8 @@ class PlatBase(metaclass=abc.ABCMeta):
     """
     Base class for all platforms
     """
-    @abc.abstractmethod
-    def __init__(self, hyp_profile, guest_profile, os_entry, gw_iface):
+    def __init__(self, hyp_profile, guest_profile, os_entry, repo_entry,
+                 gw_iface):
         """
         Constructor, store references and create hypervisor object
 
@@ -47,15 +47,17 @@ class PlatBase(metaclass=abc.ABCMeta):
             hyp_profile (SystemProfile): hypervisor profile's db entry
             guest_profile (SystemProfile): guest profile's db entry
             os_entry (OperatingSystem): db's entry
+            repo_entry (Repository): entry of install source repository
             gw_iface (dict): gateway network interface
 
         Raises:
             RuntimeError: if hypervisor type in profile is unknown
         """
-        self._hyp_model = hyp_profile.system_rel
+        self._hyp_system = hyp_profile.system_rel
         self._hyp_prof = hyp_profile
         self._guest_prof = guest_profile
         self._os = os_entry
+        self._repo = repo_entry
         self._gw_iface = gw_iface
 
         # TODO: normalize names between baselib and engine to get rid of this
@@ -80,8 +82,8 @@ class PlatBase(metaclass=abc.ABCMeta):
         """
         return Hypervisor(
             self._hyp_type,
-            self._hyp_model.name,
-            self._hyp_model.hostname,
+            self._hyp_system.name,
+            self._hyp_system.hostname,
             self._hyp_prof.credentials['username'],
             self._hyp_prof.credentials['password'],
             None)
@@ -153,7 +155,7 @@ class PlatBase(metaclass=abc.ABCMeta):
             }
         else:
             params = self._get_start_params(kargs)
-            
+
         self._hyp_obj.start(guest_name, cpu, memory, params)
     # boot()
 

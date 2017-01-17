@@ -20,8 +20,7 @@ Module to deal with operations on KVM guests
 # IMPORTS
 #
 from tessia_engine.state_machines.install.plat_base import PlatBase
-
-import os
+from urllib.parse import urljoin
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -34,10 +33,6 @@ class PlatKvm(PlatBase):
     """
     Handling for KVM guests
     """
-    def __init__(self, hyp_profile, guest_profile, os_entry, gw_iface):
-        super().__init__(hyp_profile, guest_profile, os_entry, gw_iface)
-    # __init__()
-
     def _get_start_params(self, kargs):
         """
         Return the start parameters specific to KVM guests
@@ -50,8 +45,8 @@ class PlatKvm(PlatBase):
         """
         # repository related information
         repo = self._os.repository_rel
-        kernel_uri = os.path.join(repo.url, './' + repo.kernel)
-        initrd_uri = os.path.join(repo.url, './' + repo.initrd)
+        kernel_uri = urljoin(repo.url + '/', repo.kernel.strip('/'))
+        initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
 
         params = {
             "boot_method": "network",
@@ -64,5 +59,4 @@ class PlatKvm(PlatBase):
 
         return params
     # _get_start_params()
-
 # PlatKvm

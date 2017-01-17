@@ -39,35 +39,19 @@ IFACE_TYPES = [
 ]
 
 OPERATING_SYSTEMS = [
-    ['rhel7.2', 'rhel', '7', '2', 'RHEL 7.2 GA', "rhel7.2_cmdline.jinja"]
+    'rhel7.2,rhel,7,2,RHEL 7.2 GA'
 ]
 
-REPOSITORIES = [
-    ['rhel7.2',
-     'http://installserver.domain.com/redhat/s390x/RHEL7.2/DVD/',
-     '/images/kernel.img', '/images/initrd.img']
+USERS = [
+    'System user,System user for common resources,system,false,true'
 ]
 
-DEFAULT_USERS = [
-    ["Default Admin", True, "Admin", False, "tessia-admin@domain.com"]
-]
-
-DEFAULT_USER_KEYS = [
-    ["tessia-admin@domain.com", "c129600154774d14972dc6815b9a31ec",
-     "51203bad07c04fefbd1ed41ea7afe0b9"]
-]
-
-DEFAULT_USER_ROLES = [
-    ["Default Project", "tessia-admin@domain.com", "User"]
-]
-
-DEFAULT_PROJECTS = [
-    ["Default Project", "Default project for common resources"]
+PROJECTS = [
+    'System project,System project for common resources'
 ]
 
 TEMPLATES = [
-    ["RHEL7.2", "Template for RHEL7.2", "tessia-admin@domain.com",
-     "tessia-admin@domain.com", "Default Project", "rhel7.2", "rhel7.2.jinja"]
+    "RHEL7.2,Template for RHEL7.2,system,System project,rhel7.2"
 ]
 
 ROLES = [
@@ -201,16 +185,21 @@ def get_oses():
     Create the supported operating systems
     """
     data = []
-    field_names = ["name", "type", "major", "minor", "desc", "cmdline"]
     for row in OPERATING_SYSTEMS:
-        # to avoid changing the constants definitions
-        new_row = row[:]
-        template_filename = new_row[-1]
+        row = row.split(',', 5)
+        template_filename = '{}_cmdline.jinja'.format(row[0])
         with open(TEMPLATES_DIR + template_filename, "r") as template_file:
-            template = template_file.read()
-        new_row[-1] = template
-
-        data.append({k: v for k, v in zip(field_names, new_row)})
+            template_content = template_file.read()
+        data.append(
+            {
+                'name': row[0],
+                'type': row[1],
+                'major': row[2],
+                'minor': row[3],
+                'desc': row[4],
+                'cmdline': template_content
+            }
+        )
 
     return {'OperatingSystem': data}
 
@@ -219,25 +208,17 @@ def get_projects():
     Create the default projects
     """
     data = []
-    field_names = ["name", "desc"]
-    for row in DEFAULT_PROJECTS:
-        data.append({k: v for k, v in zip(field_names, row)})
+    for row in PROJECTS:
+        row = row.split(',', 2)
+        data.append(
+            {
+                'name': row[0],
+                'desc': row[1],
+            }
+        )
 
     return {"Project": data}
 # get_projects()
-
-def get_repos():
-    """
-    Create the repos for the default os
-    """
-    data = []
-    field_names = ["operating_system", "url", "kernel", "initrd"]
-
-    for row in REPOSITORIES:
-        data.append({k: v for k, v in zip(field_names, row)})
-
-    return {"Repository": data}
-# get_repos()
 
 def get_roles():
     """
@@ -344,55 +325,45 @@ def get_templates():
     Create the supported operating systems
     """
     data = []
-    field_names = ["name", "desc", "owner", "modifier", "project",
-                   "operating_system", "content"]
     for row in TEMPLATES:
-        # to avoid changing the constants definitions
-        new_row = row[:]
-        template_filename = new_row[-1]
+        row = row.split(',', 5)
+        template_filename = '{}.jinja'.format(row[4])
         with open(TEMPLATES_DIR + template_filename, "r") as template_file:
-            template = template_file.read()
-        new_row[-1] = template
-
-        data.append({k: v for k, v in zip(field_names, new_row)})
+            template_content = template_file.read()
+        data.append(
+            {
+                'name': row[0],
+                'desc': row[1],
+                'owner': row[2],
+                'modifier': row[2],
+                'project': row[3],
+                'operating_system': row[4],
+                'content': template_content
+            }
+        )
 
     return {'Template': data}
+# get_templates()
 
 def get_users():
     """
     Create the default users in the application.
     """
     data = []
-    field_names = ["name", "admin", "title", "restricted", "login"]
-
-    for row in DEFAULT_USERS:
-        data.append({k: v for k, v in zip(field_names, row)})
+    for row in USERS:
+        row = row.split(',', 5)
+        data.append(
+            {
+                'name': row[0],
+                'title': row[1],
+                'login': row[2],
+                'admin': bool(row[3] == 'true'),
+                'restricted': bool(row[4] == 'true'),
+            }
+        )
 
     return {"User": data}
 # get_users()
-
-def get_user_roles():
-    """
-    Create the roles for the default users
-    """
-    data = []
-    field_names = ["project", "user", "role"]
-
-    for row in DEFAULT_USER_ROLES:
-        data.append({k: v for k, v in zip(field_names, row)})
-
-    return {"UserRole": data}
-
-def get_user_keys():
-    """
-    Create the api keys of the default users
-    """
-    data = []
-    field_names = ["user", "key_id", "key_secret"]
-    for row in DEFAULT_USER_KEYS:
-        data.append({k: v for k, v in zip(field_names, row)})
-
-    return {"UserKey": data}
 
 def get_volume_types():
     """
@@ -423,11 +394,8 @@ def create_all():
     data.update(get_system_states())
     data.update(get_volume_types())
     data.update(get_users())
-    data.update(get_user_keys())
-    data.update(get_user_roles())
     data.update(get_projects())
     data.update(get_oses())
     data.update(get_templates())
-    data.update(get_repos())
     db_insert(data)
 # create_all()

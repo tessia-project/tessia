@@ -21,9 +21,13 @@ The administratives entries required in the database
 #
 from tessia_engine.db.feeder import db_insert
 
+import os
+
 #
 # CONSTANTS AND DEFINITIONS
 #
+TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates/"
+
 IFACE_TYPES = [
     'OSA,OSA card',
     'KVM_LIBVIRT,KVM interface configured by libvirt',
@@ -32,6 +36,22 @@ IFACE_TYPES = [
     'HSI,Hipersocket',
     'ROCE,PCI card',
     'OVS_VPORT,Openvswitch virtual port',
+]
+
+OPERATING_SYSTEMS = [
+    'rhel7.2,rhel,7,2,RHEL 7.2 GA'
+]
+
+USERS = [
+    'System user,System user for common resources,system,false,true'
+]
+
+PROJECTS = [
+    'System project,System project for common resources'
+]
+
+TEMPLATES = [
+    "RHEL7.2,Template for RHEL7.2,system,System project,rhel7.2"
 ]
 
 ROLES = [
@@ -160,6 +180,46 @@ def get_iface_types():
     return {'IfaceType': data}
 # get_iface_types()
 
+def get_oses():
+    """
+    Create the supported operating systems
+    """
+    data = []
+    for row in OPERATING_SYSTEMS:
+        row = row.split(',', 5)
+        template_filename = '{}_cmdline.jinja'.format(row[0])
+        with open(TEMPLATES_DIR + template_filename, "r") as template_file:
+            template_content = template_file.read()
+        data.append(
+            {
+                'name': row[0],
+                'type': row[1],
+                'major': row[2],
+                'minor': row[3],
+                'desc': row[4],
+                'cmdline': template_content
+            }
+        )
+
+    return {'OperatingSystem': data}
+
+def get_projects():
+    """
+    Create the default projects
+    """
+    data = []
+    for row in PROJECTS:
+        row = row.split(',', 2)
+        data.append(
+            {
+                'name': row[0],
+                'desc': row[1],
+            }
+        )
+
+    return {"Project": data}
+# get_projects()
+
 def get_roles():
     """
     Create the default system roles for users
@@ -260,6 +320,51 @@ def get_system_states():
     return {'SystemState': data}
 # get_system_states()
 
+def get_templates():
+    """
+    Create the supported operating systems
+    """
+    data = []
+    for row in TEMPLATES:
+        row = row.split(',', 5)
+        template_filename = '{}.jinja'.format(row[4])
+        with open(TEMPLATES_DIR + template_filename, "r") as template_file:
+            template_content = template_file.read()
+        data.append(
+            {
+                'name': row[0],
+                'desc': row[1],
+                'owner': row[2],
+                'modifier': row[2],
+                'project': row[3],
+                'operating_system': row[4],
+                'content': template_content
+            }
+        )
+
+    return {'Template': data}
+# get_templates()
+
+def get_users():
+    """
+    Create the default users in the application.
+    """
+    data = []
+    for row in USERS:
+        row = row.split(',', 5)
+        data.append(
+            {
+                'name': row[0],
+                'title': row[1],
+                'login': row[2],
+                'admin': bool(row[3] == 'true'),
+                'restricted': bool(row[4] == 'true'),
+            }
+        )
+
+    return {"User": data}
+# get_users()
+
 def get_volume_types():
     """
     Create the volume types allowed in the application.
@@ -288,6 +393,9 @@ def create_all():
     data.update(get_system_types())
     data.update(get_system_states())
     data.update(get_volume_types())
-
+    data.update(get_users())
+    data.update(get_projects())
+    data.update(get_oses())
+    data.update(get_templates())
     db_insert(data)
 # create_all()

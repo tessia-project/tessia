@@ -855,19 +855,64 @@ class OperatingSystem(CommonMixin, BASE):
     """A supported operating system"""
 
     __tablename__ = 'operating_systems'
-
-    name = Column(String, unique=True, nullable=False)
-    major = Column(String, nullable=False)
-    minor = Column(String)
-    desc = Column(String)
+    name = Column(String, unique=True, index=True)
+    type = Column(String, nullable=False)
+    major = Column(Integer, nullable=False)
+    minor = Column(Integer, nullable=False)
+    desc = Column(String, nullable=False)
+    # The template for the cmdline
+    cmdline = Column(String)
+    repository_rel = relationship("Repository", uselist=True)
 
     def __repr__(self):
         """Object representation"""
-        return "<OperatingSystem(name='{}', major='{}', minor='{}')>".format(
-            self.name, self.major, self.minor)
+        return "<OperatingSystem(type='{}', major='{}', minor='{}')>".format(
+            self.type, self.major, self.minor)
     # __repr__()
 
 # OperatingSystem
+
+class Repository(CommonMixin, BASE):
+    """A repository for an supported operating system"""
+    # Not all operating systems have repositories
+    # that is why we put this information in other table.
+    __tablename__ = "repositories"
+
+    url = Column(String, unique=True, nullable=False)
+    # the path in the repo to the kernel and initrd
+    kernel = Column(String)
+    initrd = Column(String)
+    operating_system_id = Column(Integer,
+                                 ForeignKey('operating_systems.id'),
+                                 index=True)
+
+    operating_system_rel = relationship("OperatingSystem", uselist=False)
+
+    @hybrid_property
+    def operating_system(self):
+        """Defines the os attribute pointing to os's name"""
+        return self.operating_system_rel.name
+
+    @operating_system.setter
+    def operating_system(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = OperatingSystem.query.filter_by(name=value).one_or_none()
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'os', OperatingSystem, 'name', value)
+        self.operating_system_id = match.id
+
+    @operating_system.expression
+    def operating_system(cls):
+        """Expression used for performing queries"""
+        return OperatingSystem.name
+
+    def __repr__(self):
+        """Object representation"""
+        return "<Template(name='{}', os='{}')>".format(
+            self.name, self.os_rel.name)
+    # __repr__()
+# Repository
 
 class SystemProfile(CommonMixin, BASE):
     """A system activation profile"""
@@ -1004,6 +1049,44 @@ class SystemProfile(CommonMixin, BASE):
         return "<SystemProfile(name='{}'>".format(self.name)
     # __repr__()
 # SystemProfile
+
+class Template(CommonMixin, ResourceMixin, BASE):
+    """A template for a InstallMachine"""
+    __tablename__ = "templates"
+
+    name = Column(String, unique=True, nullable=False)
+    content = Column(String)
+    operating_system_id = Column(
+        Integer, ForeignKey('operating_systems.id'), index=True)
+
+    # relationships
+    operating_system_rel = relationship("OperatingSystem", uselist=False)
+
+    @hybrid_property
+    def operating_system(self):
+        """Defines the os attribute pointing to os's name"""
+        return self.operating_system_rel.name
+
+    @operating_system.setter
+    def operating_system(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = OperatingSystem.query.filter_by(name=value).one_or_none()
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'os', OperatingSystem, 'name', value)
+        self.operating_system_id = match.id
+
+    @operating_system.expression
+    def operating_system(cls):
+        """Expression used for performing queries"""
+        return OperatingSystem.name
+
+    def __repr__(self):
+        """Object representation"""
+        return "<Template(name='{}', os='{}')>".format(
+            self.name, self.os_rel.name)
+    # __repr__()
+# Template
 
 class SystemIfaceProfileAssociation(BASE):
     """Represents a system iface associated with a system activation profile"""

@@ -1,4 +1,8 @@
 # tessia engine configuration file
+install_machine:
+  # the url must be accessible from the systems being installed
+  url: http://server/
+  www_dir: /srv/www/htdocs/
 
 # database configuration
 db:

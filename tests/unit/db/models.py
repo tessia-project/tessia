@@ -174,6 +174,15 @@ class DbUnit(object):
         """
         cls._db_insert(data)
     # create_entry()
+
+    @classmethod
+    def drop_db(cls):
+        """
+        Drop the test database.
+        """
+        if cls._prepared:
+            models.BASE.metadata.drop_all(connection.MANAGER.engine)
+    # drop_db()
 # DbUnit
 
 class TestModels(TestCase):

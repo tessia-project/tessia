@@ -18,3 +18,5 @@ flask>=0.10.1
 Flask-SQLAlchemy>=2.1
 # help create the endpoints for the rest-api
 flask-potion>=0.12.6
+# template engine for the automatic installation files
+jinja2>=2.8

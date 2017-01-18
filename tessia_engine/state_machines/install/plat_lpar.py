@@ -84,7 +84,7 @@ class PlatLpar(PlatBase):
         ssh_client.login(hostname, user=user, passwd=password,
                          timeout=10)
         shell = ssh_client.open_shell()
-        shell.run('nohup reboot &>/dev/null &', ignore_ret=True)
+        shell.run('nohup reboot &>/dev/null', ignore_ret=True)
         shell.close()
         ssh_client.logoff()
     # reboot()

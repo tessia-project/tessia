@@ -44,7 +44,7 @@ class PlatKvm(PlatBase):
             dict: in format expected by tessia_baselibs' parameters option
         """
         # repository related information
-        repo = self._os.repository_rel
+        repo = self._repo
         kernel_uri = urljoin(repo.url + '/', repo.kernel.strip('/'))
         initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
 

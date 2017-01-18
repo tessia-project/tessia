@@ -107,38 +107,38 @@ class SmAnaconda(SmBase):
         return cmdline
     # _get_kargs()
 
-    def _get_ssh_client(self):
+    def _get_ssh_conn(self):
         """
-        Auxiliary method to get a ssh connection to the target system
+        Auxiliary method to get a ssh connection and shell to the target system
         being installed.
         """
         timeout_trials = [5, 10, 20, 40]
 
-        ssh_client = SshClient()
         hostname = self._profile.system_rel.hostname
         user = self._profile.credentials['username']
         password = self._profile.credentials['password']
 
         for timeout in timeout_trials:
             try:
+                ssh_client = SshClient()
                 ssh_client.login(hostname, user=user, passwd=password)
-                return ssh_client
+                ssh_shell = ssh_client.open_shell()
+                return ssh_client, ssh_shell
             except (ConnectionError, ConnectionResetError):
                 self._logger.warning("connection not available yet, "
                                      "retrying in %d seconds.", timeout)
                 sleep(timeout)
 
         raise ConnectionError("Error while connecting to the target system")
-    # _get_ssh_client()
+    # _get_ssh_conn()
 
     def check_installation(self):
         """
         Makes sure that the installation was successfully completed.
         """
-        ssh_client = self._get_ssh_client()
-        shell = ssh_client.open_shell()
+        ssh_client, shell = self._get_ssh_conn()
 
-        ret = shell.run("echo 1")
+        ret, _ = shell.run("echo 1")
         if ret != 0:
             raise RuntimeError("Unable to connect to the system.")
 
@@ -153,8 +153,7 @@ class SmAnaconda(SmBase):
         indicates that the process has finished. There is a timeout of 10
         minutes.
         """
-        ssh_client = self._get_ssh_client()
-        shell = ssh_client.open_shell()
+        ssh_client, shell = self._get_ssh_conn()
 
         cmd_read_line = "tail -n +{} /tmp/anaconda.log"
         termination_string = "Thread Done: AnaConfigurationThread"

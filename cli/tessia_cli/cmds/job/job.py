@@ -92,7 +92,7 @@ def req_show(request_id, params, **kwargs):
     # the result is paginated so we can iterate on it later
     entries = client.JobRequests.instances(**parsed_filter)
 
-    print_ver_table(REQUEST_FIELDS_GENERIC, entries)
+    print_ver_table(REQUEST_FIELDS_GENERIC, entries, REQUEST_FIELDS_GENERIC)
 
 # req_show()
 
@@ -215,7 +215,7 @@ def show(job_id, params, **kwargs):
     # the result is paginated so we can iterate on it later
     entries = client.Jobs.instances(**parsed_filter)
 
-    print_ver_table(JOB_FIELDS_GENERIC, entries)
+    print_ver_table(JOB_FIELDS_GENERIC, entries, JOB_FIELDS_GENERIC)
 # show()
 
 CMDS = [cancel, output, submit, req_show, show]

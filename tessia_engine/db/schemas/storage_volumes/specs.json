@@ -4,10 +4,7 @@
             "title": "FCP",
             "type": "object",
             "properties": {
-                "multipath": {
-                    "type": "boolean"
-                },
-                "paths": {
+                "adapters": {
                     "type": "array",
                     "items": {
                         "type": "object",
@@ -19,6 +16,7 @@
                             "wwpns": {
                                 "type": "array",
                                 "items": {
+                                    "pattern": "^[a-f0-9]{16}$",
                                     "type": "string"
                                 },
                                 "minItems": 1
@@ -30,16 +28,27 @@
                         ]
                     },
                     "minItems": 1
+                },
+                "multipath": {
+                    "type": "boolean"
+                },
+                "wwid": {
+                    "type": "string",
+                    "pattern": "[a-z0-9]+"
                 }
             },
             "required": [
+                "adapters",
                 "multipath",
-                "paths"
+                "wwid"
             ]
         },
         {
             "title": "Others, at the moment not specified",
-            "type": "null"
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+            }
         }
     ]
 }

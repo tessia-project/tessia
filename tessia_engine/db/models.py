@@ -1084,7 +1084,7 @@ class Template(CommonMixin, ResourceMixin, BASE):
     def __repr__(self):
         """Object representation"""
         return "<Template(name='{}', os='{}')>".format(
-            self.name, self.os_rel.name)
+            self.name, self.operating_system_rel.name)
     # __repr__()
 # Template
 
@@ -1580,7 +1580,7 @@ class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
     type_id = Column(Integer, ForeignKey('volume_types.id'), nullable=False)
     pool_id = Column(Integer, ForeignKey('storage_pools.id'), index=True)
     size = Column(BigInteger, nullable=False)
-    part_table = Column(postgresql.JSONB)
+    part_table = Column(postgresql.JSONB, nullable=False)
     specs = Column(postgresql.JSONB)
     system_attributes = Column(postgresql.JSONB)
 
@@ -1699,10 +1699,25 @@ class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
         """Expression used for performing queries"""
         return StoragePool.name
 
+    @hybrid_property
+    def human_name(self):
+        """Convenient attribute to uniquely represent the volume for humans"""
+        return '{}/{}'.format(self.server, self.volume_id)
+
+    @human_name.setter
+    def human_name(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        # let the ValueError exception go up in case of invalid value
+        self.server, self.volume_id = value.split('/', 1)
+
+    @human_name.expression
+    def human_name(cls):
+        """Expression used for performing queries"""
+        return '{}/{}'.format(cls.server, cls.volume_id)
+
     def __repr__(self):
         """Object representation"""
-        return "<StorageVolume(volume_id='{}', server='{}')>".format(
-            self.volume_id, self.server)
+        return "<StorageVolume(human_name='{}')>".format(self.human_name)
     # __repr__()
 
 # StorageVolume

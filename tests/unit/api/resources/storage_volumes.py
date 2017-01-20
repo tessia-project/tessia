@@ -19,10 +19,11 @@ Unit test for storage_volumes resource module
 #
 # IMPORTS
 #
-from tests.unit.api.resources.secure_resource import TestSecureResource
 from tessia_engine.api.resources.storage_volumes import MSG_INVALID_PTABLE
 from tessia_engine.api.resources.storage_volumes import MSG_INVALID_TYPE
+from tessia_engine.api.resources.storage_volumes import StorageVolumeResource
 from tessia_engine.db import models
+from tests.unit.api.resources.secure_resource import TestSecureResource
 
 import json
 
@@ -41,6 +42,8 @@ class TestStorageVolume(TestSecureResource):
     RESOURCE_URL = '/storage-volumes'
     # model associated with this resource
     RESOURCE_MODEL = models.StorageVolume
+    # potion object associated with this resource
+    RESOURCE_API = StorageVolumeResource
 
     @classmethod
     def _entry_gen(cls):
@@ -50,30 +53,32 @@ class TestStorageVolume(TestSecureResource):
         index = 0
         specs_template = {
             'multipath': True,
-            'paths': [
+            'adapters': [
                 {
                     'devno': '0.0.1800',
                     'wwpns': [
-                        '5005076300C213e5',
-                        '5005076300C213e9'
+                        '5005076300c213e5',
+                        '5005076300c213e9'
                     ]
                 },
                 {
                     'devno': '0.0.1900',
                     'wwpns': [
-                        '5005076300C213e9'
+                        '5005076300c213e9'
                     ]
                 }
             ]
         }
         while True:
+            specs_dict = specs_template.copy()
+            specs_dict['wwid'] = str(10000000000 + index)
             data = {
                 'project': cls._db_entries['Project'][0]['name'],
                 'desc': '- Storage volume with some *markdown*',
                 'volume_id': '%x' % (0x1022400000000000 + index),
                 'size': 10000,
                 'part_table': None,
-                'specs': specs_template,
+                'specs': specs_dict,
                 'type': 'FCP',
                 'server': 'DSK8_x_0',
 

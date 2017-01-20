@@ -32,23 +32,26 @@ from urllib.parse import urljoin
 #
 class PlatLpar(PlatBase):
     """
-    Handling for KVM guests
+    Handling for HMC's LPARs
     """
-    def _get_start_params(self, kargs):
+    def boot(self, kargs):
         """
-        Return the start parameters specific to LPAR
+        Perform a boot operation so that the installation process can start.
 
         Args:
             kargs (str): kernel command line args for os' installer
-
-        Returns:
-            dict: in format expected by tessia_baselibs' parameters option
         """
+        # basic information
+        cpu = self._guest_prof.cpu
+        memory = self._guest_prof.memory
+        guest_name = self._guest_prof.system_rel.name
+
         # repository related information
         repo = self._repo
         kernel_uri = urljoin(repo.url + '/', repo.kernel.strip('/'))
         initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
 
+        # parameters argument, see tessia_baselib schema for details
         params = {
             "cpc_name": self._hyp_system.name.upper(),
             "boot_params": {
@@ -65,8 +68,31 @@ class PlatLpar(PlatBase):
             }
         }
 
-        return params
-    # _get_start_params()
+        self._hyp_obj.start(guest_name, cpu, memory, params)
+    # boot()
+
+    def get_vol_devpath(self, vol_obj):
+        """
+        Given a volume entry, return the correspondent device path on operating
+        system.
+        """
+        if vol_obj.type == 'DASD':
+            vol_id = vol_obj.volume_id
+            if vol_id.find('.') < 0:
+                vol_id = '0.0.' + vol_id
+            return '/dev/disk/by-path/ccw-{}'.format(vol_id)
+
+        elif vol_obj.type == 'FCP':
+            if vol_obj.specs['multipath']:
+                prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
+            else:
+                prefix = '/dev/disk/by-id/scsi-{}'
+            return prefix.format(vol_obj.specs['wwid'])
+
+        raise RuntimeError(
+            "Unknown volume type'{}'".format(vol_obj.type))
+
+    # get_vol_devpath()
 
     def reboot(self, system_profile):
         """

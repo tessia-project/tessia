@@ -215,7 +215,7 @@ class StorageVolumeResource(SecureResource):
             try:
                 server_obj = StorageServer.query.filter_by(name=server).one()
             except:
-                raise ItemNotFoundError('server', server, self.Schema)
+                raise ItemNotFoundError('server', server, self)
         else:
             server_obj = server
         server_map = VOL_SERVER_MAP[server_obj.type]

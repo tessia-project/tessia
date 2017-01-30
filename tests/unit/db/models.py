@@ -385,7 +385,7 @@ class TestModels(TestCase):
                 {
                     'rel_name': 'operating_system_rel',
                     'attr_name': 'operating_system',
-                    'value': 'rhel7.0',
+                    'value': 'RHEL7.0',
                 },
             ]),
             (self.models.SystemIfaceProfileAssociation, [

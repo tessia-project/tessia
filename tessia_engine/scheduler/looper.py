@@ -21,6 +21,7 @@ The main module containing the daemon processing the job requests
 #
 from datetime import datetime
 from jsonschema import validate
+from tessia_engine import state_machines
 from tessia_engine.config import CONF
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import SchedulerRequest
@@ -28,7 +29,6 @@ from tessia_engine.db.models import SchedulerJob
 from tessia_engine.scheduler import resources_manager
 from tessia_engine.scheduler import spawner
 from tessia_engine.scheduler import wrapper
-from tessia_engine import state_machines
 
 import logging
 import multiprocessing
@@ -109,6 +109,11 @@ class Looper(object):
         self._init_manager()
     # __init__()
 
+    def _refresh_and_expunge(self, job):
+        self._session.refresh(job)
+        self._session.expunge(job)
+        return job
+
     def _cancel_active_job(self, request, job):
         """
         Receive a request to stop a job that is still active (running or
@@ -116,7 +121,8 @@ class Looper(object):
 
         Args:
             request (SchedulerRequest): request's model instance
-            job (SchedulerJob): job's model instance
+            job (SchedulerJob): job's model instance with state RUNNING or
+                                CLEANINGUP
         """
         # pid ended or does not belong to this job: post process job and
         # mark request as failed since job had already ended
@@ -155,6 +161,7 @@ class Looper(object):
         # we might consider in future to use a FORCECANCEL request type
         # to be more explicit
         else:
+            # state must be CLEANINGUP here
             # there is a slight chance that the process does not die after a
             # sigkill, this can happen if it is in the middle of a syscall that
             # never ends (uninterruptible sleep) possibly due to some buggy io
@@ -183,7 +190,7 @@ class Looper(object):
             request (SchedulerRequest): request's model instance
         """
         job = self._session.query(SchedulerJob).filter(
-            SchedulerJob.id == request.job_id).one()
+            SchedulerJob.id == request.job_id).one_or_none()
 
         # target job does not exist: request fails. This is very unlikely to
         # occur as the job id is a FK constraint in the request table which
@@ -201,7 +208,8 @@ class Looper(object):
 
         # job already over: mark request as invalid
         elif job.state in (SchedulerJob.STATE_FAILED,
-                           SchedulerJob.STATE_COMPLETED):
+                           SchedulerJob.STATE_COMPLETED,
+                           SchedulerJob.STATE_CANCELED):
             request.state = SchedulerRequest.STATE_FAILED
             request.result = 'Cannot cancel job because it already ended'
             self._session.commit()
@@ -220,6 +228,7 @@ class Looper(object):
         else:
             request.state = SchedulerRequest.STATE_FAILED
             request.result = 'Job is in an unknown state'
+            self._logger.error('Missing state branch in cancel_job')
             self._session.commit()
 
     # _cancel_job()
@@ -295,6 +304,13 @@ class Looper(object):
             self._session.commit()
             return
 
+        if not self._resources_man.validate_resources(resources):
+            request.state = SchedulerRequest.STATE_FAILED
+            request.result = (
+                'Invalid resources. A resource appears twice.')
+            self._session.commit()
+            return
+
         # create job object
         new_job = SchedulerJob(
             requester_id=request.requester_id,
@@ -311,8 +327,12 @@ class Looper(object):
             timeout=request.timeout
         )
 
-        # enqueue job
-        self._resources_man.enqueue(new_job)
+        if not self._resources_man.can_enqueue(new_job):
+            request.state = SchedulerRequest.STATE_FAILED
+            request.result = (
+                'Job would conflict with another scheduled job.')
+            self._session.commit()
+            return
 
         # save to job table
         self._session.add(new_job)
@@ -326,6 +346,11 @@ class Looper(object):
         request.result = 'OK'
 
         self._session.commit()
+
+        # enqueue job
+
+        self._resources_man.enqueue(
+            self._refresh_and_expunge(new_job))
 
     # _submit_job()
 
@@ -348,7 +373,8 @@ class Looper(object):
                     'Job %s has no resources associated', job.id)
                 continue
 
-            self._resources_man.enqueue(job)
+            self._resources_man.enqueue(
+                self._refresh_and_expunge(job))
 
         # get the list of active jobs
         active_jobs = SchedulerJob.query.filter(
@@ -365,7 +391,8 @@ class Looper(object):
                 continue
 
             if self._has_resources(job):
-                self._resources_man.enqueue(job)
+                self._resources_man.set_active(
+                    self._refresh_and_expunge(job))
 
     # _init_manager()
 
@@ -405,13 +432,23 @@ class Looper(object):
 
         try:
             with open(results_file_name, 'r') as results_file:
-                results = results_file.readlines()
-                ret_code = int(results[0].strip())
-                end_date = datetime.strptime(results[1].strip(),
-                                             wrapper.DATE_FORMAT)
+                results_lines = results_file.readlines()
+
+            results = iter(results_lines)
+
+            ret_code = int(next(results).strip())
+
+            cleanup_code = None
+
+            if len(results_lines) > 2:
+                cleanup_code = int(next(results).strip())
+
+            end_date = datetime.strptime(next(results).strip(),
+                                         wrapper.DATE_FORMAT)
         except Exception as exc:
-            self._logger.warning('Reading of result file for job %s: %s',
-                                 job.id, str(exc))
+            self._logger.warning(
+                'Reading of result file for job %s: %s failed',
+                job.id, str(exc))
             job.state = SchedulerJob.STATE_FAILED
             job.result = 'Job ended in unknown state'
             job.end_date = datetime.utcnow()
@@ -421,25 +458,37 @@ class Looper(object):
         # success return code: mark job as finished successfully
         if ret_code == wrapper.RESULT_SUCCESS:
             job.state = SchedulerJob.STATE_COMPLETED
-            job.result = 'Job finished successfully'
-        # job timed out: mark as failed
-        elif ret_code == wrapper.RESULT_TIMEOUT:
+            result = 'Job finished successfully.'
+        elif (ret_code == wrapper.RESULT_CANCELED
+              or ret_code == wrapper.RESULT_TIMEOUT):
+
+            job.state = SchedulerJob.STATE_CANCELED
+
+            if ret_code == wrapper.RESULT_CANCELED:
+                result = 'Job canceled.'
+            else:
+                assert ret_code == wrapper.RESULT_TIMEOUT
+                result = 'Job timed out.'
+
+            if cleanup_code is None:
+                # Job was already cleaning up before being interrupted.
+                result += " Normal cleanup was interrupted."
+            elif cleanup_code == wrapper.RESULT_TIMEOUT:
+                result += " Cleanup timed out."
+            elif cleanup_code == wrapper.RESULT_EXCEPTION:
+                result += " Cleanup failed abnormally."
+            elif cleanup_code == wrapper.RESULT_SUCCESS:
+                result += " Cleanup completed."
+            else:
+                result += " Cleanup ended with error exit code."
+        elif ret_code == wrapper.RESULT_EXCEPTION:
             job.state = SchedulerJob.STATE_FAILED
-            job.result = 'Job aborted due to timeout'
-        # job canceled by user: mark as canceled
-        elif ret_code == wrapper.RESULT_CANCELED:
-            job.state = SchedulerJob.STATE_CANCELED
-            job.result = 'Job canceled by user'
-        # job timed out while cleaning up: mark as canceled and report the
-        # timeout
-        elif ret_code == wrapper.RESULT_CANCELED_TIMEOUT:
-            job.state = SchedulerJob.STATE_CANCELED
-            job.result = 'Job canceled and cleanup timed out'
-        # unknown error code: execution failed
+            result = 'Job failed abnormally.'
         else:
             job.state = SchedulerJob.STATE_FAILED
-            job.result = 'Job ended with error exit code'
+            result = 'Job ended with error exit code'
 
+        job.result = result
         job.end_date = end_date
         self._session.commit()
     # _post_process_job()
@@ -466,7 +515,9 @@ class Looper(object):
             try:
                 process = multiprocessing.Process(
                     target=spawner.spawn,
-                    args=(job_dir, job.job_type, job.parameters))
+                    args=(
+                        job_dir, job.job_type, job.parameters,
+                        job.timeout))
 
                 process.start()
 
@@ -488,12 +539,11 @@ class Looper(object):
             job.state = SchedulerJob.STATE_RUNNING
             job.result = 'Job is running'
             job.start_date = datetime.utcnow()
-
-            self._resources_man.enqueue(job)
-
             self._session.commit()
 
+            self._refresh_and_expunge(job)
             self._resources_man.wait_pop(job)
+            self._resources_man.set_active(job)
 
     # _start_jobs()
 
@@ -595,6 +645,8 @@ class Looper(object):
             # valid request: execute the specified action
             else:
                 method(request)
+
+        self._session.commit()
     # _process_pending_requests()
 
     def loop(self, sleep_time=0.5):

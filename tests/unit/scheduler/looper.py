@@ -44,6 +44,7 @@ FAKE_JOBS_DIR = '/tmp/test-looper/jobs-dir'
 # CODE
 #
 # pylint: disable=protected-access
+# pylint: disable=too-many-public-methods
 class TestLooper(TestCase):
     """
     Unit test for the looper module
@@ -341,7 +342,8 @@ class TestLooper(TestCase):
             [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
     # _patch_dead_process_bad_cwd()
 
-    def _patch_dead_process_no_comm(self, ret_code, end_time):
+    def _patch_dead_process_no_comm(
+            self, ret_code, end_time, cleanup_code=None):
         """
         Patch with mocks to simulate the case where job's process died because
         /proc/$pid/comm does not exist.
@@ -349,11 +351,20 @@ class TestLooper(TestCase):
         Args:
             ret_code (int): return code to include in results file
             end_time (str): end date to include in results file
+            cleanup_code (int): cleanup code to include in results file
         """
         # contents of result file
+
+        if cleanup_code is not None:
+            readlines_return = (
+                [str(ret_code), str(cleanup_code),
+                 end_time.strftime(wrapper.DATE_FORMAT)])
+        else:
+            readlines_return = (
+                [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
+
         self._mock_open.return_value.__enter__.return_value.readlines. \
-        return_value = (
-            [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
+        return_value = readlines_return
 
         # mock the open function to failed on first call (no /proc/$pid/comm)
         # and return a result file on second call.
@@ -484,27 +495,37 @@ class TestLooper(TestCase):
         """
         # job with exclusive and shared resources allocated
         job = self._make_alive_job(['A'], ['B'])
-        self._mock_resources_man.enqueue.reset_mock()
+        self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
-        self._mock_resources_man.enqueue.assert_called_with(job)
+
+        self.assertEqual(
+            self._mock_resources_man.set_active.call_args[0][0].id,
+            job.id)
 
         # job with only exclusive resource allocated
         job = self._make_alive_job(['A'], [])
-        self._mock_resources_man.enqueue.reset_mock()
+        self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
-        self._mock_resources_man.enqueue.assert_called_with(job)
+
+        self.assertEqual(
+            self._mock_resources_man.set_active.call_args[0][0].id,
+            job.id)
 
         # job with only shared resource allocated
         job = self._make_alive_job([], ['B'])
-        self._mock_resources_man.enqueue.reset_mock()
+        self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
-        self._mock_resources_man.enqueue.assert_called_with(job)
+
+        self.assertEqual(
+            self._mock_resources_man.set_active.call_args[0][0].id,
+            job.id)
 
         # job with no resource allocated
         job = self._make_alive_job([], [])
-        self._mock_resources_man.enqueue.reset_mock()
+        self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
-        self._mock_resources_man.enqueue.assert_not_called()
+        self._mock_resources_man.set_active.assert_not_called()
+
     # test_init_alive_process()
 
     def test_init_bad_conf(self):
@@ -593,12 +614,26 @@ class TestLooper(TestCase):
         job = self._make_alive_job()
         self._patch_dead_process_no_comm(1, datetime.utcnow())
         self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
         self.assertEqual(job.state, job.STATE_FAILED)
 
         # process died by seeing comm cannot be read and result is job failed
         job = self._make_alive_job()
         self._patch_dead_process_noread_comm(1, datetime.utcnow())
         self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
+        self.assertEqual(job.state, job.STATE_FAILED)
+
+        # process died by seeing comm cannot be read and result job failed
+        # with an exception
+        job = self._make_alive_job()
+        self._patch_dead_process_noread_comm(
+            wrapper.RESULT_EXCEPTION, datetime.utcnow())
+        self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
         self.assertEqual(job.state, job.STATE_FAILED)
 
         # process died by seeing cwd points to inexistent directory and result
@@ -606,12 +641,16 @@ class TestLooper(TestCase):
         job = self._make_alive_job()
         self._patch_dead_process_no_cwd(0, datetime.utcnow())
         self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
         self.assertEqual(job.state, job.STATE_COMPLETED)
 
         # process died by seeing cwd is wrong and result has invalid exit code
         job = self._make_alive_job()
         self._patch_dead_process_bad_cwd("not_a_number", datetime.utcnow())
         self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
         self.assertEqual(job.state, job.STATE_FAILED)
 
         # process died by seeing cwd cannot be read and result has job was
@@ -620,14 +659,62 @@ class TestLooper(TestCase):
         self._patch_dead_process_noread_cwd(
             wrapper.RESULT_CANCELED, datetime.utcnow())
         self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
         self.assertEqual(job.state, job.STATE_CANCELED)
 
-        # process died by seeing cwd is wrong and cleanup after cancelation
-        # timed out
+        # process died by seeing cwd is wrong and the job was in
+        # the process of a normal cleanup
         job = self._make_alive_job()
         self._patch_dead_process_bad_cwd(
-            wrapper.RESULT_CANCELED_TIMEOUT, datetime.utcnow())
+            wrapper.RESULT_CANCELED, datetime.utcnow())
         self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
+        self.assertEqual(job.state, job.STATE_CANCELED)
+
+        # process died by seeing /proc/comm was not there, the job was
+        # canceled and the cleanup routine timed out
+        job = self._make_alive_job()
+        self._patch_dead_process_no_comm(
+            wrapper.RESULT_CANCELED, datetime.utcnow(),
+            cleanup_code=wrapper.RESULT_TIMEOUT)
+        self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
+        self.assertEqual(job.state, job.STATE_CANCELED)
+
+        # process died by seeing /proc/comm was not there, the job was
+        # canceled and the cleanup routine failed with an exit code
+        job = self._make_alive_job()
+        self._patch_dead_process_no_comm(
+            wrapper.RESULT_CANCELED, datetime.utcnow(),
+            cleanup_code=2)
+        self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
+        self.assertEqual(job.state, job.STATE_CANCELED)
+
+        # process died by seeing /proc/comm was not there, the job was
+        # canceled and the cleanup routine failed with an exception
+        job = self._make_alive_job()
+        self._patch_dead_process_no_comm(
+            wrapper.RESULT_CANCELED, datetime.utcnow(),
+            cleanup_code=wrapper.RESULT_EXCEPTION)
+        self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
+        self.assertEqual(job.state, job.STATE_CANCELED)
+
+        # process died by seeing /proc/comm was not there, the job
+        # timed out and the cleanup routine was successful
+        job = self._make_alive_job()
+        self._patch_dead_process_no_comm(
+            wrapper.RESULT_TIMEOUT, datetime.utcnow(),
+            cleanup_code=wrapper.RESULT_SUCCESS)
+        self._looper.loop()
+
+        job = self._session.query(SchedulerJob).get(job.id)
         self.assertEqual(job.state, job.STATE_CANCELED)
     # test_finish_jobs_dead_process()
 
@@ -786,6 +873,8 @@ class TestLooper(TestCase):
 
         self._looper.loop()
 
+        job = self._session.query(SchedulerJob).get(job.id)
+
         # validate request and job states/results
         self.assertEqual(job.state, SchedulerJob.STATE_CLEANINGUP)
         self.assertEqual(job.result, 'Job canceled by user; cleaning up')
@@ -821,6 +910,7 @@ class TestLooper(TestCase):
 
         self._looper.loop()
 
+        job = self._session.query(SchedulerJob).get(job.id)
         # validate request and job states/results
         self.assertEqual(job.state, SchedulerJob.STATE_CLEANINGUP)
 
@@ -882,6 +972,7 @@ class TestLooper(TestCase):
         # have the request processed
         self._looper.loop()
 
+        job = self._session.query(SchedulerJob).get(job.id)
         # validate states and results
         self.assertEqual(job.state, SchedulerJob.STATE_COMPLETED)
         self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
@@ -942,5 +1033,81 @@ class TestLooper(TestCase):
         self.assertEqual(
             request.result, 'Cannot cancel job because it already ended')
     # test_cancel_finished_job()
+
+    def test_submit_invalid_resources(self):
+        """
+        Submit a job that causes the resource manager to fail when validating
+        the resources.
+        """
+
+        self._mock_resources_man.validate_resources.return_value = False
+
+        request = self._make_request(
+            self._make_resources(['A'], []),
+            self._requester,
+            commit=True)
+
+        self._looper.loop()
+
+        self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
+
+    def test_submit_cant_enqueue(self):
+        """
+        Submit a job that cannot be enqueued by the resources manager.
+        """
+
+        self._mock_resources_man.can_enqueue.return_value = False
+
+        request = self._make_request(
+            self._make_resources(['A'], []),
+            self._requester,
+            commit=True)
+
+        self._looper.loop()
+
+        self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
+
+    def test_submit_bad_attribute(self):
+        """
+        Submit a job with a state machine without a parse attribute.
+        """
+        request = self._make_request(
+            self._make_resources([], []),
+            self._requester,
+            commit=True)
+
+        # Patch the returned state machine to None, which will cause
+        # None.parse to raise an AttributeError
+        echo_patcher = patch.dict(
+            looper.state_machines.MACHINES, {'echo': None})
+        echo_patcher.start()
+        self.addCleanup(echo_patcher.stop)
+
+        self._looper.loop()
+
+        self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
+        self.assertRegex(request.result.lower(), 'parser not found')
+
+    def test_signal_handler(self):
+        """
+        Exercise the looper's signal handler.
+        """
+
+        # Manually call the handler set for the signal,
+        # since ther is no public interface that eventually calls it.
+        call = self._mock_signal.signal.call_args
+
+        self.assertIsNotNone(call)
+
+        # signal should have been called with e.g. signal(SIGINT, handler),
+        signum = call[0][0]
+        handler = call[0][1]
+
+        # According to the doc the stack frame can be None in a signal handler.
+        # The looper handler doesn't use the stack frame anyways.
+        handler(signum, None)
+
+        # Check if the looper was asked to stop by the signal handler.
+        self.assertFalse(self._looper._should_run)
 
 # TestLooper

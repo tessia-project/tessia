@@ -910,7 +910,7 @@ class Repository(CommonMixin, BASE):
     def __repr__(self):
         """Object representation"""
         return "<Template(name='{}', os='{}')>".format(
-            self.name, self.os_rel.name)
+            self.name, self.operating_system_rel.name)
     # __repr__()
 # Repository
 
@@ -1084,7 +1084,7 @@ class Template(CommonMixin, ResourceMixin, BASE):
     def __repr__(self):
         """Object representation"""
         return "<Template(name='{}', os='{}')>".format(
-            self.name, self.os_rel.name)
+            self.name, self.operating_system_rel.name)
     # __repr__()
 # Template
 

@@ -43,11 +43,11 @@ class TestEcho(TestCase):
         Prepare the necessary mocks at the beginning of each testcase.
         """
         patcher = patch.object(machine, 'print', autospect=True)
-        patcher.start()
+        self._mock_print = patcher.start()
         self.addCleanup(patcher.stop)
 
         patcher = patch.object(machine, 'sleep', autospect=True)
-        patcher.start()
+        self._mock_sleep = patcher.start()
         self.addCleanup(patcher.stop)
 
     def test_good_content(self):
@@ -87,11 +87,11 @@ class TestEcho(TestCase):
         echo_obj = machine.EchoMachine(content)
         ret_code = echo_obj.start()
         self.assertEqual(ret_code, 0)
-        machine.print.assert_has_calls([
+        self._mock_print.assert_has_calls([
             call('Hello world!'),
             call('Testing a more long message to see if it works...')
         ])
-        machine.sleep.assert_has_calls([call(20)])
+        self._mock_sleep.assert_has_calls([call(20)])
 
     # test_good_content()
 

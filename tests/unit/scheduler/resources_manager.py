@@ -45,8 +45,9 @@ class TestResourceManager(TestCase):
         Prepare the necessary mocks at the beginning of each testcase.
         """
         # logging module
-        patcher = patch.object(resources_manager, 'logging', autospect=True)
-        patcher.start()
+        patcher = patch.object(resources_manager, 'logging', spec_set=True)
+        mock_logging = patcher.start()
+        self._mock_logger = mock_logging.getLogger.return_value
         self.addCleanup(patcher.stop)
 
         self._res_man = resources_manager.ResourcesManager()
@@ -236,7 +237,7 @@ class TestResourceManager(TestCase):
         self.assertTrue(self._res_man.can_enqueue(job))
 
         # Check against the infinite job in the queue.
-        job = self._make_job(['C'], [], 5)
+        job = self._make_job(['C'], [])
 
         # Overlaps
         job.start_date = future_start_date
@@ -563,8 +564,8 @@ class TestResourceManager(TestCase):
 
         self.assertTrue(self._res_man.can_start(job))
 
-        # Test with a bad timeslot.
-        job.time_slot = job.time_slot + "#"
+        # Test with a timeslot that is not current.
+        job.time_slot = SchedulerJob.SLOT_NIGHT
 
         self.assertFalse(self._res_man.can_start(job))
 
@@ -578,11 +579,11 @@ class TestResourceManager(TestCase):
 
         # Check if can_start reported an error (calling can_start
         # with a job that wasn't enqueued).
-        logger_error_call_count = self._res_man._logger.error.call_count
+        logger_error_call_count = self._mock_logger.error.call_count
 
         self.assertFalse(self._res_man.can_start(job))
 
-        self.assertEqual(self._res_man._logger.error.call_count,
+        self.assertEqual(self._mock_logger.error.call_count,
                          logger_error_call_count + 1)
 
         # Test another path that detects that the job wasn't enqueued,
@@ -600,7 +601,7 @@ class TestResourceManager(TestCase):
 
         self.assertFalse(self._res_man.can_start(job))
 
-        self.assertEqual(self._res_man._logger.error.call_count,
+        self.assertEqual(self._mock_logger.error.call_count,
                          logger_error_call_count + 2)
 
         # Now properly enqueue the job, and test the checks against

@@ -418,8 +418,6 @@ class Looper(object):
             if self._has_resources(job):
                 self._resources_man.active_pop(job)
 
-        self._session.commit()
-
     # _finish_jobs()
 
     def _post_process_job(self, job):

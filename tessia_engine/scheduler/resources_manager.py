@@ -151,7 +151,7 @@ class ResourcesManager(object):
                                         0 means an infinite interval
 
         Returns:
-            True if there is an overlap, False otherwise.
+            bool: True if there is an overlap, False otherwise.
         Raises:
         """
 
@@ -308,9 +308,9 @@ class ResourcesManager(object):
         Args:
             job (SchedulerJob):  job to check
         Returns:
-            True if the job has no start date or if it has a start date
+            bool: True if the job has no start date or if it has a start date
                  and doesn't conflict with other jobs with start dates.
-            False if the job has a start date and overlaps with other
+                  False if the job has a start date and overlaps with other
                   jobs using the same resources (with non-shareable modes).
         Raises:
         """
@@ -518,7 +518,9 @@ class ResourcesManager(object):
         Args:
             job (SchedulerJob)
         Returns:
+            None
         Raises:
+            ValueError: in case job state is invalid
         """
         if job.state not in (SchedulerJob.STATE_CLEANINGUP,
                              SchedulerJob.STATE_RUNNING):
@@ -547,10 +549,10 @@ class ResourcesManager(object):
         only once, so this needs to be checked before enqueuing jobs.
 
         Args:
-            resources (dict): resources dictionnary
+            resources (dict): resources dictionary
         Returns:
-            True if there are no duplicates in all the mode lists
-            False otherwise (indicates unsafe dictionnary)
+            bool: True if there are no duplicates in all the mode lists
+                  False otherwise (indicates unsafe dictionary)
         Raises:
         """
         all_resources = set()

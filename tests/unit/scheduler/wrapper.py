@@ -52,7 +52,7 @@ class TestWrapper(TestCase):
 
         # signal module
         patcher = patch.object(wrapper, 'signal', autospect=True)
-        patcher.start()
+        self._mock_signal = patcher.start()
         self.addCleanup(patcher.stop)
 
         # os module
@@ -88,18 +88,18 @@ class TestWrapper(TestCase):
 
         machine_class.return_value = mock.MagicMock(spec=base.BaseMachine)
 
-        self._machine = machine_class.return_value
+        self._mock_machine = machine_class.return_value
 
         self._wrapper = wrapper.MachineWrapper(RUN_DIR, MACHINE_NAME, '', 0)
 
     def _check_written_rc(self, ret, cleanup_ret=None):
         # check if the result was corretly written to the results file
-        write_mock = wrapper.open.return_value.__enter__.return_value.write
+        mock_write = self._mock_open.return_value.__enter__.return_value.write
 
         # Result will be something like
         # <rc>\n<cleanup_rc>\n<end_date>\n
 
-        written_lines = write_mock.call_args[0][0].split('\n')
+        written_lines = mock_write.call_args[0][0].split('\n')
 
         # A trailing newline causes an empty line to appear at the end
         # of the split array.
@@ -124,11 +124,11 @@ class TestWrapper(TestCase):
         """
 
         if exception is not None:
-            self._machine.start.side_effect = exception
+            self._mock_machine.start.side_effect = exception
             expected_rc = wrapper.RESULT_EXCEPTION
         else:
             assert ret is not None
-            self._machine.start.return_value = ret
+            self._mock_machine.start.return_value = ret
             expected_rc = ret
 
         self._wrapper.start()
@@ -155,7 +155,7 @@ class TestWrapper(TestCase):
                 finally:
                     self._wrapper._handle_timeout()
 
-            self._machine.start.side_effect = start_side_effect
+            self._mock_machine.start.side_effect = start_side_effect
             expected_ret = wrapper.RESULT_TIMEOUT
         else:
 
@@ -166,10 +166,10 @@ class TestWrapper(TestCase):
                 """
                 self._wrapper._handle_cancel()
 
-            self._machine.start.side_effect = start_side_effect
+            self._mock_machine.start.side_effect = start_side_effect
             expected_ret = wrapper.RESULT_CANCELED
 
-        if self._machine.cleaning_up:
+        if self._mock_machine.cleaning_up:
             # machine was set to be cleaning up during interruption,
             # we don't expected a cleanup retun code
             expected_cleanup_ret = None
@@ -227,20 +227,20 @@ class TestWrapper(TestCase):
                     finally:
                         self._wrapper._handle_cleanup_timeout()
 
-                self._machine.cleanup.side_effect = cleanup_side_effect
+                self._mock_machine.cleanup.side_effect = cleanup_side_effect
                 expected_cleanup_ret = wrapper.RESULT_TIMEOUT
             elif cleanup_exception is not None:
-                self._machine.cleanup.side_effect = cleanup_exception
+                self._mock_machine.cleanup.side_effect = cleanup_exception
                 expected_cleanup_ret = wrapper.RESULT_EXCEPTION
             else:
                 assert cleanup_ret is not None
-                self._machine.cleanup.return_value = cleanup_ret
+                self._mock_machine.cleanup.return_value = cleanup_ret
                 expected_cleanup_ret = cleanup_ret
 
         self._wrapper.start()
 
         if timeout:
-            wrapper.signal.alarm.assert_has_calls(
+            self._mock_signal.alarm.assert_has_calls(
                 [mock.call(self._wrapper._timeout)])
 
         self._check_written_rc(expected_ret,
@@ -257,20 +257,20 @@ class TestWrapper(TestCase):
 
         # no timeout and no interruption cleanup
         # means alarm should not have been called except for resetting
-        alarm_args = wrapper.signal.alarm.call_args_lists
+        alarm_args = self._mock_signal.alarm.call_args_lists
 
         for call in alarm_args:
             self.assertEqual(call, (0,))
 
         # test with a timeout and a start that raises an exception
 
-        wrapper.signal.alarm.reset_mock()
+        self._mock_signal.alarm.reset_mock()
 
         self._wrapper._timeout = 5
 
         self._run_normal_start(exception=RuntimeError('test'))
 
-        wrapper.signal.alarm.assert_has_calls(
+        self._mock_signal.alarm.assert_has_calls(
             [mock.call(self._wrapper._timeout)])
 
     def test_canceled_start_no_cleanup(self):
@@ -279,7 +279,7 @@ class TestWrapper(TestCase):
         signal during normal cleanup.
         """
 
-        self._machine.cleaning_up = True
+        self._mock_machine.cleaning_up = True
         self._run_interrupted_start(cleanup_ret=wrapper.RESULT_SUCCESS)
 
     def test_timed_out_start_with_cleanup(self):
@@ -287,7 +287,7 @@ class TestWrapper(TestCase):
         Test a wrapper that starts and gets interrupted by an alarm
         and the cleanup routine fails with an exception.
         """
-        self._machine.cleaning_up = False
+        self._mock_machine.cleaning_up = False
         self._run_interrupted_start(timeout=True,
                                     cleanup_exception=RuntimeError('test'))
 
@@ -296,7 +296,7 @@ class TestWrapper(TestCase):
         Test a wrapper that starts and gets interrupted by an alarm
         and the cleanup routine itself also times out.
         """
-        self._machine.cleaning_up = False
+        self._mock_machine.cleaning_up = False
         self._run_interrupted_start(timeout=True,
                                     cleanup_timeout=True)
 

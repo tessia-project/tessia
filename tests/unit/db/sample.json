@@ -247,7 +247,7 @@
             "memory": 1024,
             "system": "lpar0",
             "hypervisor_profile": "cpc0/default cpc0",
-            "operating_system": "rhel7.0"
+            "operating_system": "RHEL7.0"
         }
     ],
     "StorageVolumeProfileAssociation": [
@@ -270,7 +270,8 @@
     ],
     "OperatingSystem": [
         {
-            "name": "RHEL",
+            "name": "RHEL7.0",
+            "type": "rhel",
             "major": "7",
             "minor": "0",
             "desc": "RHEL 7.0 GA"

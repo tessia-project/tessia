@@ -1034,31 +1034,6 @@ class TestLooper(TestCase):
             request.result, 'Cannot cancel job because it already ended')
     # test_cancel_finished_job()
 
-    def test_cancel_bad_state(self):
-        """
-        Submit a request to cancel a job that has an unknown state.
-        """
-        job = self._make_job(['A'], [], self._requester,
-                             state='ASDF')
-        self._session.add(job)
-        self._session.flush()
-
-        # create cancel request
-        request = self._make_request(
-            self._make_resources([], []),
-            self._requester, action_type=SchedulerRequest.ACTION_CANCEL)
-        request.job_id = job.id
-        self._session.add(request)
-        self._session.commit()
-
-        # let looper process request
-        self._looper.loop()
-
-        # validate state and result
-        self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
-        self.assertEqual(
-            request.result, 'Job is in an unknown state')
-
     def test_submit_invalid_resources(self):
         """
         Submit a job that causes the resource manager to fail when validating
@@ -1120,15 +1095,13 @@ class TestLooper(TestCase):
 
         # Manually call the handler set for the signal,
         # since ther is no public interface that eventually calls it.
-        call = looper.signal.signal.call_args
+        call = self._mock_signal.signal.call_args
 
         self.assertIsNotNone(call)
 
         # signal should have been called with e.g. signal(SIGINT, handler),
         signum = call[0][0]
         handler = call[0][1]
-
-        import signal
 
         # According to the doc the stack frame can be None in a signal handler.
         # The looper handler doesn't use the stack frame anyways.

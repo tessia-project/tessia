@@ -63,8 +63,8 @@ class PlatLpar(PlatBase):
                 "ip": self._gw_iface['ip'],
                 "mask": self._gw_iface["mask"],
                 "gateway": self._gw_iface['gateway'],
-                "device": self._gw_iface['attributes']['devicenr'].split(
-                    ",")[0].lstrip("0x"),
+                "device": self._gw_iface['attributes']
+                          ['ccwgroup'].split(",")[0].split('.')[-1],
             }
         }
 

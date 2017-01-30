@@ -267,7 +267,8 @@ def create_network(data):
                 'name': 'external osa',
                 'osname': 'enccwf500',
                 'attributes': (
-                    "{'layer2': True, 'devicenr': '0xf500,0xf501,0xf502'}"),
+                    "{'layer2': True, "
+                    "'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'}"),
                 'type': 'OSA',
                 'mac_address': ':'.join(
                     ['%x' % random.randint(0x00, 0xff) for i in range(0, 6)]),
@@ -346,7 +347,8 @@ def create_network(data):
                 'name': 'external osa',
                 'osname': 'enccw1200',
                 'attributes': (
-                    "{'layer2': True, 'devicenr': '0x1200,0x1201,0x1202'}"),
+                    "{'layer2': True, "
+                    "'ccwgroup': '0.0.1200,0.0.1201,0.0.1202'}"),
                 'type': 'OSA',
                 'mac_address': ':'.join(
                     ['%x' % random.randint(0x00, 0xff) for i in range(0, 6)]),
@@ -382,7 +384,7 @@ def create_network(data):
                 'name': 'external macvtap',
                 'osname': 'en0',
                 'attributes': "{'libvirt': %s}" % libvirt_xml,
-                'type': 'KVM_LIBVIRT',
+                'type': 'MACVTAP',
                 'mac_address': mac_address,
                 'system': system['name'],
                 'ip_address': '{}/{}'.format(

@@ -106,7 +106,11 @@ class PlatKvm(PlatBase):
         """
         Format an iface object to a json format expected by tessia_baselib.
         """
-        result = {"attributes": iface_entry.attributes}
+        result = {
+            "attributes": iface_entry.attributes,
+            "mac_address": iface_entry.mac_address,
+            "type": iface_entry.type
+        }
         return result
     # _kvm_jsonify_iface()
 

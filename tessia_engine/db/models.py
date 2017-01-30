@@ -1181,7 +1181,7 @@ class SystemIfaceProfileAssociation(BASE):
     # __repr__()
 # SystemIfaceProfileAssociation
 
-class SystemIface(CommonMixin, BASE):
+class SystemIface(CommonMixin, SchemaMixin, BASE):
     """Represents a network interface associated to a system"""
 
     __tablename__ = 'system_ifaces'

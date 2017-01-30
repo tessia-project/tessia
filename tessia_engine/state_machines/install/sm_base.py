@@ -153,6 +153,11 @@ class SmBase(metaclass=abc.ABCMeta):
             result["dns_1"] = iface.ip_address_rel.subnet_rel.dns_1
             result["dns_2"] = iface.ip_address_rel.subnet_rel.dns_2
 
+        # osa: add some sensitive defaults
+        if result['type'] == 'OSA':
+            result['attributes'].setdefault('portno', '0')
+            result['attributes'].setdefault('portname', 'OSAPORT')
+
         return result
     # _parse_iface()
 

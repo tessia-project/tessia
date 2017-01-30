@@ -75,7 +75,8 @@ class SystemIfaceResource(SecureResource):
             title=DESC['name'], description=DESC['name'])
         osname = fields.String(
             title=DESC['osname'], description=DESC['osname'], nullable=True)
-        attributes = fields.String(
+        attributes = fields.Custom(
+            schema=SystemIface.get_schema('attributes'),
             title=DESC['attributes'], description=DESC['attributes'],
             nullable=True)
         mac_address = fields.String(

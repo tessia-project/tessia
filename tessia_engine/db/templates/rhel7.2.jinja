@@ -17,7 +17,7 @@ lang en_US.UTF-8
 
 # Network information
 {% for iface in config["ifaces"] %}
-network  --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["systemd_osname"]}} --ip={{iface["ip"]}} --netmask={{iface["mask"]}} --noipv6 --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}} {% endif %}
+network  --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["systemd_osname"]}} --ip={{iface["ip"]}} --netmask={{iface["mask"]}} --noipv6 --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}}{% endif %}
 {% endfor %}
 network  --hostname={{config["hostname"]}}
 

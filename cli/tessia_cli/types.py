@@ -29,6 +29,41 @@ import re
 #
 # CODE
 #
+class QethGroup(click.ParamType):
+    """
+    Represents a qeth group for use with OSA cards
+    """
+    name = 'read,write,data'
+
+    def convert(self, value, param, ctx):
+        """
+        Validate and convert a string in the format read_id,write_id,data_id
+        to a tuple after removing possible '0x' prefixes.
+        """
+        try:
+            devnos = value.lower().split(',')
+        except ValueError:
+            self.fail(
+                '{} is not a valid qeth ccwgroup'.format(value), param, ctx)
+
+        # format and validate for devno format
+        result = []
+        for devno in devnos:
+            if devno.startswith('0x'):
+                devno = '0.0.' + devno[2:]
+            elif devno.find('.') < 0:
+                devno = '0.0.' + devno
+            ret = re.match(r"^(([a-fA-F0-9]\.){2})?[a-fA-F0-9]{4}$", devno)
+            if ret is None:
+                self.fail('{} is not a valid devno'.format(devno), param, ctx)
+            result.append(devno)
+
+        return ','.join(result)
+    # convert()
+# QethGroup
+
+QETH_GROUP = QethGroup()
+
 class FcpPath(click.ParamType):
     """
     Represents a FCP path type
@@ -53,7 +88,8 @@ class FcpPath(click.ParamType):
             self.fail('{} is not a valid devno'.format(devno), param, ctx)
 
         # format and validate wwpn format
-        wwpn = wwpn.lstrip('0x')
+        if wwpn.startswith('0x'):
+            wwpn = wwpn[2:]
         ret = re.match(r'^[a-f0-9]{16}$', wwpn)
         if ret is None:
             self.fail('{} is not a valid wwpn'.format(wwpn), param, ctx)

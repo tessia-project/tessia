@@ -254,7 +254,7 @@
     "SystemIface": [
         {
             "attributes": {
-                "devicenr": "0xf500,0xf501,0xf502",
+                "ccwgroup": "0.0.f500,0.0.f501,0.0.f502",
                 "layer2": true
             },
             "ip_address": "CPC3 shared/192.168.161.225",
@@ -273,7 +273,7 @@
             "name": "external macvtap",
             "osname": "eth0",
             "system": "kvm054",
-            "type": "KVM_LIBVIRT"
+            "type": "MACVTAP"
         }
     ],
     "SystemIfaceProfileAssociation": [

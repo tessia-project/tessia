@@ -60,13 +60,13 @@ class SmAnaconda(SmBase):
         Returns:
             None
         """
-        devicenr = iface['attributes']["devicenr"].split(",")
+        ccwgroup = iface['attributes']["ccwgroup"].split(",")
         # The control read device number is used to create a predictable
         # device name for OSA network interfaces (for details see
         # https://www.freedesktop.org/wiki/Software/systemd/
         # PredictableNetworkInterfaceNames/)
         iface["systemd_osname"] = (
-            "enccw0.0.{}".format(devicenr[0].lstrip("0x"))
+            "enccw{}".format(ccwgroup[0])
         )
     # _add_systemd_osname()
 
@@ -178,9 +178,9 @@ class SmAnaconda(SmBase):
             if ret != 0:
                 self._logger.error("Error while reading the installation log.")
                 return success
-            lines = out.strip().split("\n")
+            lines = out.split("\n")
 
-            if len(lines) > 0:
+            if len(lines) > 1 or lines[0] != "":
                 initial_line += len(lines)
                 self._logger.info(out)
 

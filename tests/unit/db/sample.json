@@ -107,10 +107,10 @@
             "password": null,
             "fw_level": null,
             "modifier": "user_x_0@domain.com",
-            "type": "ECKD-SCSI",
+            "type": "DASD-FCP",
             "hostname": null,
             "project": "Department x",
-            "desc": "- Storage *ECKD-SCSI* beloging to Department x",
+            "desc": "- Storage *DASD-FCP* beloging to Department x",
             "model": "DS8800",
             "owner": "user_x_0@domain.com"
         }
@@ -131,9 +131,9 @@
     ],
     "StorageVolume": [
         {
-            "specs": "{}",
+            "specs": {},
             "server": "DSK8_x_0",
-            "type": "ECKD",
+            "type": "DASD",
             "system": "cpc0",
             "owner": "user_x_0@domain.com",
             "desc": "- DASD disk for regression tests",
@@ -163,9 +163,9 @@
             "size": 10000
         },
         {
-            "specs": "{}",
+            "specs": {},
             "server": "DSK8_x_0",
-            "type": "ECKD",
+            "type": "DASD",
             "system": "lpar0",
             "owner": "user_x_0@domain.com",
             "desc": "- DASD disk for regression tests",
@@ -270,7 +270,7 @@
     ],
     "OperatingSystem": [
         {
-            "name": "rhel7.0",
+            "name": "RHEL",
             "major": "7",
             "minor": "0",
             "desc": "RHEL 7.0 GA"

@@ -49,6 +49,8 @@ GUEST_HYP_MATCHES = {
     'CPC': [],
 }
 
+MSG_BAD_COMBO = 'Invalid guest/hypervisor combination'
+
 #
 # CODE
 #
@@ -86,8 +88,7 @@ class SystemResource(SecureResource):
         name = fields.String(
             title=DESC['name'], description=DESC['name'])
         hostname = fields.String(
-            title=DESC['hostname'], description=DESC['hostname'],
-            nullable=True)
+            title=DESC['hostname'], description=DESC['hostname'])
         modified = fields.DateTime(
             title=DESC['modified'], description=DESC['modified'], io='r')
         desc = fields.String(
@@ -101,8 +102,7 @@ class SystemResource(SecureResource):
         type = fields.String(
             title=DESC['type'], description=DESC['type'])
         state = fields.String(
-            title=DESC['state'], description=DESC['state'],
-            nullable=True)
+            title=DESC['state'], description=DESC['state'], nullable=True)
         modifier = fields.String(
             title=DESC['modifier'], description=DESC['modifier'], io='r')
         project = fields.String(
@@ -144,14 +144,12 @@ class SystemResource(SecureResource):
                     'hypervisor', properties['hypervisor'], self)
 
             if hyp.type not in guest_match_list:
-                raise BaseHttpError(
-                    code=422, msg='Invalid guest/hypervisor combination')
+                raise BaseHttpError(code=422, msg=MSG_BAD_COMBO)
 
             if properties['model'] is None:
                 properties['model'] = hyp.model
-
         elif properties['model'] is None:
-            raise BaseHttpError(code=400, msg='System model must be specified')
+            properties['model'] = 'ZGENERIC'
 
         if properties['state'] is None:
             properties['state'] = 'AVAILABLE'
@@ -207,8 +205,7 @@ class SystemResource(SecureResource):
 
         # guest/hypervisor combination does not match: report error
         if hyp_obj.type not in guest_match_list:
-            raise BaseHttpError(
-                code=422, msg='Invalid guest/hypervisor combination')
+            raise BaseHttpError(code=422, msg=MSG_BAD_COMBO)
 
         return super().do_update(properties, id)
     # do_update()

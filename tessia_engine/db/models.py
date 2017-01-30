@@ -39,6 +39,10 @@ from sqlalchemy.types import SmallInteger
 from sqlalchemy.types import String
 from tessia_engine.db.exceptions import AssociationError
 
+import ipaddress
+import json
+import os
+
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -87,6 +91,36 @@ class CommonMixin(object):
         super().__init__(*args, **kwargs)
     # __init__()
 # CommonMixin
+
+class SchemaMixin(object):
+    """
+    Helper mixin to provide json-schema validation capability
+    """
+    _SCHEMA_FOLDER = '{}/schemas'.format(
+        os.path.dirname(os.path.abspath(__file__)))
+    _cache = {}
+
+    @classmethod
+    def get_schema(cls, field_name):
+        """
+        Return the json-schema for the field specified, or None if no schema is
+        defined.
+        """
+        if not hasattr(cls, field_name):
+            raise ValueError("Field '{}' not part of model".format(field_name))
+
+        if field_name not in cls._cache:
+            file_path = '{}/{}/{}.json'.format(
+                cls._SCHEMA_FOLDER, cls.__tablename__, field_name)
+            try:
+                with open(file_path) as file_fd:
+                    cls._cache[field_name] = json.loads(file_fd.read())
+            except FileNotFoundError:
+                cls._cache[field_name] = None
+
+        return cls._cache[field_name]
+    # get_schema()
+# SchemaMixin
 
 class User(CommonMixin, BASE):
     """Represents a user on the application"""
@@ -363,6 +397,7 @@ class ResourceMixin(object):
         return relationship(
             'User', uselist=False, lazy='joined', innerjoin=True,
             primaryjoin=lambda: self.modifier_id == User.id)
+
     @hybrid_property
     def modifier(self):
         """Defines the modifier attribute pointing to modifier's login"""
@@ -493,6 +528,36 @@ class Subnet(CommonMixin, ResourceMixin, BASE):
         """Object representation"""
         return "<Subnet(name='{}', zone='{}')>".format(self.name, self.zone)
     # __repr__()
+
+    @validates('address', 'gateway', 'dns_1', 'dns_2')
+    def validate_ip(self, key, value):
+        """
+        Verify if ip addresses/networks are in correct format.
+
+        Args:
+            key (str): field name
+            value (any): field's value
+
+        Raises:
+            ValueError: in case field's value is invalid
+
+        Returns:
+            str: field's value to populate row
+        """
+        if value is None:
+            return
+        try:
+            if key == 'address':
+                address_obj = ipaddress.ip_network(value, strict=True)
+            else:
+                address_obj = ipaddress.ip_address(value)
+        except ValueError as exc:
+            raise ValueError("<({})=({})> ({})".format(key, value, str(exc)))
+
+        # conversion to str normalizes different mask formats used
+        return str(address_obj)
+    # validate_ip()
+
 # Subnet
 
 class IpAddress(CommonMixin, ResourceMixin, BASE):
@@ -705,6 +770,8 @@ class System(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def hypervisor(self):
         """Defines the hypervisor attribute pointing to system's name"""
+        if self.hypervisor_rel is None:
+            return None
         return self.hypervisor_rel.name
 
     @hypervisor.setter
@@ -788,19 +855,64 @@ class OperatingSystem(CommonMixin, BASE):
     """A supported operating system"""
 
     __tablename__ = 'operating_systems'
-
-    name = Column(String, unique=True, nullable=False)
-    major = Column(String, nullable=False)
-    minor = Column(String)
-    desc = Column(String)
+    name = Column(String, unique=True, index=True)
+    type = Column(String, nullable=False)
+    major = Column(Integer, nullable=False)
+    minor = Column(Integer, nullable=False)
+    desc = Column(String, nullable=False)
+    # The template for the cmdline
+    cmdline = Column(String)
+    repository_rel = relationship("Repository", uselist=True)
 
     def __repr__(self):
         """Object representation"""
-        return "<OperatingSystem(name='{}', major='{}', minor='{}')>".format(
-            self.name, self.major, self.minor)
+        return "<OperatingSystem(type='{}', major='{}', minor='{}')>".format(
+            self.type, self.major, self.minor)
     # __repr__()
 
 # OperatingSystem
+
+class Repository(CommonMixin, BASE):
+    """A repository for an supported operating system"""
+    # Not all operating systems have repositories
+    # that is why we put this information in other table.
+    __tablename__ = "repositories"
+
+    url = Column(String, unique=True, nullable=False)
+    # the path in the repo to the kernel and initrd
+    kernel = Column(String)
+    initrd = Column(String)
+    operating_system_id = Column(Integer,
+                                 ForeignKey('operating_systems.id'),
+                                 index=True)
+
+    operating_system_rel = relationship("OperatingSystem", uselist=False)
+
+    @hybrid_property
+    def operating_system(self):
+        """Defines the os attribute pointing to os's name"""
+        return self.operating_system_rel.name
+
+    @operating_system.setter
+    def operating_system(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = OperatingSystem.query.filter_by(name=value).one_or_none()
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'os', OperatingSystem, 'name', value)
+        self.operating_system_id = match.id
+
+    @operating_system.expression
+    def operating_system(cls):
+        """Expression used for performing queries"""
+        return OperatingSystem.name
+
+    def __repr__(self):
+        """Object representation"""
+        return "<Template(name='{}', os='{}')>".format(
+            self.name, self.os_rel.name)
+    # __repr__()
+# Repository
 
 class SystemProfile(CommonMixin, BASE):
     """A system activation profile"""
@@ -828,6 +940,8 @@ class SystemProfile(CommonMixin, BASE):
     @hybrid_property
     def hypervisor_profile(self):
         """Defines the profile attribute as system_name/profile_name"""
+        if self.hypervisor_profile_rel is None:
+            return None
         return '{}/{}'.format(
             self.hypervisor_profile_rel.system,
             self.hypervisor_profile_rel.name)
@@ -907,6 +1021,8 @@ class SystemProfile(CommonMixin, BASE):
     @hybrid_property
     def operating_system(self):
         """Defines the operating system attribute pointing to os name"""
+        if self.operating_system_rel is None:
+            return None
         return self.operating_system_rel.name
 
     @operating_system.setter
@@ -933,6 +1049,44 @@ class SystemProfile(CommonMixin, BASE):
         return "<SystemProfile(name='{}'>".format(self.name)
     # __repr__()
 # SystemProfile
+
+class Template(CommonMixin, ResourceMixin, BASE):
+    """A template for a InstallMachine"""
+    __tablename__ = "templates"
+
+    name = Column(String, unique=True, nullable=False)
+    content = Column(String)
+    operating_system_id = Column(
+        Integer, ForeignKey('operating_systems.id'), index=True)
+
+    # relationships
+    operating_system_rel = relationship("OperatingSystem", uselist=False)
+
+    @hybrid_property
+    def operating_system(self):
+        """Defines the os attribute pointing to os's name"""
+        return self.operating_system_rel.name
+
+    @operating_system.setter
+    def operating_system(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = OperatingSystem.query.filter_by(name=value).one_or_none()
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'os', OperatingSystem, 'name', value)
+        self.operating_system_id = match.id
+
+    @operating_system.expression
+    def operating_system(cls):
+        """Expression used for performing queries"""
+        return OperatingSystem.name
+
+    def __repr__(self):
+        """Object representation"""
+        return "<Template(name='{}', os='{}')>".format(
+            self.name, self.os_rel.name)
+    # __repr__()
+# Template
 
 class SystemIfaceProfileAssociation(BASE):
     """Represents a system iface associated with a system activation profile"""
@@ -1051,6 +1205,9 @@ class SystemIface(CommonMixin, BASE):
     profiles_rel = relationship(
         'SystemProfile',
         uselist=True,
+        # This is important: prevents sqlalchemy from issuing a delete to
+        # the associated entry in the other table
+        passive_deletes='all',
         secondary='profiles_system_ifaces')
 
     # ip_address relationship section
@@ -1059,6 +1216,8 @@ class SystemIface(CommonMixin, BASE):
     @hybrid_property
     def ip_address(self):
         """Defines the ip_address attribute as subnet_name/ip_address"""
+        if self.ip_address_rel is None:
+            return None
         return '{}/{}'.format(
             self.ip_address_rel.subnet, self.ip_address_rel.address)
 
@@ -1268,6 +1427,8 @@ class StoragePool(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def system(self):
         """Defines the system attribute pointing to system's name"""
+        if self.system_rel is None:
+            return None
         return self.system_rel.name
 
     @system.setter
@@ -1407,7 +1568,7 @@ class StorageVolumeProfileAssociation(BASE):
 
 # StorageVolumeProfileAssociation
 
-class StorageVolume(CommonMixin, ResourceMixin, BASE):
+class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
     """A volume from a storage server"""
 
     __tablename__ = 'storage_volumes'
@@ -1429,6 +1590,9 @@ class StorageVolume(CommonMixin, ResourceMixin, BASE):
     profiles_rel = relationship(
         'SystemProfile',
         uselist=True,
+        # This is important: prevents sqlalchemy from issuing a delete to
+        # the associated entry in the other table
+        passive_deletes='all',
         secondary='profiles_storage_volumes')
 
     # type relationship section
@@ -1485,6 +1649,8 @@ class StorageVolume(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def system(self):
         """Defines the system attribute pointing to system's name"""
+        if self.system_rel is None:
+            return None
         return self.system_rel.name
 
     @system.setter
@@ -1511,6 +1677,8 @@ class StorageVolume(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def pool(self):
         """Defines the pool attribute pointing to pool's name"""
+        if self.pool_rel is None:
+            return None
         return self.pool_rel.name
 
     @pool.setter
@@ -1660,6 +1828,9 @@ class LogicalVolume(CommonMixin, ResourceMixin, BASE):
     profiles_rel = relationship(
         'SystemProfile',
         uselist=True,
+        # This is important: prevents sqlalchemy from issuing a delete to
+        # the associated entry in the other table
+        passive_deletes='all',
         secondary='profiles_logical_volumes')
 
     # type relationship section
@@ -1692,6 +1863,8 @@ class LogicalVolume(CommonMixin, ResourceMixin, BASE):
     @hybrid_property
     def system(self):
         """Defines the system attribute pointing to system's name"""
+        if self.system_rel is None:
+            return None
         return self.system_rel.name
 
     @system.setter
@@ -1778,10 +1951,10 @@ class SchedulerRequest(CommonMixin, BASE):
     # job type refers to the type of state machine to use
     job_type = Column(String, nullable=False)
 
-    time_slot = Column(String, nullable=False, default='DEFAULT')
+    time_slot = Column(String, nullable=False, default=SLOT_DEFAULT)
 
     # period in minutes after job is considered to have timed out
-    timeout = Column(Integer, default=0, nullable=False)
+    timeout = Column(Integer, nullable=False, default=0)
 
     # the date when request was submitted
     submit_date = Column(DateTime(timezone=False), nullable=False)
@@ -1791,7 +1964,7 @@ class SchedulerRequest(CommonMixin, BASE):
 
     # parameters are passed to the state machine parser which returns to the
     # scheduler which resources are to be used
-    parameters = Column(String, nullable=False)
+    parameters = Column(String, nullable=False, default='')
 
     # priority defines order
     priority = Column(SmallInteger, nullable=False, default=0)
@@ -1802,22 +1975,56 @@ class SchedulerRequest(CommonMixin, BASE):
     # messages about the request result
     result = Column(String, nullable=True)
 
-    @validates(('action_type', 'time_slot', 'state'))
-    def validate(self, key, value):
+    @validates('action_type', 'time_slot', 'state')
+    def validate_enum(self, key, value):
         """
-        Simple validator
+        Simple validator, enforces enum behavior.
+
+        Args:
+            key (str): field name
+            value (any): field's value
+
+        Raises:
+            ValueError: in case field's value is not one of allowed values
+
+        Returns:
+            any: field's value to populate row
         """
         if key == 'action_type' and value not in self.ACTIONS:
-            raise ValueError("Invalid action type '{}'".format(value))
+            raise ValueError("Invalid <(action_type)=({})>".format(value))
 
         elif key == 'time_slot' and value not in self.SLOTS:
-            raise ValueError("Invalid time slot type '{}'".format(value))
+            raise ValueError("Invalid <(time_slot)=({})>".format(value))
 
         elif key == 'state' and value not in self.STATES:
-            raise ValueError("Invalid state '{}'".format(value))
+            raise ValueError("Invalid <(state)=({})>".format(value))
 
         return value
-    # validate_action_type()
+    # validate_enum()
+
+    # requester relationship section
+    requester_rel = relationship(
+        'User', uselist=False, lazy='joined', innerjoin=True)
+
+    @hybrid_property
+    def requester(self):
+        """Defines the requester attribute pointing to requester's login"""
+        return self.requester_rel.login
+
+    @requester.setter
+    def requester(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = User.query.filter_by(login=value).one_or_none()
+        # related entry does not exist: report error
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'requester', User, 'login', value)
+        self.requester_id = match.id
+
+    @requester.expression
+    def requester(cls):
+        """Expression used for performing queries"""
+        return User.login
 
 # SchedulerRequest
 
@@ -1825,6 +2032,22 @@ class SchedulerJob(CommonMixin, BASE):
     """A scheduler request accepted for execution"""
 
     __tablename__ = 'scheduler_jobs'
+
+    # define constants to be globally used
+    # time slots
+    SLOT_DEFAULT = 'DEFAULT'
+    SLOT_NIGHT = 'NIGHT'
+    # time slots
+    SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
+    STATE_CANCELED = 'CANCELED'
+    STATE_CLEANINGUP = 'CLEANINGUP'
+    STATE_COMPLETED = 'COMPLETED'
+    STATE_FAILED = 'FAILED'
+    STATE_RUNNING = 'RUNNING'
+    STATE_WAITING = 'WAITING'
+    # jobs states
+    STATES = (STATE_CANCELED, STATE_CLEANINGUP, STATE_COMPLETED, STATE_FAILED,
+              STATE_RUNNING, STATE_WAITING)
 
     requester_id = Column(
         Integer, ForeignKey('users.id'), index=True, nullable=False)
@@ -1836,7 +2059,7 @@ class SchedulerJob(CommonMixin, BASE):
     job_type = Column(String, nullable=False)
 
     # default or nightslot
-    time_slot = Column(String, nullable=False)
+    time_slot = Column(String, nullable=False, default=SLOT_DEFAULT)
 
     state = Column(String, nullable=False)
     pid = Column(Integer)
@@ -1871,39 +2094,57 @@ class SchedulerJob(CommonMixin, BASE):
 
     timeout = Column(Integer, default=0, nullable=False)
 
-    # define constants to be globally used
-    # time slots
-    SLOT_DEFAULT = 'DEFAULT'
-    SLOT_NIGHT = 'NIGHT'
-    # time slots
-    SLOTS = (SLOT_DEFAULT, SLOT_NIGHT)
-    STATE_CANCELED = 'CANCELED'
-    STATE_CLEANINGUP = 'CLEANINGUP'
-    STATE_COMPLETED = 'COMPLETED'
-    STATE_FAILED = 'FAILED'
-    STATE_RUNNING = 'RUNNING'
-    STATE_WAITING = 'WAITING'
-    # jobs states
-    STATES = (STATE_CANCELED, STATE_CLEANINGUP, STATE_COMPLETED, STATE_FAILED,
-              STATE_RUNNING, STATE_WAITING)
-
     def __repr__(self):
         """Object representation"""
         return "<Job (id='{}')>".format(self.id)
     # __repr__()
 
-    @validates(('time_slot', 'state'))
-    def validate(self, key, value):
+    @validates('time_slot', 'state')
+    def validate_enum(self, key, value):
         """
-        Simple validator
+        Simple validator, enforces enum behavior.
+
+        Args:
+            key (str): field name
+            value (any): field's value
+
+        Raises:
+            ValueError: in case field's value is not one of allowed values
+
+        Returns:
+            any: field's value to populate row
         """
         if key == 'time_slot' and value not in self.SLOTS:
-            raise ValueError("Invalid time slot type '{}'".format(value))
+            raise ValueError("Invalid <(time_slot)=({})>".format(value))
 
         elif key == 'state' and value not in self.STATES:
-            raise ValueError("Invalid state '{}'".format(value))
+            raise ValueError("Invalid <(state)=({})>".format(value))
 
         return value
-    # validate_action_type()
+    # validate_enum()
+
+    # requester relationship section
+    requester_rel = relationship(
+        'User', uselist=False, lazy='joined', innerjoin=True)
+
+    @hybrid_property
+    def requester(self):
+        """Defines the requester attribute pointing to requester's login"""
+        return self.requester_rel.login
+
+    @requester.setter
+    def requester(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        match = User.query.filter_by(login=value).one_or_none()
+        # related entry does not exist: report error
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'requester', User, 'login', value)
+        self.requester_id = match.id
+
+    @requester.expression
+    def requester(cls):
+        """Expression used for performing queries"""
+        return User.login
 
 # SchedulerJob

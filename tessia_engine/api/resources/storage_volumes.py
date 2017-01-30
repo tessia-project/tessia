@@ -21,8 +21,10 @@ Resource definition
 #
 from flask_potion import fields
 from flask_potion.contrib.alchemy.fields import InlineModel
+from tessia_engine.api.exceptions import BaseHttpError, ItemNotFoundError
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import StorageVolume
+from tessia_engine.db.models import StorageServer
 from tessia_engine.db.models import SystemProfile
 
 #
@@ -44,6 +46,22 @@ DESC = {
     'modifier': 'Modified by',
     'project': 'Project',
     'owner': 'Owner',
+}
+
+MSG_INVALID_PTABLE = (
+    "The value 'part_table' is invalid: sum of partitions sizes ({}) is "
+    "bigger than volume's size ({})"
+)
+
+MSG_INVALID_TYPE = (
+    "The value 'type={}' is invalid: it does not match storage server "
+    "type '{}'"
+)
+
+# support map between storage servers and volumes types
+VOL_SERVER_MAP = {
+    'DASD-FCP': ['DASD', 'FCP'],
+    'ISCSI': ['ISCSI'],
 }
 
 #
@@ -73,6 +91,13 @@ class StorageVolumeResource(SecureResource):
         # db errors.
         human_identifiers = ['volume_id', 'server']
 
+        # some fields do make sense to be searchable so we disable them
+        filters = {
+            'part_table': False,
+            'spec': False,
+            '*': True
+        }
+
     class Schema:
         """
         Potion's schema section
@@ -87,25 +112,28 @@ class StorageVolumeResource(SecureResource):
             title=DESC['volume_id'], description=DESC['volume_id'])
         size = fields.PositiveInteger(
             title=DESC['size'], description=DESC['size'])
-        # TODO: add format= to specify the json schema for part tables
-        part_table = fields.Any(
+        part_table = fields.Custom(
+            schema=StorageVolume.get_schema('part_table'),
             title=DESC['part_table'], description=DESC['part_table'],
             nullable=True)
-        specs = fields.Object(
+        specs = fields.Custom(
+            schema=StorageVolume.get_schema('specs'),
             title=DESC['specs'], description=DESC['specs'], nullable=True)
         modified = fields.DateTime(
             title=DESC['modified'], description=DESC['modified'], io='r')
         desc = fields.String(
             title=DESC['desc'], description=DESC['desc'], nullable=True)
         # relations
+        # association with a pool is done via pool's entry point
         pool = fields.String(
-            title=DESC['pool'], description=DESC['pool'], nullable=True)
+            title=DESC['pool'], description=DESC['pool'], io='r')
         type = fields.String(
             title=DESC['type'], description=DESC['type'])
         server = fields.String(
             title=DESC['server'], description=DESC['server'])
+        # association with a system is done via system profiles
         system = fields.String(
-            title=DESC['system'], description=DESC['system'], nullable=True)
+            title=DESC['system'], description=DESC['system'], io='r')
         modifier = fields.String(
             title=DESC['modifier'], description=DESC['modifier'], io='r')
         owner = fields.String(
@@ -139,7 +167,115 @@ class StorageVolumeResource(SecureResource):
             io='r'
         )
 
-    # TODO: validate if volume type matches server type
-    # TODO: demand server to be provided when deleting/updating as there might
-    # be more than one volume with same id
+    @staticmethod
+    def _assert_ptable(part_table, vol_size):
+        """
+        Assert that the total size of the partitions do not exceed the volume's
+        assigned size.
+
+        Args:
+            part_table (dict): partition table
+            vol_size (int): volume size
+
+        Raises:
+            BaseHttpError: in case types do not match
+
+        Returns:
+            None
+        """
+        if part_table is None:
+            return
+
+        # dict format was already validated by schema
+        table_size = sum([part['size'] for part in part_table['table']])
+
+        if table_size > vol_size:
+            msg = MSG_INVALID_PTABLE.format(table_size, vol_size)
+            raise BaseHttpError(code=400, msg=msg)
+    # _assert_ptable()
+
+    def _assert_type(self, server, vol_type):
+        """
+        Assert that the volume type selected is the same as the selected
+        storage server.
+
+        Args:
+            server (str): storage server's name or instance
+            vol_type (str): volume type
+
+        Raises:
+            BaseHttpError: in case types do not match
+            ItemNotFoundError: in case storage server instance is not found
+
+        Returns:
+            None
+        """
+        # server name provided: fetch instance from db
+        if isinstance(server, str):
+            try:
+                server_obj = StorageServer.query.filter_by(name=server).one()
+            except:
+                raise ItemNotFoundError('server', server, self.Schema)
+        else:
+            server_obj = server
+        server_map = VOL_SERVER_MAP[server_obj.type]
+        # types do not match: report invalid request
+        if vol_type not in server_map:
+            msg = MSG_INVALID_TYPE.format(vol_type, server_obj.type)
+            raise BaseHttpError(code=400, msg=msg)
+    # _assert_type()
+
+    def do_create(self, properties):
+        """
+        Overriden method to perform sanity checks. See parent class for
+        complete docstring.
+        """
+        # make sure type matches selected storage server
+        self._assert_type(properties['server'], properties['type'])
+
+        self._assert_ptable(
+            properties.get('part_table'), properties['size'])
+
+        return super().do_create(properties)
+    # do_create()
+
+    def do_update(self, properties, id):
+        # pylint: disable=invalid-name,redefined-builtin
+        """
+        Overriden method to perform sanity checks. See parent class for
+        complete docstring.
+        """
+        # cache the item's instance to avoid unnecessary queries on the db
+        cached_item = None
+
+        # server changed: verify if vol type matches it
+        if 'server' in properties:
+            # vol type also changed: use provided value
+            if 'type' in properties:
+                type_value = properties['type']
+            # vol type not changed: use existing value from db
+            else:
+                cached_item = self.manager.read(id)
+                type_value = cached_item.type
+            self._assert_type(properties['server'], type_value)
+
+        # volume type changed: verify if new type matches storage server
+        elif 'type' in properties:
+            self._assert_type(
+                self.manager.read(id).server_rel, properties['type'])
+
+        # partition table changed: validate partitions' sizes
+        if 'part_table' in properties:
+            if 'size' in properties:
+                size = properties['size']
+            elif cached_item is not None:
+                size = cached_item.size
+            else:
+                cached_item = self.manager.read(id)
+                size = cached_item.size
+            self._assert_ptable(properties.get('part_table'), size)
+
+        return super().do_update(properties, id)
+    # do_update()
+
 # StorageVolumeResource

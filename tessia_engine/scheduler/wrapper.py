@@ -1,4 +1,4 @@
-# Copyright 2016, 2017 IBM Corp.
+# Copyright 2017 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ from datetime import datetime
 from tessia_engine import state_machines
 from tessia_engine.scheduler import exceptions
 
+import builtins
 import os
 import pickle
 import signal
@@ -259,6 +260,14 @@ class MachineWrapper(object):
         os.dup2(log_file.fileno(), sys.stdout.fileno())
         sys.stderr.flush()
         os.dup2(log_file.fileno(), sys.stderr.fileno())
+
+        # replace the original print by one that always performs flush
+        # so that output goes directly to the file
+        orig_print = builtins.print
+        def new_print(*args, **kwargs):
+            """Print function with auto-flush"""
+            orig_print(*args, **kwargs, flush=True)
+        builtins.print = new_print
 
         MachineWrapper.write_comm()
 

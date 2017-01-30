@@ -108,7 +108,7 @@ class SecureResource(ModelResource):
             raise api_exceptions.ConflictError(exc, self)
         except db_exceptions.AssociationError as exc:
             raise api_exceptions.ItemNotFoundError(
-                exc.column, exc.value, self.Schema)
+                exc.column, exc.value, self)
 
         return item
     # create()
@@ -140,7 +140,7 @@ class SecureResource(ModelResource):
             raise api_exceptions.ConflictError(exc, self)
         except db_exceptions.AssociationError as exc:
             raise api_exceptions.ItemNotFoundError(
-                exc.column, exc.value, self.Schema)
+                exc.column, exc.value, self)
 
         return item
     # update()
@@ -176,7 +176,7 @@ class SecureResource(ModelResource):
         permissions to perform the specified action upon the target.
 
         Args:
-            action (str): one of CREATE, UPDATE, DELETE, USE
+            action (str): one of CREATE, UPDATE, DELETE
             target_obj (ResourceMixin): sa's object
             target_type (str): type of the target to report in case of error
 
@@ -408,10 +408,11 @@ class SecureResource(ModelResource):
             list: list of items retrieved, can be an empty in case no items are
                   found or a restricted user has no permission to see them
         """
-        # model is a special resource or user is not restricted: listing is
-        # allowed
-        if (not hasattr(self.meta.model, 'project_id') or
-                not flask_global.auth_user.restricted):
+        # model is a special resource: listing is allowed for all
+        if not hasattr(self.meta.model, 'project_id'):
+            return self.manager.paginated_instances(**kwargs)
+        # non restricted user: regular resource listing is allowed
+        elif not flask_global.auth_user.restricted:
             return self.manager.paginated_instances(**kwargs)
 
         # for restricted users, filter the list by the projects they have
@@ -451,10 +452,11 @@ class SecureResource(ModelResource):
         """
         item = self.manager.read(id)
 
-        # model is a special resource or user is not restricted: reading
-        # is allowed
-        if (not hasattr(self.meta.model, 'project_id') or
-                not flask_global.auth_user.restricted):
+        # model is a special resource: reading is allowed for all
+        if not hasattr(self.meta.model, 'project_id'):
+            return item
+        # non restricted user: regular resource reading is allowed
+        elif not flask_global.auth_user.restricted:
             return item
 
         # user is not the resource's owner or an administrator: verify if

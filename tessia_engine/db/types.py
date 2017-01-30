@@ -21,9 +21,13 @@ The administratives entries required in the database
 #
 from tessia_engine.db.feeder import db_insert
 
+import os
+
 #
 # CONSTANTS AND DEFINITIONS
 #
+TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates/"
+
 IFACE_TYPES = [
     'OSA,OSA card',
     'KVM_LIBVIRT,KVM interface configured by libvirt',
@@ -32,6 +36,22 @@ IFACE_TYPES = [
     'HSI,Hipersocket',
     'ROCE,PCI card',
     'OVS_VPORT,Openvswitch virtual port',
+]
+
+OPERATING_SYSTEMS = [
+    'rhel7.2,rhel,7,2,RHEL 7.2 GA'
+]
+
+USERS = [
+    'System user,System user for common resources,system,false,true'
+]
+
+PROJECTS = [
+    'System project,System project for common resources'
+]
+
+TEMPLATES = [
+    "RHEL7.2,Template for RHEL7.2,system,System project,rhel7.2"
 ]
 
 ROLES = [
@@ -47,36 +67,30 @@ ROLES = [
 ROLE_ACTIONS = [
     # User
     'User,SYSTEMS,CREATE',
-    'User,STORAGE_VOLUMES,USE',
+    'User,SUBNETS,CREATE',
+    'User,NET_ZONES,CREATE',
     'User,STORAGE_POOLS,CREATE',
     'User,LOGICAL_VOLUMES,CREATE',
-    'User,IP_ADDRESSES,USE',
     # Privileged user
     # first, create the same privileges as 'User'
     'Privileged user,SYSTEMS,CREATE',
-    'Privileged user,STORAGE_VOLUMES,USE',
+    'Privileged user,SUBNETS,CREATE',
+    'Privileged user,NET_ZONES,CREATE',
     'Privileged user,STORAGE_POOLS,CREATE',
     'Privileged user,LOGICAL_VOLUMES,CREATE',
-    'Privileged user,IP_ADDRESSES,USE',
-    # now the additional ones to allow using other users' systems
-    'Privileged user,SYSTEMS,USE',
+    # now the additional ones to allow managing other users' systems
     'Privileged user,SYSTEMS,UPDATE',
-    'Privileged user,STORAGE_POOLS,USE',
     'Privileged user,STORAGE_POOLS,UPDATE',
-    'Privileged user,LOGICAL_VOLUMES,USE',
     'Privileged user,LOGICAL_VOLUMES,UPDATE',
     # Project admin
     # first, the same privileges as 'Privileged user'
     'Project admin,SYSTEMS,CREATE',
-    'Project admin,STORAGE_VOLUMES,USE',
+    'Project admin,SUBNETS,CREATE',
+    'Project admin,NET_ZONES,CREATE',
     'Project admin,STORAGE_POOLS,CREATE',
     'Project admin,LOGICAL_VOLUMES,CREATE',
-    'Project admin,IP_ADDRESSES,USE',
-    'Project admin,SYSTEMS,USE',
     'Project admin,SYSTEMS,UPDATE',
-    'Project admin,STORAGE_POOLS,USE',
     'Project admin,STORAGE_POOLS,UPDATE',
-    'Project admin,LOGICAL_VOLUMES,USE',
     'Project admin,LOGICAL_VOLUMES,UPDATE',
     # additional ones to allow managing the resources
     'Project admin,SYSTEMS,DELETE',
@@ -86,23 +100,18 @@ ROLE_ACTIONS = [
     'Hardware admin,IP_ADDRESSES,CREATE',
     'Hardware admin,IP_ADDRESSES,DELETE',
     'Hardware admin,IP_ADDRESSES,UPDATE',
-    'Hardware admin,IP_ADDRESSES,USE',
     'Hardware admin,NET_ZONES,CREATE',
     'Hardware admin,NET_ZONES,DELETE',
     'Hardware admin,NET_ZONES,UPDATE',
-    'Hardware admin,NET_ZONES,USE',
     'Hardware admin,STORAGE_SERVERS,CREATE',
     'Hardware admin,STORAGE_SERVERS,DELETE',
     'Hardware admin,STORAGE_SERVERS,UPDATE',
-    'Hardware admin,STORAGE_SERVERS,USE',
     'Hardware admin,STORAGE_VOLUMES,CREATE',
     'Hardware admin,STORAGE_VOLUMES,DELETE',
     'Hardware admin,STORAGE_VOLUMES,UPDATE',
-    'Hardware admin,STORAGE_VOLUMES,USE',
     'Hardware admin,SUBNETS,CREATE',
     'Hardware admin,SUBNETS,DELETE',
     'Hardware admin,SUBNETS,UPDATE',
-    'Hardware admin,SUBNETS,USE',
     'Hardware admin,SYSTEMS,CREATE',
     'Hardware admin,SYSTEMS,DELETE',
     'Hardware admin,SYSTEMS,UPDATE',
@@ -115,7 +124,7 @@ STORAGE_POOL_TYPES = [
 ]
 
 STORAGE_SERVER_TYPES = [
-    'ECKD-SCSI,Storage serving eckd/scsi disks',
+    'DASD-FCP,Storage serving dasd/fcp disks',
     'ISCSI,iSCSI server',
     'NFS,NFS server',
 ]
@@ -147,8 +156,9 @@ SYSTEM_STATES = [
 ]
 
 VOLUME_TYPES = [
-    'ECKD,ECKD disk type',
-    'SCSI,SCSI disk type',
+    'DASD,DASD disk type',
+    'FCP,FCP-SCSI disk type',
+    'ISCSI,ISCSI disk type',
     'RAW,RAW (loopback file)',
     'QCOW2,Compressed file format',
     'LVM,LVM Logical Volume',
@@ -169,6 +179,46 @@ def get_iface_types():
 
     return {'IfaceType': data}
 # get_iface_types()
+
+def get_oses():
+    """
+    Create the supported operating systems
+    """
+    data = []
+    for row in OPERATING_SYSTEMS:
+        row = row.split(',', 5)
+        template_filename = '{}_cmdline.jinja'.format(row[0])
+        with open(TEMPLATES_DIR + template_filename, "r") as template_file:
+            template_content = template_file.read()
+        data.append(
+            {
+                'name': row[0],
+                'type': row[1],
+                'major': row[2],
+                'minor': row[3],
+                'desc': row[4],
+                'cmdline': template_content
+            }
+        )
+
+    return {'OperatingSystem': data}
+
+def get_projects():
+    """
+    Create the default projects
+    """
+    data = []
+    for row in PROJECTS:
+        row = row.split(',', 2)
+        data.append(
+            {
+                'name': row[0],
+                'desc': row[1],
+            }
+        )
+
+    return {"Project": data}
+# get_projects()
 
 def get_roles():
     """
@@ -270,6 +320,51 @@ def get_system_states():
     return {'SystemState': data}
 # get_system_states()
 
+def get_templates():
+    """
+    Create the supported operating systems
+    """
+    data = []
+    for row in TEMPLATES:
+        row = row.split(',', 5)
+        template_filename = '{}.jinja'.format(row[4])
+        with open(TEMPLATES_DIR + template_filename, "r") as template_file:
+            template_content = template_file.read()
+        data.append(
+            {
+                'name': row[0],
+                'desc': row[1],
+                'owner': row[2],
+                'modifier': row[2],
+                'project': row[3],
+                'operating_system': row[4],
+                'content': template_content
+            }
+        )
+
+    return {'Template': data}
+# get_templates()
+
+def get_users():
+    """
+    Create the default users in the application.
+    """
+    data = []
+    for row in USERS:
+        row = row.split(',', 5)
+        data.append(
+            {
+                'name': row[0],
+                'title': row[1],
+                'login': row[2],
+                'admin': bool(row[3] == 'true'),
+                'restricted': bool(row[4] == 'true'),
+            }
+        )
+
+    return {"User": data}
+# get_users()
+
 def get_volume_types():
     """
     Create the volume types allowed in the application.
@@ -298,6 +393,9 @@ def create_all():
     data.update(get_system_types())
     data.update(get_system_states())
     data.update(get_volume_types())
-
+    data.update(get_users())
+    data.update(get_projects())
+    data.update(get_oses())
+    data.update(get_templates())
     db_insert(data)
 # create_all()

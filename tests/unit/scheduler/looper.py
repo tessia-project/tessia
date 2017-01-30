@@ -779,15 +779,11 @@ class TestLooper(TestCase):
         Exercises scenarios where a malformed request moves to the failed state
         correctly.
         """
-        # request with invalid action type
-        request = self._make_request(
-            self._make_resources(['A'], []),
-            self._requester, action_type="#", commit=True)
-
-        self._looper.loop()
-        # validate state and result
-        self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
-        self.assertEqual(request.result, 'Invalid operation specified')
+        # invalid action type
+        with self.assertRaises(ValueError):
+            self._make_request(
+                self._make_resources(['A'], []),
+                self._requester, action_type="#", commit=True)
 
         # request with invalid job type
         request = self._make_request(

@@ -25,6 +25,7 @@ from flask_potion.contrib.alchemy.filters import EqualFilter
 from flask_potion.filters import Condition
 from tessia_engine.db.models import UserKey
 from tessia_engine.api.exceptions import BaseHttpError
+from tessia_engine.api.exceptions import ItemNotFoundError
 from tessia_engine.api.resources.secure_resource import SecureResource
 from werkzeug.exceptions import Forbidden
 
@@ -122,28 +123,30 @@ class UserKeyResource(SecureResource):
         return [item.key_id, item.key_secret]
     # do_create()
 
-    def do_delete(self, id):
+    def do_delete(self, id): # pylint: disable=redefined-builtin
         """
         Custom implementation of key deletion. Enforce password based
         authentication and permission control.
 
         Args:
-            id (int): id of the key in (table id, not key id)
+            id (int): key_id
 
         Raises:
-            Forbidden: in case user is not admin or key's owner
             BaseHttpError: in case password based auth was not used
+            ItemNotFoundError: if id specified does not exist or user is
+                               neither key's owner nor admin
 
         Returns:
             bool: True
         """
-        # pylint: disable=redefined-builtin
-
         user_key = self.manager.read(id)
-        # user is not the key owner and is not admin: forbidden
-        if (user_key.id != flask_global.auth_user.id and
+
+        # user is not the key owner and is not admin: report item as not found
+        # instead of forbidden for security reasons (forbidden would tip the
+        # user that such key_id exists)
+        if (user_key.user_rel.id != flask_global.auth_user.id and
                 not flask_global.auth_user.admin):
-            raise Forbidden()
+            raise ItemNotFoundError('id', id, self.Schema)
 
         # must be authenticated with password
         if flask_global.auth_method != 'basic':
@@ -204,7 +207,7 @@ class UserKeyResource(SecureResource):
                       id field in the table's database
 
         Raises:
-            Forbidden: in case user is not admin or key's owner
+            ItemNotFoundError: in case user is not admin or key's owner
 
         Returns:
             json: json representation of item
@@ -212,10 +215,12 @@ class UserKeyResource(SecureResource):
         # pylint: disable=redefined-builtin
 
         user_key = self.manager.read(id)
-        # user is not the key owner and is not admin: forbidden
-        if (user_key.id != flask_global.auth_user.id and
+        # user is not the key owner and is not admin: report item as not found
+        # instead of forbidden for security reasons (forbidden would tip the
+        # user that such key_id exists)
+        if (user_key.user_rel.id != flask_global.auth_user.id and
                 not flask_global.auth_user.admin):
-            raise Forbidden()
+            raise ItemNotFoundError('id', id, self.Schema)
 
         return self.manager.read(id)
     # do_read()

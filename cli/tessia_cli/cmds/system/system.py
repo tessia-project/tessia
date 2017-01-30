@@ -20,12 +20,15 @@ Module for the system commands
 # IMPORTS
 #
 from tessia_cli.client import Client
+from tessia_cli.cmds.job.job import output
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
+from tessia_cli.utils import wait_scheduler
 
 import click
+import json
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -84,7 +87,23 @@ def del_(name):
     click.echo('Item successfully deleted.')
 # del_()
 
-@click.command()
+@click.command(name='install')
+@click.pass_context
+@click.option('--template', required=True, help='autofile template')
+@click.option('profile', '--system', required=True,
+              help='system-name or system-name/profile-name')
+def install(ctx=None, **kwargs):
+    """
+    install a system using an autofile template
+    """
+    request = {'action_type': 'SUBMIT', 'job_type': 'install'}
+    request['parameters'] = json.dumps(kwargs)
+    job_id = wait_scheduler(Client(), request)
+    click.echo('Waiting for installation output (Ctrl+C to stop waiting)')
+    ctx.invoke(output, job_id=job_id)
+# install()
+
+@click.command(name='edit')
 @click.option('cur_name', '--name', required=True, help='system to edit')
 @click.option('name', '--newname', help="new system name")
 @click.option('hypervisor', '--hyp', help="hypervisor's name")
@@ -161,4 +180,4 @@ def states():
         STATE_FIELDS, client.SystemStates, None, entries)
 # states()
 
-CMDS = [add, del_, edit, show, types, states]
+CMDS = [add, del_, edit, install, show, types, states]

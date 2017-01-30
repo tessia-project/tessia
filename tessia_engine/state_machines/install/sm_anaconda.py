@@ -132,7 +132,7 @@ class SmAnaconda(SmBase):
                                      "retrying in %d seconds.", timeout)
                 sleep(timeout)
 
-        raise ConnectionError("Error while connecting to the target system")
+        raise ConnectionError("Error while trying to connect to the target system.")
     # _get_ssh_conn()
 
     def check_installation(self):
@@ -143,7 +143,7 @@ class SmAnaconda(SmBase):
 
         ret, _ = shell.run("echo 1")
         if ret != 0:
-            raise RuntimeError("Unable to connect to the system.")
+            raise RuntimeError("Error while checking the installed system.")
 
         shell.close()
         ssh_client.logoff()
@@ -170,14 +170,14 @@ class SmAnaconda(SmBase):
         timeout_installation = time() + 600
         frequency_check = 10
 
-        # Performs successive calls to tail to extract the end of the file
+        # Performs consecutive calls to tail to extract the end of the file
         # from a previous start point.
         success = False
         while time() <= timeout_installation:
             ret, out = shell.run(cmd_read_line.format(line_offset))
             if ret != 0:
-                self._logger.error("Error while reading the installation log.")
-                return success
+                raise RuntimeError("Error while reading the installation log.")
+
             out = out.rstrip('\n')
             if len(out) == 0:
                 continue
@@ -200,7 +200,8 @@ class SmAnaconda(SmBase):
         ssh_client.logoff()
 
         if not success:
-            raise TimeoutError('Timed out waiting for installer')
+            raise TimeoutError('Installation Timeout: The installation'
+                               ' process is taking too long')
 
         return success
     # wait_install()

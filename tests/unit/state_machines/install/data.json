@@ -90,7 +90,7 @@
             "project": "System project",
             "server": "DSK7K16",
             "size": 10000,
-            "specs": "{}",
+            "specs": {},
             "system": "CPC3LP55",
             "system_attributes": {
             },
@@ -128,7 +128,8 @@
                     {
                         "devno": "0.0.1800",
                         "wwpns": [
-                            "100207630508c1ae"
+                            "100207630503c1ae",
+							"100207630508c1ae"
                         ]
                     }
                 ],
@@ -140,6 +141,43 @@
             },
             "type": "FCP",
             "volume_id": "1024400000000000"
+        },
+        {
+            "desc": "FCP-SCSI DISK",
+            "modifier": "system",
+            "owner": "system",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data1",
+                        "size": 4000,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "System project",
+            "server": "DSK7K16",
+            "size": 4095,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "wwid": "11002076305aac1a0000000000002407",
+                "multipath": false
+            },
+            "system": "kvm054",
+            "system_attributes": {
+            },
+            "type": "FCP",
+            "volume_id": "1024400700000000"
         },
         {
             "desc": "FCP-SCSI DISK",
@@ -185,6 +223,154 @@
             },
             "type": "FCP",
             "volume_id": "1024400100000000"
+        },
+        {
+            "desc": "FCP-SCSI DISK",
+            "modifier": "system",
+            "owner": "system",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data1",
+                        "size": 4095,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "System project",
+            "server": "DSK7K16",
+            "size": 4095,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "wwid": "11002076305aac1a0000000000002403",
+                "multipath": true
+            },
+            "system": "kvm054",
+            "system_attributes": {
+            },
+            "type": "FCP",
+            "volume_id": "1024400300000000"
+        },
+        {
+            "desc": "FCP-SCSI DISK",
+            "modifier": "system",
+            "owner": "system",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data2",
+                        "size": 4095,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "System project",
+            "server": "DSK7K16",
+            "size": 4095,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "wwid": "11002076305aac1a0000000000002404",
+                "multipath": true
+            },
+            "system": "kvm054",
+            "system_attributes": {
+            },
+            "type": "FCP",
+            "volume_id": "1024400400000000"
+        },
+        {
+            "desc": "FCP-SCSI DISK",
+            "modifier": "system",
+            "owner": "system",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data3",
+                        "size": 4095,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "System project",
+            "server": "DSK7K16",
+            "size": 4095,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "wwid": "11002076305aac1a0000000000002405",
+                "multipath": true
+            },
+            "system": "kvm054",
+            "system_attributes": {
+            },
+            "type": "FCP",
+            "volume_id": "1024400500000000"
+        },
+        {
+            "desc": "FCP-SCSI DISK",
+            "modifier": "system",
+            "owner": "system",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data4",
+                        "size": 4095,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "System project",
+            "server": "DSK7K16",
+            "size": 4095,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "wwid": "11002076305aac1a0000000000002406",
+                "multipath": true
+            },
+            "system": "kvm054",
+            "system_attributes": {
+            },
+            "type": "FCP",
+            "volume_id": "1024400600000000"
         }
     ],
     "StorageVolumeProfileAssociation": [
@@ -193,12 +379,36 @@
             "volume": "DSK7K16/3961"
         },
         {
+            "profile": "CPC3LP55/default_CPC3LP55",
+            "volume": "DSK7K16/1024400700000000"
+        },
+        {
             "profile": "CPC3LP55/default_CPC3LP55_SCSI",
             "volume": "DSK7K16/1024400000000000"
         },
         {
+            "profile": "CPC3LP55/default_CPC3LP55_SCSI",
+            "volume": "DSK7K16/1024400700000000"
+        },
+        {
             "profile": "kvm054/kvm_kvm054_install",
             "volume": "DSK7K16/1024400100000000"
+        },
+        {
+            "profile": "kvm054/kvm_kvm054_install",
+            "volume": "DSK7K16/1024400300000000"
+        },
+        {
+            "profile": "kvm054/kvm_kvm054_install",
+            "volume": "DSK7K16/1024400400000000"
+        },
+        {
+            "profile": "kvm054/kvm_kvm054_install",
+            "volume": "DSK7K16/1024400500000000"
+        },
+        {
+            "profile": "kvm054/kvm_kvm054_install",
+            "volume": "DSK7K16/1024400600000000"
         }
     ],
     "Subnet": [

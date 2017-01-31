@@ -11,15 +11,7 @@
 	    <firmware>hd0</firmware>
 	    {% for volume in config["svols"] %}
 			{% if volume["is_root"] %}
-			    {% if config["system_type"] == "KVM" %}
-				<linux>/dev/vda</linux>
-				{% elif volume["type"] == "DASD" %}
-				<linux>/dev/dasda</linux>
-				{% elif volume["specs"]["multipath"] %}
 				<linux>{{ volume["system_attributes"]["device"] }}</linux>
-				{% else %}
-				<linux>/dev/sda</linux>
-				{% endif %}
 			{% endif %}
 		{% endfor %}
       </device_map_entry>
@@ -657,11 +649,6 @@
 	{% for volume in config["svols"] %}
     <drive>
 	  <device>{{ volume["system_attributes"]["device"] }}</device>
-	  {% if volume["type"] == "DASD" %}
-      <disklabel>dasd</disklabel>
-	  {% else %}
-      <disklabel>msdos</disklabel>
-	  {% endif %}
       <enable_snapshots config:type="boolean">true</enable_snapshots>
       <initialize config:type="boolean">true</initialize>
       <partitions config:type="list">
@@ -1127,14 +1114,15 @@
     <devices config:type="list">
     {% for volume in config["svols"] %}
 	  {% if config["system_type"] == "LPAR" and volume["type"] == "FCP" %}
-
-      {% set devno = volume["specs"]["adapters"][0]["devno"] %}
-	  {% set wwpn = volume["specs"]["adapters"][0]["wwpns"][0] %}
-      <listentry>
-		<controller_id>{{ devno }}</controller_id>
-		<fcp_lun>0x{{ volume["volume_id"] }}</fcp_lun>
-		<wwpn>0x{{ wwpn }}</wwpn>
-      </listentry>
+        {% for adapter in volume["specs"]["adapters"] %}
+	      {% for wwpn in adapter["wwpns"] %}
+		  <listentry>
+			<controller_id>{{ adapter["devno"] }}</controller_id>
+			<fcp_lun>0x{{ volume["volume_id"] }}</fcp_lun>
+			<wwpn>0x{{ wwpn }}</wwpn>
+		  </listentry>
+	      {% endfor %}
+	    {% endfor %}
 	  {% endif %}
 	{% endfor %}
     </devices>

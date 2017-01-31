@@ -165,7 +165,7 @@ class SmAnaconda(SmBase):
             r'^.* ERR anaconda: storage configuration failed: *(.*)$',
             re.MULTILINE
         )
-        initial_line = 1
+        line_offset = 1
 
         timeout_installation = time() + 600
         frequency_check = 10
@@ -174,15 +174,16 @@ class SmAnaconda(SmBase):
         # from a previous start point.
         success = False
         while time() <= timeout_installation:
-            ret, out = shell.run(cmd_read_line.format(initial_line))
+            ret, out = shell.run(cmd_read_line.format(line_offset))
             if ret != 0:
                 self._logger.error("Error while reading the installation log.")
                 return success
-            lines = out.split("\n")
+            out = out.rstrip('\n')
+            if len(out) == 0:
+                continue
 
-            if len(lines) > 1 or lines[0] != "":
-                initial_line += len(lines)
-                self._logger.info(out)
+            line_offset += len(out.split('\n'))
+            self._logger.info(out)
 
             if out.find(termination_string) != -1:
                 success = True

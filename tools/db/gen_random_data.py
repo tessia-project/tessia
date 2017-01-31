@@ -556,7 +556,7 @@ def create_storage(data):
                     ]
                 },
                 'specs': "{}",
-                'system_attributes': "{}",
+                'system_attributes': {},
                 'owner': system['owner'],
                 'project': system['project'],
                 'modifier': system['modifier'],
@@ -646,7 +646,7 @@ def create_storage(data):
                         ]
                     },
                     'specs': scsi_specs_template,
-                    'system_attributes': "{}",
+                    'system_attributes': {},
                     'owner': system['owner'],
                     'project': system['project'],
                     'modifier': system['modifier'],
@@ -694,8 +694,12 @@ def create_storage(data):
                         ]
                     },
                     'specs': "{'thin': true}",
-                    'system_attributes': "{'libvirt: '%s'}" % (
-                        libvirt_qcow % '{}_root_image'.format(system['name'])),
+                    'system_attributes': {
+                        'libvirt': '%s' % (
+                            libvirt_qcow % '{}_root_image'.format(
+                                system['name'])
+                        )
+                    },
                     'owner': system['owner'],
                     'project': system['project'],
                     'modifier': system['modifier'],
@@ -719,8 +723,12 @@ def create_storage(data):
                          'type': 'primary', 'mo': None},
                     ]
                 },
-                volume['system_attributes'] = "{'libvirt: '%s'}" % (
-                    libvirt_qcow % '{}_image_for__var'.format(system['name'])),
+                volume['system_attributes'] = {
+                    'libvirt': '%s' % (
+                        libvirt_qcow % '{}_image_for__var'.format(
+                            system['name'])
+                    ),
+                },
 
                 logical_volumes.append(volume)
                 prof_logical_volumes_assoc.append({
@@ -751,8 +759,9 @@ def create_storage(data):
                         ]
                     },
                     'specs': scsi_specs_template,
-                    'system_attributes': "{'libvirt: '%s'}" % (
-                        libvirt_disk % disk_counter),
+                    'system_attributes': {
+                        'libvirt': '%s' % (libvirt_disk % disk_counter),
+                    },
                     'owner': system['owner'],
                     'project': system['project'],
                     'modifier': system['modifier'],
@@ -780,7 +789,7 @@ def create_storage(data):
                     ]
                 }
                 volume['specs'] = "{}"
-                volume['system_attributes'] = "{}"
+                volume['system_attributes'] = {}
                 volume['desc'] = '- DASD disk for test data'
                 storage_volumes.append(volume)
                 disk_counter += 1

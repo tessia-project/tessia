@@ -38,8 +38,8 @@ import click
 #
 FIELDS = (
     'volume_id', 'server', 'size', 'specs', 'type', 'system',
-    'system_profiles', 'pool', 'owner', 'project', 'modified', 'modifier',
-    'desc'
+    'system_attributes', 'system_profiles', 'pool', 'owner', 'project',
+    'modified', 'modifier', 'desc'
 )
 PART_FIELDS = (
     'number', 'size', 'type', 'filesystem', 'mount point', 'mount options'

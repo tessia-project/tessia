@@ -100,6 +100,31 @@ class FcpPath(click.ParamType):
 
 FCP_PATH = FcpPath()
 
+class Libvirtxml(click.ParamType):
+    """
+    Represents a libvirt xml content extracted from a local file
+    """
+    name = 'xml_file'
+
+    def convert(self, value, param, ctx):
+        """
+        Read the file and validate the xml content before returning it.
+        """
+        # no file specified: return empty string so that the caller can
+        # interpret it as unsetting the parameter.
+        if value == '':
+            return value
+
+        with click.open_file(value, 'r') as file_stream:
+            xml_content = file_stream.read()
+
+        # TODO: perform some sanity checks
+        return xml_content
+    # convert()
+# Libvirtxml
+
+LIBVIRT_XML = Libvirtxml()
+
 class ScsiWwid(click.ParamType):
     """
     Represents a SCSI's World Wide Identifier

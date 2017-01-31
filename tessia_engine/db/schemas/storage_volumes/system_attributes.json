@@ -1,0 +1,23 @@
+{
+    "oneOf": [
+        {
+            "title": "System related attributes",
+            "type": "object",
+            "properties": {
+                "libvirt": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "libvirt"
+            ]
+        },
+        {
+            "title": "Empty value",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+            }
+        }
+    ]
+}

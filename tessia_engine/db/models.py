@@ -1188,13 +1188,14 @@ class SystemIface(CommonMixin, SchemaMixin, BASE):
 
     name = Column(String, nullable=False)
     osname = Column(String)
-    ip_address_id = Column(Integer, ForeignKey('ip_addresses.id'))
+    ip_address_id = Column(
+        Integer, ForeignKey('ip_addresses.id'), nullable=False)
     system_id = Column(
         Integer, ForeignKey('systems.id'), index=True, nullable=False)
 
     type_id = Column(Integer, ForeignKey('iface_types.id'), nullable=False)
-    attributes = Column(postgresql.JSONB)
-    mac_address = Column(postgresql.MACADDR)
+    attributes = Column(postgresql.JSONB, nullable=False)
+    mac_address = Column(postgresql.MACADDR, nullable=False)
     desc = Column(String)
 
     @declared_attr
@@ -1216,8 +1217,6 @@ class SystemIface(CommonMixin, SchemaMixin, BASE):
     @hybrid_property
     def ip_address(self):
         """Defines the ip_address attribute as subnet_name/ip_address"""
-        if self.ip_address_rel is None:
-            return None
         return '{}/{}'.format(
             self.ip_address_rel.subnet, self.ip_address_rel.address)
 
@@ -1582,7 +1581,7 @@ class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
     size = Column(BigInteger, nullable=False)
     part_table = Column(postgresql.JSONB, nullable=False)
     specs = Column(postgresql.JSONB)
-    system_attributes = Column(postgresql.JSONB)
+    system_attributes = Column(postgresql.JSONB, nullable=False)
 
     __table_args__ = (UniqueConstraint(volume_id, server_id),)
 

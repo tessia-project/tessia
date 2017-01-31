@@ -23,6 +23,7 @@ from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.utils import fetch_item
 from tessia_cli.output import print_items
+from tessia_cli.types import LIBVIRT_XML
 from tessia_cli.types import QETH_GROUP
 from tessia_cli.utils import fetch_and_delete
 
@@ -33,7 +34,7 @@ import click
 #
 IFACE_FIELDS = (
     'name', 'osname', 'system', 'type', 'ip_address', 'mac_address',
-    'attributes', 'desc', 'profiles'
+    'attributes', 'profiles', 'desc'
 )
 IFACE_TYPE_FIELDS = (
     'name', 'desc'
@@ -44,8 +45,7 @@ ATTR_BY_TYPE = {
     'portname': 'OSA',
     'portno': 'OSA',
     'hostiface': 'MACVTAP',
-    'noxml': 'MACVTAP',
-    'xml': 'MACVTAP',
+    'libvirt': 'MACVTAP',
 }
 
 #
@@ -58,9 +58,8 @@ ATTR_BY_TYPE = {
 @click.option('--type', required=True,
               help="interface type (see iface-types)")
 @click.option('--osname', help="interface name in operating system (i.e. en0)")
-@click.option('mac_address', '--mac',
-              help="mac address, leave blank to auto generate")
-@click.option('ip_address', '--ip',
+@click.option('mac_address', '--mac', required=True, help="mac address")
+@click.option('ip_address', '--ip', required=True,
               help="assign subnet-name/ip-addr to interface")
 @click.option('--layer2', type=click.BOOL,
               help="enable layer2 mode (OSA only)")
@@ -68,7 +67,7 @@ ATTR_BY_TYPE = {
 @click.option('--portno', help="port number (OSA only)")
 @click.option('--portname', help="port name (OSA only)")
 @click.option('--hostiface', help="host iface to bind (KVM only)")
-@click.option('--xml', type=click.File('r'),
+@click.option('--libvirt', type=LIBVIRT_XML,
               help="libvirt definition file (KVM only)")
 @click.option('--desc', help="free form field describing interface")
 def iface_add(**kwargs):
@@ -95,10 +94,7 @@ def iface_add(**kwargs):
                 raise click.ClickException(
                     'invalid attribute for this iface type')
 
-            if key == 'xml':
-                item.attributes['libvirt'] = value.read()
-            else:
-                item.attributes[key] = value
+            item.attributes[key] = value
 
         # normal arg: just add to the dict
         else:
@@ -118,7 +114,7 @@ def iface_add(**kwargs):
                 item.attributes['libvirt']
             except KeyError:
                 raise click.ClickException(
-                    'at least one of --hostiface or --xml must be '
+                    'at least one of --hostiface or --libvirt must be '
                     'specified')
 
     item.save()
@@ -228,8 +224,7 @@ def iface_detach(profile, iface):
 @click.option('--type',
               help="interface type (see iface-types)")
 @click.option('--osname', help="interface name in operating system (i.e. en0)")
-@click.option('mac_address', '--mac',
-              help="mac address, leave blank to auto generate")
+@click.option('mac_address', '--mac', help="mac address")
 @click.option('ip_address', '--ip',
               help="assign subnet-name/ip-addr to interface")
 @click.option('--layer2', type=click.BOOL,
@@ -239,10 +234,8 @@ def iface_detach(profile, iface):
 @click.option('--portno', help="port number (OSA only)")
 @click.option('--portname', help="port name (OSA only)")
 @click.option('--hostiface', help="host iface to bind (KVM only)")
-@click.option('--xml', type=click.File('r'),
+@click.option('--libvirt', type=LIBVIRT_XML,
               help="libvirt definition file (KVM only)")
-@click.option('--noxml', is_flag=True,
-              help="unset libvirt definition (KVM only)")
 @click.option('--desc', help="free form field describing interface")
 def iface_edit(cur_name, **kwargs):
     """
@@ -273,12 +266,6 @@ def iface_edit(cur_name, **kwargs):
 
         # process attribute arg
         if key in ATTR_BY_TYPE:
-            # special param handling
-            if key == 'noxml':
-                if value is True and 'libvirt' in update_dict['attributes']:
-                    update_dict['attributes'].pop('libvirt')
-                continue
-
             if ATTR_BY_TYPE[key] != iface_type:
                 raise click.ClickException(
                     'invalid attribute for this iface type')
@@ -288,8 +275,6 @@ def iface_edit(cur_name, **kwargs):
             # allow unsetting parameters
             if value == '' and key in update_dict['attributes']:
                 update_dict['attributes'].pop(key)
-            elif key == 'xml':
-                update_dict['attributes']['libvirt'] = value.read()
             else:
                 update_dict['attributes'][key] = value
 
@@ -299,6 +284,25 @@ def iface_edit(cur_name, **kwargs):
 
     if len(update_dict) == 0:
         raise click.ClickException('no update criteria provided.')
+
+    # attributes changed: perform sanity checks
+    if 'attributes' in update_dict:
+        if iface_type == 'OSA':
+            try:
+                update_dict['attributes']['ccwgroup']
+            except KeyError:
+                raise click.ClickException('--ccwgroup must be present')
+        elif iface_type == 'MACVTAP':
+            try:
+                update_dict['attributes']['hostiface']
+            except KeyError:
+                try:
+                    update_dict['attributes']['libvirt']
+                except KeyError:
+                    raise click.ClickException(
+                        'at least one of --hostiface or --libvirt must be '
+                        'present')
+
     item.update(**update_dict)
     click.echo('Item successfully updated.')
 # iface_edit()

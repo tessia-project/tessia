@@ -92,7 +92,8 @@
             "size": 10000,
             "specs": "{}",
             "system": "CPC3LP55",
-            "system_attributes": null,
+            "system_attributes": {
+            },
             "type": "DASD",
             "volume_id": "3961"
         },
@@ -135,7 +136,8 @@
                 "multipath": true
             },
             "system": "CPC3LP55",
-            "system_attributes": null,
+            "system_attributes": {
+            },
             "type": "FCP",
             "volume_id": "1024400000000000"
         },

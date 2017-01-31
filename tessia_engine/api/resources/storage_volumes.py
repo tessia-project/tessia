@@ -38,6 +38,7 @@ DESC = {
     'specs': 'Volume specifications',
     'type': 'Volume type',
     'system': 'Attached to system',
+    'system_attributes': 'System related attributes',
     'system_profiles': 'Associated system profiles',
     'pool': 'Attached to storage pool',
     'server': 'Storage server',
@@ -134,6 +135,10 @@ class StorageVolumeResource(SecureResource):
         # association with a system is done via system profiles
         system = fields.String(
             title=DESC['system'], description=DESC['system'], io='r')
+        system_attributes = fields.Custom(
+            schema=StorageVolume.get_schema('system_attributes'),
+            title=DESC['system_attributes'],
+            description=DESC['system_attributes'])
         modifier = fields.String(
             title=DESC['modifier'], description=DESC['modifier'], io='r')
         owner = fields.String(

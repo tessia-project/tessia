@@ -56,17 +56,32 @@ def _log_exc_info(msg, exc):
 # _log_response_info()
 
 def _parse_resp_error(response):
-    answer = response.text.strip()
+    """
+    Parse the content of the error response for more friendly messages
+    """
+    try:
+        answer = json.loads(response.text.strip())
+    # not a json content: just return the raw content
+    except Exception:
+        return answer
+
     msg = ''
     try:
-        errors = [error['message'] for error in json.loads(answer)['errors']]
-        msg = '\n' + '\n'.join(errors)
+        parsed_errors = []
+        for error in answer['errors']:
+            path = ''.join(error['path'])
+            validation_of = list(error['validationOf'].keys())[0]
+            validation_value = error['validationOf'][validation_of]
+            friendly_error = "{} must be {}={}".format(
+                path, validation_of, validation_value)
+            parsed_errors.append(friendly_error)
+        msg = ', '.join(parsed_errors)
     except Exception:
         # error messages other than 400 bad request have a different format
         try:
-            msg = json.loads(answer)['message']
+            msg = answer['message']
         # not a json content: just return the raw content
-        except Exception:
+        except KeyError:
             msg = answer
 
     return msg

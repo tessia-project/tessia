@@ -79,6 +79,7 @@ class TestStorageVolume(TestSecureResource):
                 'size': 10000,
                 'part_table': None,
                 'specs': specs_dict,
+                'system_attributes': {},
                 'type': 'FCP',
                 'server': 'DSK8_x_0',
 
@@ -143,7 +144,8 @@ class TestStorageVolume(TestSecureResource):
         Test if api correctly reports error when a mandatory field is missing
         during creation.
         """
-        pop_fields = ['volume_id', 'size', 'type', 'server']
+        pop_fields = [
+            'volume_id', 'size', 'type', 'system_attributes', 'server']
         self._test_add_missing_field('user_hw_admin@domain.com', pop_fields)
     # test_add_missing_field()
 
@@ -196,6 +198,9 @@ class TestStorageVolume(TestSecureResource):
             ('pool', 'something'),
             ('system', 'something'),
             ('system_profiles', 'something'),
+            ('system_attributes', {'invalid': 'something'}),
+            ('system_attributes', "invalid_something"),
+            ('system_attributes', None),
         ]
         self._test_add_update_wrong_field(
             'user_hw_admin@domain.com', wrong_data)

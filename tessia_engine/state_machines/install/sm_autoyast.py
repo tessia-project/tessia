@@ -21,6 +21,9 @@ Machine for auto installation of Autoyast based operating systems
 #
 from tessia_engine.state_machines.install.sm_base import SmBase
 
+import jinja2
+from time import sleep
+
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -47,7 +50,10 @@ class SmAutoyast(SmBase):
         # collect repos, volumes, ifaces
         super().collect_info()
 
-        # TODO
+        self._info["hostname"] = self._system.hostname
+        self._info["autofile"] = self._autofile_url
+        self._info["gw_iface"] = self._gw_iface
+
     # collect_info()
 
     def _get_kargs(self):
@@ -57,18 +63,66 @@ class SmAutoyast(SmBase):
         Returns:
             str: kernel cmdline string
         """
-        # TODO
-        return ''
+        template_cmdline = jinja2.Template(self._os.cmdline)
+
+        cmdline = template_cmdline.render(
+            config=self._info
+        )
+
+        return cmdline
     # _get_kargs()
 
     def wait_install(self):
         """
-        Waits for the installation, this method periodically checks the
-        /tmp/anaconda.log file in the system and looks for a string that
-        indicates that the process has finished. There is a timeout of 10
-        minutes.
+        Waits for the installation end. This method periodically checks if
+        the YaST process is still running while also extracts installation
+        logs. There is a timeout of 10 minutes.
         """
-        # TODO:
-        pass
+        initial_line = 1
+        elapsed_time = 0
+        frequency_check = 10
+        timeout_installation = 600
+        cmd_read_line = "tail -n +{} /var/log/YaST2/y2log"
+
+        ssh_client, shell = self._get_ssh_conn()
+        # Under SLES, we use the cmdline parameter 'start_shell' that
+        # starts a shell before and after the autoyast.
+        # This is required to control when the installer will reboot.
+
+        # Kill shell so installation can start
+        ret, _ = shell.run(
+            "kill -9 $(ps --no-header -o pid --ppid=`pgrep 'inst_setup'`)"
+        )
+        if ret != 0:
+            self._logger.error(
+                "Error while killing shell before installation start")
+            raise Exception("Command Error: ret={}".format(ret))
+
+        # performs successive calls to extract the installation log
+        # and check installation stage
+        while elapsed_time < timeout_installation:
+            ret, out = shell.run(cmd_read_line.format(initial_line))
+            if ret != 0:
+                self._logger.error(
+                    "Error while reading the installation log:"
+                    "ret=%s,out=%s", ret, out
+                )
+            lines = out.split("\n")
+
+            # extract installation information
+            if len(lines) > 1 or lines[0] != "":
+                initial_line += len(lines)
+                self._logger.info(out)
+
+            # check if installation finished by querying for its process
+            ret, out = shell.run("pgrep '^yast2'")
+            if out == '':
+                break
+
+            sleep(frequency_check)
+            elapsed_time += frequency_check
+
+        shell.close()
+        ssh_client.logoff()
     # wait_install()
 # SmAutoyast

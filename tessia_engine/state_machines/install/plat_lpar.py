@@ -84,7 +84,7 @@ class PlatLpar(PlatBase):
 
         elif vol_obj.type == 'FCP':
             if vol_obj.specs['multipath']:
-                prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
+                prefix = '/dev/mapper/{}'
             else:
                 prefix = '/dev/disk/by-id/scsi-{}'
             return prefix.format(vol_obj.specs['wwid'])
@@ -110,7 +110,7 @@ class PlatLpar(PlatBase):
         ssh_client.login(hostname, user=user, passwd=password,
                          timeout=10)
         shell = ssh_client.open_shell()
-        shell.run('nohup reboot &>/dev/null', ignore_ret=True)
+        shell.run('nohup reboot -f &>/dev/null', ignore_ret=True)
         shell.close()
         ssh_client.logoff()
     # reboot()

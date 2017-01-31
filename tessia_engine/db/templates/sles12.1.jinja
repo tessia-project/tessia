@@ -42,19 +42,19 @@
     </global>
     <loader_type>grub2</loader_type>
   </bootloader>
-  {% for volume in config["svols"] %}
 	<dasd>
       <devices config:type="list">
+      {% for volume in config["svols"] %}
 	  {% if config["system_type"] == "LPAR" and volume["type"] == "DASD" %}
 	    <listentry>
 		  <channel>0.0.{{ volume["volume_id"] }}</channel>
 		  <diag config:type="boolean">false</diag>
 		</listentry>
 	  {% endif %}
+      {% endfor %}
 	  </devices>
       <format_unformatted config:type="boolean">false</format_unformatted>
 	</dasd>
-  {% endfor %}
   <deploy_image>
     <image_installation config:type="boolean">false</image_installation>
   </deploy_image>

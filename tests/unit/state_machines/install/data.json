@@ -112,6 +112,31 @@
             "volume_id": "3961"
         },
 		{
+            "desc": "- DASD disk for regression tests",
+            "modifier": "system",
+            "owner": "system",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/home",
+                        "size": 4000,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "System project",
+            "server": "DSK7K16",
+            "size": 10000,
+            "specs": {},
+            "system": "CPC3LP54",
+            "system_attributes": {},
+            "type": "DASD",
+            "volume_id": "395f"
+        },
+		{
             "desc": "FCP-SCSI DISK",
             "modifier": "system",
             "owner": "system",
@@ -247,6 +272,10 @@
         {
             "profile": "CPC3LP55/default_CPC3LP55",
             "volume": "DSK7K16/3961"
+        },
+		{
+            "profile": "CPC3LP54/lpar_cpc3lp54_install",
+            "volume": "DSK7K16/395f"
         },
         {
             "profile": "CPC3LP55/default_CPC3LP55_SCSI",

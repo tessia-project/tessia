@@ -135,7 +135,7 @@ class PlatKvm(PlatBase):
         Args:
             vol_obj (StorageVolume): volume sqlsa object
             target_dev (str): vda, vdb, etc.
-            devno (str): 00f0, 0001, etc.
+            devno (int): 1, 500, etc.
 
         Returns:
             str: libvirt xml definition
@@ -158,18 +158,18 @@ class PlatKvm(PlatBase):
                 boot_tag = '<boot order="1"/>'
                 break
 
+        hex_devno = '{:04x}'.format(devno)
         vol_libvirt = DISK_TEMPLATE.format(
             disk_type=disk_type,
             driver=driver,
             src_type=src_type,
             src_dev=self._kvm_get_vol_devpath_on_host(vol_obj),
             target_dev=target_dev,
-            devno=devno,
+            devno='0x' + hex_devno,
             boot_tag=boot_tag,
         )
         result = {
-            'devpath': self._devpath_prefix.format(
-                '0', devno.replace('0x', '')),
+            'devpath': self._devpath_prefix.format('0', hex_devno),
             'libvirt': vol_libvirt
         }
         return result
@@ -229,11 +229,11 @@ class PlatKvm(PlatBase):
                 vol.system_attributes['libvirt'])
             # device is of same type used for dynamic entries: add it to the
             # used map
-            if result['bus'] == 'virtio' and result['ssid'] == '0':
+            if result['bus'] == 'virtio' and result['ssid'] == 0:
                 # devno already used: report conflict
                 if result['devno'] in used_devnos:
                     raise ValueError(
-                        'devno {} is used by more than one device'.format(
+                        'devno {:04x} is used by more than one device'.format(
                             result['devno'])
                     )
                 used_devnos[result['devno']] = True
@@ -271,11 +271,11 @@ class PlatKvm(PlatBase):
                 if devno_counter == 0xffff:
                     raise RuntimeError("devno limit reached (0xffff)")
                 devno_counter += 1
-            devno = "0x{:04x}".format(devno_counter)
             used_devs[target_dev] = True
-            used_devnos[devno] = True
+            used_devnos[devno_counter] = True
 
-            result = self._kvm_vol_create_libvirt(vol, target_dev, devno)
+            result = self._kvm_vol_create_libvirt(
+                vol, target_dev, devno_counter)
             # add libvirt definition to the object, this will be used only
             # during the run-time of the installation and not made persistent
             # to the database.
@@ -330,14 +330,11 @@ class PlatKvm(PlatBase):
             # for s390 we use ccw addressing to determine device path
             try:
                 address = libvirt_tree.find('address')
-                ssid = address.get('ssid').replace('0x', '')
-                devno = address.get('devno').replace('0x', '')
-            except (AttributeError, KeyError):
+                ssid = int(address.get('ssid'), 16)
+                devno = int(address.get('devno'), 16)
+            except (AttributeError, KeyError, ValueError):
                 msg = 'Libvirt xml has missing or invalid <address> tag'
                 self._logger.debug(msg, exc_info=True)
-                raise ValueError(msg)
-            if re.match('^[0-9]{1}$', ssid) is None:
-                msg = 'ssid attribute has invalid format'
                 raise ValueError(msg)
 
             result = {
@@ -345,7 +342,8 @@ class PlatKvm(PlatBase):
                 'dev': dev,
                 'ssid': ssid,
                 'devno': devno,
-                'devpath': self._devpath_prefix.format(ssid, devno)
+                'devpath': self._devpath_prefix.format(
+                    '{:x}'.format(ssid), '{:04x}'.format(devno))
             }
             return result
 

@@ -48,8 +48,8 @@ PROFILE_FIELDS = (
 @click.option('--cpu', default=1, type=click.IntRange(min=1),
               help="number of cpus")
 @click.option('--memory', default='1gb', help="memory size (i.e. 1gb)")
-@click.option('--default', is_flag=True, help="make it the default profile")
-@click.option('hypervisor_profile', '--require',
+@click.option('--default', is_flag=True, help="set as default for system")
+@click.option('hypervisor_profile', '--parent',
               help="hypervisor profile required for activation")
 @click.option('parameters', '--params',
               help="activation parameters (future use)")
@@ -70,6 +70,11 @@ def prof_add(**kwargs):
         kwargs['memory'] = str_to_size(kwargs['memory'])
     except ValueError:
         raise click.ClickException('invalid memory size specified.')
+    # avoid user confusion
+    if (kwargs['hypervisor_profile'] is not None and
+            kwargs['hypervisor_profile'].find('/') > -1):
+        raise click.ClickException(
+            'invalid format for parent, specify profile name only')
 
     # login provided: parse it to json format expected by API
     if kwargs['login'] is not None:
@@ -115,8 +120,8 @@ def prof_del(name):
 @click.option('name', '--newname', help="new name (i.e. new-profile-name)")
 @click.option('--cpu', type=click.IntRange(min=1), help="number of cpus")
 @click.option('--memory', help="memory size (i.e. 1gb)")
-@click.option('--default', is_flag=True, help="make it the default profile")
-@click.option('hypervisor_profile', '--require',
+@click.option('--default', is_flag=True, help="set as default for system")
+@click.option('hypervisor_profile', '--parent',
               help="hypervisor profile required for activation")
 @click.option('parameters', '--params',
               help="activation parameters (future use)")
@@ -135,6 +140,11 @@ def prof_edit(cur_name, **kwargs):
         kwargs['memory'] = str_to_size(kwargs['memory'])
     except ValueError:
         raise click.ClickException('invalid memory size specified.')
+    # avoid user confusion
+    if (kwargs['hypervisor_profile'] is not None and
+            kwargs['hypervisor_profile'].find('/') > -1):
+        raise click.ClickException(
+            'invalid format for parent, specify profile name only')
 
     # login provided: parse it to json format expected by API
     if kwargs['login'] is not None:
@@ -144,6 +154,10 @@ def prof_edit(cur_name, **kwargs):
         except (AttributeError, ValueError):
             raise click.ClickException('invalid format specified for login')
         kwargs['credentials'] = {'user': user, 'passwd': passwd}
+    # default not provided: remove from dict otherwise it will force setting to
+    # false
+    if kwargs['default'] is False:
+        kwargs.pop('default')
 
     client = Client()
     fetch_and_update(
@@ -162,8 +176,8 @@ def prof_edit(cur_name, **kwargs):
               help="filter by specified system")
 @click.option('--cpu', help="filter by specified number of cpus")
 @click.option('--memory', help="filter by specified memory size (i.e. 1gb)")
-@click.option('--default', type=click.BOOL, help="show default profiles")
-@click.option('hypervisor_profile', '--require',
+@click.option('--default', is_flag=True, help="list only default profiles")
+@click.option('hypervisor_profile', '--parent',
               help="filter by required hypervisor profile")
 def prof_show(**kwargs):
     """
@@ -179,6 +193,10 @@ def prof_show(**kwargs):
             kwargs['system'], kwargs['name'] = kwargs['name'].split('/', 1)
         except:
             raise click.ClickException('invalid format for profile name')
+    # default not provided: remove from dict otherwise it will force listing
+    # only non defaults
+    if kwargs['default'] is False:
+        kwargs.pop('default')
 
     # fetch data from server
     client = Client()

@@ -949,7 +949,7 @@ class SystemProfile(CommonMixin, BASE):
     @hypervisor_profile.setter
     def hypervisor_profile(self, value):
         """Defines what to do when assigment occurs for the attribute"""
-        if value == '' or value is None:
+        if value is None:
             self.hypervisor_profile_id = None
             return
         try:
@@ -959,6 +959,9 @@ class SystemProfile(CommonMixin, BASE):
                 self.__class__, 'hypervisor_profile',
                 SystemProfile, 'name', value)
 
+        # WARNING: it's possible that we associate with a profile of a
+        # hypervisor different from the system associated, this must be checked
+        # by the API.
         match = SystemProfile.query.join(
             System, SystemProfile.system_id == System.id
         ).filter(

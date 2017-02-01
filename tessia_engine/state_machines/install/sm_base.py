@@ -266,6 +266,7 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         info = {
             'ifaces': [],
+            'repos': [],
             'svols': [],
             'system_type': self._system.type
         }
@@ -278,7 +279,7 @@ class SmBase(metaclass=abc.ABCMeta):
             info['ifaces'].append(self._parse_iface(
                 iface, iface.osname == self._gw_iface['osname']))
 
-        info['repos'] = self._repo.url
+        info['repos'].append(self._repo.url)
 
         self._info = info
     # collect_info()

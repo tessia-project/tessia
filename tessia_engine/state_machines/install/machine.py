@@ -20,6 +20,7 @@ State machine that performs the installation of Linux Distros.
 # IMPORTS
 #
 from jsonschema import validate
+from tessia_engine.config import CONF
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import OperatingSystem
 from tessia_engine.db.models import Template
@@ -85,6 +86,7 @@ class AutoInstallMachine(BaseMachine):
         # Create the first connection
         MANAGER.session()
 
+        CONF.log_config()
         self._logger = logging.getLogger(__name__)
         # The content of the request is validated in the parse method.
         # so it is not checked here.

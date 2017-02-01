@@ -87,16 +87,16 @@ def del_(name):
     click.echo('Item successfully deleted.')
 # del_()
 
-@click.command(name='install')
+@click.command(name='autoinstall')
 @click.pass_context
 @click.option('--template', required=True, help='autofile template')
 @click.option('profile', '--system', required=True,
               help='system-name or system-name/profile-name')
-def install(ctx=None, **kwargs):
+def autoinstall(ctx=None, **kwargs):
     """
     install a system using an autofile template
     """
-    request = {'action_type': 'SUBMIT', 'job_type': 'install'}
+    request = {'action_type': 'SUBMIT', 'job_type': 'autoinstall'}
     request['parameters'] = json.dumps(kwargs)
     job_id = wait_scheduler(Client(), request)
     click.echo('Waiting for installation output (Ctrl+C to stop waiting)')
@@ -180,4 +180,4 @@ def states():
         STATE_FIELDS, client.SystemStates, None, entries)
 # states()
 
-CMDS = [add, del_, edit, install, show, types, states]
+CMDS = [add, del_, edit, autoinstall, show, types, states]

@@ -207,7 +207,7 @@ def print_hor_table(headers, rows):
     click.echo(output)
 # print_hor_table()
 
-def print_ver_table(headers, entries):
+def print_ver_table(headers, entries, fields_map):
     """
     Print to the screen one or more items in vertical (traditional)
     orientation.
@@ -216,6 +216,7 @@ def print_ver_table(headers, entries):
         headers (list): in format (header1, header2, header3)
         entries (list): in format [(entry1_1, entry1_2, entry1_3),
                      (entry2_1, entry2_2, entry2_3)]
+        fields_map (list): mapping of header to entries' fields
 
     Returns:
         None
@@ -236,9 +237,12 @@ def print_ver_table(headers, entries):
         # use this variable to avoid the need to compute the size of the
         # rows list
         rows_qty = 0
-        # there is no other way to get this info other than acessing a
+        # there is no other way to get this info other than accessing a
         # protected attribute :(
-        per_page = entries._per_page # pylint: disable=protected-access
+        try:
+            per_page = entries._per_page # pylint: disable=protected-access
+        except AttributeError:
+            per_page = rows_qty + 1
 
         # on each iteration we work with a number of entries that do not exceed
         # the number of already fetched entries. That way we make sure not to
@@ -250,7 +254,7 @@ def print_ver_table(headers, entries):
                 break
 
             # add the row containing the fields' values
-            rows.append([getattr(entry, field) for field in headers])
+            rows.append([getattr(entry, field) for field in fields_map])
             entry_index += 1
             rows_qty += 1
         # no rows processed: no more entries to print

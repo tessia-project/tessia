@@ -93,7 +93,7 @@
             "name": "external osa",
             "osname": "enccwf500",
             "attributes":
-                "{'layer2': True, 'devicenr': '0xf500,0xf501,0xf502'}",
+                "{'layer2': True, 'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'}",
             "ip_address": "cpc0 shared/10.1.0.4",
             "type": "OSA",
             "mac_address": "26:8d:db:b1:12:b2",

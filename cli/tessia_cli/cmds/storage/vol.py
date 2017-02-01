@@ -19,12 +19,14 @@ Module for the vol (storage volumes) commands
 #
 # IMPORTS
 #
+from collections import namedtuple
 from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
 from tessia_cli.output import print_ver_table
+from tessia_cli.types import FCP_PATH
+from tessia_cli.types import SCSI_WWID
 from tessia_cli.utils import fetch_and_delete
-from tessia_cli.utils import fetch_and_update
 from tessia_cli.utils import fetch_item
 from tessia_cli.utils import size_to_str
 from tessia_cli.utils import str_to_size
@@ -36,8 +38,8 @@ import click
 #
 FIELDS = (
     'volume_id', 'server', 'size', 'specs', 'type', 'system',
-    'system_profiles', 'pool', 'owner', 'project', 'modified', 'modifier',
-    'desc'
+    'system_attributes', 'system_profiles', 'pool', 'owner', 'project',
+    'modified', 'modifier', 'desc'
 )
 PART_FIELDS = (
     'number', 'size', 'type', 'filesystem', 'mount point', 'mount options'
@@ -55,9 +57,9 @@ TYPE_FIELDS = (
 @click.option('volume_id', '--id', required=True,
               help="volume id in the form server-name/volume-id")
 @click.option('--size', required=True, help="size (i.e. 500mb)")
-@click.option('--fs', default='', help="filesystem")
-@click.option('--mo', default='', help="mount options")
-@click.option('--mp', default='', help="mount point")
+@click.option('--fs', default=None, help="filesystem")
+@click.option('--mo', default=None, help="mount options")
+@click.option('--mp', default=None, help="mount point")
 @click.option(
     '--type', default='primary', type=click.Choice(['primary', 'logical']),
     help="partition type (no effect for gpt)")
@@ -159,6 +161,9 @@ def part_edit(volume_id, num, **kwargs):
     parsed_args = {}
     for key, value in kwargs.items():
         if value is not None:
+            # empty value: convert to None to allow field to be unset
+            if value == '':
+                value = None
             parsed_args[key] = value
     if len(parsed_args) == 0:
         raise click.ClickException('nothing to update.')
@@ -238,21 +243,23 @@ def part_show(volume_id, **kwargs):
 
     rows = []
     table_list = part_table.get('table', [])
+    fields_map = ['number', 'size', 'type', 'fs', 'mp', 'mo']
+    part_table_cls = namedtuple('PartTable', fields_map)
     for i in range(0, len(table_list)):
         part = table_list[i]
-        row = [
-            i+1,
-            size_to_str(part.get('size', 0)),
-            part.get('type', ''),
-            part.get('fs', ''),
-            part.get('mp', ''),
-            part.get('mo', ''),
-        ]
+        row = part_table_cls(
+            number=i+1,
+            size=size_to_str(part.get('size', 0)),
+            type=part.get('type', ''),
+            fs=part.get('fs', ''),
+            mp=part.get('mp', ''),
+            mo=part.get('mo', ''),
+        )
         rows.append(row)
 
     click.echo('\nPartition table type: {}'.format(
         part_table.get('type', 'undefined')))
-    print_ver_table(PART_FIELDS, rows)
+    print_ver_table(PART_FIELDS, rows, fields_map)
 # part_show()
 
 @click.command('vol-add')
@@ -321,10 +328,21 @@ def vol_del(vol_id):
               help="volume size (i.e. 10gb)")
 @click.option('--type', help="volume type (see vol-types)")
 @click.option('--pool', help="assign volume to this storage pool")
-@click.option('--specs', help="volume specification (json)")
 @click.option('--owner', help="volume's owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
+# options specific to FCP type
+@click.option('--mpath', type=click.BOOL,
+              help="enable/disable multipath (FCP only)")
+@click.option(
+    '--addpath', multiple=True, type=FCP_PATH,
+    help='add a FCP path (FCP only)')
+@click.option(
+    '--delpath', multiple=True, type=FCP_PATH,
+    help='delete a FCP path (FCP only)')
+@click.option(
+    '--wwid', type=SCSI_WWID,
+    help='scsi world wide identifier (FCP only)')
 def vol_edit(cur_id, **kwargs):
     """
     change properties of an existing storage volume
@@ -340,11 +358,107 @@ def vol_edit(cur_id, **kwargs):
         raise click.ClickException('invalid size specified.')
 
     client = Client()
-    fetch_and_update(
+    item = fetch_item(
         client.StorageVolumes,
         {'volume_id': cur_id, 'server': server},
-        'volume not found.',
-        kwargs)
+        'volume not found.'
+    )
+    update_dict = {}
+
+    for key, value in kwargs.items():
+
+        # option was not specified: skip it
+        if value is None:
+            continue
+
+        # process multipath arg
+        if key == 'mpath':
+            update_dict.setdefault('specs', item.specs)
+            update_dict['specs']['multipath'] = kwargs['mpath']
+
+        # process add fcp path arg
+        elif key == 'addpath':
+            # option was not specified: skip it
+            if len(value) == 0:
+                continue
+
+            # add the necessary keys to the update dict in case they are not
+            # there yet
+            update_dict.setdefault('specs', item.specs)
+            update_dict['specs'].setdefault('adapters', [])
+
+            for devno, wwpn in value:
+
+                # find the entry with the corresponding devno
+                adapter_entry = None
+                for check_entry in update_dict['specs']['adapters']:
+                    if check_entry.get('devno') == devno:
+                        adapter_entry = check_entry
+                        break
+
+                # adapter entry does not exist yet: create one
+                if adapter_entry is None:
+                    adapter_entry = {
+                        'devno': devno,
+                        'wwpns': [wwpn]
+                    }
+                    update_dict['specs']['adapters'].append(adapter_entry)
+                # adapter entry found: verify if it contains wwpn
+                else:
+                    adapter_entry.setdefault('wwpns', [])
+                    # wwpn not listed yet: add it
+                    if wwpn not in adapter_entry['wwpns']:
+                        adapter_entry['wwpns'].append(wwpn)
+
+        elif key == 'delpath':
+            # option was not specified: skip it
+            if len(value) == 0:
+                continue
+            # add the necessary keys to the update dict in case they are not
+            # there yet
+            update_dict.setdefault('specs', item.specs)
+            update_dict['specs'].setdefault('adapters', [])
+
+            for devno, wwpn in value:
+                index = -1
+                for i in range(0, len(update_dict['specs']['adapters'])):
+                    check_entry = update_dict['specs']['adapters'][i]
+                    if check_entry.get('devno') == devno:
+                        index = i
+                        break
+                # adapter not found: nothing to do
+                if index == -1:
+                    continue
+
+                adapter_entry = update_dict['specs']['adapters'][index]
+                try:
+                    adapter_entry.get('wwpns', []).remove(wwpn)
+                except ValueError:
+                    continue
+
+                # no more wwpns listed: remove adapter entry
+                if len(adapter_entry['wwpns']) == 0:
+                    update_dict['specs']['adapters'].pop(index)
+
+            # at least one path must be available
+            if len(update_dict['specs']['adapters']) == 0:
+                raise click.ClickException(
+                    'fcp volume must have at least one path')
+
+        elif key == 'wwid':
+            # add the necessary key to the update dict in case they are not
+            # there yet
+            update_dict.setdefault('specs', item.specs)
+            update_dict['specs']['wwid'] = value
+
+        # normal arg: just add to the dict
+        else:
+            update_dict[key] = value
+
+    if len(update_dict) == 0:
+        raise click.ClickException('no update criteria provided.')
+    item.update(**update_dict)
+
     click.echo('Item successfully updated.')
 # vol_edit()
 

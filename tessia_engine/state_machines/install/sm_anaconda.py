@@ -21,11 +21,13 @@ Machine for auto installation of Anaconda based operating systems.
 #
 from tessia_baselib.common.ssh.client import SshClient
 from tessia_engine.state_machines.install.sm_base import SmBase
+from time import time
 from time import sleep
 
 import crypt
 import jinja2
 import logging
+import re
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -58,13 +60,13 @@ class SmAnaconda(SmBase):
         Returns:
             None
         """
-        devicenr = iface['attributes']["devicenr"].split(",")
+        ccwgroup = iface['attributes']["ccwgroup"].split(",")
         # The control read device number is used to create a predictable
         # device name for OSA network interfaces (for details see
         # https://www.freedesktop.org/wiki/Software/systemd/
         # PredictableNetworkInterfaceNames/)
         iface["systemd_osname"] = (
-            "enccw0.0.{}".format(devicenr[0].lstrip("0x"))
+            "enccw{}".format(ccwgroup[0])
         )
     # _add_systemd_osname()
 
@@ -84,6 +86,7 @@ class SmAnaconda(SmBase):
         for iface in self._info["ifaces"]:
             if iface["type"] == "OSA":
                 self._add_systemd_osname(iface)
+
     # collect_info()
 
     def _get_kargs(self):
@@ -157,35 +160,48 @@ class SmAnaconda(SmBase):
 
         cmd_read_line = "tail -n +{} /tmp/anaconda.log"
         termination_string = "Thread Done: AnaConfigurationThread"
-        initial_line = 1
+        # re to match errors with partitioning scheme
+        part_error_regex = re.compile(
+            r'^.* ERR anaconda: storage configuration failed: *(.*)$',
+            re.MULTILINE
+        )
+        line_offset = 1
 
-        timeout_installation = 600
+        timeout_installation = time() + 600
         frequency_check = 10
-        elapsed_time = 0
 
         # Performs successive calls to tail to extract the end of the file
         # from a previous start point.
         success = False
-        while elapsed_time < timeout_installation:
-            ret, out = shell.run(cmd_read_line.format(initial_line))
+        while time() <= timeout_installation:
+            ret, out = shell.run(cmd_read_line.format(line_offset))
             if ret != 0:
                 self._logger.error("Error while reading the installation log.")
                 return success
-            lines = out.split("\n")
+            out = out.rstrip('\n')
+            if len(out) == 0:
+                continue
 
-            if len(lines) > 1 or lines[0] != "":
-                initial_line += len(lines)
-                self._logger.info(out)
+            line_offset += len(out.split('\n'))
+            self._logger.info(out)
 
             if out.find(termination_string) != -1:
                 success = True
                 break
 
+            match = part_error_regex.search(out)
+            if match is not None:
+                raise RuntimeError(
+                    'Anaconda storage configuration failed: ' + match.group(1))
+
             sleep(frequency_check)
-            elapsed_time += frequency_check
 
         shell.close()
         ssh_client.logoff()
+
+        if not success:
+            raise TimeoutError('Timed out waiting for installer')
+
         return success
     # wait_install()
 # SmAnaconda

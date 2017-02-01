@@ -75,14 +75,11 @@ class SmBase(metaclass=abc.ABCMeta):
                 name=self._profile.parameters['gateway_iface'],
             ).one()
         except KeyError:
-            raise RuntimeError('No gateway interface defined for profile')
+            raise RuntimeError('No gateway interface defined in profile')
         except NoResultFound:
             msg = 'Gateway interface {} does not exist'.format(
                 self._profile.parameters['gateway_iface'])
             raise RuntimeError(msg)
-        if gw_iface is None:
-            raise RuntimeError(
-                'System has no gateway network interface configured')
         self._gw_iface = self._parse_iface(gw_iface, True)
 
         # create the appropriate platform object according to the system being
@@ -153,11 +150,15 @@ class SmBase(metaclass=abc.ABCMeta):
             result["dns_1"] = iface.ip_address_rel.subnet_rel.dns_1
             result["dns_2"] = iface.ip_address_rel.subnet_rel.dns_2
 
+        # osa: add some sensitive defaults
+        if result['type'] == 'OSA':
+            result['attributes'].setdefault('portno', '0')
+            result['attributes'].setdefault('portname', 'OSAPORT')
+
         return result
     # _parse_iface()
 
-    @staticmethod
-    def _parse_svol(storage_vol):
+    def _parse_svol(self, storage_vol):
         """
         Auxiliary method to parse the information of a storage volume,
         (eg: type of disk, partition table, etc).
@@ -169,14 +170,11 @@ class SmBase(metaclass=abc.ABCMeta):
             dict: a dictionary with all the parsed information.
         """
         result = {}
-        # TODO: remove the following remap between the Information in the
-        # tessia-engine database and the tessia_baselib.
-
-        disk_type = storage_vol.type_rel.name
-        result["disk_type"] = disk_type
+        result["type"] = storage_vol.type_rel.name
         result["volume_id"] = storage_vol.volume_id
-        result["system_attributes"] = storage_vol.system_attributes
-        result["specs"] = storage_vol.specs
+        result["server"] = storage_vol.server
+        result["system_attributes"] = storage_vol.system_attributes.copy()
+        result["specs"] = storage_vol.specs.copy()
 
         result["part_table"] = storage_vol.part_table
         result["is_root"] = False
@@ -184,6 +182,11 @@ class SmBase(metaclass=abc.ABCMeta):
             if entry["mp"] == "/":
                 result["is_root"] = True
                 break
+
+        # device path not user-defined: determine it based on the platform
+        if "device" not in result["system_attributes"]:
+            result["system_attributes"]["device"] = \
+                self._platform.get_vol_devpath(storage_vol)
 
         return result
     # _parse_svol()
@@ -228,7 +231,7 @@ class SmBase(metaclass=abc.ABCMeta):
             'ifaces': [],
             'repos': [],
             'svols': [],
-            'system_type': self._profile.system_rel.type
+            'system_type': self._system.type
         }
 
         # iterate over all available volumes and ifaces and filter data for

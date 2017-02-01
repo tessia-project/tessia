@@ -93,7 +93,6 @@
             "specs": "{}",
             "system": "CPC3LP55",
             "system_attributes": {
-                "device": "/dev/disk/by-path/ccw-0.0.3961"
             },
             "type": "DASD",
             "volume_id": "3961"
@@ -114,7 +113,7 @@
                     {
                         "fs": "swap",
                         "mo": null,
-                        "mp": "swap",
+                        "mp": null,
                         "size": 95,
                         "type": "primary"
                     }
@@ -133,12 +132,11 @@
                         ]
                     }
                 ],
+                "wwid": "11002076305aac1a0000000000002400",
                 "multipath": true
             },
-            "system": "kvm054",
+            "system": "CPC3LP55",
             "system_attributes": {
-                "device": "/dev/disk/by-path/ccw-0.0.1800-zfcp-0x100207630508c1ae\\:0x1024400000000000",
-                "libvirt": "    <disk type='block' device='disk'>      <driver name='qemu' type='raw'/>      <source dev='/dev/mapper/11002076305aac1a0000000000002400'/>      <target dev='vda' bus='virtio'/>      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0001'/>    </disk>"
             },
             "type": "FCP",
             "volume_id": "1024400000000000"
@@ -159,7 +157,7 @@
                     {
                         "fs": "swap",
                         "mo": null,
-                        "mp": "swap",
+                        "mp": null,
                         "size": 95,
                         "type": "primary"
                     }
@@ -178,12 +176,12 @@
                         ]
                     }
                 ],
+                "wwid": "11002076305aac1a0000000000002401",
                 "multipath": true
             },
             "system": "kvm054",
             "system_attributes": {
-                "device": "vda",
-                "libvirt": "    <disk type='block' device='disk'>      <driver name='qemu' type='raw'/>      <source dev='/dev/mapper/11002076305aac1a0000000000002401'/>      <target dev='vda' bus='virtio'/>      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0001'/>    </disk>"
+                "libvirt": "    <disk type='block' device='disk'>      <driver name='qemu' type='raw'/>      <source dev='/dev/disk/by-id/scsi-11002076305aac1a0000000000002401'/>      <target dev='vda' bus='virtio'/>      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0001'/>    </disk>"
             },
             "type": "FCP",
             "volume_id": "1024400100000000"
@@ -258,7 +256,7 @@
     "SystemIface": [
         {
             "attributes": {
-                "devicenr": "0xf500,0xf501,0xf502",
+                "ccwgroup": "0.0.f500,0.0.f501,0.0.f502",
                 "layer2": true
             },
             "ip_address": "CPC3 shared/192.168.161.225",
@@ -277,7 +275,7 @@
             "name": "external macvtap",
             "osname": "eth0",
             "system": "kvm054",
-            "type": "KVM_LIBVIRT"
+            "type": "MACVTAP"
         }
     ],
     "SystemIfaceProfileAssociation": [

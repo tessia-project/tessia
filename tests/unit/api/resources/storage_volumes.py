@@ -19,10 +19,11 @@ Unit test for storage_volumes resource module
 #
 # IMPORTS
 #
-from tests.unit.api.resources.secure_resource import TestSecureResource
 from tessia_engine.api.resources.storage_volumes import MSG_INVALID_PTABLE
 from tessia_engine.api.resources.storage_volumes import MSG_INVALID_TYPE
+from tessia_engine.api.resources.storage_volumes import StorageVolumeResource
 from tessia_engine.db import models
+from tests.unit.api.resources.secure_resource import TestSecureResource
 
 import json
 
@@ -41,6 +42,8 @@ class TestStorageVolume(TestSecureResource):
     RESOURCE_URL = '/storage-volumes'
     # model associated with this resource
     RESOURCE_MODEL = models.StorageVolume
+    # potion object associated with this resource
+    RESOURCE_API = StorageVolumeResource
 
     @classmethod
     def _entry_gen(cls):
@@ -50,30 +53,33 @@ class TestStorageVolume(TestSecureResource):
         index = 0
         specs_template = {
             'multipath': True,
-            'paths': [
+            'adapters': [
                 {
                     'devno': '0.0.1800',
                     'wwpns': [
-                        '5005076300C213e5',
-                        '5005076300C213e9'
+                        '5005076300c213e5',
+                        '5005076300c213e9'
                     ]
                 },
                 {
                     'devno': '0.0.1900',
                     'wwpns': [
-                        '5005076300C213e9'
+                        '5005076300c213e9'
                     ]
                 }
             ]
         }
         while True:
+            specs_dict = specs_template.copy()
+            specs_dict['wwid'] = str(10000000000 + index)
             data = {
                 'project': cls._db_entries['Project'][0]['name'],
                 'desc': '- Storage volume with some *markdown*',
                 'volume_id': '%x' % (0x1022400000000000 + index),
                 'size': 10000,
                 'part_table': None,
-                'specs': specs_template,
+                'specs': specs_dict,
+                'system_attributes': {},
                 'type': 'FCP',
                 'server': 'DSK8_x_0',
 
@@ -138,7 +144,8 @@ class TestStorageVolume(TestSecureResource):
         Test if api correctly reports error when a mandatory field is missing
         during creation.
         """
-        pop_fields = ['volume_id', 'size', 'type', 'server']
+        pop_fields = [
+            'volume_id', 'size', 'type', 'system_attributes', 'server']
         self._test_add_missing_field('user_hw_admin@domain.com', pop_fields)
     # test_add_missing_field()
 
@@ -191,6 +198,9 @@ class TestStorageVolume(TestSecureResource):
             ('pool', 'something'),
             ('system', 'something'),
             ('system_profiles', 'something'),
+            ('system_attributes', {'invalid': 'something'}),
+            ('system_attributes', "invalid_something"),
+            ('system_attributes', None),
         ]
         self._test_add_update_wrong_field(
             'user_hw_admin@domain.com', wrong_data)

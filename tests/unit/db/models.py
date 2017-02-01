@@ -638,4 +638,34 @@ class TestModels(TestCase):
         DbUnit.session.commit()
     # test_validators()
 
+    def test_storage_volume_human_name(self):
+        """
+        Test the hybrid attribute definition human_name for StorageVolume
+        """
+        item = self.models.StorageVolume.query.first()
+
+        # verify that we got a row
+        self.assertIsInstance(item, self.models.StorageVolume)
+
+        # test the getter
+        server, volume_id = item.human_name.split('/', 1)
+        self.assertEqual(item.server, server)
+        self.assertEqual(item.volume_id, volume_id)
+
+        # test the setter with invalid value
+        with self.assertRaises(ValueError):
+            item.human_name = 'some_invalid_id'
+
+        # test the setter with invalid association
+        with self.assertRaises(AssociationError):
+            item.human_name = 'some_server/some_volume_id'
+
+        # test the setter with valid value
+        item.human_name = '{}/{}'.format(item.server, item.volume_id)
+        DbUnit.session.add(item)
+        DbUnit.session.commit()
+        self.assertEqual(item.server, server)
+        self.assertEqual(item.volume_id, volume_id)
+
+    # test_storage_volume_human_name()
 # TestModels

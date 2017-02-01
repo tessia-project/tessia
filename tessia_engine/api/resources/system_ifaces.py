@@ -75,18 +75,16 @@ class SystemIfaceResource(SecureResource):
             title=DESC['name'], description=DESC['name'])
         osname = fields.String(
             title=DESC['osname'], description=DESC['osname'], nullable=True)
-        attributes = fields.String(
-            title=DESC['attributes'], description=DESC['attributes'],
-            nullable=True)
+        attributes = fields.Custom(
+            schema=SystemIface.get_schema('attributes'),
+            title=DESC['attributes'], description=DESC['attributes'])
         mac_address = fields.String(
-            title=DESC['mac_address'], description=DESC['mac_address'],
-            nullable=True)
+            title=DESC['mac_address'], description=DESC['mac_address'])
         desc = fields.String(
             title=DESC['desc'], description=DESC['desc'], nullable=True)
         # relations
         ip_address = fields.String(
-            title=DESC['ip_address'], description=DESC['ip_address'],
-            nullable=True)
+            title=DESC['ip_address'], description=DESC['ip_address'])
         system = fields.String(
             title=DESC['system'], description=DESC['system'])
         type = fields.String(

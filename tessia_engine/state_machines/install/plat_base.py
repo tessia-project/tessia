@@ -22,6 +22,7 @@ Interface for epresentation of each platform type
 from tessia_baselib.hypervisors import Hypervisor
 
 import abc
+import logging
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -53,6 +54,7 @@ class PlatBase(metaclass=abc.ABCMeta):
         Raises:
             RuntimeError: if hypervisor type in profile is unknown
         """
+        self._logger = logging.getLogger(__name__)
         self._hyp_system = hyp_profile.system_rel
         self._hyp_prof = hyp_profile
         self._guest_prof = guest_profile
@@ -89,43 +91,7 @@ class PlatBase(metaclass=abc.ABCMeta):
             None)
     # _create_hyp()
 
-    @staticmethod
-    def _jsonify_iface(iface_entry):
-        """
-        """
-        result = {"attributes": iface_entry.attributes}
-        return result
-    # _jsonify_iface()
-
-    @staticmethod
-    def _jsonify_svol(svol_entry):
-
-        result = {}
-
-        disk_type = svol_entry.type_rel.name
-        result["disk_type"] = disk_type
-        result["volume_id"] = svol_entry.volume_id
-        result["system_attributes"] = svol_entry.system_attributes
-        result["specs"] = svol_entry.specs
-
-        return result
-    # _jsonify_svol()
-
     @abc.abstractmethod
-    def _get_start_params(self, kargs):
-        """
-        Return the start parameters specific to the platform. Should be
-        implemented by each concrete child class.
-
-        Args:
-            kargs (str): kernel command line args for os' installer
-
-        Returns:
-            dict: in format expected by tessia_baselibs' parameters option
-        """
-        return {}
-    # _get_start_params()
-
     def boot(self, kargs):
         """
         Perform a boot operation so that the installation process can start.
@@ -133,31 +99,20 @@ class PlatBase(metaclass=abc.ABCMeta):
         Args:
             kargs (str): kernel command line args for os' installer
         """
-        # basic information
-        cpu = self._guest_prof.cpu
-        memory = self._guest_prof.memory
-        guest_name = self._guest_prof.system_rel.name
-
-        # prepare entries in the format expected by tessia_baselib
-        svols = []
-        for svol in self._guest_prof.storage_volumes_rel:
-            svols.append(self._jsonify_svol(svol))
-        ifaces = []
-        for iface in self._guest_prof.system_ifaces_rel:
-            ifaces.append(self._jsonify_iface(iface))
-
-        # parameters argument, see tessia_baselib schema for details
-        if self._guest_prof.system_rel.type == "KVM":
-            params = {
-                'ifaces': ifaces,
-                'storage_volumes': svols,
-                'parameters': self._get_start_params(kargs),
-            }
-        else:
-            params = self._get_start_params(kargs)
-
-        self._hyp_obj.start(guest_name, cpu, memory, params)
+        pass
     # boot()
+
+    @abc.abstractmethod
+    def get_vol_devpath(self, vol_obj):
+        """
+        Given a volume entry, return the correspondent device path on operating
+        system.
+
+        Args:
+            vol_obj (StorageVolume): storage volume db object
+        """
+        pass
+    # get_vol_devpath()
 
     def reboot(self, system_profile):
         """

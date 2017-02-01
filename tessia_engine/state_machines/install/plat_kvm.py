@@ -25,7 +25,6 @@ from urllib.parse import urljoin
 from xml.etree import ElementTree
 
 import logging
-import re
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -96,9 +95,6 @@ class PlatKvm(PlatBase):
             else:
                 prefix = '/dev/disk/by-id/scsi-{}'
             return prefix.format(vol_obj.specs['wwid'])
-
-        raise RuntimeError(
-            "Unknown volume type'{}'".format(vol_obj.type))
     # _kvm_get_vol_devpath_on_host()
 
     @staticmethod
@@ -214,7 +210,13 @@ class PlatKvm(PlatBase):
         # later to avoid conflicts with volumes that have libvirt defined
         # by user.
         dyn_vols = []
+        # We need to test for valid types before anything so that we avoid
+        # checking the device type twice.
+        valid_vol_types = ["FCP", "DASD", "RAW", "QCOW2"]
         for vol in vols:
+            if vol.type_rel.name not in valid_vol_types:
+                raise RuntimeError(
+                    "Unknown volume type'{}'".format(vol.type))
             # no libvirt definition: process it later
             if vol.system_attributes.get('libvirt') is None:
                 dyn_vols.append(vol)

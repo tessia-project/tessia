@@ -96,6 +96,9 @@ ROLE_ACTIONS = [
     'Project admin,SYSTEMS,DELETE',
     'Project admin,STORAGE_POOLS,DELETE',
     'Project admin,LOGICAL_VOLUMES,DELETE',
+    'Project admin,TEMPLATES,CREATE',
+    'Project admin,TEMPLATES,DELETE',
+    'Project admin,TEMPLATES,UPDATE',
     # Hardware admin
     'Hardware admin,IP_ADDRESSES,CREATE',
     'Hardware admin,IP_ADDRESSES,DELETE',

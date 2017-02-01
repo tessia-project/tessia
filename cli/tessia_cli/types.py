@@ -29,6 +29,27 @@ import re
 #
 # CODE
 #
+class AutoTemplate(click.ParamType):
+    """
+    Represents an autofile template (i.e. kickstart) content extracted from a
+    local file
+    """
+    name = 'file_path'
+
+    def convert(self, value, param, ctx):
+        """
+        Read the file and validate the content before returning it.
+        """
+        with click.open_file(value, 'r') as file_stream:
+            content = file_stream.read()
+
+        # TODO: perform some sanity checks
+        return content
+    # convert()
+# AutoTemplate
+
+AUTO_TEMPLATE = AutoTemplate()
+
 class QethGroup(click.ParamType):
     """
     Represents a qeth group for use with OSA cards

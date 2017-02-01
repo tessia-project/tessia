@@ -8,17 +8,17 @@
     <bootloader>
     <device_map config:type="list">
       <device_map_entry>
-	    <firmware>hd0</firmware>
-	    {% for volume in config["svols"] %}
-			{% if volume["is_root"] %}
-				<linux>{{ volume["system_attributes"]["device"] }}</linux>
-			{% endif %}
-		{% endfor %}
+    <firmware>hd0</firmware>
+    {% for volume in config["svols"] %}
+      {% if volume["is_root"] %}
+        <linux>{{ volume["system_attributes"]["device"] }}</linux>
+      {% endif %}
+    {% endfor %}
       </device_map_entry>
     </device_map>
     <global>
       <activate>false</activate>
-	  <append> hvc_iucv=8 TERM=dumb</append>
+    <append> hvc_iucv=8 TERM=dumb</append>
       <boot_boot>false</boot_boot>
       <boot_extended>false</boot_extended>
       <boot_mbr>false</boot_mbr>
@@ -34,19 +34,19 @@
     </global>
     <loader_type>grub2</loader_type>
   </bootloader>
-	<dasd>
+  <dasd>
       <devices config:type="list">
       {% for volume in config["svols"] %}
-	  {% if config["system_type"] == "LPAR" and volume["type"] == "DASD" %}
-	    <listentry>
-		  <channel>0.0.{{ volume["volume_id"] }}</channel>
-		  <diag config:type="boolean">false</diag>
-		</listentry>
-	  {% endif %}
+    {% if config["system_type"] == "LPAR" and volume["type"] == "DASD" %}
+    <listentry>
+      <channel>0.0.{{ volume["volume_id"] }}</channel>
+      <diag config:type="boolean">false</diag>
+    </listentry>
+    {% endif %}
       {% endfor %}
-	  </devices>
+    </devices>
       <format_unformatted config:type="boolean">false</format_unformatted>
-	</dasd>
+  </dasd>
   <deploy_image>
     <image_installation config:type="boolean">false</image_installation>
   </deploy_image>
@@ -79,10 +79,10 @@
     <cio_ignore config:type="boolean">false</cio_ignore>
     <mode>
       <confirm config:type="boolean">false</confirm>
-	  <halt config:type="boolean">false</halt>
-	  <forceboot config:type="boolean">false</forceboot>
-	  <final_reboot config:type="boolean">false</final_reboot>
-	  <final_halt config:type="boolean">false</final_halt>
+    <halt config:type="boolean">false</halt>
+    <forceboot config:type="boolean">false</forceboot>
+    <final_reboot config:type="boolean">false</final_reboot>
+    <final_halt config:type="boolean">false</final_halt>
       <final_restart_services>false</final_restart_services>
     </mode>
     <proposals config:type="list"/>
@@ -96,17 +96,17 @@
     </signature-handling>
     <storage>
       <partition_alignment config:type="symbol">align_optimal</partition_alignment>
-	  {% set multipath = [] %}
-	  {% for volume in config["svols"] %}
-	  {% if volume["specs"]["multipath"] %}
-	  {% set _ = multipath.append(volume["specs"]["multipath"]) %}
-	  {% endif %}
-	  {% endfor %}
-	  {% if multipath %}
-	  <start_multipath config:type="boolean">true</start_multipath>
-	  {% else %}
-	  <start_multipath config:type="boolean">false</start_multipath>
-	  {% endif %}
+    {% set multipath = [] %}
+    {% for volume in config["svols"] %}
+    {% if volume["specs"]["multipath"] %}
+    {% set _ = multipath.append(volume["specs"]["multipath"]) %}
+    {% endif %}
+    {% endfor %}
+    {% if multipath %}
+    <start_multipath config:type="boolean">true</start_multipath>
+    {% else %}
+    <start_multipath config:type="boolean">false</start_multipath>
+    {% endif %}
     </storage>
   </general>
   <groups config:type="list">
@@ -407,34 +407,34 @@
     <dns>
       <dhcp_hostname config:type="boolean">false</dhcp_hostname>
       {% for iface in config["ifaces"] %}
-	  {% if iface["is_gateway"] %}
-	  {% set host_domain = config["hostname"].split('.', 1) %}
-	  <!-- need to fix this -->
-	  <domain>{{ host_domain[1] }}</domain>
-	  <hostname>{{ host_domain[0] }}</hostname>
+    {% if iface["is_gateway"] %}
+    {% set host_domain = config["hostname"].split('.', 1) %}
+    <!-- need to fix this -->
+    <domain>{{ host_domain[1] }}</domain>
+    <hostname>{{ host_domain[0] }}</hostname>
       <nameservers config:type="list">
         <nameserver>{{ iface["dns_1"] }}</nameserver>
       </nameservers>
-	  {% endif %}
-	  {% endfor %}
+    {% endif %}
+    {% endfor %}
       <resolv_conf_policy>auto</resolv_conf_policy>
       <write_hostname config:type="boolean">false</write_hostname>
     </dns>
     <interfaces config:type="list">
       <!-- not working for Hypersockets -->
-	  {% for iface in config["ifaces"] %}
+    {% for iface in config["ifaces"] %}
       {% set device_nr = 0 %}
       <interface>
         <bootproto>static</bootproto>
-		<device>eth{{ device_nr }}</device>
-	    <ipaddr>{{ iface["ip"] }}</ipaddr>
+    <device>eth{{ device_nr }}</device>
+    <ipaddr>{{ iface["ip"] }}</ipaddr>
         <lladdr>{{ iface["mac_addr"] }}</lladdr>
         <netmask>{{ iface["mask"] }}</netmask>
         <prefixlen>{{ iface["mask_bits"] }}</prefixlen>
         <startmode>auto</startmode>
       </interface>
       {% set device_nr = device_nr + 1 %}
-	  {% endfor %}
+    {% endfor %}
       <interface>
         <bootproto>static</bootproto>
         <broadcast>127.255.255.255</broadcast>
@@ -451,19 +451,19 @@
     <ipv6 config:type="boolean">true</ipv6>
     <keep_install_network config:type="boolean">false</keep_install_network>
     <managed config:type="boolean">false</managed>
-	{% if config["system_type"] == "LPAR" %}
+  {% if config["system_type"] == "LPAR" %}
     <net-udev config:type="list">
       {% for iface in config["ifaces"] %}
       {% set device_nr = 0 %}
       <rule>
-		  <name>eth{{ device_nr }}</name>
+      <name>eth{{ device_nr }}</name>
         <rule>KERNELS</rule>
-		<value>{{ iface["attributes"]["ccwgroup"].split(',')[0] }}</value>
+    <value>{{ iface["attributes"]["ccwgroup"].split(',')[0] }}</value>
       </rule>
       {% set device_nr = device_nr + 1 %}
-	  {% endfor %}
+    {% endfor %}
     </net-udev>
-	{% endif %}
+  {% endif %}
     <routing>
       <ipv4_forward config:type="boolean">false</ipv4_forward>
       <ipv6_forward config:type="boolean">false</ipv6_forward>
@@ -473,9 +473,9 @@
           <device>eth0</device>
           {% for iface in config["ifaces"] %}
           {% if iface["is_gateway"] %}
-		  <gateway>{{ iface["gateway"] }}</gateway>
+      <gateway>{{ iface["gateway"] }}</gateway>
           {% endif %}
-	      {% endfor %}
+      {% endfor %}
           <netmask>-</netmask>
         </route>
       </routes>
@@ -483,11 +483,11 @@
     <s390-devices config:type="list">
       {% for iface in config["ifaces"] %}
       <listentry>
-		{% if config["system_type"] == "LPAR" %}
-		<chanids>{{ iface["attributes"]["ccwgroup"]|replace(',', ' ') }}</chanids>
+    {% if config["system_type"] == "LPAR" %}
+    <chanids>{{ iface["attributes"]["ccwgroup"]|replace(',', ' ') }}</chanids>
         <portname>OSAPORT</portname>
         <type>qeth</type>
-		{% endif %}
+    {% endif %}
       </listentry>
       {% endfor %}
     </s390-devices>
@@ -511,7 +511,7 @@
         <type>driftfile</type>
       </peer>
       <peer>
-        <address>/var/log/ntp		</address>
+        <address>/var/log/ntp    </address>
         <comment># path for drift file
 
 </comment>
@@ -519,12 +519,12 @@
         <type>logfile</type>
       </peer>
       <peer>
-        <address>/etc/ntp.keys		</address>
+        <address>/etc/ntp.keys    </address>
         <comment># alternate log file
 # logconfig =syncstatus + sysevents
 # logconfig =all
 
-# statsdir /tmp/		# directory for statistics files
+# statsdir /tmp/    # directory for statistics files
 # filegen peerstats  file peerstats  type day enable
 # filegen loopstats  file loopstats  type day enable
 # filegen clockstats file clockstats type day enable
@@ -537,21 +537,21 @@
         <type>keys</type>
       </peer>
       <peer>
-        <address>1			</address>
+        <address>1      </address>
         <comment># path for keys file
 </comment>
         <options/>
         <type>trustedkey</type>
       </peer>
       <peer>
-        <address>1			</address>
+        <address>1      </address>
         <comment># define trusted keys
 </comment>
         <options/>
         <type>requestkey</type>
       </peer>
       <peer>
-        <address>1			</address>
+        <address>1      </address>
         <comment># key (7) for accessing server variables
 </comment>
         <options/>
@@ -573,20 +573,20 @@
 ################################################################################
 
 ##
-## Radio and modem clocks by convention have addresses in the 
-## form 127.127.t.u, where t is the clock type and u is a unit 
-## number in the range 0-3. 
+## Radio and modem clocks by convention have addresses in the
+## form 127.127.t.u, where t is the clock type and u is a unit
+## number in the range 0-3.
 ##
-## Most of these clocks require support in the form of a 
-## serial port or special bus peripheral. The particular  
-## device is normally specified by adding a soft link 
-## /dev/device-u to the particular hardware device involved, 
-## where u correspond to the unit number above. 
-## 
+## Most of these clocks require support in the form of a
+## serial port or special bus peripheral. The particular
+## device is normally specified by adding a soft link
+## /dev/device-u to the particular hardware device involved,
+## where u correspond to the unit number above.
+##
 ## Generic DCF77 clock on serial port (Conrad DCF77)
 ## Address:     127.127.8.u
 ## Serial Port: /dev/refclock-u
-##  
+##
 ## (create soft link /dev/refclock-0 to the particular ttyS?)
 ##
 # server 127.127.8.0 mode 5 prefer
@@ -595,8 +595,8 @@
 ## Undisciplined Local Clock. This is a fake driver intended for backup
 ## and when no outside source of synchronized time is available.
 ##
-# server 127.127.1.0		# local clock (LCL)
-# fudge  127.127.1.0 stratum 10	# LCL is unsynchronized
+# server 127.127.1.0    # local clock (LCL)
+# fudge  127.127.1.0 stratum 10  # LCL is unsynchronized
 
 ##
 ## Add external Servers using
@@ -646,40 +646,36 @@
     <synchronize_time config:type="boolean">false</synchronize_time>
   </ntp-client>
   <partitioning config:type="list">
-	{% for volume in config["svols"] %}
+  {% for volume in config["svols"] %}
     <drive>
-	  <device>{{ volume["system_attributes"]["device"] }}</device>
+    <device>{{ volume["system_attributes"]["device"] }}</device>
       <enable_snapshots config:type="boolean">true</enable_snapshots>
       <initialize config:type="boolean">true</initialize>
       <partitions config:type="list">
-        {% set partition_nr = 1 %}
-    	{% for entry in volume["part_table"]["table"] %}
+    {% for entry in volume["part_table"]["table"] %}
+        {% set primary_nr = [1] %}
+        {% set logical_nr = [5] %}
         <partition>
           <create config:type="boolean">true</create>
           <crypt_fs config:type="boolean">false</crypt_fs>
-		  <filesystem config:type="symbol">{{ entry["fs"] }}</filesystem>
+      <filesystem config:type="symbol">{{ entry["fs"] }}</filesystem>
           <format config:type="boolean">true</format>
           <fstopt>acl,user_xattr</fstopt>
           <loop_fs config:type="boolean">false</loop_fs>
-		  <mount>{{ entry["mp"] }}</mount>
+      <mount>{% if entry["fs"] == "swap" %}swap{% else %}{{ entry["mp"] }}{% endif %}</mount>
           <mountby config:type="symbol">path</mountby>
-          <partition_id config:type="integer">{% if entry["mp"] == "swap" %}
-              130
-            {% else %}
-              131
-            {% endif %}</partition_id>
-          <partition_nr config:type="integer">{{ partition_nr }}</partition_nr>
+          <partition_id config:type="integer">{% if entry["fs"] == "swap" %}130{% else %}131{% endif %}</partition_id>
+		  <!--  <partition_nr config:type="integer">1</partition_nr>-->
           <resize config:type="boolean">false</resize>
           <size>{{ entry["size"] ~ 'M' }}</size>
         </partition>
-        {% set partition_nr = partition_nr + 1 %}
         {% endfor %}
       </partitions>
       <pesize/>
       <type config:type="symbol">CT_DISK</type>
       <use>all</use>
     </drive>
-	{% endfor %}
+  {% endfor %}
   </partitioning>
   <proxy>
     <enabled config:type="boolean">false</enabled>
@@ -1113,18 +1109,18 @@
   <zfcp>
     <devices config:type="list">
     {% for volume in config["svols"] %}
-	  {% if config["system_type"] == "LPAR" and volume["type"] == "FCP" %}
+    {% if config["system_type"] == "LPAR" and volume["type"] == "FCP" %}
         {% for adapter in volume["specs"]["adapters"] %}
-	      {% for wwpn in adapter["wwpns"] %}
-		  <listentry>
-			<controller_id>{{ adapter["devno"] }}</controller_id>
-			<fcp_lun>0x{{ volume["volume_id"] }}</fcp_lun>
-			<wwpn>0x{{ wwpn }}</wwpn>
-		  </listentry>
-	      {% endfor %}
-	    {% endfor %}
-	  {% endif %}
-	{% endfor %}
+      {% for wwpn in adapter["wwpns"] %}
+      <listentry>
+      <controller_id>{{ adapter["devno"] }}</controller_id>
+      <fcp_lun>0x{{ volume["volume_id"] }}</fcp_lun>
+      <wwpn>0x{{ wwpn }}</wwpn>
+      </listentry>
+      {% endfor %}
+    {% endfor %}
+    {% endif %}
+  {% endfor %}
     </devices>
   </zfcp>
 </profile>

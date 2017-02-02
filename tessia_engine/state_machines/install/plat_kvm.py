@@ -140,14 +140,16 @@ class PlatKvm(PlatBase):
             disk_type = 'block'
             src_type = 'dev'
             driver = 'raw'
-        elif vol_obj.type == 'RAW':
-            disk_type = 'file'
-            src_type = 'file'
-            driver = 'raw'
-        elif vol_obj.type == 'QCOW2':
-            disk_type = 'file'
-            src_type = 'file'
-            driver = 'qcow2'
+        # The handling of the following disks is not supported yet,
+        # so we are disabling it temporally.
+        #elif vol_obj.type == 'RAW':
+        #    disk_type = 'file'
+        #    src_type = 'file'
+        #    driver = 'raw'
+        #elif vol_obj.type == 'QCOW2':
+        #    disk_type = 'file'
+        #    src_type = 'file'
+        #    driver = 'qcow2'
         boot_tag = ''
         for part in vol_obj.part_table['table']:
             if part['mp'] == '/':
@@ -252,8 +254,8 @@ class PlatKvm(PlatBase):
             self._devpath_by_vol[vol.id] = result['devpath']
 
         # no volumes without libvirt definition: nothing more to do
-        if len(dyn_vols) == 0:
-            return
+        # There is no need to return right away since it will not
+        # enter in the following loop if there is no dyn_vols.
 
         # generator for valid libvirt device names
         dev_generate = self._kvm_vol_devs_generator()

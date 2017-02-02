@@ -322,4 +322,5 @@ class TestPlatKvm(TestCase):
         self.assertRaisesRegex(RuntimeError, "Unsupported bus",
                                self._create_plat_kvm)
     # test_unsupported_bus()
+
 # TestPlatKvm

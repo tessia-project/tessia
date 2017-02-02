@@ -67,6 +67,14 @@ class TestSmAnaconda(TestCase):
         self._mock_open = patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = patch.object(sm_anaconda, 'logging', autospec=True)
+        self._mock_logging = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        patcher = patch.object(sm_base, 'logging', autospec=True)
+        self._mock_logging_base = patcher.start()
+        self.addCleanup(patcher.stop)
+
         patcher = patch.object(sm_base, 'Config', autospec=True)
         self._mock_config = patcher.start()
         self.addCleanup(patcher.stop)

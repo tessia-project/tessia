@@ -61,9 +61,13 @@ class TestAutoInstallMachine(TestCase):
             'sles': self._mock_sm_autoyast
         }
 
-        patcher = patch.dict(machine.SUPPORTED_DISTROS,
-                             values=mocked_supported_distros)
-        self._mocked_supported_distros = patcher.start()
+        patcher_dict = patch.dict(machine.SUPPORTED_DISTROS,
+                                  values=mocked_supported_distros)
+        self._mocked_supported_distros = patcher_dict.start()
+        self.addCleanup(patcher_dict.stop)
+
+        patcher = patch.object(machine, 'logging', autospec=True)
+        self._mock_logging = patcher.start()
         self.addCleanup(patcher.stop)
 
         # We do not patch the jsonschema in order to validate the expressions

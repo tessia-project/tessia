@@ -64,6 +64,10 @@ class TestSmBase(TestCase):
         dict_patcher.start()
         self.addCleanup(dict_patcher.stop)
 
+        patcher = patch.object(sm_base, 'logging', autospec=True)
+        self._mock_logging = patcher.start()
+        self.addCleanup(patcher.stop)
+
         patcher = patch.object(sm_base, 'jinja2', autospec=True)
         self._mock_jinja2 = patcher.start()
         self.addCleanup(patcher.stop)

@@ -206,7 +206,7 @@
                 "wwid": "11002076305aac1a0000000000002407",
                 "multipath": false
             },
-            "system": "kvm054",
+            "system": "CPC3LP55",
             "system_attributes": {
             },
             "type": "FCP",
@@ -244,7 +244,7 @@
                 "wwid": "11002076305aac1a0000000000002408",
                 "multipath": true
             },
-            "system": "kvm054",
+            "system": "CPC3LP55",
             "system_attributes": {
             },
             "type": "FCP",
@@ -746,7 +746,7 @@
                 "password": "somepasswd",
                 "username": "root"
             },
-            "default": true,
+            "default": false,
             "hypervisor_profile": "CPC3/default CPC3",
             "memory": 4096,
             "name": "default_CPC3LP55_SCSI",
@@ -778,7 +778,7 @@
                 "password": "somepasswd",
                 "username": "root"
             },
-            "default": true,
+            "default": false,
             "hypervisor_profile": "CPC3LP55/default_CPC3LP55",
             "memory": 1024,
             "name": "kvm_kvm054_install_dasd",

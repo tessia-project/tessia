@@ -19,6 +19,7 @@ Base state machine for auto installation of operating systems
 #
 # IMPORTS
 #
+from tessia_baselib.common.ssh.client import SshClient
 from socket import inet_ntoa
 from sqlalchemy.orm.exc import NoResultFound
 from tessia_engine.config import Config
@@ -26,7 +27,9 @@ from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import SystemIface
 from tessia_engine.state_machines.install.plat_lpar import PlatLpar
 from tessia_engine.state_machines.install.plat_kvm import PlatKvm
+from time import sleep
 from urllib.parse import urljoin
+
 
 import abc
 import jinja2
@@ -205,13 +208,43 @@ class SmBase(metaclass=abc.ABCMeta):
         MANAGER.session.commit()
     # init()
 
-    @abc.abstractmethod
+    def _get_ssh_conn(self):
+        """
+        Auxiliary method to get a ssh connection and shell to the target system
+        being installed.
+        """
+        timeout_trials = [5, 10, 20, 40]
+
+        hostname = self._profile.system_rel.hostname
+        user = self._profile.credentials['username']
+        password = self._profile.credentials['password']
+
+        for timeout in timeout_trials:
+            try:
+                ssh_client = SshClient()
+                ssh_client.login(hostname, user=user, passwd=password)
+                ssh_shell = ssh_client.open_shell()
+                return ssh_client, ssh_shell
+            except (ConnectionError, ConnectionResetError):
+                self._logger.warning("connection not available yet, "
+                                     "retrying in %d seconds.", timeout)
+                sleep(timeout)
+
+        raise ConnectionError("Error while connecting to the target system")
+    # _get_ssh_conn()
+
     def check_installation(self):
         """
         Check if the installation was correctly performed.
         """
-        # Each operating system will have its own implementation
-        raise NotImplementedError()
+        ssh_client, shell = self._get_ssh_conn()
+
+        ret, _ = shell.run("echo 1")
+        if ret != 0:
+            raise RuntimeError("Unable to connect to the system.")
+
+        shell.close()
+        ssh_client.logoff()
     # check_installation()
 
     def cleanup(self):
@@ -233,7 +266,6 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         info = {
             'ifaces': [],
-            'repos': [],
             'svols': [],
             'system_type': self._system.type
         }
@@ -246,7 +278,7 @@ class SmBase(metaclass=abc.ABCMeta):
             info['ifaces'].append(self._parse_iface(
                 iface, iface.osname == self._gw_iface['osname']))
 
-        info['repos'].append(self._repo.url)
+        info['repos'] = self._repo.url
 
         self._info = info
     # collect_info()

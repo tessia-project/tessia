@@ -42,7 +42,7 @@ class BaseMachine(metaclass=abc.ABCMeta):
         most cases it makes sense to call parse() to validate and convert the
         parameters here.
         """
-        pass
+        self.cleaning_up = False
     # __init__()
 
     @staticmethod
@@ -61,6 +61,8 @@ class BaseMachine(metaclass=abc.ABCMeta):
         """
         Called when the process receives a signal to terminate (SIGTERM,
         SIGHUP, SIGINT) in order to perform clean up before exiting.
+
+        Should return 0 on successful cleanup, > 0 on failure.
         """
         raise NotImplementedError()
     # cleanup()
@@ -71,6 +73,8 @@ class BaseMachine(metaclass=abc.ABCMeta):
         Entry point to begin machine execution. Receives the same parameters as
         provided to parse so in most cases it makes sense to call parse() to
         validate and convert the parameters before starting execution.
+
+        Should return 0 on successful execution, > 0 on failure.
         """
         raise NotImplementedError()
     # start()

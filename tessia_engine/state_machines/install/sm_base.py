@@ -19,6 +19,7 @@ Base state machine for auto installation of operating systems
 #
 # IMPORTS
 #
+from tessia_baselib.common.ssh.client import SshClient
 from socket import inet_ntoa
 from sqlalchemy.orm.exc import NoResultFound
 from tessia_engine.config import Config
@@ -26,7 +27,9 @@ from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import SystemIface
 from tessia_engine.state_machines.install.plat_lpar import PlatLpar
 from tessia_engine.state_machines.install.plat_kvm import PlatKvm
+from time import sleep
 from urllib.parse import urljoin
+
 
 import abc
 import jinja2
@@ -75,15 +78,20 @@ class SmBase(metaclass=abc.ABCMeta):
                 name=self._profile.parameters['gateway_iface'],
             ).one()
         except KeyError:
-            raise RuntimeError('No gateway interface defined in profile')
+            raise RuntimeError('No gateway interface defined for profile')
         except NoResultFound:
             msg = 'Gateway interface {} does not exist'.format(
                 self._profile.parameters['gateway_iface'])
             raise RuntimeError(msg)
+
+        # There is no need to check if gw_iface is instanciated (not None)
+        # since the one() already raises a NoResultFound if no interface
+        # is found.
+
         self._gw_iface = self._parse_iface(gw_iface, True)
 
-        # create the appropriate platform object according to the system being
-        # installed
+        # Create the appropriate platform object according to the system being
+        # installed.
         hyp_type = self._system.type_rel.name.lower()
         try:
             plat_class = PLATFORMS[hyp_type]
@@ -97,7 +105,7 @@ class SmBase(metaclass=abc.ABCMeta):
             self._repo,
             self._gw_iface)
 
-        # the path and url for the auto file
+        # The path and url for the auto file.
         config = Config.get_config()
         autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
         self._autofile_url = urljoin(
@@ -108,6 +116,7 @@ class SmBase(metaclass=abc.ABCMeta):
         self._info = None
     # __init__()
 
+    @abc.abstractmethod
     def _get_kargs(self): # pylint: disable=no-self-use
         """
         Return the cmdline used for the os installer
@@ -115,7 +124,7 @@ class SmBase(metaclass=abc.ABCMeta):
         Returns:
             str: kernel cmdline string
         """
-        return ''
+        raise NotImplementedError()
     # _get_kargs()
 
     @staticmethod
@@ -196,16 +205,46 @@ class SmBase(metaclass=abc.ABCMeta):
         Initialization, clean the current OS in the SystemProfile.
         """
         self._profile.operating_system_id = None
-        MANAGER.session.add(self._profile)
         MANAGER.session.commit()
     # init()
+
+    def _get_ssh_conn(self):
+        """
+        Auxiliary method to get a ssh connection and shell to the target system
+        being installed.
+        """
+        timeout_trials = [5, 10, 20, 40]
+
+        hostname = self._profile.system_rel.hostname
+        user = self._profile.credentials['username']
+        password = self._profile.credentials['password']
+
+        for timeout in timeout_trials:
+            try:
+                ssh_client = SshClient()
+                ssh_client.login(hostname, user=user, passwd=password)
+                ssh_shell = ssh_client.open_shell()
+                return ssh_client, ssh_shell
+            except (ConnectionError, ConnectionResetError):
+                self._logger.warning("connection not available yet, "
+                                     "retrying in %d seconds.", timeout)
+                sleep(timeout)
+
+        raise ConnectionError("Error while connecting to the target system")
+    # _get_ssh_conn()
 
     def check_installation(self):
         """
         Check if the installation was correctly performed.
         """
-        # Each operating system will have its own implementation
-        pass
+        ssh_client, shell = self._get_ssh_conn()
+
+        ret, _ = shell.run("echo 1")
+        if ret != 0:
+            raise RuntimeError("Unable to connect to the system.")
+
+        shell.close()
+        ssh_client.logoff()
     # check_installation()
 
     def cleanup(self):
@@ -216,10 +255,8 @@ class SmBase(metaclass=abc.ABCMeta):
             try:
                 os.remove(self._autofile_path)
             except OSError:
-                self._logger.warning("unable to delete the autofile during"
-                                     " cleanup.")
-                return 1
-        return 0
+                raise RuntimeError("Unable to delete the autofile during"
+                                   " cleanup.")
     # cleanup()
 
     def collect_info(self):
@@ -229,7 +266,6 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         info = {
             'ifaces': [],
-            'repos': [],
             'svols': [],
             'system_type': self._system.type
         }
@@ -242,7 +278,7 @@ class SmBase(metaclass=abc.ABCMeta):
             info['ifaces'].append(self._parse_iface(
                 iface, iface.osname == self._gw_iface['osname']))
 
-        info['repos'].append(self._repo.url)
+        info['repos'] = self._repo.url
 
         self._info = info
     # collect_info()
@@ -273,7 +309,6 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         # Change the operating system in the profile.
         self._profile.operating_system_id = self._os.id
-        MANAGER.session.add(self._profile)
         MANAGER.session.commit()
 
         self.cleanup()
@@ -293,13 +328,14 @@ class SmBase(metaclass=abc.ABCMeta):
         self._platform.reboot(self._profile)
     # target_reboot()
 
+    @abc.abstractmethod
     def wait_install(self):
         """
         Each system has its heuristic to follow the installation progress and
         determine when it's done therefore this function should be implemented
         by children classes.
         """
-        pass
+        raise NotImplementedError()
     # wait_install()
 
     def start(self):
@@ -329,5 +365,7 @@ class SmBase(metaclass=abc.ABCMeta):
 
         self._logger.info('new state: post_install')
         self.post_install()
+
+        return 0
     # start()
 # SmBase

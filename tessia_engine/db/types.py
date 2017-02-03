@@ -39,7 +39,8 @@ IFACE_TYPES = [
 ]
 
 OPERATING_SYSTEMS = [
-    'rhel7.2,rhel,7,2,RHEL 7.2 GA'
+    'rhel7.2,rhel,7,2,RHEL 7.2 GA',
+    'sles12.1,sles,12,1,SLES 12.1'
 ]
 
 USERS = [
@@ -51,7 +52,8 @@ PROJECTS = [
 ]
 
 TEMPLATES = [
-    "RHEL7.2,Template for RHEL7.2,system,System project,rhel7.2"
+    "RHEL7.2,Template for RHEL7.2,system,System project,rhel7.2",
+    "SLES12.1,Template for SLES12.1,system,System project,sles12.1"
 ]
 
 ROLES = [

@@ -19,7 +19,6 @@ Machine for auto installation of Anaconda based operating systems.
 #
 # IMPORTS
 #
-from tessia_baselib.common.ssh.client import SshClient
 from tessia_engine.state_machines.install.sm_base import SmBase
 from time import time
 from time import sleep
@@ -110,45 +109,6 @@ class SmAnaconda(SmBase):
         return cmdline
     # _get_kargs()
 
-    def _get_ssh_conn(self):
-        """
-        Auxiliary method to get a ssh connection and shell to the target system
-        being installed.
-        """
-        timeout_trials = [5, 10, 20, 40]
-
-        hostname = self._profile.system_rel.hostname
-        user = self._profile.credentials['username']
-        password = self._profile.credentials['password']
-
-        for timeout in timeout_trials:
-            try:
-                ssh_client = SshClient()
-                ssh_client.login(hostname, user=user, passwd=password)
-                ssh_shell = ssh_client.open_shell()
-                return ssh_client, ssh_shell
-            except (ConnectionError, ConnectionResetError):
-                self._logger.warning("connection not available yet, "
-                                     "retrying in %d seconds.", timeout)
-                sleep(timeout)
-
-        raise ConnectionError("Error while connecting to the target system")
-    # _get_ssh_conn()
-
-    def check_installation(self):
-        """
-        Makes sure that the installation was successfully completed.
-        """
-        ssh_client, shell = self._get_ssh_conn()
-
-        ret, _ = shell.run("echo 1")
-        if ret != 0:
-            raise RuntimeError("Unable to connect to the system.")
-
-        shell.close()
-        ssh_client.logoff()
-    # check_installation()
-
     def wait_install(self):
         """
         Waits for the installation. This method periodically checks the
@@ -170,14 +130,14 @@ class SmAnaconda(SmBase):
         timeout_installation = time() + 600
         frequency_check = 10
 
-        # Performs successive calls to tail to extract the end of the file
+        # Performs consecutive calls to tail to extract the end of the file
         # from a previous start point.
         success = False
         while time() <= timeout_installation:
             ret, out = shell.run(cmd_read_line.format(line_offset))
             if ret != 0:
-                self._logger.error("Error while reading the installation log.")
-                return success
+                raise RuntimeError("Error while reading the installation log.")
+
             out = out.rstrip('\n')
             if len(out) == 0:
                 continue
@@ -200,7 +160,8 @@ class SmAnaconda(SmBase):
         ssh_client.logoff()
 
         if not success:
-            raise TimeoutError('Timed out waiting for installer')
+            raise TimeoutError('Installation Timeout: The installation'
+                               ' process is taking too long')
 
         return success
     # wait_install()

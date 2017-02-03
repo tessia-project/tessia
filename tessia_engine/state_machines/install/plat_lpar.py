@@ -23,6 +23,8 @@ from tessia_baselib.common.ssh.client import SshClient
 from tessia_engine.state_machines.install.plat_base import PlatBase
 from urllib.parse import urljoin
 
+import logging
+
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -34,6 +36,13 @@ class PlatLpar(PlatBase):
     """
     Handling for HMC's LPARs
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # create our own logger so that the right module name is in output
+        self._logger = logging.getLogger(__name__)
+    # __init__()
+
     def boot(self, kargs):
         """
         Perform a boot operation so that the installation process can start.
@@ -84,7 +93,7 @@ class PlatLpar(PlatBase):
 
         elif vol_obj.type == 'FCP':
             if vol_obj.specs['multipath']:
-                prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
+                prefix= '/dev/disk/by-id/dm-uuid-mpath-{}'
             else:
                 prefix = '/dev/disk/by-id/scsi-{}'
             return prefix.format(vol_obj.specs['wwid'])
@@ -102,6 +111,8 @@ class PlatLpar(PlatBase):
             system_profile (SystemProfile): db's entry
         """
         # perform a soft reboot until reboot via hypervisor gets fixed in hmc
+        self._logger.info('Rebooting the system now!')
+
         hostname = system_profile.system_rel.hostname
         user = system_profile.credentials['username']
         password = system_profile.credentials['password']
@@ -110,7 +121,7 @@ class PlatLpar(PlatBase):
         ssh_client.login(hostname, user=user, passwd=password,
                          timeout=10)
         shell = ssh_client.open_shell()
-        shell.run('nohup reboot &>/dev/null', ignore_ret=True)
+        shell.run('nohup reboot -f &>/dev/null', ignore_ret=True)
         shell.close()
         ssh_client.logoff()
     # reboot()

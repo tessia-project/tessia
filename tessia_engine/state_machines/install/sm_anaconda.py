@@ -19,7 +19,6 @@ Machine for auto installation of Anaconda based operating systems.
 #
 # IMPORTS
 #
-from tessia_baselib.common.ssh.client import SshClient
 from tessia_engine.state_machines.install.sm_base import SmBase
 from time import time
 from time import sleep
@@ -109,45 +108,6 @@ class SmAnaconda(SmBase):
 
         return cmdline
     # _get_kargs()
-
-    def _get_ssh_conn(self):
-        """
-        Auxiliary method to get a ssh connection and shell to the target system
-        being installed.
-        """
-        timeout_trials = [5, 10, 20, 40]
-
-        hostname = self._profile.system_rel.hostname
-        user = self._profile.credentials['username']
-        password = self._profile.credentials['password']
-
-        for timeout in timeout_trials:
-            try:
-                ssh_client = SshClient()
-                ssh_client.login(hostname, user=user, passwd=password)
-                ssh_shell = ssh_client.open_shell()
-                return ssh_client, ssh_shell
-            except (ConnectionError, ConnectionResetError):
-                self._logger.warning("connection not available yet, "
-                                     "retrying in %d seconds.", timeout)
-                sleep(timeout)
-
-        raise ConnectionError("Error while connecting to the target system")
-    # _get_ssh_conn()
-
-    def check_installation(self):
-        """
-        Makes sure that the installation was successfully completed.
-        """
-        ssh_client, shell = self._get_ssh_conn()
-
-        ret, _ = shell.run("echo 1")
-        if ret != 0:
-            raise RuntimeError("Unable to connect to the system.")
-
-        shell.close()
-        ssh_client.logoff()
-    # check_installation()
 
     def wait_install(self):
         """

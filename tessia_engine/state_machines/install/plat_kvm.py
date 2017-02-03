@@ -43,6 +43,7 @@ DISK_TEMPLATE = """
 # mapping of distros that ship with udev 227 or less
 UDEV_227_BY_DISTRO = {
     'rhel': (7, 2),
+    'sles': (12,1)
 }
 
 #

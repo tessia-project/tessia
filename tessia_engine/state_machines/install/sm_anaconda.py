@@ -130,14 +130,14 @@ class SmAnaconda(SmBase):
         timeout_installation = time() + 600
         frequency_check = 10
 
-        # Performs successive calls to tail to extract the end of the file
+        # Performs consecutive calls to tail to extract the end of the file
         # from a previous start point.
         success = False
         while time() <= timeout_installation:
             ret, out = shell.run(cmd_read_line.format(line_offset))
             if ret != 0:
-                self._logger.error("Error while reading the installation log.")
-                return success
+                raise RuntimeError("Error while reading the installation log.")
+
             out = out.rstrip('\n')
             if len(out) == 0:
                 continue
@@ -160,7 +160,8 @@ class SmAnaconda(SmBase):
         ssh_client.logoff()
 
         if not success:
-            raise TimeoutError('Timed out waiting for installer')
+            raise TimeoutError('Installation Timeout: The installation'
+                               ' process is taking too long')
 
         return success
     # wait_install()

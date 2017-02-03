@@ -25,7 +25,6 @@ from urllib.parse import urljoin
 from xml.etree import ElementTree
 
 import logging
-import re
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -97,9 +96,6 @@ class PlatKvm(PlatBase):
             else:
                 prefix = '/dev/disk/by-id/scsi-{}'
             return prefix.format(vol_obj.specs['wwid'])
-
-        raise RuntimeError(
-            "Unknown volume type'{}'".format(vol_obj.type))
     # _kvm_get_vol_devpath_on_host()
 
     @staticmethod
@@ -145,14 +141,16 @@ class PlatKvm(PlatBase):
             disk_type = 'block'
             src_type = 'dev'
             driver = 'raw'
-        elif vol_obj.type == 'RAW':
-            disk_type = 'file'
-            src_type = 'file'
-            driver = 'raw'
-        elif vol_obj.type == 'QCOW2':
-            disk_type = 'file'
-            src_type = 'file'
-            driver = 'qcow2'
+        # The handling of the following disks is not supported yet,
+        # so we are disabling it temporally.
+        #elif vol_obj.type == 'RAW':
+        #    disk_type = 'file'
+        #    src_type = 'file'
+        #    driver = 'raw'
+        #elif vol_obj.type == 'QCOW2':
+        #    disk_type = 'file'
+        #    src_type = 'file'
+        #    driver = 'qcow2'
         boot_tag = ''
         for part in vol_obj.part_table['table']:
             if part['mp'] == '/':
@@ -215,7 +213,13 @@ class PlatKvm(PlatBase):
         # later to avoid conflicts with volumes that have libvirt defined
         # by user.
         dyn_vols = []
+        # We need to test for valid types before anything so that we avoid
+        # checking the device type twice.
+        valid_vol_types = ["FCP", "DASD", "RAW", "QCOW2"]
         for vol in vols:
+            if vol.type_rel.name not in valid_vol_types:
+                raise RuntimeError(
+                    "Unknown volume type'{}'".format(vol.type))
             # no libvirt definition: process it later
             if vol.system_attributes.get('libvirt') is None:
                 dyn_vols.append(vol)
@@ -251,8 +255,8 @@ class PlatKvm(PlatBase):
             self._devpath_by_vol[vol.id] = result['devpath']
 
         # no volumes without libvirt definition: nothing more to do
-        if len(dyn_vols) == 0:
-            return
+        # There is no need to return right away since it will not
+        # enter in the following loop if there is no dyn_vols.
 
         # generator for valid libvirt device names
         dev_generate = self._kvm_vol_devs_generator()

@@ -99,7 +99,7 @@ class PlatBase(metaclass=abc.ABCMeta):
         Args:
             kargs (str): kernel command line args for os' installer
         """
-        pass
+        raise NotImplementedError()
     # boot()
 
     @abc.abstractmethod
@@ -111,7 +111,7 @@ class PlatBase(metaclass=abc.ABCMeta):
         Args:
             vol_obj (StorageVolume): storage volume db object
         """
-        pass
+        raise NotImplementedError()
     # get_vol_devpath()
 
     def reboot(self, system_profile):

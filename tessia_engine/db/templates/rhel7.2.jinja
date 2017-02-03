@@ -25,13 +25,14 @@ network  --hostname={{config["hostname"]}}
 rootpw --iscrypted {{config["sha512rootpwd"]}}
 # System timezone
 timezone America/New_York
-# System bootloader configuration
+
+# Partition clearing information
+clearpart --all --initlabel --drives={{config["svols"]|map(attribute="system_attributes")|map(attribute="device")|join(",")}}
 {% for volume in config["svols"] %}
 {% if volume["is_root"] %}
+# System bootloader configuration
 bootloader --append=" crashkernel=auto" --location=mbr --boot-drive={{volume["system_attributes"]["device"]}}
 {% endif %}
-# Partition clearing information
-clearpart --all --initlabel --drives={{volume["system_attributes"]["device"]}}
 # Disk partitioning information
 {% for entry in volume["part_table"]["table"] %}
 part {{entry["mp"]}} --fstype="{{entry["fs"]}}" --ondisk={{volume["system_attributes"]["device"]}} --size={{entry["size"]}} {% if entry.get("mo") %} --fsoptions="{{entry["mo"]}}" {% endif %}

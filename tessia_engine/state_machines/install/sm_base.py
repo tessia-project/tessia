@@ -78,15 +78,20 @@ class SmBase(metaclass=abc.ABCMeta):
                 name=self._profile.parameters['gateway_iface'],
             ).one()
         except KeyError:
-            raise RuntimeError('No gateway interface defined in profile')
+            raise RuntimeError('No gateway interface defined for profile')
         except NoResultFound:
             msg = 'Gateway interface {} does not exist'.format(
                 self._profile.parameters['gateway_iface'])
             raise RuntimeError(msg)
+
+        # There is no need to check if gw_iface is instanciated (not None)
+        # since the one() already raises a NoResultFound if no interface
+        # is found.
+
         self._gw_iface = self._parse_iface(gw_iface, True)
 
-        # create the appropriate platform object according to the system being
-        # installed
+        # Create the appropriate platform object according to the system being
+        # installed.
         hyp_type = self._system.type_rel.name.lower()
         try:
             plat_class = PLATFORMS[hyp_type]
@@ -100,7 +105,7 @@ class SmBase(metaclass=abc.ABCMeta):
             self._repo,
             self._gw_iface)
 
-        # the path and url for the auto file
+        # The path and url for the auto file.
         config = Config.get_config()
         autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
         self._autofile_url = urljoin(
@@ -111,6 +116,7 @@ class SmBase(metaclass=abc.ABCMeta):
         self._info = None
     # __init__()
 
+    @abc.abstractmethod
     def _get_kargs(self): # pylint: disable=no-self-use
         """
         Return the cmdline used for the os installer
@@ -118,7 +124,7 @@ class SmBase(metaclass=abc.ABCMeta):
         Returns:
             str: kernel cmdline string
         """
-        return ''
+        raise NotImplementedError()
     # _get_kargs()
 
     @staticmethod
@@ -199,7 +205,6 @@ class SmBase(metaclass=abc.ABCMeta):
         Initialization, clean the current OS in the SystemProfile.
         """
         self._profile.operating_system_id = None
-        MANAGER.session.add(self._profile)
         MANAGER.session.commit()
     # init()
 
@@ -250,10 +255,8 @@ class SmBase(metaclass=abc.ABCMeta):
             try:
                 os.remove(self._autofile_path)
             except OSError:
-                self._logger.warning("unable to delete the autofile during"
-                                     " cleanup.")
-                return 1
-        return 0
+                raise RuntimeError("Unable to delete the autofile during"
+                                   " cleanup.")
     # cleanup()
 
     def collect_info(self):
@@ -306,7 +309,6 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         # Change the operating system in the profile.
         self._profile.operating_system_id = self._os.id
-        MANAGER.session.add(self._profile)
         MANAGER.session.commit()
 
         self.cleanup()
@@ -326,13 +328,14 @@ class SmBase(metaclass=abc.ABCMeta):
         self._platform.reboot(self._profile)
     # target_reboot()
 
+    @abc.abstractmethod
     def wait_install(self):
         """
         Each system has its heuristic to follow the installation progress and
         determine when it's done therefore this function should be implemented
         by children classes.
         """
-        pass
+        raise NotImplementedError()
     # wait_install()
 
     def start(self):
@@ -362,5 +365,7 @@ class SmBase(metaclass=abc.ABCMeta):
 
         self._logger.info('new state: post_install')
         self.post_install()
+
+        return 0
     # start()
 # SmBase

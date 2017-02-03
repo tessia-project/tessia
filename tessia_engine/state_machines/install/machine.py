@@ -99,16 +99,17 @@ class AutoInstallMachine(BaseMachine):
         installed.
         """
         # get template entry in db
-        template_entry = Template.query.filter_by(
-            name=self._params['template']).one_or_none()
-        if template_entry is None:
-            raise RuntimeError('Template {} not found'.format(
-                self._params['template']))
-
+        template_entry = self._get_template(self._params['template'])
         # get the os entry in db
         os_entry = self._get_os(template_entry, self._params.get('os'))
         # get the profile entry in db
         prof_entry = self._get_profile(self._params.get("profile"))
+
+        if os_entry != template_entry.operating_system_rel:
+            self._logger.warning('warning: custom OS specified by user,'
+                                 ' template might not work properly.'
+                                 ' Use at your own RISK!')
+
         try:
             sm_class = SUPPORTED_DISTROS[os_entry.type]
         except KeyError:
@@ -118,7 +119,8 @@ class AutoInstallMachine(BaseMachine):
         return sm_class(os_entry, prof_entry, template_entry)
     # _create_machine()
 
-    def _get_os(self, template, os_name=None):
+    @staticmethod
+    def _get_os(template, os_name=None):
         """
         Return the OS type to be used for the installation
         """
@@ -128,14 +130,10 @@ class AutoInstallMachine(BaseMachine):
         # os specified by user: override one defined in database and issue a
         # warning
         os_entry = OperatingSystem.query.filter_by(
-            name=os_name.upper()).one_or_none()
+            name=os_name).one_or_none()
         if os_entry is None:
             raise RuntimeError('OS {} not found'.format(
                 os_name))
-        if os_entry != template.operating_system_rel:
-            self._logger.warning('warning: custom OS specified by user,'
-                                 ' template might not work properly.'
-                                 ' Use at your own RISK!')
 
         return os_entry
     # _get_os()
@@ -144,7 +142,8 @@ class AutoInstallMachine(BaseMachine):
     def _get_profile(profile_param):
         """
         Get a SystemProfile instance based on the profile_param
-        passed in the request parameters.
+        passed in the request parameters. In case only the system name is
+        provided, the default profile will be used.
 
         Args:
             profile_param (str): Identifier for a profile in the format

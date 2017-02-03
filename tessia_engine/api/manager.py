@@ -76,7 +76,7 @@ class ApiManager(SQLAlchemyManager):
                 self.msg = 'A value entered is in wrong format.'
                 return
 
-            self.msg = 'The value {} is in wrong format.'.format(value)
+            self.msg = "The value '{}' is in wrong format.".format(value)
         # __init__()
 
         def as_dict(self):

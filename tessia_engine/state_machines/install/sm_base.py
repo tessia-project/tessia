@@ -78,14 +78,11 @@ class SmBase(metaclass=abc.ABCMeta):
                 name=self._profile.parameters['gateway_iface'],
             ).one()
         except KeyError:
-            raise RuntimeError('No gateway interface defined for profile')
+            raise RuntimeError('No gateway interface defined in profile')
         except NoResultFound:
             msg = 'Gateway interface {} does not exist'.format(
                 self._profile.parameters['gateway_iface'])
             raise RuntimeError(msg)
-        if gw_iface is None:
-            raise RuntimeError(
-                'System has no gateway network interface configured')
         self._gw_iface = self._parse_iface(gw_iface, True)
 
         # create the appropriate platform object according to the system being

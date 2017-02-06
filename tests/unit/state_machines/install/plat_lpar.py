@@ -150,7 +150,7 @@ class TestPlatLpar(TestCase):
                                                  passwd=password,
                                                  timeout=10)
         mock_shell = mock_ssh_client.open_shell.return_value
-        mock_shell.run.assert_called_with('nohup reboot &>/dev/null',
+        mock_shell.run.assert_called_with('nohup reboot -f &>/dev/null',
                                           ignore_ret=True)
 
     # test_reboot()

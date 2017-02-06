@@ -93,7 +93,7 @@ class PlatLpar(PlatBase):
 
         elif vol_obj.type == 'FCP':
             if vol_obj.specs['multipath']:
-                prefix= '/dev/disk/by-id/dm-uuid-mpath-{}'
+                prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
             else:
                 prefix = '/dev/disk/by-id/scsi-{}'
             return prefix.format(vol_obj.specs['wwid'])

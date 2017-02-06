@@ -92,7 +92,7 @@ class PlatBase(metaclass=abc.ABCMeta):
     # _create_hyp()
 
     @abc.abstractmethod
-    def boot(self, kargs):
+    def boot(self, kargs): #pylint: disable=missing-raises-doc
         """
         Perform a boot operation so that the installation process can start.
 
@@ -103,7 +103,7 @@ class PlatBase(metaclass=abc.ABCMeta):
     # boot()
 
     @abc.abstractmethod
-    def get_vol_devpath(self, vol_obj):
+    def get_vol_devpath(self, vol_obj): #pylint: disable=missing-raises-doc
         """
         Given a volume entry, return the correspondent device path on operating
         system.

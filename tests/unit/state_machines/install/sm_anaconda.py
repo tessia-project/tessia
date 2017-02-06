@@ -85,16 +85,20 @@ class TestSmAnaconda(TestCase):
         self._mock_os = patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = patch.object(sm_base, 'SshClient', autospec=True)
+        self._mock_ssh_client = patcher.start()
+        self.addCleanup(patcher.stop)
+
         patcher = patch.object(sm_base, 'urljoin', autospec=True)
         self._mock_urljoin = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(sm_anaconda, 'sleep', autospec=True)
-        self._mock_sleep = patcher.start()
+        patcher = patch.object(sm_base, 'sleep', autospec=True)
+        self._mock_sleep_base = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(sm_anaconda, 'SshClient', autospec=True)
-        self._mock_ssh_client = patcher.start()
+        patcher = patch.object(sm_anaconda, 'sleep', autospec=True)
+        self._mock_sleep_base = patcher.start()
         self.addCleanup(patcher.stop)
 
         patcher = patch.object(sm_anaconda, 'time', autospec=True)
@@ -172,25 +176,6 @@ class TestSmAnaconda(TestCase):
         with self.assertRaisesRegex(TimeoutError, "Installation Timeout:"):
             mach.start()
     # test_wait_install_timeout()
-
-    def test_check_install_error(self):
-        """
-        Check the case an error occur when testing the installed system
-        after the installation has successfully finished.
-        """
-        os_entry = utils.get_os("rhel7.2")
-        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
-        template_entry = utils.get_template("RHEL7.2")
-        mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
-        mock_shell.run.side_effect = [
-            (0, "Some text"),
-            (0, ""),
-            (0, "Thread Done: AnaConfigurationThread"),
-            (-1, "ERROR")]
-        mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
-        with self.assertRaisesRegex(RuntimeError, "Error while checking"):
-            mach.start()
-    # test_check_install_error()
 
     def test_installation_error_from_log(self):
         """

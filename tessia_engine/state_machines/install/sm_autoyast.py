@@ -22,12 +22,17 @@ Machine for auto installation of Autoyast based operating systems
 from tessia_engine.state_machines.install.sm_base import SmBase
 
 import jinja2
+import logging
 from time import sleep
 
 
 #
 # CONSTANTS AND DEFINITIONS
 #
+
+INSTALLATION_TIMEOUT = 600
+CHECK_INSTALLATION_FREQ = 10
+LOGFILE_PATH = "/var/log/YaST2/y2log"
 
 #
 # CODE
@@ -41,6 +46,7 @@ class SmAutoyast(SmBase):
         Constructor
         """
         super().__init__(os_entry, profile_entry, template_entry)
+        self._logger = logging.getLogger(__name__)
     # __init__()
 
     def collect_info(self):
@@ -80,9 +86,7 @@ class SmAutoyast(SmBase):
         """
         initial_line = 1
         elapsed_time = 0
-        frequency_check = 10
-        timeout_installation = 600
-        cmd_read_line = "tail -n +{} /var/log/YaST2/y2log"
+        cmd_read_line = "tail -n +{} " + LOGFILE_PATH
 
         ssh_client, shell = self._get_ssh_conn()
         # Under SLES, we use the cmdline parameter 'start_shell' that
@@ -96,11 +100,11 @@ class SmAutoyast(SmBase):
         if ret != 0:
             self._logger.error(
                 "Error while killing shell before installation start")
-            raise Exception("Command Error: ret={}".format(ret))
+            raise RuntimeError("Command Error: ret={}".format(ret))
 
         # performs successive calls to extract the installation log
         # and check installation stage
-        while elapsed_time < timeout_installation:
+        while elapsed_time < INSTALLATION_TIMEOUT:
             ret, out = shell.run(cmd_read_line.format(initial_line))
             if ret != 0:
                 self._logger.error(
@@ -119,8 +123,11 @@ class SmAutoyast(SmBase):
             if out == '':
                 break
 
-            sleep(frequency_check)
-            elapsed_time += frequency_check
+            sleep(CHECK_INSTALLATION_FREQ)
+            elapsed_time += CHECK_INSTALLATION_FREQ
+        else:
+            raise TimeoutError('Installation Timeout: The installation'
+                               ' process is taking too long')
 
         shell.close()
         ssh_client.logoff()

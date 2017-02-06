@@ -15,6 +15,14 @@
             "owner": "system",
             "project": "System project",
             "subnet": "CPC3 shared"
+        },
+        {
+            "address": "192.168.161.224",
+            "desc": null,
+            "modifier": "system",
+            "owner": "system",
+            "project": "System project",
+            "subnet": "CPC3 shared"
         }
     ],
     "NetZone": [
@@ -33,11 +41,11 @@
             "operating_system": "rhel7.2",
             "url": "http://installserver.domain.com/redhat/s390x/RHEL7.2/DVD"
         },
-		{
+        {
             "initrd": "/boot/s390x/initrd",
             "kernel": "/boot/s390x/linux",
             "operating_system": "sles12.1",
-            "url": "http://installserver.domain.com/suse/s390x/SLES12.1/DVD/"
+            "url": "http://installserver.domain.com/suse/s390x/SLES12.1/DVD"
         }
     ],
     "StoragePool": [
@@ -98,10 +106,77 @@
             "size": 10000,
             "specs": {},
             "system": "CPC3LP55",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "DASD",
             "volume_id": "3961"
+        },
+        {
+            "desc": "- DASD disk for regression tests",
+            "modifier": "system",
+            "owner": "system",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/home",
+                        "size": 4000,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "System project",
+            "server": "DSK7K16",
+            "size": 10000,
+            "specs": {},
+            "system": "CPC3LP54",
+            "system_attributes": {},
+            "type": "DASD",
+            "volume_id": "395f"
+        },
+        {
+            "desc": "FCP-SCSI DISK",
+            "modifier": "system",
+            "owner": "system",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/",
+                        "size": 8000,
+                        "type": "primary"
+                    },
+                    {
+                        "fs": "swap",
+                        "mo": null,
+                        "mp": null,
+                        "size": 2000,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "System project",
+            "server": "DSK7K16",
+            "size": 20000,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002000"
+            },
+            "system": "CPC3LP54",
+            "system_attributes": {},
+            "type": "FCP",
+            "volume_id": "1020400000000000"
         },
         {
             "desc": "- DASD disk for regression tests",
@@ -131,8 +206,7 @@
             "size": 10000,
             "specs": {},
             "system": "kvm054",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "DASD",
             "volume_id": "3962"
         },
@@ -168,16 +242,15 @@
                         "devno": "0.0.1800",
                         "wwpns": [
                             "100207630503c1ae",
-							"100207630508c1ae"
+                            "100207630508c1ae"
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002400",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002400"
             },
             "system": "CPC3LP55",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "FCP",
             "volume_id": "1024400000000000"
         },
@@ -209,12 +282,11 @@
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002407",
-                "multipath": false
+                "multipath": false,
+                "wwid": "11002076305aac1a0000000000002407"
             },
             "system": "CPC3LP55",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "FCP",
             "volume_id": "1024400700000000"
         },
@@ -242,17 +314,16 @@
                     {
                         "devno": "0.0.1800",
                         "wwpns": [
-							"100207630503c1ae",
-							"100207630508c1ae"
+                            "100207630503c1ae",
+                            "100207630508c1ae"
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002408",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002408"
             },
             "system": "CPC3LP55",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "FCP",
             "volume_id": "1024400800000000"
         },
@@ -280,13 +351,13 @@
                     {
                         "devno": "0.0.1800",
                         "wwpns": [
-							"100207630503c1ae",
-							"100207630508c1ae"
+                            "100207630503c1ae",
+                            "100207630508c1ae"
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002409",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002409"
             },
             "system": "kvm054",
             "system_attributes": {
@@ -319,16 +390,15 @@
                     {
                         "devno": "0.0.1800",
                         "wwpns": [
-							"100207630503c1ae"
+                            "100207630503c1ae"
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a000000000000240a",
-                "multipath": false
+                "multipath": false,
+                "wwid": "11002076305aac1a000000000000240a"
             },
             "system": "kvm054",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "FCP",
             "volume_id": "1024400a00000000"
         },
@@ -356,17 +426,16 @@
                     {
                         "devno": "0.0.1800",
                         "wwpns": [
-							"100207630503c1ae",
-							"100207630508c1ae"
+                            "100207630503c1ae",
+                            "100207630508c1ae"
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a000000000000240b",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a000000000000240b"
             },
             "system": "kvm054",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "FCP",
             "volume_id": "1024400b00000000"
         },
@@ -405,8 +474,8 @@
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002401",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002401"
             },
             "system": "kvm054",
             "system_attributes": {
@@ -443,12 +512,11 @@
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002403",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002403"
             },
             "system": "kvm054",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "FCP",
             "volume_id": "1024400300000000"
         },
@@ -480,8 +548,8 @@
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002404",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002404"
             },
             "system": "kvm054",
             "system_attributes": {
@@ -518,12 +586,11 @@
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002405",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002405"
             },
             "system": "kvm054",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "FCP",
             "volume_id": "1024400500000000"
         },
@@ -555,12 +622,11 @@
                         ]
                     }
                 ],
-                "wwid": "11002076305aac1a0000000000002406",
-                "multipath": true
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002406"
             },
             "system": "kvm054",
-            "system_attributes": {
-            },
+            "system_attributes": {},
             "type": "FCP",
             "volume_id": "1024400600000000"
         }
@@ -571,16 +637,24 @@
             "volume": "DSK7K16/3961"
         },
         {
+            "profile": "CPC3LP54/lpar_cpc3lp54_install",
+            "volume": "DSK7K16/395f"
+        },
+        {
             "profile": "CPC3LP55/default_CPC3LP55",
             "volume": "DSK7K16/1024400700000000"
         },
-		{
+        {
             "profile": "CPC3LP55/default_CPC3LP55",
             "volume": "DSK7K16/1024400800000000"
         },
         {
             "profile": "CPC3LP55/default_CPC3LP55_SCSI",
             "volume": "DSK7K16/1024400000000000"
+        },
+        {
+            "profile": "CPC3LP54/lpar_cpc3lp54_install",
+            "volume": "DSK7K16/1020400000000000"
         },
         {
             "profile": "CPC3LP55/default_CPC3LP55_SCSI",
@@ -606,19 +680,19 @@
             "profile": "kvm054/kvm_kvm054_install",
             "volume": "DSK7K16/1024400600000000"
         },
-		{
+        {
             "profile": "kvm054/kvm_kvm054_install_dasd",
             "volume": "DSK7K16/3962"
         },
-		{
+        {
             "profile": "kvm054/kvm_kvm054_install_dasd",
             "volume": "DSK7K16/1024400900000000"
         },
-		{
+        {
             "profile": "kvm054/kvm_kvm054_install_dasd",
             "volume": "DSK7K16/1024400a00000000"
         },
-		{
+        {
             "profile": "kvm054/kvm_kvm054_install_dasd",
             "volume": "DSK7K16/1024400b00000000"
         }
@@ -663,6 +737,18 @@
             "type": "lpar"
         },
         {
+            "desc": "- LPAR 1 for user tessia-admin@domain.com",
+            "hostname": "CPC3LP54.domain.com",
+            "hypervisor": "CPC3",
+            "model": "ZEC12_H20",
+            "modifier": "system",
+            "name": "CPC3LP54",
+            "owner": "system",
+            "project": "System project",
+            "state": "AVAILABLE",
+            "type": "lpar"
+        },
+        {
             "desc": "KVM Guest",
             "hostname": "kvm054.domain.com",
             "hypervisor": "CPC3LP55",
@@ -698,6 +784,18 @@
             "osname": "eth0",
             "system": "kvm054",
             "type": "MACVTAP"
+        },
+        {
+            "attributes": {
+                "ccwgroup": "0.0.f500,0.0.f501,0.0.f502",
+                "layer2": true
+            },
+            "ip_address": "CPC3 shared/192.168.161.224",
+            "mac_address": "02:57:54:00:76:00",
+            "name": "external osa",
+            "osname": "enccwf500",
+            "system": "CPC3LP54",
+            "type": "OSA"
         }
     ],
     "SystemIfaceProfileAssociation": [
@@ -716,6 +814,10 @@
         {
             "iface": "kvm054/external macvtap",
             "profile": "kvm054/kvm_kvm054_install_dasd"
+        },
+        {
+            "iface": "CPC3LP54/external osa",
+            "profile": "CPC3LP54/lpar_cpc3lp54_install"
         }
     ],
     "SystemProfile": [
@@ -769,6 +871,22 @@
                 "username": "root"
             },
             "default": true,
+            "hypervisor_profile": "CPC3/default CPC3",
+            "memory": 4096,
+            "name": "lpar_cpc3lp54_install",
+            "operating_system": "sles12.1",
+            "parameters": {
+                "gateway_iface": "external osa"
+            },
+            "system": "CPC3LP54"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+                "password": "somepasswd",
+                "username": "root"
+            },
+            "default": true,
             "hypervisor_profile": "CPC3LP55/default_CPC3LP55",
             "memory": 1024,
             "name": "kvm_kvm054_install",
@@ -778,7 +896,7 @@
             },
             "system": "kvm054"
         },
-		{
+        {
             "cpu": 2,
             "credentials": {
                 "password": "somepasswd",

@@ -120,14 +120,14 @@ def template_edit(cur_name, **kwargs):
     click.echo('Item successfully updated.')
 # template_edit()
 
-@autotemplate.command(name='show')
-@click.option('--name', help="show specified template")
+@autotemplate.command(name='list')
+@click.option('--name', help="filter by template name")
 @click.option('--owner', type=AUTO_TEMPLATE, help="filter by owner")
 @click.option('--project', help="filter by project")
 @click.option('operating_system', '--os', help="filter by supported OS")
-def template_show(**kwargs):
+def template_list(**kwargs):
     """
-    show the available templates
+    list the available templates
     """
     # fetch data from server
     client = Client()
@@ -138,4 +138,4 @@ def template_show(**kwargs):
     # present results
     print_items(
         MODEL_FIELDS, client.AutoTemplates, None, entries)
-# template_show()
+# template_list()

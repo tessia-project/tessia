@@ -102,15 +102,15 @@ def server_edit(cur_name, **kwargs):
     click.echo('Item successfully updated.')
 # server_edit()
 
-@click.command(name='server-show')
-@click.option('--name', help="show specified server only")
+@click.command(name='server-list')
+@click.option('--name', help="filter by specified name")
 @click.option('--model', help="filter by specified model")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 @click.option('--type', help="filter by specified volume type")
-def server_show(**kwargs):
+def server_list(**kwargs):
     """
-    show registered storage servers
+    list registered storage servers
     """
     # fetch data from server
     client = Client()
@@ -123,12 +123,12 @@ def server_show(**kwargs):
     print_items(
         FIELDS, client.StorageServers, None, entries)
 
-# server_show()
+# server_list()
 
 @click.command(name='server-types')
 def server_types():
     """
-    show the supported storage server types
+    list the supported storage server types
     """
     # fetch data from server
     client = Client()
@@ -142,4 +142,4 @@ def server_types():
 
 # server_types()
 
-CMDS = [server_add, server_del, server_edit, server_show, server_types]
+CMDS = [server_add, server_del, server_edit, server_list, server_types]

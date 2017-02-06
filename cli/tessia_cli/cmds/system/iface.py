@@ -53,8 +53,8 @@ ATTR_BY_TYPE = {
 #
 
 @click.command(name='iface-add')
-@click.option('--name', required=True,
-              help="interface name in form system-name/iface-name")
+@click.option('--system', required=True, help="target system")
+@click.option('--name', required=True, help="interface name")
 @click.option('--type', required=True,
               help="interface type (see iface-types)")
 @click.option('--osname', help="interface name in operating system (i.e. en0)")
@@ -74,11 +74,6 @@ def iface_add(**kwargs):
     """
     create a new network interface
     """
-    try:
-        kwargs['system'], kwargs['name'] = kwargs['name'].split('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
-
     client = Client()
 
     item = client.SystemIfaces()
@@ -124,30 +119,24 @@ def iface_add(**kwargs):
 @click.command(
     name='iface-attach',
     short_help='attach a network interface to a system activation profile')
-@click.option(
-    'target', '--to', required=True,
-    help="target profile system-name/profile-name")
-@click.option('--iface', required=True, help='iface-name')
-def iface_attach(target, iface):
+@click.option('--system', required=True, help='target system')
+@click.option('--profile', required=True, help='target activation profile')
+@click.option('--iface', required=True, help='interface name')
+def iface_attach(system, profile, iface):
     """
     attach a network interface to a system activation profile
     """
-    try:
-        system_name, profile_name = target.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for profile')
-
     # fetch data from server
     client = Client()
 
     prof_obj = fetch_item(
         client.SystemProfiles,
-        {'system': system_name, 'name': profile_name},
+        {'system': system, 'name': profile},
         'no profile found.'
     )
     iface_obj = fetch_item(
         client.SystemIfaces,
-        {'system': system_name, 'name': iface},
+        {'system': system, 'name': iface},
         'no network interface found.'
     )
 
@@ -157,22 +146,17 @@ def iface_attach(target, iface):
 # iface_attach()
 
 @click.command(name='iface-del')
-@click.option('--name', required=True,
-              help="interface name in form system-name/iface-name")
-def iface_del(name):
+@click.option('--system', required=True, help="system name")
+@click.option('--name', required=True, help="interface name")
+def iface_del(**kwargs):
     """
     remove an existing network interface
     """
-    try:
-        system_name, iface_name = name.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
-
     client = Client()
 
     fetch_and_delete(
         client.SystemIfaces,
-        {'system': system_name, 'name': iface_name},
+        kwargs,
         'network interface not found.'
     )
     click.echo('Item successfully deleted.')
@@ -181,30 +165,24 @@ def iface_del(name):
 @click.command(
     name='iface-detach',
     short_help='detach a network interface from a system activation profile')
-@click.option(
-    'profile', '--from', required=True,
-    help="from profile system-name/profile-name")
-@click.option('--iface', required=True, help='iface-name')
-def iface_detach(profile, iface):
+@click.option('--system', required=True, help='target system')
+@click.option('--profile', required=True, help='target activation profile')
+@click.option('--iface', required=True, help='interface name')
+def iface_detach(system, profile, iface):
     """
     detach a network interface from a system activation profile
     """
-    try:
-        system_name, profile_name = profile.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for profile')
-
     # fetch data from server
     client = Client()
 
     prof_obj = fetch_item(
         client.SystemProfiles,
-        {'system': system_name, 'name': profile_name},
+        {'system': system, 'name': profile},
         'no profile found.'
     )
     iface_obj = fetch_item(
         client.SystemIfaces,
-        {'system': system_name, 'name': iface},
+        {'system': system, 'name': iface},
         'no network interface found.'
     )
 
@@ -218,9 +196,9 @@ def iface_detach(profile, iface):
 @click.command(
     name='iface-edit',
     short_help='change properties of an existing network interface')
-@click.option('cur_name', '--name', required=True,
-              help="interface name in form system-name/iface-name")
-@click.option('name', '--newname', help="new interface name iface-name")
+@click.option('--system', required=True, help="system containing interface")
+@click.option('cur_name', '--name', required=True, help="interface name")
+@click.option('name', '--newname', help="new interface name")
 @click.option('--type',
               help="interface type (see iface-types)")
 @click.option('--osname', help="interface name in operating system (i.e. en0)")
@@ -237,19 +215,14 @@ def iface_detach(profile, iface):
 @click.option('--libvirt', type=LIBVIRT_XML,
               help="libvirt definition file (KVM only)")
 @click.option('--desc', help="free form field describing interface")
-def iface_edit(cur_name, **kwargs):
+def iface_edit(system, cur_name, **kwargs):
     """
     change properties of an existing network interface
     """
-    try:
-        system_name, cur_name = cur_name.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
-
     client = Client()
     item = fetch_item(
         client.SystemIfaces,
-        {'system': system_name, 'name': cur_name},
+        {'system': system, 'name': cur_name},
         'network interface not found.',
     )
     update_dict = {}
@@ -307,11 +280,9 @@ def iface_edit(cur_name, **kwargs):
     click.echo('Item successfully updated.')
 # iface_edit()
 
-@click.command(name='iface-show')
-@click.option(
-    '--name',
-    help="show specific system-name/iface-name or filter by iface-name")
-@click.option('--system', help='filter by specified system')
+@click.command(name='iface-list')
+@click.option('--system', help='the system to list')
+@click.option('--name', help="filter by interface name")
 @click.option('--type',
               help="filter by specified interface type")
 @click.option('--osname', help="filter by specified operating system name")
@@ -319,20 +290,15 @@ def iface_edit(cur_name, **kwargs):
               help="filter by specified mac address")
 @click.option('ip_address', '--ip',
               help="filter by specified ip address")
-def iface_show(**kwargs):
+def iface_list(**kwargs):
     """
-    show existing system activation profiles
+    list the network interfaces of a system
     """
-    # system-name/iface-name format specified: split it
-    if kwargs['name'] is not None and kwargs['name'].find('/') > -1:
-        # system dedicated parameter also specified: report conflict
-        if kwargs['system'] is not None:
-            raise click.ClickException(
-                'system specified twice (--name and --system)')
-        try:
-            kwargs['system'], kwargs['name'] = kwargs['name'].split('/', 1)
-        except:
-            raise click.ClickException('invalid format for interface name')
+    # at least one qualifier must be specified so that we don't have to
+    # retrieve the full list
+    if kwargs['system'] is None and kwargs['name'] is None:
+        raise click.ClickException(
+            'at least one of --system or --name must be specified')
 
     # fetch data from server
     client = Client()
@@ -350,12 +316,12 @@ def iface_show(**kwargs):
         },
         entries)
 
-# iface_show()
+# iface_list()
 
 @click.command(name='iface-types')
 def iface_types():
     """
-    show the supported storage server types
+    list the supported network interface types
     """
     # fetch data from server
     client = Client()
@@ -369,6 +335,6 @@ def iface_types():
 # iface_types()
 
 CMDS = [
-    iface_add, iface_attach, iface_del, iface_edit, iface_detach, iface_show,
+    iface_add, iface_attach, iface_del, iface_edit, iface_detach, iface_list,
     iface_types
 ]

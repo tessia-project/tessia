@@ -54,7 +54,7 @@ SYSTEM_FIELDS = (
     '--hostname', required=True, help="resolvable hostname or ip address")
 @click.option('hypervisor', '--hyp', help="system's hypervisor")
 @click.option('--type', required=True, help="system type (see types)")
-@click.option('--model', help="system model (see model-show)")
+@click.option('--model', help="system model (see model-list)")
 @click.option('--state', help="system state (see states)")
 @click.option('--project', help="project owning system")
 @click.option('--desc', help="free form field describing system")
@@ -90,24 +90,28 @@ def del_(name):
 @click.command(name='autoinstall')
 @click.pass_context
 @click.option('--template', required=True, help='autofile template')
-@click.option('profile', '--system', required=True,
-              help='system-name or system-name/profile-name')
+@click.option('--system', required=True,
+              help='system to be installed')
+@click.option('--profile',
+              help='activation profile; if not specified default is used')
 def autoinstall(ctx=None, **kwargs):
     """
     install a system using an autofile template
     """
     request = {'action_type': 'SUBMIT', 'job_type': 'autoinstall'}
+    if kwargs['profile'] is None:
+        kwargs.pop('profile')
     request['parameters'] = json.dumps(kwargs)
     job_id = wait_scheduler(Client(), request)
     click.echo('Waiting for installation output (Ctrl+C to stop waiting)')
     ctx.invoke(output, job_id=job_id)
-# install()
+# autoinstall()
 
 @click.command(name='edit')
 @click.option('cur_name', '--name', required=True, help='system to edit')
 @click.option('name', '--newname', help="new system name")
 @click.option('hypervisor', '--hyp', help="hypervisor's name")
-@click.option('--model', help="system model (see model-show)")
+@click.option('--model', help="system model (see model-list)")
 @click.option('--type', help="system type (see types)")
 @click.option('--state', help="system state (see states)")
 @click.option('--project', help="project owning system ")
@@ -126,17 +130,17 @@ def edit(cur_name, **kwargs):
     click.echo('Item successfully updated.')
 # edit()
 
-@click.command(name='show')
-@click.option('--name', help="show specified system only")
+@click.command(name='list')
+@click.option('--name', help="filter by system name")
 @click.option('hypervisor', '--hyp', help="filter by specified hypervisor")
 @click.option('--model', help="filter by specified model")
 @click.option('--type', help="filter by specified type")
 @click.option('--state', help="filter by specified state")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
-def show(**kwargs):
+def list_(**kwargs):
     """
-    show registered systems
+    list registered systems
     """
     # fetch data from server
     client = Client()
@@ -148,12 +152,12 @@ def show(**kwargs):
     # present results
     print_items(
         SYSTEM_FIELDS, client.Systems, None, entries)
-# show()
+# list_()
 
 @click.command(name='types')
 def types():
     """
-    show the supported system types
+    list the supported system types
     """
     # fetch data from server
     client = Client()
@@ -168,7 +172,7 @@ def types():
 @click.command(name='states')
 def states():
     """
-    show the supported system states
+    list the supported system states
     """
     # fetch data from server
     client = Client()
@@ -180,4 +184,4 @@ def states():
         STATE_FIELDS, client.SystemStates, None, entries)
 # states()
 
-CMDS = [add, del_, edit, autoinstall, show, types, states]
+CMDS = [add, del_, edit, autoinstall, list_, types, states]

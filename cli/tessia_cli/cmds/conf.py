@@ -103,29 +103,24 @@ def key_del(key, login, password):
     click.echo('Item successfully deleted.')
 # key_del()
 
-@conf.command(name='key-show')
-@click.option('--all', is_flag=True, help="show all users (admin only)")
-def key_show(**kwargs):
+@conf.command(name='key-list')
+def key_list(**kwargs):
     """
-    show the access keys associated with the user
+    list the access keys associated with the user
     """
     client = Client()
-    # all parameter provided: list all keys
-    if kwargs['all'] is True:
-        entries = client.UserKeys.instances()
-    else:
-        current_key = fetch_item(
-            client.UserKeys,
-            {'key_id': CONF.get_key()[0]},
-            'current key has no user associated.'
-        )
-        entries = client.UserKeys.instances(where={'user': current_key.user})
+    current_key = fetch_item(
+        client.UserKeys,
+        {'key_id': CONF.get_key()[0]},
+        'current key has no user associated.'
+    )
+    entries = client.UserKeys.instances(where={'user': current_key.user})
 
     # present results
     print_items(
         FIELDS, client.UserKeys, None, entries)
 
-# key_show()
+# key_list()
 
 @conf.command()
 def show():

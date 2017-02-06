@@ -43,12 +43,13 @@ INSTALL_REQ_PARAMS_SCHEMA = {
     "type": "object",
     "properties": {
         "os": {"type": "string"},
+        "profile": {"type": "string"},
         "template": {"type": "string"},
-        "profile": {"type": "string"}
+        "system": {"type": "string"}
     },
     "required": [
         "template",
-        "profile"
+        "system"
     ],
     "additionalProperties": False
 }
@@ -105,7 +106,8 @@ class AutoInstallMachine(BaseMachine):
         # get the os entry in db
         os_entry = self._get_os(template_entry, self._params.get('os'))
         # get the profile entry in db
-        prof_entry = self._get_profile(self._params.get("profile"))
+        prof_entry = self._get_profile(
+            self._params['system'], self._params.get("profile"))
 
         if os_entry != template_entry.operating_system_rel:
             self._logger.warning('warning: custom OS specified by user,'
@@ -141,28 +143,30 @@ class AutoInstallMachine(BaseMachine):
     # _get_os()
 
     @staticmethod
-    def _get_profile(profile_param):
+    def _get_profile(system_name, profile_name):
         """
-        Get a SystemProfile instance based on the profile_param
+        Get a SystemProfile instance based on the system and profile names
         passed in the request parameters. In case only the system name is
         provided, the default profile will be used.
 
         Args:
-            profile_param (str): Identifier for a profile in the format
-                                 <system_name>[/<profile_name>]
+            system_name (str): system name in db
+            profile_name (str): profile name in db
 
         Returns:
             SystemProfile: a SystemProfile instance.
         """
-        if profile_param.find("/") != -1:
-            system_name, profile_name = profile_param.split("/")
+        if profile_name is not None:
             profile = SystemProfile.query.filter_by(
                 name=profile_name, system=system_name).one()
         else:
-            system_name = profile_param
-            system = System.query.filter_by(name=system_name).one()
-            profile = SystemProfile.query.filter_by(
-                system_id=system.id, default=True).one()
+            profile = SystemProfile.query.join(
+                'system_rel'
+            ).filter(
+                SystemProfile.default == bool(True)
+            ).filter(
+                SystemProfile.system == system_name
+            ).one()
 
         return profile
     # _get_profile()
@@ -220,7 +224,7 @@ class AutoInstallMachine(BaseMachine):
         }
 
         # check which format the profile parameter is using
-        profile = cls._get_profile(params['profile'])
+        profile = cls._get_profile(params['system'], params.get("profile"))
         system = profile.system_rel
 
         # the system being installed is considered an exclusive resource

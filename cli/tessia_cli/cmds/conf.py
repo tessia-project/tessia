@@ -39,6 +39,10 @@ FIELDS = (
     'user', 'key_id', 'created', 'last_used', 'desc'
 )
 
+NO_USER_MSG = (
+    "current key is not registered, create a new one with 'tessia conf key-gen'"
+)
+
 #
 # CODE
 #
@@ -112,7 +116,7 @@ def key_list(**kwargs):
     current_key = fetch_item(
         client.UserKeys,
         {'key_id': CONF.get_key()[0]},
-        'current key has no user associated.'
+        NO_USER_MSG,
     )
     entries = client.UserKeys.instances(where={'user': current_key.user})
 
@@ -132,7 +136,7 @@ def show():
     current_key = fetch_item(
         client.UserKeys,
         {'key_id': CONF.get_key()[0]},
-        'current key has no user associated.'
+        NO_USER_MSG,
     )
 
     conf_dict = CONF.get_config()

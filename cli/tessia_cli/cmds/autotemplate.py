@@ -20,6 +20,7 @@ Module for the os installation template (autotemplate) commands
 # IMPORTS
 #
 from tessia_cli.client import Client
+from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
 from tessia_cli.types import AUTO_TEMPLATE
 from tessia_cli.utils import fetch_and_delete
@@ -122,7 +123,7 @@ def template_edit(cur_name, **kwargs):
 
 @autotemplate.command(name='list')
 @click.option('--name', help="filter by template name")
-@click.option('--owner', type=AUTO_TEMPLATE, help="filter by owner")
+@click.option('--owner', help="filter by owner")
 @click.option('--project', help="filter by project")
 @click.option('operating_system', '--os', help="filter by supported OS")
 def template_list(**kwargs):
@@ -133,7 +134,8 @@ def template_list(**kwargs):
     client = Client()
 
     # parse parameters to filters
-    entries = client.AutoTemplates.instances()
+    parsed_filter = dict_to_filter(kwargs)
+    entries = client.AutoTemplates.instances(**parsed_filter)
 
     # present results
     print_items(

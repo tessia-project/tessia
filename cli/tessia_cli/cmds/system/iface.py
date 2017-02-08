@@ -203,8 +203,8 @@ def iface_detach(system, profile, iface):
               help="interface type (see iface-types)")
 @click.option('--osname', help="interface name in operating system (i.e. en0)")
 @click.option('mac_address', '--mac', help="mac address")
-@click.option('ip_address', '--ip',
-              help="assign subnet-name/ip-addr to interface")
+@click.option('--subnet', help="subnet of ip address to be assigned")
+@click.option('--ip', help="ip address to be assigned to interface")
 @click.option('--layer2', type=click.BOOL,
               help="enable layer2 mode (OSA only)")
 @click.option('--ccwgroup', type=QETH_GROUP,
@@ -230,6 +230,21 @@ def iface_edit(system, cur_name, **kwargs):
         iface_type = item.type
     else:
         iface_type = kwargs['type']
+
+    ip_addr = kwargs.pop('ip')
+    subnet = kwargs.pop('subnet')
+    # one of mandatory parameters not specified: report error
+    if (subnet is not None and ip_addr is None or
+            subnet is None and ip_addr is not None):
+        raise click.ClickException(
+            '--subnet and --ip must be specified together')
+    # both parameters specified: set value for update on item
+    elif subnet is not None and ip_addr is not None:
+        # both parameters are empty: unassign ip address
+        if subnet == '' and ip_addr == '':
+            update_dict['ip_address'] = None
+        else:
+            update_dict['ip_address'] = '{}/{}'.format(subnet, ip_addr)
 
     for key, value in kwargs.items():
 

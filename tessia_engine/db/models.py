@@ -1191,8 +1191,7 @@ class SystemIface(CommonMixin, SchemaMixin, BASE):
 
     name = Column(String, nullable=False)
     osname = Column(String)
-    ip_address_id = Column(
-        Integer, ForeignKey('ip_addresses.id'), nullable=False)
+    ip_address_id = Column(Integer, ForeignKey('ip_addresses.id'))
     system_id = Column(
         Integer, ForeignKey('systems.id'), index=True, nullable=False)
 
@@ -1220,13 +1219,15 @@ class SystemIface(CommonMixin, SchemaMixin, BASE):
     @hybrid_property
     def ip_address(self):
         """Defines the ip_address attribute as subnet_name/ip_address"""
+        if self.ip_address_rel is None:
+            return None
         return '{}/{}'.format(
             self.ip_address_rel.subnet, self.ip_address_rel.address)
 
     @ip_address.setter
     def ip_address(self, value):
         """Defines what to do when assigment occurs for the attribute"""
-        if value == '' or value is None:
+        if value is None:
             self.ip_address_id = None
             return
         try:

@@ -86,11 +86,11 @@ def team_edit(cur_name, **kwargs):
     click.echo('Item successfully updated.')
 # team_edit()
 
-@click.command(name='team-show')
+@click.command(name='team-list')
 @click.option('--name', help="list specified team only")
-def team_show(**kwargs):
+def team_list(**kwargs):
     """
-    show registered teams
+    list registered teams
     """
     # fetch data from server
     client = Client()
@@ -103,6 +103,6 @@ def team_show(**kwargs):
     print_items(
         FIELDS, client.Projects, None, entries)
 
-# team_show()
+# team_list()
 
-CMDS = [team_add, team_del, team_edit, team_show]
+CMDS = [team_add, team_del, team_edit, team_list]

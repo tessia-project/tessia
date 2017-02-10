@@ -38,20 +38,15 @@ FIELDS = (
 # CODE
 
 @click.command(name='ip-add')
-@click.option(
-    '--address', required=True,
-    help="subnet-name/ip-addr to create (i.e. subnet-foo/192.168.0.50)")
+@click.option('--subnet', required=True, help='target subnet')
+@click.option('address', '--ip', required=True,
+              help="ip address to create (i.e. 192.168.0.50)")
 @click.option('--project', help="project owning ip address")
 @click.option('--desc', help="free form field describing address")
-def ip_add(address, **kwargs):
+def ip_add(**kwargs):
     """
     create a new ip address
     """
-    try:
-        kwargs['subnet'], kwargs['address'] = address.rsplit('/', 1)
-    except:
-        raise click.ClickException('invalid format for address')
-
     client = Client()
 
     item = client.IpAddresses()
@@ -62,74 +57,56 @@ def ip_add(address, **kwargs):
 # ip_add()
 
 @click.command(name='ip-del')
-@click.option(
-    '--address', required=True,
-    help="subnet-name/ip-addr to delete (i.e. foo/192.168.0.50)")
-def ip_del(address):
+@click.option('--subnet', required=True, help='subnet containing ip')
+@click.option('address', '--ip', required=True, help="ip address to delete")
+def ip_del(**kwargs):
     """
     remove an existing ip address
     """
-    try:
-        subnet, address = address.rsplit('/', 1)
-    except:
-        raise click.ClickException('invalid format for address')
-
     client = Client()
 
     fetch_and_delete(
         client.IpAddresses,
-        {'address': address, 'subnet': subnet},
+        kwargs,
         'ip address not found.'
     )
     click.echo('Item successfully deleted.')
 # ip_del()
 
 @click.command(name='ip-edit')
-@click.option(
-    'cur_address', '--address', required=True,
-    help="subnet-name/ip-addr to edit (i.e. foo/192.168.0.50)")
-@click.option('address', '--newaddress', help="new ip-addr")
+@click.option('--subnet', required=True, help='subnet containing ip')
+@click.option('cur_address', '--ip', required=True, help="ip address to edit")
+@click.option('address', '--newip', help="new ip-addr")
 @click.option('--project', help="project owning ip address")
 @click.option('--desc', help="free form field describing address")
-def ip_edit(cur_address, **kwargs):
+def ip_edit(subnet, cur_address, **kwargs):
     """
     change properties of an existing ip address
     """
-    try:
-        subnet, address = cur_address.rsplit('/', 1)
-    except:
-        raise click.ClickException('invalid format for address')
-
     client = Client()
     fetch_and_update(
         client.IpAddresses,
-        {'address': address, 'subnet': subnet},
+        {'address': cur_address, 'subnet': subnet},
         'ip address not found.',
         kwargs)
     click.echo('Item successfully updated.')
 # ip_edit()
 
-@click.command(name='ip-show')
-@click.option('--address',
-              help="show specific subnet-name/ip-addr or filter by ip-addr")
-@click.option('--subnet', help="filter by specified subnet")
+@click.command(name='ip-list')
+@click.option('--subnet', help='the subnet to list')
+@click.option('address', '--ip', help='filter by ip address')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
-def ip_show(**kwargs):
+def ip_list(**kwargs):
     """
-    show registered ip addresses
+    list the registered ip addresses
     """
-    # subnet/ip format specified: split it
-    if kwargs['address'] is not None and kwargs['address'].find('/') > -1:
-        # subnet dedicated parameter also specified: report conflict
-        if kwargs['subnet'] is not None:
-            raise click.ClickException(
-                'subnet specified twice (--address and --subnet)')
-        try:
-            kwargs['subnet'], kwargs['address'] = \
-                kwargs['address'].rsplit('/', 1)
-        except:
-            raise click.ClickException('invalid format for address')
+    # at least one qualifier must be specified so that we don't have to
+    # retrieve the full list
+    if kwargs['subnet'] is None and kwargs['address'] is None:
+        raise click.ClickException(
+            'at least one of --subnet or --ip must be specified')
+
     # fetch data from server
     client = Client()
 
@@ -140,6 +117,6 @@ def ip_show(**kwargs):
     # present results
     print_items(
         FIELDS, client.IpAddresses, None, entries)
-# ip_show()
+# ip_list()
 
-CMDS = [ip_add, ip_del, ip_edit, ip_show]
+CMDS = [ip_add, ip_del, ip_edit, ip_list]

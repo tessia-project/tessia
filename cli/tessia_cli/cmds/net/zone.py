@@ -92,13 +92,13 @@ def zone_edit(cur_name, **kwargs):
     click.echo('Item successfully updated.')
 # zone_edit()
 
-@click.command(name='zone-show')
-@click.option('--name', help="show specified network zone only")
+@click.command(name='zone-list')
+@click.option('--name', help="filter by zone name")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
-def zone_show(**kwargs):
+def zone_list(**kwargs):
     """
-    show registered network zones
+    list the registered network zones
     """
     # fetch data from server
     client = Client()
@@ -111,6 +111,6 @@ def zone_show(**kwargs):
     print_items(
         FIELDS, client.NetZones, None, entries)
 
-# zone_show()
+# zone_list()
 
-CMDS = [zone_add, zone_del, zone_edit, zone_show]
+CMDS = [zone_add, zone_del, zone_edit, zone_list]

@@ -94,10 +94,10 @@ def model_edit(cur_name, **kwargs):
 
 # model_edit()
 
-@click.command(name='model-show')
-def model_show():
+@click.command(name='model-list')
+def model_list():
     """
-    show the supported system models
+    list the supported system models
     """
     # fetch data from server
     client = Client()
@@ -108,6 +108,6 @@ def model_show():
     # present results
     print_items(
         MODEL_FIELDS, client.SystemModels, None, entries)
-# model_show()
+# model_list()
 
-CMDS = [model_add, model_del, model_edit, model_show]
+CMDS = [model_add, model_del, model_edit, model_list]

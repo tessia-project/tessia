@@ -35,36 +35,26 @@ import click
 @click.command(
     name='vol-attach',
     short_help='attach a storage volume to a system activation profile')
-@click.option(
-    'target', '--to', required=True,
-    help="target profile system-name/profile-name")
-@click.option(
-    '--vol', required=True,
-    help='storage-server/volume-id')
-def vol_attach(target, vol):
+@click.option('--system', required=True, help='target system')
+@click.option('--profile', required=True, help='target activation profile')
+@click.option('--server', required=True,
+              help='storage server containing volume')
+@click.option('--vol', required=True, help='volume id')
+def vol_attach(system, profile, server, vol):
     """
     attach a storage volume to a system activation profile
     """
-    try:
-        system_name, profile_name = target.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for profile')
-    try:
-        server_name, vol_id = vol.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume')
-
     # fetch data from server
     client = Client()
 
     prof_obj = fetch_item(
         client.SystemProfiles,
-        {'system': system_name, 'name': profile_name},
+        {'system': system, 'name': profile},
         'no profile found.'
     )
     vol_obj = fetch_item(
         client.StorageVolumes,
-        {'server': server_name, 'volume_id': vol_id},
+        {'server': server, 'volume_id': vol},
         'no storage volume found.'
     )
 
@@ -76,36 +66,26 @@ def vol_attach(target, vol):
 @click.command(
     name='vol-detach',
     short_help='detach a storage volume from a system activation profile')
-@click.option(
-    'profile', '--from', required=True,
-    help="from profile system-name/profile-name")
-@click.option(
-    '--vol', required=True,
-    help='storage-server/volume-id')
-def vol_detach(profile, vol):
+@click.option('--system', required=True, help='target system')
+@click.option('--profile', required=True, help='target activation profile')
+@click.option('--server', required=True,
+              help='storage server containing volume')
+@click.option('--vol', required=True, help='volume id')
+def vol_detach(system, profile, server, vol):
     """
     detach a storage volume from a system activation profile
     """
-    try:
-        system_name, profile_name = profile.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for profile')
-    try:
-        server_name, vol_id = vol.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume')
-
     # fetch data from server
     client = Client()
 
     prof_obj = fetch_item(
         client.SystemProfiles,
-        {'system': system_name, 'name': profile_name},
+        {'system': system, 'name': profile},
         'no profile found.'
     )
     vol_obj = fetch_item(
         client.StorageVolumes,
-        {'server': server_name, 'volume_id': vol_id},
+        {'server': server, 'volume_id': vol},
         'no storage volume found.'
     )
 

@@ -84,7 +84,8 @@ class SystemIfaceResource(SecureResource):
             title=DESC['desc'], description=DESC['desc'], nullable=True)
         # relations
         ip_address = fields.String(
-            title=DESC['ip_address'], description=DESC['ip_address'])
+            title=DESC['ip_address'], description=DESC['ip_address'],
+            nullable=True)
         system = fields.String(
             title=DESC['system'], description=DESC['system'])
         type = fields.String(

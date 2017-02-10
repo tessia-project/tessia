@@ -19,6 +19,7 @@ Resource definition
 #
 # IMPORTS
 #
+from flask import g as flask_global
 from flask_potion import fields
 from flask_potion.routes import Route
 from flask_potion.contrib.alchemy.fields import InlineModel
@@ -42,7 +43,7 @@ from tessia_engine.db.models import StorageVolumeProfileAssociation
 DESC = {
     'name': 'Profile name',
     'system': 'System',
-    'hypervisor': 'Required hypervisor profile',
+    'hypervisor_profile': 'Parent hypervisor profile',
     'os': 'Operating system',
     'default': 'Default',
     'cpu': 'CPU(s)',
@@ -103,8 +104,8 @@ class SystemProfileResource(SecureResource):
             nullable=True)
         # relations
         hypervisor_profile = fields.String(
-            title=DESC['hypervisor'], description=DESC['hypervisor'],
-            nullable=True)
+            title=DESC['hypervisor_profile'],
+            description=DESC['hypervisor_profile'], nullable=True)
         system = fields.String(
             title=DESC['system'], description=DESC['system'])
         # operating system is a read-only property; it's set by the engine
@@ -216,23 +217,26 @@ class SystemProfileResource(SecureResource):
         Returns:
             int: id of created item
         """
-        hyp_prof_name = properties['hypervisor_profile']
-        if hyp_prof_name == '':
-            hyp_prof_name = None
+        project = self._get_project_for_create(
+            System.__tablename__, properties.get('project', None))
+
+        # create the item beloging to the user requesting it
+        properties['project'] = project
+        properties['owner'] = flask_global.auth_user.login
+
+        hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
-            parent = aliased(SystemProfile)
+            system_match = System.query.filter(
+                System.name == properties['system']
+            ).one_or_none()
+            if system_match is None:
+                raise ItemNotFoundError(
+                    'system', properties['system'], self)
+
             match = SystemProfile.query.join(
-                parent, parent.id == SystemProfile.hypervisor_profile_id
-            ).join(
-                System, System.id == SystemProfile.system_id
+                System, System.id == system_match.hypervisor_rel.id
             ).filter(
-                parent.name == hyp_prof_name
-            ).filter(
-                SystemProfile.name == properties['name']
-            ).filter(
-                SystemProfile.system == properties['system']
-            ).filter(
-                System.hypervisor_id == parent.system_id
+                SystemProfile.name == hyp_prof_name
             ).one_or_none()
             # no profile for hypervisor with that name or system has another
             # hypervisor: report input as invalid
@@ -240,15 +244,43 @@ class SystemProfileResource(SecureResource):
                 raise ItemNotFoundError(
                     'hypervisor_profile', hyp_prof_name, self)
             properties['hypervisor_profile'] = '{}/{}'.format(
-                match.system_rel.hypervisor, hyp_prof_name)
+                system_match.hypervisor_rel.name, hyp_prof_name)
 
-        return super().do_create(properties)
+
+        item = self.manager.create(properties)
+        # don't waste resources building the object in the answer,
+        # just give the id and let the client decide if it needs more info (in
+        # which case it can use the provided id to request the item)
+        return item.id
     # do_create()
+
+    def do_delete(self, id): # pylint: disable=invalid-name,redefined-builtin
+        """
+        Verify if the user attempting to delete the instance has permission
+        on the corresponding system to do so.
+
+        Args:
+            id (any): id of the item in the table's database
+
+        Raises:
+            Forbidden: in case user has no permission to perform action
+
+        Returns:
+            bool: True
+        """
+        entry = self.manager.read(id)
+
+        # validate user permission on object
+        self._assert_permission('DELETE', entry.system_rel, 'system')
+
+        self.manager.delete_by_id(id)
+        return True
+    # do_delete()
 
     def do_update(self, properties, id):
         """
         Custom implementation of update. Perform some sanity checks and
-        add sensitive defaults to values not provided.
+        and verify permissions on the corresponding system.
 
         Args:
             properties (dict): field=value combination for the item to be
@@ -258,32 +290,30 @@ class SystemProfileResource(SecureResource):
         Raises:
             ItemNotFoundError: in case hypervisor profile is specified but not
                                found
+            BaseHttpError: if request tries to change associated system
 
         Returns:
             int: id of created item
         """
         # pylint: disable=invalid-name,redefined-builtin
-        hyp_prof_name = properties.get('hypervisor_profile')
-        if hyp_prof_name == '':
-            hyp_prof_name = None
-        if hyp_prof_name is not None:
-            # an appropriate exception will be raised by the manager in case
-            # the item is not found
-            item = self.manager.read(id)
 
-            parent = aliased(SystemProfile)
+        item = self.manager.read(id)
+
+        # validate permission on the object - use the associated system
+        self._assert_permission('UPDATE', item.system_rel, 'system')
+
+        # a profile cannot change its system so we only allow to set it on
+        # creation
+        if 'system' in properties and properties['system'] != item.system:
+            raise BaseHttpError(
+                400, msg='Profiles cannot change associated system')
+
+        hyp_prof_name = properties.get('hypervisor_profile')
+        if hyp_prof_name is not None:
             match = SystemProfile.query.join(
-                parent, parent.id == SystemProfile.hypervisor_profile_id
-            ).join(
-                System, System.id == SystemProfile.system_id
+                System, System.id == item.system_rel.hypervisor_rel.id
             ).filter(
-                parent.name == hyp_prof_name
-            ).filter(
-                SystemProfile.name == item.name
-            ).filter(
-                SystemProfile.system == item.system
-            ).filter(
-                System.hypervisor_id == parent.system_id
+                SystemProfile.name == hyp_prof_name
             ).one_or_none()
             # no profile for hypervisor with that name or system has another
             # hypervisor: report input as invalid
@@ -291,9 +321,27 @@ class SystemProfileResource(SecureResource):
                 raise ItemNotFoundError(
                     'hypervisor_profile', hyp_prof_name, self)
             properties['hypervisor_profile'] = '{}/{}'.format(
-                match.system_rel.hypervisor, hyp_prof_name)
+                item.system_rel.hypervisor_rel.name, hyp_prof_name)
 
-        return super().do_update(properties, id)
+        # profile set as default: make sure to unset the previous default one
+        # to avoid duplication
+        if properties.get('default') is True:
+            current_default = SystemProfile.query.filter_by(
+                system_id=item.system_id,
+                default=True
+            ).one_or_none()
+            if current_default is not None and current_default.id != item.id:
+                current_default.default = False
+                # do not commit yet, let the manager to it when updating the
+                # target profile to make it an atomic operation
+                API.db.session.add(current_default)
+
+        updated_item = self.manager.update(item, properties)
+
+        # don't waste resources building the object in the answer,
+        # just give the id and let the client decide if it needs more info (in
+        # which case it can use the provided id to request the item)
+        return updated_item.id
     # do_update()
 
     # pylint: disable=invalid-name,redefined-builtin

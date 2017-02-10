@@ -54,8 +54,8 @@ TYPE_FIELDS = (
 
 # partition table related functions
 @click.command(name='part-add')
-@click.option('volume_id', '--id', required=True,
-              help="volume id in the form server-name/volume-id")
+@click.option('--server', required=True, help='target storage server')
+@click.option('volume_id', '--id', required=True, help="volume id")
 @click.option('--size', required=True, help="size (i.e. 500mb)")
 @click.option('--fs', default=None, help="filesystem")
 @click.option('--mo', default=None, help="mount options")
@@ -63,15 +63,10 @@ TYPE_FIELDS = (
 @click.option(
     '--type', default='primary', type=click.Choice(['primary', 'logical']),
     help="partition type (no effect for gpt)")
-def part_add(volume_id, **kwargs):
+def part_add(server, volume_id, **kwargs):
     """
     add a partition to volume's partition table
     """
-    # break name parts
-    try:
-        server, volume_id = volume_id.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume id')
     try:
         kwargs['size'] = str_to_size(kwargs['size'])
     except ValueError:
@@ -98,20 +93,15 @@ def part_add(volume_id, **kwargs):
     name='part-del',
     # short help is needed to avoid truncation
     short_help="Remove a partition from volume's partition table")
-@click.option('volume_id', '--id', required=True,
-              help="volume id in the form server-name/volume-id")
+@click.option('--server', required=True,
+              help='storage server containing volume')
+@click.option('volume_id', '--id', required=True, help="volume id")
 @click.option('--num', required=True, type=click.IntRange(min=1),
               help="partition's number to delete")
-def part_del(volume_id, num):
+def part_del(server, volume_id, num):
     """
     remove a partition from volume's partition table
     """
-    # break name parts
-    try:
-        server, volume_id = volume_id.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume id')
-
     client = Client()
     item = fetch_item(
         client.StorageVolumes,
@@ -133,8 +123,9 @@ def part_del(volume_id, num):
 # part_del()
 
 @click.command(name='part-edit')
-@click.option('volume_id', '--id', required=True,
-              help="volume id in the form server-name/volume-id")
+@click.option('--server', required=True,
+              help='storage server containing volume')
+@click.option('volume_id', '--id', required=True, help="volume id")
 @click.option('--num', type=click.IntRange(min=1), required=True,
               help="partition's number to edit")
 @click.option('--size', help="size (i.e. 500mb)")
@@ -144,15 +135,10 @@ def part_del(volume_id, num):
 @click.option(
     '--type', default='primary', type=click.Choice(['primary', 'logical']),
     help="partition type (no effect for gpt)")
-def part_edit(volume_id, num, **kwargs):
+def part_edit(server, volume_id, num, **kwargs):
     """
     edit partition properties
     """
-    # break name parts
-    try:
-        server, volume_id = volume_id.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume id')
     try:
         kwargs['size'] = str_to_size(kwargs['size'])
     except ValueError:
@@ -189,20 +175,15 @@ def part_edit(volume_id, num, **kwargs):
 # part_edit()
 
 @click.command(name='part-init')
-@click.option('volume_id', '--id', required=True,
-              help="volume id in the form server-name/volume-id")
+@click.option('--server', required=True,
+              help='storage server containing volume')
+@click.option('volume_id', '--id', required=True, help="volume id")
 @click.option('--label', required=True, type=click.Choice(['msdos', 'gpt']),
               help="partition table type (i.e. msdos, gpt)")
-def part_init(volume_id, label):
+def part_init(server, volume_id, label):
     """
     initialize the volume's partition table
     """
-    # break name parts
-    try:
-        server, volume_id = volume_id.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume id')
-
     part_table = {'type': label, 'table': []}
 
     client = Client()
@@ -216,18 +197,14 @@ def part_init(volume_id, label):
     click.echo('Partition table successfully initialized.')
 # part_init()
 
-@click.command(name='part-show')
-@click.option('volume_id', '--id', required=True, help="volume's id")
-def part_show(volume_id, **kwargs):
+@click.command(name='part-print')
+@click.option('--server', required=True,
+              help='storage server containing volume')
+@click.option('volume_id', '--id', required=True, help="volume id")
+def part_print(server, volume_id, **kwargs):
     """
-    display the volume's partition table
+    print the volume's partition table
     """
-    # break name parts
-    try:
-        server, volume_id = volume_id.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume id')
-
     client = Client()
     item = fetch_item(
         client.StorageVolumes,
@@ -260,27 +237,22 @@ def part_show(volume_id, **kwargs):
     click.echo('\nPartition table type: {}'.format(
         part_table.get('type', 'undefined')))
     print_ver_table(PART_FIELDS, rows, fields_map)
-# part_show()
+# part_print()
 
 @click.command('vol-add')
 # set the parameter name after the model's attribute name to save on typing
-@click.option('vol_id', '--id', required=True,
-              help="volume id in the form server-name/volume-id")
+@click.option('--server', required=True, help='target storage server')
+@click.option('volume_id', '--id', required=True, help='volume id')
 @click.option('--size', required=True, help="volume size (i.e. 10gb)")
 @click.option('--type', required=True, help="volume type (see vol-types)")
 @click.option('--pool', help="assign volume to this storage pool")
 @click.option('--specs', help="volume specification (json)")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
-def vol_add(vol_id, **kwargs):
+def vol_add(**kwargs):
     """
     create a new storage volume
     """
-    # break name parts
-    try:
-        kwargs['server'], kwargs['volume_id'] = vol_id.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume id')
     # convert a human size to integer
     try:
         kwargs['size'] = str_to_size(kwargs['size'])
@@ -296,22 +268,17 @@ def vol_add(vol_id, **kwargs):
 # vol_add()
 
 @click.command(name='vol-del')
-@click.option('vol_id', '--id', required=True,
-              help="volume id in the form server-name/volume-id")
-def vol_del(vol_id):
+@click.option('--server', required=True, help='server containing volume')
+@click.option('volume_id', '--id', required=True, help='volume id')
+def vol_del(**kwargs):
     """
     remove an existing storage volume
     """
-    # break name parts
-    try:
-        server, vol_id = vol_id.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume id')
     client = Client()
 
     fetch_and_delete(
         client.StorageVolumes,
-        {'volume_id': vol_id, 'server': server},
+        kwargs,
         'volume not found.'
     )
     click.echo('Item successfully deleted.')
@@ -320,8 +287,8 @@ def vol_del(vol_id):
 @click.command(
     'vol-edit',
     short_help='change properties of an existing storage volume')
-@click.option('cur_id', '--id', required=True,
-              help="volume id in the form server-name/volume-id")
+@click.option('--server', required=True, help='server containing volume')
+@click.option('cur_id', '--id', required=True, help='volume id')
 # set the parameter name after the model's attribute name to save on typing
 @click.option('volume_id', '--newid', help="new volume's id in form volume-id")
 @click.option('--size',
@@ -343,15 +310,10 @@ def vol_del(vol_id):
 @click.option(
     '--wwid', type=SCSI_WWID,
     help='scsi world wide identifier (FCP only)')
-def vol_edit(cur_id, **kwargs):
+def vol_edit(server, cur_id, **kwargs):
     """
     change properties of an existing storage volume
     """
-    # break name parts
-    try:
-        server, cur_id = cur_id.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for volume id')
     try:
         kwargs['size'] = str_to_size(kwargs['size'])
     except ValueError:
@@ -462,32 +424,25 @@ def vol_edit(cur_id, **kwargs):
     click.echo('Item successfully updated.')
 # vol_edit()
 
-@click.command(name='vol-show')
+@click.command(name='vol-list')
 # set the parameter name after the model's attribute name to save on typing
-@click.option(
-    'volume_id', '--id',
-    help="show specified server-name/volume-id only or filter by volume-id")
+@click.option('--server', help='the storage server to list')
+@click.option('volume_id', '--id', help='filter by volume id')
 @click.option('--owner', help="filter by specified owner login")
-@click.option('--pool', help="show volumes assigned to this pool")
+@click.option('--pool', help="list volumes assigned to this pool")
 @click.option('--project', help="filter by specified project")
-@click.option('--server', help="filter by specified server")
-@click.option('--system', help="show volumes assigned to this system")
+@click.option('--system', help="list volumes assigned to this system")
 @click.option('--type', help="filter by specified volume type")
-def vol_show(**kwargs):
+def vol_list(**kwargs):
     """
-    show registered storage volumes
+    list registered storage volumes
     """
-    # server/id format specified: split it
-    if kwargs['volume_id'] is not None and kwargs['volume_id'].find('/') > -1:
-        # server dedicated parameter also specified: report conflict
-        if kwargs['server'] is not None:
-            raise click.ClickException(
-                'server specified twice (--id and --server)')
-        try:
-            kwargs['server'], kwargs['volume_id'] = \
-                kwargs['volume_id'].split('/', 1)
-        except:
-            raise click.ClickException('invalid format for volume id')
+    # at least one qualifier must be specified so that we don't have to
+    # retrieve the full list
+    if kwargs['server'] is None and kwargs['id'] is None:
+        raise click.ClickException(
+            'at least one of --server or --id must be specified')
+
     # fetch data from server
     client = Client()
 
@@ -507,12 +462,12 @@ def vol_show(**kwargs):
         entries
     )
 
-# vol_show()
+# vol_list()
 
 @click.command(name='vol-types')
 def vol_types():
     """
-    show the supported volume types
+    list the supported volume types
     """
     # fetch data from server
     client = Client()
@@ -525,6 +480,6 @@ def vol_types():
 # vol_types()
 
 CMDS = [
-    vol_add, vol_del, vol_edit, vol_show, vol_types, part_add, part_del,
-    part_edit, part_init, part_show
+    vol_add, vol_del, vol_edit, vol_list, vol_types, part_add, part_del,
+    part_edit, part_init, part_print
 ]

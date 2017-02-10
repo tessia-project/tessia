@@ -241,6 +241,42 @@ class TestModels(TestCase):
                 self.assertIsInstance(repr(item), str)
     # test_repr()
 
+    def test_relation_system(self):
+        """
+        Test the special relation system in IpAddress model.
+        """
+        item = self.models.IpAddress.query.first()
+        iface_obj = self.models.SystemIface.query.filter_by(
+            ip_address_id=item.id
+        ).one()
+        self.assertEqual(iface_obj.system, item.system)
+
+        with self.assertRaises(RuntimeError):
+            item.system = 'some_system'
+        # should always return None
+        self.assertIs(
+            None,
+            self.models.IpAddress.query.filter_by(
+                system=item.system).one_or_none()
+        )
+
+        # verify when ip has no system associated
+        new_ip = self.models.IpAddress(
+            address="10.1.0.5",
+            desc=None,
+            modifier="user_x_0@domain.com",
+            project="Department x",
+            subnet="cpc0 shared",
+            owner="user_x_0@domain.com"
+        )
+        DbUnit.session.add(new_ip)
+        DbUnit.session.commit()
+        self.assertIs(None, new_ip.system)
+        DbUnit.session.delete(new_ip)
+        DbUnit.session.commit()
+
+    # test_relation_system()
+
     def test_relations(self):
         """
         Make sure all model relationships work

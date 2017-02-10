@@ -595,6 +595,25 @@ class IpAddress(CommonMixin, ResourceMixin, BASE):
         """Expression used for performing queries"""
         return Subnet.name
 
+    @hybrid_property
+    def system(self):
+        """Defines the attribute as a system_name"""
+        item = SystemIface.query.filter_by(
+            ip_address_id=self.id).one_or_none()
+        if item is None:
+            return None
+        return item.system
+
+    @system.setter
+    def system(self, value): # pylint: disable=unused-argument
+        """Defines what to do when assigment occurs for the attribute"""
+        raise RuntimeError('Not allowed')
+
+    @system.expression
+    def system(cls):
+        """Expression used for performing queries"""
+        return None
+
     def __repr__(self):
         """Object representation"""
         return "<IpAddress(name='{}')>".format(self.address)

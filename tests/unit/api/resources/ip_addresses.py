@@ -151,6 +151,8 @@ class TestIpAddress(TestSecureResource):
             ('subnet', 5),
             ('subnet', None),
             ('subnet', True),
+            # read-only field
+            ('system', 'something'),
         ]
         self._test_add_update_wrong_field(
             'user_hw_admin@domain.com', wrong_data)

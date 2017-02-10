@@ -36,6 +36,10 @@ import click
 #
 # CONSTANTS AND DEFINITIONS
 #
+EMPTY_PART_MSG = (
+    'partition table undefined; initialize it with the part-init '
+    'command.')
+
 FIELDS = (
     'volume_id', 'server', 'size', 'specs', 'type', 'system',
     'system_attributes', 'system_profiles', 'pool', 'owner', 'project',
@@ -57,12 +61,12 @@ TYPE_FIELDS = (
 @click.option('--server', required=True, help='target storage server')
 @click.option('volume_id', '--id', required=True, help="volume id")
 @click.option('--size', required=True, help="size (i.e. 500mb)")
-@click.option('--fs', default=None, help="filesystem")
+@click.option('--fs', required=True, help="filesystem type")
 @click.option('--mo', default=None, help="mount options")
 @click.option('--mp', default=None, help="mount point")
 @click.option(
     '--type', default='primary', type=click.Choice(['primary', 'logical']),
-    help="partition type (no effect for gpt)")
+    help="partition type (only affects msdos type)")
 def part_add(server, volume_id, **kwargs):
     """
     add a partition to volume's partition table
@@ -80,7 +84,7 @@ def part_add(server, volume_id, **kwargs):
     part_table = item.part_table
     if (not isinstance(part_table, dict) or not
             isinstance(part_table.get('table'), list)):
-        part_table = {'type': 'msdos', 'table': kwargs.copy()}
+        raise click.ClickException(EMPTY_PART_MSG)
     else:
         part_table['table'] = part_table.get('table', [])
         part_table['table'].append(kwargs.copy())
@@ -112,9 +116,7 @@ def part_del(server, volume_id, num):
     try:
         part_table['table'].pop(num-1)
     except AttributeError:
-        raise click.ClickException(
-            'partition table undefined; initialize it with the part-init '
-            'command.')
+        raise click.ClickException(EMPTY_PART_MSG)
     except (IndexError, KeyError):
         raise click.ClickException('specified partition not found')
 
@@ -178,8 +180,9 @@ def part_edit(server, volume_id, num, **kwargs):
 @click.option('--server', required=True,
               help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, help="volume id")
-@click.option('--label', required=True, type=click.Choice(['msdos', 'gpt']),
-              help="partition table type (i.e. msdos, gpt)")
+@click.option(
+    '--label', required=True, type=click.Choice(['dasd', 'gpt', 'msdos']),
+    help="partition table type")
 def part_init(server, volume_id, label):
     """
     initialize the volume's partition table
@@ -197,11 +200,11 @@ def part_init(server, volume_id, label):
     click.echo('Partition table successfully initialized.')
 # part_init()
 
-@click.command(name='part-print')
+@click.command(name='part-list')
 @click.option('--server', required=True,
               help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, help="volume id")
-def part_print(server, volume_id, **kwargs):
+def part_list(server, volume_id, **kwargs):
     """
     print the volume's partition table
     """
@@ -237,7 +240,7 @@ def part_print(server, volume_id, **kwargs):
     click.echo('\nPartition table type: {}'.format(
         part_table.get('type', 'undefined')))
     print_ver_table(PART_FIELDS, rows, fields_map)
-# part_print()
+# part_list()
 
 @click.command('vol-add')
 # set the parameter name after the model's attribute name to save on typing
@@ -245,8 +248,6 @@ def part_print(server, volume_id, **kwargs):
 @click.option('volume_id', '--id', required=True, help='volume id')
 @click.option('--size', required=True, help="volume size (i.e. 10gb)")
 @click.option('--type', required=True, help="volume type (see vol-types)")
-@click.option('--pool', help="assign volume to this storage pool")
-@click.option('--specs', help="volume specification (json)")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
 def vol_add(**kwargs):
@@ -263,6 +264,9 @@ def vol_add(**kwargs):
     item = client.StorageVolumes()
     for key, value in kwargs.items():
         setattr(item, key, value)
+    # json fields are initially empty and populated later by edit commands
+    setattr(item, 'specs', {})
+    setattr(item, 'system_attributes', {})
     item.save()
     click.echo('Item added successfully.')
 # vol_add()
@@ -294,7 +298,6 @@ def vol_del(**kwargs):
 @click.option('--size',
               help="volume size (i.e. 10gb)")
 @click.option('--type', help="volume type (see vol-types)")
-@click.option('--pool', help="assign volume to this storage pool")
 @click.option('--owner', help="volume's owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
@@ -481,5 +484,5 @@ def vol_types():
 
 CMDS = [
     vol_add, vol_del, vol_edit, vol_list, vol_types, part_add, part_del,
-    part_edit, part_init, part_print
+    part_edit, part_init, part_list
 ]

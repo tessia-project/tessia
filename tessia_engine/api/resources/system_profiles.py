@@ -24,7 +24,6 @@ from flask_potion import fields
 from flask_potion.routes import Route
 from flask_potion.contrib.alchemy.fields import InlineModel
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import aliased
 from tessia_engine.api.app import API
 from tessia_engine.api.exceptions import BaseHttpError
 from tessia_engine.api.exceptions import ConflictError
@@ -225,16 +224,34 @@ class SystemProfileResource(SecureResource):
         properties['owner'] = flask_global.auth_user.login
 
         hyp_prof_name = properties.get('hypervisor_profile')
-        if hyp_prof_name is not None:
-            system_match = System.query.filter(
+
+        cache_system = None
+        # check if this is the first profile and make it the default
+        if properties.get('default', False) is False:
+            cache_system = System.query.filter(
                 System.name == properties['system']
             ).one_or_none()
-            if system_match is None:
+            if cache_system is None:
                 raise ItemNotFoundError(
                     'system', properties['system'], self)
+            profile = SystemProfile.query.filter(
+                SystemProfile.system_id == cache_system.id
+            ).first()
+            # confirmed it's the first profile: make it default
+            if profile is None:
+                properties['default'] = True
+
+        if hyp_prof_name is not None:
+            if cache_system is None:
+                cache_system = System.query.filter(
+                    System.name == properties['system']
+                ).one_or_none()
+                if cache_system is None:
+                    raise ItemNotFoundError(
+                        'system', properties['system'], self)
 
             match = SystemProfile.query.join(
-                System, System.id == system_match.hypervisor_rel.id
+                System, System.id == cache_system.hypervisor_rel.id
             ).filter(
                 SystemProfile.name == hyp_prof_name
             ).one_or_none()
@@ -244,8 +261,7 @@ class SystemProfileResource(SecureResource):
                 raise ItemNotFoundError(
                     'hypervisor_profile', hyp_prof_name, self)
             properties['hypervisor_profile'] = '{}/{}'.format(
-                system_match.hypervisor_rel.name, hyp_prof_name)
-
+                cache_system.hypervisor_rel.name, hyp_prof_name)
 
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,

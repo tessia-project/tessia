@@ -39,14 +39,15 @@ def main():
         None
 
     Returns:
-        None
+        int: exit code
 
     Raises:
         None
     """
     # determine the repository root dir
-    my_dir = os.path.dirname(os.path.abspath(__file__))
-    doc_dir = '{}/doc'.format(os.path.abspath('{}/..'.format(my_dir)))
+    root_dir = os.path.abspath(
+        '{}/..'.format(os.path.dirname(os.path.abspath(__file__)))
+    )
 
     # no arguments specified: use default
     if len(sys.argv) < 2:
@@ -56,7 +57,7 @@ def main():
         args = ' '.join(sys.argv[1:])
 
     # create the command
-    cmd = 'cd {} && mkdocs {}'.format(doc_dir, args)
+    cmd = 'cd {} && mkdocs {}'.format(root_dir, args)
 
     # show command to the user
     print(cmd)

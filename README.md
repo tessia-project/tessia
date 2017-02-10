@@ -1,3 +1,3 @@
 # Task Execution Supporter and System Installation Assistant (Tessia)
 
-Get introduced: [Introduction](doc/index.md)
+All documentation content for this project is available [here](doc/index.md)

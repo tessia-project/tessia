@@ -13,9 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-## Tessia - Task Execution Supporter and System Installation Assistant
+# Tessia - Task Execution Supporter and System Installation Assistant
 
-Welcome to the *Tessia* tool!
+Welcome to the *Tessia* solution!
 
 This software aims to automate and simplify all the steps involved in the systems management activity. Features include:
 
@@ -24,21 +24,19 @@ This software aims to automate and simplify all the steps involved in the system
 
 ## **Users**
 
-This section is for users who want to learn how to use the tool.
+This section provides documentation and howtos for those who want to learn how to use the tool.
 
-- Refer to [Client Installation](users/client_install.md) if you want instructions on how to install the command line client.
-- Learn how to use the client by checking the [Client usage](users/client_usage.md) page.
-- If you are interested in using tessia with your own tooling, you can do so by referring to the [Rest-like API](users/api.md).
-
-## **Administrators**
-
-If you are a sysadmin and want instructions on how to install and/or maintain the tool, refer to this section.
-
-- See [Installation](admins/install.md) to learn how to install Tessia.
+- To best understand the resources model and terminology used within the solution, we recommend to read the [Resources model](users/resources_model.md)
+- If you are a new user and want to learn how to use the command line client, visit [Getting started with the client](users/client.md)
+- If you are trying to perform a specific task and would like help from a howto, you can check Howtos (TODO)
+- If you would like to install the command line client to use from your Linux system, then visit [Client Installation](users/client_install.md).
+- If you are interested in using tessia with your own automation tools, you can do so by referring to the [REST-like API](users/api.md).
+- For documentation focused on a specific topic, refer to the following list:
+    - Systems Provisioning (TODO)
 
 ## **Developers**
 
-This section is for people wanting to collaborate with the tool's development.
+This section is for people wanting to collaborate with tessia's development.
 
 - [Coding guidelines](developers/coding_guidelines.md)
 - [Development process](developers/dev_process.md)
@@ -46,3 +44,4 @@ This section is for people wanting to collaborate with the tool's development.
 - [Working with documentation](developers/documentation.md)
 - [Database considerations](developers/database.md)
 - [Continuous Integration](developers/continuous_integration.md)
+- [Architecture topics](developers/arch.md)

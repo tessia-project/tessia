@@ -30,7 +30,6 @@ from tessia_engine.state_machines.install.plat_kvm import PlatKvm
 from time import sleep
 from urllib.parse import urljoin
 
-
 import abc
 import jinja2
 import logging
@@ -117,15 +116,39 @@ class SmBase(metaclass=abc.ABCMeta):
     # __init__()
 
     @abc.abstractmethod
-    def _get_kargs(self): # pylint: disable=no-self-use
+    def _get_kargs(self):
         """
-        Return the cmdline used for the os installer
-
-        Returns:
-            str: kernel cmdline string
+        This method should be implemented by children classes and return a
+        string containing the cmdline used for the os installer.
         """
         raise NotImplementedError()
     # _get_kargs()
+
+    def _get_ssh_conn(self):
+        """
+        Auxiliary method to get a ssh connection and shell to the target system
+        being installed.
+        """
+        timeout_trials = [5, 10, 20, 40]
+
+        hostname = self._profile.system_rel.hostname
+        user = self._profile.credentials['username']
+        password = self._profile.credentials['password']
+
+        for timeout in timeout_trials:
+            try:
+                ssh_client = SshClient()
+                ssh_client.login(hostname, user=user, passwd=password)
+                ssh_shell = ssh_client.open_shell()
+                return ssh_client, ssh_shell
+            except (ConnectionError, ConnectionResetError):
+                self._logger.warning("connection not available yet, "
+                                     "retrying in %d seconds.", timeout)
+                sleep(timeout)
+
+        raise ConnectionError("Error while trying to connect"
+                              " to the target system.")
+    # _get_ssh_conn()
 
     @staticmethod
     def _parse_iface(iface, gateway_iface):
@@ -208,40 +231,15 @@ class SmBase(metaclass=abc.ABCMeta):
         MANAGER.session.commit()
     # init()
 
-    def _get_ssh_conn(self):
-        """
-        Auxiliary method to get a ssh connection and shell to the target system
-        being installed.
-        """
-        timeout_trials = [5, 10, 20, 40]
-
-        hostname = self._profile.system_rel.hostname
-        user = self._profile.credentials['username']
-        password = self._profile.credentials['password']
-
-        for timeout in timeout_trials:
-            try:
-                ssh_client = SshClient()
-                ssh_client.login(hostname, user=user, passwd=password)
-                ssh_shell = ssh_client.open_shell()
-                return ssh_client, ssh_shell
-            except (ConnectionError, ConnectionResetError):
-                self._logger.warning("connection not available yet, "
-                                     "retrying in %d seconds.", timeout)
-                sleep(timeout)
-
-        raise ConnectionError("Error while connecting to the target system")
-    # _get_ssh_conn()
-
     def check_installation(self):
         """
-        Check if the installation was correctly performed.
+        Make sure that the installation was successfully completed.
         """
         ssh_client, shell = self._get_ssh_conn()
 
         ret, _ = shell.run("echo 1")
         if ret != 0:
-            raise RuntimeError("Unable to connect to the system.")
+            raise RuntimeError("Error while checking the installed system.")
 
         shell.close()
         ssh_client.logoff()

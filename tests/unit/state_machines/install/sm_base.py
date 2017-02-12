@@ -64,6 +64,14 @@ class TestSmBase(TestCase):
         dict_patcher.start()
         self.addCleanup(dict_patcher.stop)
 
+        patcher = patch.object(sm_base, 'SshClient', autospec=True)
+        self._mock_ssh_client = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        patcher = patch.object(sm_base, 'sleep', autospec=True)
+        self._mock_sleep = patcher.start()
+        self.addCleanup(patcher.stop)
+
         patcher = patch.object(sm_base, 'logging', autospec=True)
         self._mock_logging = patcher.start()
         self.addCleanup(patcher.stop)
@@ -102,10 +110,8 @@ class TestSmBase(TestCase):
         # The following mock objectes are used to track the correct execution
         # of the install machine, assuring that each method was called.
         mock_get_kargs = Mock()
-        mock_check_installation = Mock()
         mock_wait_install = Mock()
         self._mock_get_kargs = mock_get_kargs
-        self._mock_check_installation = mock_check_installation
         self._mock_wait_install = mock_wait_install
         class Child(sm_base.SmBase):
             """
@@ -117,9 +123,6 @@ class TestSmBase(TestCase):
 
             def _get_kargs(self):
                 mock_get_kargs()
-
-            def check_installation(self):
-                mock_check_installation()
 
             def wait_install(self):
                 mock_wait_install()
@@ -134,8 +137,7 @@ class TestSmBase(TestCase):
 
             def _get_kargs(self):
                 super()._get_kargs()
-            def check_installation(self):
-                super().check_installation()
+
             def wait_install(self):
                 super().wait_install()
 
@@ -162,6 +164,8 @@ class TestSmBase(TestCase):
         self._mock_os.remove.side_effect = OSError
         mach = self._create_sm(self._child_cls, "rhel7.2",
                                "kvm054/kvm_kvm054_install", "RHEL7.2")
+        mock_client = self._mock_ssh_client.return_value
+        mock_client.open_shell.return_value.run.return_value = 0, ""
         with self.assertRaisesRegex(RuntimeError, "Unable to delete"):
             mach.start()
     # test_init()
@@ -177,6 +181,8 @@ class TestSmBase(TestCase):
         system_entry = profile_entry.system_rel
         hyp_type = system_entry.type_rel.name.lower()
         repo_entry = os_entry.repository_rel[0]
+        mock_client = self._mock_ssh_client.return_value
+        mock_client.open_shell.return_value.run.return_value = 0, ""
 
         mach = self._child_cls(os_entry, profile_entry, template_entry)
         mach.start()
@@ -213,7 +219,6 @@ class TestSmBase(TestCase):
         # Assert that the methods implemented in the child class where
         # called in the execution of the Install Machine.
         self._mock_get_kargs.assert_called_with()
-        self._mock_check_installation.assert_called_with()
         self._mock_wait_install.assert_called_with()
 
         mock_hyper_class.return_value.boot.assert_called_with(mock.ANY)
@@ -254,7 +259,7 @@ class TestSmBase(TestCase):
         mach = self._create_sm(self._ni_child_cls, "rhel7.2",
                                "kvm054/kvm_kvm054_install", "RHEL7.2")
 
-        methods = ('_get_kargs', 'check_installation', 'wait_install')
+        methods = ('_get_kargs', 'wait_install')
 
         for method_name in methods:
             method = getattr(mach, method_name)
@@ -310,6 +315,31 @@ class TestSmBase(TestCase):
             self._create_sm(self._child_cls, "rhel7.2",
                             "kvm054/kvm_kvm054_install", "RHEL7.2")
     # test_no_default_gateway()
+
+    def test_check_install_error(self):
+        """
+        Check the case an error occur when testing the installed system
+        after the installation has successfully finished.
+        """
+        mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
+        mock_shell.run.return_value = (-1, "Some text")
+        mach = self._create_sm(self._child_cls, "rhel7.2",
+                               "kvm054/kvm_kvm054_install", "RHEL7.2")
+        with self.assertRaisesRegex(RuntimeError, "Error while checking"):
+            mach.start()
+    # test_check_install_error()
+
+    def test_no_ssh_connection_after_installation(self):
+        """
+        Check the case that there is no ssh connection after the target system
+        reboots.
+        """
+        self._mock_ssh_client.return_value.login.side_effect = ConnectionError
+        mach = self._create_sm(self._child_cls, "rhel7.2",
+                               "kvm054/kvm_kvm054_install", "RHEL7.2")
+        with self.assertRaisesRegex(ConnectionError, "Error while"):
+            mach.start()
+    # test_check_install_error()
 
     def test_no_repo_os(self):
         """

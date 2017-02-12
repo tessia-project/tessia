@@ -367,6 +367,7 @@ class SmBase(metaclass=abc.ABCMeta):
         self._logger.info('new state: post_install')
         self.post_install()
 
+        self._logger.info('Installation finished successfully')
         return 0
     # start()
 # SmBase

@@ -19,6 +19,7 @@ Expose the API resources
 #
 # IMPORTS
 #
+from tessia_engine.api.resources.auto_templates import AutoTemplateResource
 from tessia_engine.api.resources.iface_types import IfaceTypeResource
 from tessia_engine.api.resources.ip_addresses import IpAddressResource
 from tessia_engine.api.resources.job_requests import JobRequestResource
@@ -44,6 +45,7 @@ from tessia_engine.api.resources.volume_types import VolumeTypeResource
 # CONSTANTS AND DEFINITIONS
 #
 RESOURCES = [
+    AutoTemplateResource,
     IfaceTypeResource,
     IpAddressResource,
     JobRequestResource,

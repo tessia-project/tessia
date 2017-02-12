@@ -190,7 +190,8 @@ class SecureResource(ModelResource):
         if self._is_owner_or_admin(target_obj):
             return
 
-        match = self._get_project_for_action(action, target_obj.project_id)
+        match = self._get_project_for_action(
+            action, target_obj.__tablename__, target_obj.project_id)
         # no permission in target's project: report error
         if match is None:
             msg = ('User has no {} permission for the specified '
@@ -198,7 +199,8 @@ class SecureResource(ModelResource):
             raise Forbidden(description=msg)
     # _assert_permission()
 
-    def _get_project_for_action(self, action_name, project_id=None):
+    @staticmethod
+    def _get_project_for_action(action_name, resource_type, project_id=None):
         """
         Query the database and return the name of the project which allows
         the user to perform the specified operation, or None if no such
@@ -206,6 +208,7 @@ class SecureResource(ModelResource):
 
         Args:
             action_name (str): the action to be performed (i.e. CREATE)
+            resource_type (string): tablename of target's resource
             project_id (int): id of the target project, if None means
                               to find a suitable project
 
@@ -219,7 +222,7 @@ class SecureResource(ModelResource):
         ).filter(
             RoleAction.role_id == UserRole.role_id
         ).filter(
-            RoleAction.resource == self.meta.model.__tablename__.upper()
+            RoleAction.resource == resource_type.upper()
         ).filter(
             RoleAction.action == action_name
         )
@@ -238,7 +241,7 @@ class SecureResource(ModelResource):
         return project
     # _get_project_for_action()
 
-    def _get_project_for_create(self, project):
+    def _get_project_for_create(self, resource_type, project):
         """
         If a project was specified, verify if the user has create permission on
         it, otherwise the method tries to find a project where user has create
@@ -253,7 +256,8 @@ class SecureResource(ModelResource):
         else:
             project_id = Project.query.filter_by(name=project).one().id
         # perform the db query
-        project_match = self._get_project_for_action('CREATE', project_id)
+        project_match = self._get_project_for_action(
+            'CREATE', resource_type, project_id)
 
         # permission was found or validated: return corresponding project
         if project_match is not None:
@@ -344,7 +348,7 @@ class SecureResource(ModelResource):
                 'operation')
 
         project = self._get_project_for_create(
-            properties.get('project', None))
+            self.meta.model.__tablename__, properties.get('project', None))
 
         # create the item beloging to the user requesting it
         properties['project'] = project

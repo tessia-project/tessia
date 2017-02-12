@@ -20,6 +20,7 @@ Root group to which all commands are attached
 # IMPORTS
 #
 from tessia_cli.client import Client
+from tessia_cli.cmds.autotemplate import autotemplate
 from tessia_cli.cmds.conf import conf
 from tessia_cli.cmds.conf import key_gen
 from tessia_cli.cmds.job import job
@@ -40,6 +41,7 @@ import sys
 # CONSTANTS AND DEFINITIONS
 #
 CMDS = [
+    autotemplate,
     conf,
     job,
     net,

@@ -43,13 +43,13 @@ PROFILE_FIELDS = (
 #
 
 @click.command(name='prof-add')
-@click.option('--name', required=True,
-              help="profile name in form system-name/profile-name")
+@click.option('--system', required=True, help='target system')
+@click.option('--name', required=True, help="profile name")
 @click.option('--cpu', default=1, type=click.IntRange(min=1),
               help="number of cpus")
 @click.option('--memory', default='1gb', help="memory size (i.e. 1gb)")
-@click.option('--default', is_flag=True, help="make it the default profile")
-@click.option('hypervisor_profile', '--require',
+@click.option('--default', is_flag=True, help="set as default for system")
+@click.option('hypervisor_profile', '--parent',
               help="hypervisor profile required for activation")
 @click.option('parameters', '--params',
               help="activation parameters (future use)")
@@ -61,15 +61,16 @@ def prof_add(**kwargs):
     """
     client = Client()
 
-    try:
-        kwargs['system'], kwargs['name'] = kwargs['name'].split('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
     # convert a human size to integer
     try:
         kwargs['memory'] = str_to_size(kwargs['memory'])
     except ValueError:
         raise click.ClickException('invalid memory size specified.')
+    # avoid user confusion
+    if (kwargs['hypervisor_profile'] is not None and
+            kwargs['hypervisor_profile'].find('/') > -1):
+        raise click.ClickException(
+            'invalid format for parent, specify profile name only')
 
     # login provided: parse it to json format expected by API
     if kwargs['login'] is not None:
@@ -88,53 +89,49 @@ def prof_add(**kwargs):
 # prof_add()
 
 @click.command(name='prof-del')
-@click.option('--name', required=True,
-              help="system-name/profile-name to delete")
-def prof_del(name):
+@click.option('--system', required=True, help='system name')
+@click.option('--name', required=True, help="profile name to delete")
+def prof_del(**kwargs):
     """
     remove an existing system activation profile
     """
-    try:
-        system_name, prof_name = name.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
-
     client = Client()
 
     fetch_and_delete(
         client.SystemProfiles,
-        {'system': system_name, 'name': prof_name},
+        kwargs,
         'system profile not found.'
     )
     click.echo('Item successfully deleted.')
 # prof_del()
 
 @click.command(name='prof-edit')
-@click.option('cur_name', '--name', required=True,
-              help="profile name in the form system-name/profile-name")
+@click.option('--system', required=True, help='system name')
+@click.option('cur_name', '--name', required=True, help="profile name")
 @click.option('name', '--newname', help="new name (i.e. new-profile-name)")
 @click.option('--cpu', type=click.IntRange(min=1), help="number of cpus")
 @click.option('--memory', help="memory size (i.e. 1gb)")
-@click.option('--default', is_flag=True, help="make it the default profile")
-@click.option('hypervisor_profile', '--require',
+@click.option('--default', is_flag=True, help="set as default for system")
+@click.option('hypervisor_profile', '--parent',
               help="hypervisor profile required for activation")
 @click.option('parameters', '--params',
               help="activation parameters (future use)")
 @click.option('--login',
               help="user:passwd for admin access to operating system")
-def prof_edit(cur_name, **kwargs):
+def prof_edit(system, cur_name, **kwargs):
     """
     change properties of an existing system activation profile
     """
-    try:
-        system_name, cur_name = cur_name.split('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
     # convert a human size to integer
     try:
         kwargs['memory'] = str_to_size(kwargs['memory'])
     except ValueError:
         raise click.ClickException('invalid memory size specified.')
+    # avoid user confusion
+    if (kwargs['hypervisor_profile'] is not None and
+            kwargs['hypervisor_profile'].find('/') > -1):
+        raise click.ClickException(
+            'invalid format for parent, specify profile name only')
 
     # login provided: parse it to json format expected by API
     if kwargs['login'] is not None:
@@ -144,41 +141,44 @@ def prof_edit(cur_name, **kwargs):
         except (AttributeError, ValueError):
             raise click.ClickException('invalid format specified for login')
         kwargs['credentials'] = {'user': user, 'passwd': passwd}
+    # default not provided: remove from dict otherwise it will force setting to
+    # false
+    if kwargs['default'] is False:
+        kwargs.pop('default')
 
     client = Client()
     fetch_and_update(
         client.SystemProfiles,
-        {'system': system_name, 'name': cur_name},
+        {'system': system, 'name': cur_name},
         'system profile not found.',
         kwargs)
     click.echo('Item successfully updated.')
 # prof_edit()
 
-@click.command(name='prof-show')
-@click.option(
-    '--name',
-    help="show specific system-name/profile-name or filter by profile-name")
+@click.command(name='prof-list')
+@click.option('--system', help="the system to list")
+@click.option('--name', help="filter by profile-name")
 @click.option('--system',
               help="filter by specified system")
 @click.option('--cpu', help="filter by specified number of cpus")
 @click.option('--memory', help="filter by specified memory size (i.e. 1gb)")
-@click.option('--default', type=click.BOOL, help="show default profiles")
-@click.option('hypervisor_profile', '--require',
+@click.option('--default', is_flag=True, help="list only default profiles")
+@click.option('hypervisor_profile', '--parent',
               help="filter by required hypervisor profile")
-def prof_show(**kwargs):
+def prof_list(**kwargs):
     """
-    show existing system activation profiles
+    list the activation profiles of a system
     """
-    # system-name/profile-name format specified: split it
-    if kwargs['name'] is not None and kwargs['name'].find('/') > -1:
-        # system dedicated parameter also specified: report conflict
-        if kwargs['system'] is not None:
-            raise click.ClickException(
-                'system specified twice (--name and --system)')
-        try:
-            kwargs['system'], kwargs['name'] = kwargs['name'].split('/', 1)
-        except:
-            raise click.ClickException('invalid format for profile name')
+    # at least one qualifier must be specified so that we don't have to
+    # retrieve the full list
+    if kwargs['system'] is None and kwargs['name'] is None:
+        raise click.ClickException(
+            'at least one of --system or --name must be specified')
+
+    # default not provided: remove from dict otherwise it will force listing
+    # only non defaults
+    if kwargs['default'] is False:
+        kwargs.pop('default')
 
     # fetch data from server
     client = Client()
@@ -211,6 +211,6 @@ def prof_show(**kwargs):
     print_items(
         PROFILE_FIELDS, client.SystemProfiles, parser_map, entries)
 
-# prof_show()
+# prof_list()
 
-CMDS = [prof_add, prof_del, prof_edit, prof_show]
+CMDS = [prof_add, prof_del, prof_edit, prof_list]

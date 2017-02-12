@@ -40,9 +40,8 @@ FIELDS = (
 
 @click.command('subnet-add')
 # set the parameter name after the model's attribute name to save on typing
-@click.option(
-    '--name', required=True,
-    help="netzone-name/subnet-name to create (i.e. zone-foo/subnet-bar)")
+@click.option('--zone', required=True, help='target network zone')
+@click.option('--name', required=True, help="name of subnet to create")
 @click.option('--address', required=True,
               help="subnet address (i.e. 192.168.0.0/24)")
 @click.option('gateway', '--gw', help="gateway address (i.e. 192.168.0.1)")
@@ -56,10 +55,6 @@ def subnet_add(**kwargs):
     """
     create a new subnet
     """
-    try:
-        kwargs['zone'], kwargs['name'] = kwargs['name'].rsplit('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
     client = Client()
 
     item = client.Subnets()
@@ -70,28 +65,23 @@ def subnet_add(**kwargs):
 # subnet_add()
 
 @click.command(name='subnet-del')
-@click.option(
-    '--name', required=True,
-    help="netzone-name/subnet-name to delete (i.e. zone-foo/subnet-bar)")
-def subnet_del(name):
+@click.option('--zone', required=True, help='network zone containing subnet')
+@click.option('--name', required=True, help='name of subnet to delete')
+def subnet_del(**kwargs):
     """
     remove an existing subnet
     """
-    try:
-        zone, name = name.rsplit('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
     client = Client()
 
     fetch_and_delete(
-        client.Subnets, {'zone': zone, 'name': name}, 'subnet not found.')
+        client.Subnets, kwargs, 'subnet not found.')
     click.echo('Item successfully deleted.')
 # subnet_del()
 
 @click.command(name='subnet-edit')
-@click.option(
-    'cur_name', '--name', required=True,
-    help="netzone-name/subnet-name to edit (i.e. zone-foo/subnet-bar)")
+@click.option('--zone', required=True, help='network zone containing subnet')
+@click.option('cur_name', '--name', required=True,
+              help='name of subnet to edit')
 @click.option('name', '--newname', help="new subnet name")
 @click.option('--address', help="subnet address (i.e. 192.168.0.0/24)")
 @click.option('gateway', '--gw', help="gateway address (i.e. 192.168.0.1)")
@@ -101,49 +91,35 @@ def subnet_del(name):
 @click.option('--vlan', help="vlan identifier")
 @click.option('--project', help="project owning subnet")
 @click.option('--desc', help="free form field describing subnet")
-def subnet_edit(cur_name, **kwargs):
+def subnet_edit(zone, cur_name, **kwargs):
     """
     change properties of an existing subnet
     """
-    try:
-        zone, name = cur_name.rsplit('/', 1)
-    except:
-        raise click.ClickException('invalid format for name')
-
     client = Client()
     fetch_and_update(
         client.Subnets,
-        {'zone': zone, 'name': name},
+        {'zone': zone, 'name': cur_name},
         'subnet not found.',
         kwargs)
     click.echo('Item successfully updated.')
 # subnet_edit()
 
-@click.command(name='subnet-show')
-@click.option(
-    '--name',
-    help="show specified zone-name/subnet-name or filter by subnet-name")
-@click.option('zone', '--zone',
-              help="filter by specified network zone")
+@click.command(name='subnet-list')
+@click.option('--zone', help='the network zone to list')
+@click.option('--name', help='filter by subnet name')
 @click.option('--address', help="filter by specified address")
 @click.option('--vlan', help="filter by specified vlan")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
-def subnet_show(**kwargs):
+def subnet_list(**kwargs):
     """
-    show registered subnets
+    list the registered subnets
     """
-    # zone/subnet format specified: split it
-    if kwargs['name'] is not None and kwargs['name'].find('/') > -1:
-        # zone dedicated parameter also specified: report conflict
-        if kwargs['zone'] is not None:
-            raise click.ClickException(
-                'zone specified twice (--name and --zone)')
-        try:
-            kwargs['zone'], kwargs['name'] = \
-                kwargs['name'].split('/', 1)
-        except:
-            raise click.ClickException('invalid format for name')
+    # at least one qualifier must be specified so that we don't have to
+    # retrieve the full list
+    if kwargs['zone'] is None and kwargs['name'] is None:
+        raise click.ClickException(
+            'at least one of --zone or --name must be specified')
 
     # fetch data from server
     client = Client()
@@ -155,6 +131,6 @@ def subnet_show(**kwargs):
     # present results
     print_items(
         FIELDS, client.Subnets, None, entries)
-# subnet_show()
+# subnet_list()
 
-CMDS = [subnet_add, subnet_del, subnet_edit, subnet_show]
+CMDS = [subnet_add, subnet_del, subnet_edit, subnet_list]

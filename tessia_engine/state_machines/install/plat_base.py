@@ -92,24 +92,30 @@ class PlatBase(metaclass=abc.ABCMeta):
     # _create_hyp()
 
     @abc.abstractmethod
-    def boot(self, kargs): #pylint: disable=missing-raises-doc
+    def boot(self, kargs):
         """
         Perform a boot operation so that the installation process can start.
 
         Args:
             kargs (str): kernel command line args for os' installer
+
+        Raises:
+            NotImplementedError: as it should be implemented by child class
         """
         raise NotImplementedError()
     # boot()
 
     @abc.abstractmethod
-    def get_vol_devpath(self, vol_obj): #pylint: disable=missing-raises-doc
+    def get_vol_devpath(self, vol_obj):
         """
         Given a volume entry, return the correspondent device path on operating
         system.
 
         Args:
             vol_obj (StorageVolume): storage volume db object
+
+        Raises:
+            NotImplementedError: as it should be implemented by child class
         """
         raise NotImplementedError()
     # get_vol_devpath()

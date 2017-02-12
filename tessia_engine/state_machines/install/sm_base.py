@@ -116,12 +116,10 @@ class SmBase(metaclass=abc.ABCMeta):
     # __init__()
 
     @abc.abstractmethod
-    def _get_kargs(self): # pylint: disable=no-self-use,redundant-returns-doc, missing-raises-doc
+    def _get_kargs(self):
         """
-        This method returns the cmdline  used for the os installer.
-
-        Returns:
-            str: kernel cmdline string
+        This method should be implemented by children classes and return a
+        string containing the cmdline used for the os installer.
         """
         raise NotImplementedError()
     # _get_kargs()
@@ -235,7 +233,7 @@ class SmBase(metaclass=abc.ABCMeta):
 
     def check_installation(self):
         """
-        Makes sure that the installation was successfully completed.
+        Make sure that the installation was successfully completed.
         """
         ssh_client, shell = self._get_ssh_conn()
 

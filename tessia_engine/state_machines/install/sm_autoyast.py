@@ -20,10 +20,11 @@ Machine for auto installation of Autoyast based operating systems
 # IMPORTS
 #
 from tessia_engine.state_machines.install.sm_base import SmBase
-
-import jinja2
 from time import sleep
 from time import time
+
+import jinja2
+import logging
 
 
 #
@@ -42,6 +43,7 @@ class SmAutoyast(SmBase):
         Constructor
         """
         super().__init__(os_entry, profile_entry, template_entry)
+        self._logger = logging.getLogger(__name__)
     # __init__()
 
     def collect_info(self):
@@ -115,7 +117,7 @@ class SmAutoyast(SmBase):
         if ret != 0:
             self._logger.error(
                 "Error while killing shell before installation start")
-            raise Exception("Command Error: ret={}".format(ret))
+            raise RuntimeError("Command Error: ret={}".format(ret))
 
         logfile_path = '/var/log/YaST2/y2log'
         frequency_check = 10

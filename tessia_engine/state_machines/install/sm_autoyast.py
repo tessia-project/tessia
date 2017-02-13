@@ -20,19 +20,16 @@ Machine for auto installation of Autoyast based operating systems
 # IMPORTS
 #
 from tessia_engine.state_machines.install.sm_base import SmBase
+from time import sleep
+from time import time
 
 import jinja2
 import logging
-from time import sleep
 
 
 #
 # CONSTANTS AND DEFINITIONS
 #
-
-INSTALLATION_TIMEOUT = 600
-CHECK_INSTALLATION_FREQ = 10
-LOGFILE_PATH = "/var/log/YaST2/y2log"
 
 #
 # CODE
@@ -62,6 +59,29 @@ class SmAutoyast(SmBase):
 
     # collect_info()
 
+    def _fetch_lines_until_end(self, shell, offset, logfile_path):
+        """
+        Auxiliar function to read lines from a file and log them in chunks
+        until the last line.
+        """
+        cmd_read_line = "tail -n +{offset} {file_path} | head -n 100"
+        while True:
+            ret, out = shell.run(cmd_read_line.format(
+                offset=offset, file_path=logfile_path))
+            out = out.rstrip('\n')
+            # something went wrong: stop to prevent an infinite loop
+            if ret == 1:
+                break
+            # reached end of file: stop
+            elif len(out) == 0:
+                break
+
+            offset += len(out.split('\n'))
+            self._logger.info(out)
+
+        return offset
+    # _fetch_lines_until_end()
+
     def _get_kargs(self):
         """
         Return the cmdline used for the os installer
@@ -84,11 +104,8 @@ class SmAutoyast(SmBase):
         the YaST process is still running while also extracts installation
         logs. There is a timeout of 10 minutes.
         """
-        initial_line = 1
-        elapsed_time = 0
-        cmd_read_line = "tail -n +{} " + LOGFILE_PATH
-
         ssh_client, shell = self._get_ssh_conn()
+
         # Under SLES, we use the cmdline parameter 'start_shell' that
         # starts a shell before and after the autoyast.
         # This is required to control when the installer will reboot.
@@ -102,34 +119,47 @@ class SmAutoyast(SmBase):
                 "Error while killing shell before installation start")
             raise RuntimeError("Command Error: ret={}".format(ret))
 
+        logfile_path = '/var/log/YaST2/y2log'
+        frequency_check = 10
+
+        # wait for log file to be available, it takes a while
+        timeout_logfile = time() + 120
+        cmd_logfile_exist = '[ -f "{}" ]'.format(logfile_path)
+        ret = 1
+        while time() < timeout_logfile:
+            ret, _ = shell.run(cmd_logfile_exist)
+            if ret == 0:
+                break
+            sleep(frequency_check)
+        if ret != 0:
+            raise TimeoutError(
+                'Timed out while waiting for installation logfile')
+
         # performs successive calls to extract the installation log
         # and check installation stage
-        while elapsed_time < INSTALLATION_TIMEOUT:
-            ret, out = shell.run(cmd_read_line.format(initial_line))
+        line_offset = 1
+        timeout_installation = time() + 600
+        success = False
+        while time() <= timeout_installation:
+            line_offset = self._fetch_lines_until_end(
+                shell, line_offset, logfile_path)
+
+            # installation finished: consume last lines from log and finish
+            # process
+            ret, _ = shell.run("pgrep '^yast2'")
             if ret != 0:
-                self._logger.error(
-                    "Error while reading the installation log:"
-                    "ret=%s,out=%s", ret, out
-                )
-            lines = out.split("\n")
-
-            # extract installation information
-            if len(lines) > 1 or lines[0] != "":
-                initial_line += len(lines)
-                self._logger.info(out)
-
-            # check if installation finished by querying for its process
-            ret, out = shell.run("pgrep '^yast2'")
-            if out == '':
+                self._fetch_lines_until_end(shell, line_offset, logfile_path)
+                success = True
                 break
 
-            sleep(CHECK_INSTALLATION_FREQ)
-            elapsed_time += CHECK_INSTALLATION_FREQ
-        else:
-            raise TimeoutError('Installation Timeout: The installation'
-                               ' process is taking too long')
+            sleep(frequency_check)
 
         shell.close()
         ssh_client.logoff()
+
+        if not success:
+            raise TimeoutError('Installation Timeout: The installation '
+                               'process is taking too long')
+
     # wait_install()
 # SmAutoyast

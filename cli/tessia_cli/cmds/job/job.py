@@ -39,7 +39,7 @@ REQUEST_FIELDS_GENERIC = (
 REQUEST_FIELDS_DETAILED = (
     'request_id', 'action_type', 'job_type', 'submit_date', 'requester',
     'state', 'job_id', 'time_slot', 'timeout', 'priority', 'start_date',
-    'result',
+    'result', 'parameters'
 )
 JOB_FIELDS_GENERIC = (
     'job_id', 'job_type', 'submit_date', 'start_date', 'end_date', 'requester',
@@ -54,37 +54,28 @@ JOB_FIELDS_DETAILED = (
 # CODE
 #
 @click.command(
-    name='req-show',
+    name='req-list',
     short_help='show the queue of requests or details of a request')
 @click.option('request_id', '--id', type=int,
-              help="show the details of a request id")
-@click.option('--params', is_flag=True,
-              help="show the parameters specified for request")
+              help="filter by the specified request id")
 @click.option('action_type', '--type', help='filter by action type')
 @click.option('job_type', '--machine', help='filter by machine type')
 @click.option('requester', '--owner', help='filter by owner login')
 @click.option('--state', help='filter by request state')
-def req_show(request_id, params, **kwargs):
+def req_list(request_id, **kwargs):
     """
     show the queue of requests or details of a request
     """
-    if params is True and request_id is None:
-        raise click.ClickException(
-            'for --params a request id must be specified')
-
     client = Client()
 
-    # id specified: print specific information
+    # id specified: print detailed information
     if request_id is not None:
         item = fetch_item(
             client.JobRequests,
             {'request_id': request_id},
             'request not found.')
-        if params is True:
-            click.echo(item.parameters)
-        else:
-            print_items(
-                REQUEST_FIELDS_DETAILED, client.JobRequests, None, [item])
+        print_items(
+            REQUEST_FIELDS_DETAILED, client.JobRequests, None, [item])
         return
 
     # parse parameters to filters
@@ -94,14 +85,14 @@ def req_show(request_id, params, **kwargs):
 
     print_ver_table(REQUEST_FIELDS_GENERIC, entries, REQUEST_FIELDS_GENERIC)
 
-# req_show()
+# req_list()
 
-@click.command()
+@click.command(short_help='send a request to the scheduler to cancel a job')
 @click.option('job_id', '--id', type=int, required=True,
               help='job id to be canceled')
 def cancel(**kwargs):
     """
-    request the scheduler to cancel a job
+    send a request to the scheduler to cancel a job
     """
     kwargs['action_type'] = 'CANCEL'
 
@@ -153,7 +144,8 @@ def output(job_id):
 
 # output()
 
-@click.command()
+@click.command(
+    short_help='send a request to the scheduler to submit a new job')
 @click.option('job_type', '--type', required=True,
               help="type of execution machine to use")
 @click.option('--parmfile', type=click.File('r'), required=True,
@@ -164,7 +156,7 @@ def output(job_id):
 @click.option('priority', '--prio', type=int, help="job priority")
 def submit(job_type, parmfile, **kwargs):
     """
-    request the scheduler to submit a new job
+    send a request to the scheduler to submit a new job
     """
     request = {
         'action_type': 'SUBMIT',
@@ -181,13 +173,15 @@ def submit(job_type, parmfile, **kwargs):
     wait_scheduler(Client(), request)
 # submit()
 
-@click.command(short_help='show the queue of jobs or details of a job')
+@click.command(
+    name='list',
+    short_help='show the queue of jobs or details of a job')
 @click.option('job_id', '--id', type=int, help="show details of a job id")
 @click.option('--params', is_flag=True, help="show the job parameters")
 @click.option('job_type', '--machine', help='filter by machine type')
 @click.option('requester', '--owner', help='filter by owner login')
 @click.option('--state', help='filter by request state')
-def show(job_id, params, **kwargs):
+def list_(job_id, params, **kwargs):
     """
     show the queue of jobs or details of a job
     """
@@ -216,6 +210,6 @@ def show(job_id, params, **kwargs):
     entries = client.Jobs.instances(**parsed_filter)
 
     print_ver_table(JOB_FIELDS_GENERIC, entries, JOB_FIELDS_GENERIC)
-# show()
+# list_()
 
-CMDS = [cancel, output, submit, req_show, show]
+CMDS = [cancel, list_, output, req_list, submit]

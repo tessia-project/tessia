@@ -35,11 +35,11 @@ FIELDS = (
 # CODE
 #
 
-@click.command(name='user-show')
+@click.command(name='user-list')
 @click.option('--login', help="list specified user only")
 @click.option('--restricted', help="list restricted users")
 @click.option('--admin', help="list admin users")
-def user_show(**kwargs):
+def user_list(**kwargs):
     """
     list registered users
     """
@@ -54,6 +54,6 @@ def user_show(**kwargs):
     print_items(
         FIELDS, client.Users, None, entries)
 
-# user_show()
+# user_list()
 
-CMDS = [user_show]
+CMDS = [user_list]

@@ -172,6 +172,7 @@ class _AppManager(object):
         # create the api instance and:
         # - use a decorator to force authentication on
         # each request and well as the api custom db manager
+        app.config['POTION_DECORATE_SCHEMA_ENDPOINTS'] = False
         api = Api(app, decorators=[authorize], default_manager=ApiManager)
         app.config['POTION_DEFAULT_PER_PAGE'] = 50
         app.config['POTION_MAX_PER_PAGE'] = 100

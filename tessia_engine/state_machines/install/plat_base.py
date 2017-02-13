@@ -98,6 +98,9 @@ class PlatBase(metaclass=abc.ABCMeta):
 
         Args:
             kargs (str): kernel command line args for os' installer
+
+        Raises:
+            NotImplementedError: as it should be implemented by child class
         """
         raise NotImplementedError()
     # boot()
@@ -110,6 +113,9 @@ class PlatBase(metaclass=abc.ABCMeta):
 
         Args:
             vol_obj (StorageVolume): storage volume db object
+
+        Raises:
+            NotImplementedError: as it should be implemented by child class
         """
         raise NotImplementedError()
     # get_vol_devpath()

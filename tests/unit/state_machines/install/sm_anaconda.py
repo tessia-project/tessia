@@ -85,16 +85,20 @@ class TestSmAnaconda(TestCase):
         self._mock_os = patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = patch.object(sm_base, 'SshClient', autospec=True)
+        self._mock_ssh_client = patcher.start()
+        self.addCleanup(patcher.stop)
+
         patcher = patch.object(sm_base, 'urljoin', autospec=True)
         self._mock_urljoin = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(sm_anaconda, 'sleep', autospec=True)
-        self._mock_sleep = patcher.start()
+        patcher = patch.object(sm_base, 'sleep', autospec=True)
+        patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(sm_anaconda, 'SshClient', autospec=True)
-        self._mock_ssh_client = patcher.start()
+        patcher = patch.object(sm_anaconda, 'sleep', autospec=True)
+        self._mock_sleep_base = patcher.start()
         self.addCleanup(patcher.stop)
 
         patcher = patch.object(sm_anaconda, 'time', autospec=True)
@@ -141,56 +145,65 @@ class TestSmAnaconda(TestCase):
             mach.start()
     # test_wait_install_fails_ssh_timeout(self)
 
-    def test_wait_install_shell_error(self):
-        """
-        Test the case an error occur when trying to execute shell commands
-        in the target guest.
-        """
-        mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
-        mock_shell.run.return_value = -1, "ERROR"
-
-        os_entry = utils.get_os("rhel7.2")
-        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
-        template_entry = utils.get_template("RHEL7.2")
-
-        mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
-        with self.assertRaisesRegex(RuntimeError, "Error while reading"):
-            mach.start()
-    # test_wait_install_shell_error()
-
     def test_wait_install_timeout(self):
         """
-        Test the case the installation process timeout.
+        Test the case when a timeout occurs while waiting for log file output
         """
+        def time_generator():
+            """Generator for increasing time counter"""
+            start = 1.1
+            while True:
+                start += 50.111
+                yield start
+        get_time = time_generator()
+        self._mock_time.side_effect = lambda: next(get_time)
+
+        mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
+        ssh_cmds = [
+            (1, ""), # first time to check if anaconda.log exists
+            (0, ""), # anaconda.log now exists
+            (0, ""), # read log file, empty content
+        ]
+        # generate a lot of responses to reading the log file
+        ssh_cmds.extend([(0, 'some_line')] * 50)
+        mock_shell.run.side_effect = ssh_cmds
+
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
         template_entry = utils.get_template("RHEL7.2")
-        mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
-        mock_shell.run.return_value = (0, "Some text")
-        self._mock_time.side_effect = [0, 10, 601]
+
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
-        with self.assertRaisesRegex(TimeoutError, "Installation Timeout:"):
+        with self.assertRaisesRegex(TimeoutError, "Installation Timeout"):
             mach.start()
     # test_wait_install_timeout()
 
-    def test_check_install_error(self):
+    def test_wait_install_timeout_log_file(self):
         """
-        Check the case an error occur when testing the installed system
-        after the installation has successfully finished.
+        Test the case when a timeout occurs while waiting for creation of
+        installer log file
         """
+        def time_generator():
+            """Generator for increasing time counter"""
+            start = 1.1
+            while True:
+                start += 50.111
+                yield start
+        get_time = time_generator()
+        self._mock_time.side_effect = lambda: next(get_time)
+
+        mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
+        # generate a lot failures to check if log file was created
+        mock_shell.run.side_effect = [(1, '')] * 50
+
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
         template_entry = utils.get_template("RHEL7.2")
-        mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
-        mock_shell.run.side_effect = [
-            (0, "Some text"),
-            (0, ""),
-            (0, "Thread Done: AnaConfigurationThread"),
-            (-1, "ERROR")]
+
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
-        with self.assertRaisesRegex(RuntimeError, "Error while checking"):
+        with self.assertRaisesRegex(
+            TimeoutError, "Timed out while waiting for installation logfile"):
             mach.start()
-    # test_check_install_error()
+    # test_wait_install_timeout_log_file()
 
     def test_installation_error_from_log(self):
         """

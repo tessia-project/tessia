@@ -27,12 +27,16 @@ from unittest.mock import patch
 from unittest import TestCase
 from unittest.mock import Mock
 
+import json
+
 #
 # CONSTANTS AND DEFINITIONS
 #
-REQUEST_PARAMETERS = """{"profile": "kvm054/kvm_kvm054_install",
-"template": "RHEL7.2"}
-"""
+REQUEST_PARAMETERS = json.dumps({
+    "system": "kvm054",
+    "profile": "kvm_kvm054_install",
+    "template": "RHEL7.2"
+})
 
 #
 # CODE
@@ -74,7 +78,7 @@ class TestAutoInstallMachine(TestCase):
         # that are used in the request.
 
         # Open the connection with the database so that it can be used in the
-        # tests. Even for tests that does not directly use the session, we must
+        # tests. Even for tests that do not directly use the session, we must
         # create a session in order to fullfill the models with the query
         # object.
         self.session = MANAGER.session()
@@ -90,8 +94,10 @@ class TestAutoInstallMachine(TestCase):
             {
                 "template": "<name of the template>",
                 "os": "<name of the operating system>",
-                "profile": "<system_name>[/<name of the profile>]"
+                "system": "<system_name>",
+                "profile": "<name of the profile>"
             }
+            "profile" is optional.
         """
         mach = machine.AutoInstallMachine(parameters)
         mach.start()
@@ -113,9 +119,10 @@ class TestAutoInstallMachine(TestCase):
         Test the correct initialization of the AutoInstallMachine using the
         default profile.
         """
-        request = """{"profile": "kvm054",
-         "template": "RHEL7.2"}
-        """
+        request = json.dumps({
+            "system": "kvm054",
+            "template": "RHEL7.2"
+        })
 
         self._perform_test_init(request)
     # test_init_default_profile()
@@ -156,9 +163,12 @@ class TestAutoInstallMachine(TestCase):
         """
         Test the case that an operating system does not exist in the database.
         """
-        request = """{"profile": "kvm054/kvm_kvm054_install",
-         "template": "RHEL7.2", "os": "Nonono"}
-        """
+        request = json.dumps({
+            "system": "kvm054",
+            "profile": "kvm_kvm054_install",
+            "template": "RHEL7.2",
+            "os": "Nonono"
+        })
 
         with self.assertRaisesRegex(RuntimeError, "OS Nonono"):
             machine.AutoInstallMachine(request)
@@ -168,9 +178,11 @@ class TestAutoInstallMachine(TestCase):
         """
         Test the case that the template does not exist in the database.
         """
-        request = """{"profile": "kvm054/kvm_kvm054_install",
-         "template": "Nonono"}
-        """
+        request = json.dumps({
+            "system": "kvm054",
+            "profile": "kvm_kvm054_install",
+            "template": "Nonono"
+        })
         with self.assertRaisesRegex(RuntimeError, "Template Nonono"):
             machine.AutoInstallMachine(request)
     # test_nonexistent_template()
@@ -205,9 +217,12 @@ class TestAutoInstallMachine(TestCase):
 
         self.session.add(unsupported_os)
         self.session.commit()
-        request = """{"profile": "kvm054/kvm_kvm054_install",
-         "template": "RHEL7.2", "os": "UnsupportedOS"}
-        """
+        request = json.dumps({
+            "system": "kvm054",
+            "profile": "kvm_kvm054_install",
+            "template": "RHEL7.2",
+            "os": "UnsupportedOS"
+        })
         with self.assertRaisesRegex(RuntimeError, "OS Unsupported"):
             machine.AutoInstallMachine(request)
         self.session.delete(unsupported_os)

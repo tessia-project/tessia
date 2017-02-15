@@ -87,7 +87,7 @@ def _parse_resp_error(response):
     return msg
 # _parse_resp_error()
 
-def main():
+def main(*args, **kwargs):
     """
     Entry point for client execution
     """

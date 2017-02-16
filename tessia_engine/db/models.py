@@ -211,6 +211,11 @@ class Role(CommonMixin, BASE):
     name = Column(String, unique=True, nullable=False)
     desc = Column(String, nullable=False)
 
+    # actions relationship
+    actions_rel = relationship(
+        'RoleAction', uselist=True, lazy='joined', innerjoin=False,
+        viewonly=True)
+
     def __repr__(self):
         """Object representation"""
         return "<Role(name='{}')>".format(self.name)

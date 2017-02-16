@@ -28,6 +28,8 @@ from tessia_engine.api.resources.net_zones import NetZoneResource
 from tessia_engine.api.resources.projects import ProjectResource
 from tessia_engine.api.resources.users import UserResource
 from tessia_engine.api.resources.user_keys import UserKeyResource
+from tessia_engine.api.resources.roles import RoleResource
+from tessia_engine.api.resources.user_roles import UserRoleResource
 from tessia_engine.api.resources.storage_servers import StorageServerResource
 from tessia_engine.api.resources.storage_server_types import \
     StorageServerTypeResource
@@ -64,6 +66,8 @@ RESOURCES = [
     SystemProfileResource,
     UserKeyResource,
     UserResource,
+    RoleResource,
+    UserRoleResource,
     VolumeTypeResource,
 ]
 

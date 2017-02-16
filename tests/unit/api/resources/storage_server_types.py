@@ -20,6 +20,8 @@ Unit test for storage_server_types resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.storage_server_types import \
+        StorageServerTypeResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +39,8 @@ class TestStorageServerType(TestSecureResource):
     RESOURCE_URL = '/storage-server-types'
     # model associated with this resource
     RESOURCE_MODEL = models.StorageServerType
+    # api object associated with the resource
+    RESOURCE_API = StorageServerTypeResource
 
     @staticmethod
     def _entry_gen():

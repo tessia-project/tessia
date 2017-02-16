@@ -20,6 +20,7 @@ Unit test for system_models resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.system_models import SystemModelResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +38,8 @@ class TestSystemModel(TestSecureResource):
     RESOURCE_URL = '/system-models'
     # model associated with this resource
     RESOURCE_MODEL = models.SystemModel
+    # api object associated with the resource
+    RESOURCE_API = SystemModelResource
 
     @staticmethod
     def _entry_gen():

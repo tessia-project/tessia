@@ -57,69 +57,69 @@ TEMPLATES = [
 ]
 
 ROLES = [
-    'Restricted user,Control owned resources only',
-    'User,Control owned resources and create new systems',
-    'Privileged user,Same as User + use systems from others',
-    'Project admin,Control all resources in the project, except for lab '
+    'USER_RESTRICTED,Control owned resources only',
+    'USER,Control owned resources and create new systems',
+    'USER_PRIVILEGED,Same as User + use systems from others',
+    'ADMIN_PROJECT,Control all resources in the project, except for lab '
     'resources (i.e. subnets)',
-    'Hardware admin,Control hardware resources (storage volumes, subnets, ip '
+    'ADMIN_LAB,Control infrastructure resources (storage volumes, subnets, ip '
     'addresses)',
 ]
 
 ROLE_ACTIONS = [
-    # User
-    'User,SYSTEMS,CREATE',
-    'User,SUBNETS,CREATE',
-    'User,NET_ZONES,CREATE',
-    'User,STORAGE_POOLS,CREATE',
-    'User,LOGICAL_VOLUMES,CREATE',
-    # Privileged user
-    # first, create the same privileges as 'User'
-    'Privileged user,SYSTEMS,CREATE',
-    'Privileged user,SUBNETS,CREATE',
-    'Privileged user,NET_ZONES,CREATE',
-    'Privileged user,STORAGE_POOLS,CREATE',
-    'Privileged user,LOGICAL_VOLUMES,CREATE',
+    # Normal user
+    'USER,SYSTEMS,CREATE',
+    'USER,SUBNETS,CREATE',
+    'USER,NET_ZONES,CREATE',
+    'USER,STORAGE_POOLS,CREATE',
+    'USER,LOGICAL_VOLUMES,CREATE',
+    # privileged user
+    # first, create the same privileges as 'USER'
+    'USER_PRIVILEGED,SYSTEMS,CREATE',
+    'USER_PRIVILEGED,SUBNETS,CREATE',
+    'USER_PRIVILEGED,NET_ZONES,CREATE',
+    'USER_PRIVILEGED,STORAGE_POOLS,CREATE',
+    'USER_PRIVILEGED,LOGICAL_VOLUMES,CREATE',
     # now the additional ones to allow managing other users' systems
-    'Privileged user,SYSTEMS,UPDATE',
-    'Privileged user,STORAGE_POOLS,UPDATE',
-    'Privileged user,LOGICAL_VOLUMES,UPDATE',
+    'USER_PRIVILEGED,SYSTEMS,UPDATE',
+    'USER_PRIVILEGED,STORAGE_POOLS,UPDATE',
+    'USER_PRIVILEGED,LOGICAL_VOLUMES,UPDATE',
     # Project admin
-    # first, the same privileges as 'Privileged user'
-    'Project admin,SYSTEMS,CREATE',
-    'Project admin,SUBNETS,CREATE',
-    'Project admin,NET_ZONES,CREATE',
-    'Project admin,STORAGE_POOLS,CREATE',
-    'Project admin,LOGICAL_VOLUMES,CREATE',
-    'Project admin,SYSTEMS,UPDATE',
-    'Project admin,STORAGE_POOLS,UPDATE',
-    'Project admin,LOGICAL_VOLUMES,UPDATE',
+    # first, the same privileges as 'USER_PRIVILEGED'
+    'ADMIN_PROJECT,SYSTEMS,CREATE',
+    'ADMIN_PROJECT,SUBNETS,CREATE',
+    'ADMIN_PROJECT,NET_ZONES,CREATE',
+    'ADMIN_PROJECT,STORAGE_POOLS,CREATE',
+    'ADMIN_PROJECT,LOGICAL_VOLUMES,CREATE',
+    'ADMIN_PROJECT,SYSTEMS,UPDATE',
+    'ADMIN_PROJECT,STORAGE_POOLS,UPDATE',
+    'ADMIN_PROJECT,LOGICAL_VOLUMES,UPDATE',
     # additional ones to allow managing the resources
-    'Project admin,SYSTEMS,DELETE',
-    'Project admin,STORAGE_POOLS,DELETE',
-    'Project admin,LOGICAL_VOLUMES,DELETE',
-    'Project admin,TEMPLATES,CREATE',
-    'Project admin,TEMPLATES,DELETE',
-    'Project admin,TEMPLATES,UPDATE',
-    # Hardware admin
-    'Hardware admin,IP_ADDRESSES,CREATE',
-    'Hardware admin,IP_ADDRESSES,DELETE',
-    'Hardware admin,IP_ADDRESSES,UPDATE',
-    'Hardware admin,NET_ZONES,CREATE',
-    'Hardware admin,NET_ZONES,DELETE',
-    'Hardware admin,NET_ZONES,UPDATE',
-    'Hardware admin,STORAGE_SERVERS,CREATE',
-    'Hardware admin,STORAGE_SERVERS,DELETE',
-    'Hardware admin,STORAGE_SERVERS,UPDATE',
-    'Hardware admin,STORAGE_VOLUMES,CREATE',
-    'Hardware admin,STORAGE_VOLUMES,DELETE',
-    'Hardware admin,STORAGE_VOLUMES,UPDATE',
-    'Hardware admin,SUBNETS,CREATE',
-    'Hardware admin,SUBNETS,DELETE',
-    'Hardware admin,SUBNETS,UPDATE',
-    'Hardware admin,SYSTEMS,CREATE',
-    'Hardware admin,SYSTEMS,DELETE',
-    'Hardware admin,SYSTEMS,UPDATE',
+    'ADMIN_PROJECT,SYSTEMS,DELETE',
+    'ADMIN_PROJECT,STORAGE_POOLS,DELETE',
+    'ADMIN_PROJECT,LOGICAL_VOLUMES,DELETE',
+    'ADMIN_PROJECT,TEMPLATES,CREATE',
+    'ADMIN_PROJECT,TEMPLATES,DELETE',
+    'ADMIN_PROJECT,TEMPLATES,UPDATE',
+    # Lab admin
+    'ADMIN_LAB,IP_ADDRESSES,CREATE',
+    'ADMIN_LAB,IP_ADDRESSES,DELETE',
+    'ADMIN_LAB,IP_ADDRESSES,UPDATE',
+    'ADMIN_LAB,NET_ZONES,CREATE',
+    'ADMIN_LAB,NET_ZONES,DELETE',
+    'ADMIN_LAB,NET_ZONES,UPDATE',
+    'ADMIN_LAB,STORAGE_SERVERS,CREATE',
+    'ADMIN_LAB,STORAGE_SERVERS,DELETE',
+    'ADMIN_LAB,STORAGE_SERVERS,UPDATE',
+    'ADMIN_LAB,STORAGE_VOLUMES,CREATE',
+    'ADMIN_LAB,STORAGE_VOLUMES,DELETE',
+    'ADMIN_LAB,STORAGE_VOLUMES,UPDATE',
+    'ADMIN_LAB,SUBNETS,CREATE',
+    'ADMIN_LAB,SUBNETS,DELETE',
+    'ADMIN_LAB,SUBNETS,UPDATE',
+    'ADMIN_LAB,SYSTEMS,CREATE',
+    'ADMIN_LAB,SYSTEMS,DELETE',
+    'ADMIN_LAB,SYSTEMS,UPDATE',
 ]
 
 STORAGE_POOL_TYPES = [
@@ -231,7 +231,7 @@ def get_roles():
     """
     data = []
     for row in ROLES:
-        row = row.split(',', 2)
+        row = row.split(',', 1)
         data.append(
             {'name': row[0], 'desc': row[1]})
 

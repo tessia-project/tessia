@@ -26,7 +26,7 @@
         {
             "project": "Department x",
             "user": "user_x_0@domain.com",
-            "role": "User"
+            "role": "USER"
         }
     ],
     "System": [

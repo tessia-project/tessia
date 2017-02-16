@@ -20,6 +20,7 @@ Unit test for user_keys resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.user_keys import UserKeyResource
 from tessia_engine.db import models
 
 import json
@@ -40,6 +41,8 @@ class TestUserKey(TestSecureResource):
     RESOURCE_URL = '/user-keys'
     # model associated with this resource
     RESOURCE_MODEL = models.UserKey
+    # api object associated with the resource
+    RESOURCE_API = UserKeyResource
 
     def _assert_created(self, resp, orig_data):
         """

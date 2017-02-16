@@ -20,6 +20,7 @@ Unit test for system_types resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.system_types import SystemTypeResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +38,8 @@ class TestSystemType(TestSecureResource):
     RESOURCE_URL = '/system-types'
     # model associated with this resource
     RESOURCE_MODEL = models.SystemType
+    # api object associated with the resource
+    RESOURCE_API = SystemTypeResource
 
     @staticmethod
     def _entry_gen():

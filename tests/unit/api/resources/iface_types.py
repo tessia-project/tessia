@@ -20,6 +20,7 @@ Unit test for iface_types resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.iface_types import IfaceTypeResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +38,8 @@ class TestIfaceType(TestSecureResource):
     RESOURCE_URL = '/iface-types'
     # model associated with this resource
     RESOURCE_MODEL = models.IfaceType
+    # api object associated with the resource
+    RESOURCE_API = IfaceTypeResource
 
     @staticmethod
     def _entry_gen():

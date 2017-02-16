@@ -20,6 +20,7 @@ Unit test for subnets resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.subnets import SubnetResource
 from tessia_engine.db import models
 
 import ipaddress
@@ -40,6 +41,8 @@ class TestSubnet(TestSecureResource):
     RESOURCE_URL = '/subnets'
     # model associated with this resource
     RESOURCE_MODEL = models.Subnet
+    # api object associated with the resource
+    RESOURCE_API = SubnetResource
 
     @classmethod
     def _entry_gen(cls):

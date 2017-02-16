@@ -20,6 +20,7 @@ Unit test for ip_addresses resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.ip_addresses import IpAddressResource
 from tessia_engine.db import models
 
 import ipaddress
@@ -40,6 +41,8 @@ class TestIpAddress(TestSecureResource):
     RESOURCE_URL = '/ip-addresses'
     # model associated with this resource
     RESOURCE_MODEL = models.IpAddress
+    # api object associated with the resource
+    RESOURCE_API = IpAddressResource
 
     @classmethod
     def _entry_gen(cls):

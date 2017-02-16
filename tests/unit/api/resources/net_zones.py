@@ -20,6 +20,7 @@ Unit test for net_zones resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.net_zones import NetZoneResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +38,8 @@ class TestNetZone(TestSecureResource):
     RESOURCE_URL = '/net-zones'
     # model associated with this resource
     RESOURCE_MODEL = models.NetZone
+    # api object associated with the resource
+    RESOURCE_API = NetZoneResource
 
     @classmethod
     def _entry_gen(cls):

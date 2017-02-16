@@ -292,6 +292,9 @@ class TestSecureResource(TestCase):
         Create the database instance and the flask app client to allow
         requests.
         """
+        if cls.RESOURCE_API is None:
+            raise RuntimeError('Child class did not define RESOURCE_API')
+
         cls.db = DbUnit
         cls.db.create_db()
 
@@ -359,7 +362,7 @@ class TestSecureResource(TestCase):
                     "login": "user_project_admin@domain.com"
                 },
                 {
-                    "name": "hardware_admin",
+                    "name": "lab_admin",
                     "admin": False,
                     "title": "Title of user",
                     "restricted": False,
@@ -387,22 +390,22 @@ class TestSecureResource(TestCase):
                 {
                     "project": project_name,
                     "user": "user_user@domain.com",
-                    "role": "User"
+                    "role": "USER"
                 },
                 {
                     "project": project_name,
                     "user": "user_privileged@domain.com",
-                    "role": "Privileged user"
+                    "role": "USER_PRIVILEGED"
                 },
                 {
                     "project": project_name,
                     "user": "user_project_admin@domain.com",
-                    "role": "Project admin"
+                    "role": "ADMIN_PROJECT"
                 },
                 {
                     "project": project_name,
                     "user": "user_hw_admin@domain.com",
-                    "role": "Hardware admin"
+                    "role": "ADMIN_LAB"
                 }
             ],
         }
@@ -768,7 +771,7 @@ class TestSecureResource(TestCase):
         role = models.UserRole(
             project=self._db_entries['Project'][0]['name'],
             user=login_rest,
-            role="User"
+            role="USER_RESTRICTED"
         )
         self.db.session.add(role)
         self.db.session.commit()

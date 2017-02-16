@@ -158,7 +158,7 @@ class JobRequestResource(ModelResource):
         # this might happen for example in case requester does not exist
         except db_exceptions.AssociationError as exc:
             raise api_exceptions.ItemNotFoundError(
-                exc.column, exc.value, self.Schema)
+                exc.column, exc.value, self)
         # raised by one the sa's field validators
         except ValueError as exc:
             msg_match = re.match(r'^.*<\((.*)\)=\((.*)\)>.*$', str(exc))

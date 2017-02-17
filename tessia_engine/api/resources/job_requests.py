@@ -41,7 +41,7 @@ DESC = {
     'request_id': 'Request ID',
     'requester': 'Request owner',
     'action_type': 'Action type',
-    'job_id': 'Resultant job ID',
+    'job_id': 'Target job ID',
     'job_type': 'Machine type',
     'time_slot': 'Job time slot',
     'timeout': 'Allowed job duration',

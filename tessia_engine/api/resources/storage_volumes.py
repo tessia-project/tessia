@@ -49,7 +49,22 @@ DESC = {
     'owner': 'Owner',
 }
 
-MSG_INVALID_PTABLE = (
+MSG_PTABLE_DASD_PARTS = (
+    "The value 'part_table' is invalid: a dasd partition table cannot have "
+    "more than 3 partitions"
+)
+
+MSG_PTABLE_BAD_PLACE = (
+    "The value 'part_table' is invalid: logical partitions are not in a "
+    "contiguous area"
+)
+
+MSG_PTABLE_MANY_PARTS = (
+    "The value 'part_table' is invalid: a msdos partition table cannot "
+    "have more than 4 primary/extended partitions"
+)
+
+MSG_PTABLE_SIZE_MISMATCH = (
     "The value 'part_table' is invalid: sum of partitions sizes ({}) is "
     "bigger than volume's size ({})"
 )
@@ -81,9 +96,6 @@ class StorageVolumeResource(SecureResource):
 
         # name of the resource in the url
         name = 'storage-volumes'
-
-        # internal usage fields
-        exclude_fields = ['system_attributes']
 
         title = 'Storage volume'
         description = 'Storage volume for use by Systems'
@@ -119,7 +131,7 @@ class StorageVolumeResource(SecureResource):
             nullable=True)
         specs = fields.Custom(
             schema=StorageVolume.get_schema('specs'),
-            title=DESC['specs'], description=DESC['specs'], nullable=True)
+            title=DESC['specs'], description=DESC['specs'])
         modified = fields.DateTime(
             title=DESC['modified'], description=DESC['modified'], io='r')
         desc = fields.String(
@@ -175,15 +187,14 @@ class StorageVolumeResource(SecureResource):
     @staticmethod
     def _assert_ptable(part_table, vol_size):
         """
-        Assert that the total size of the partitions do not exceed the volume's
-        assigned size.
+        Perform validations to make sure the partition table is valid.
 
         Args:
             part_table (dict): partition table
             vol_size (int): volume size
 
         Raises:
-            BaseHttpError: in case types do not match
+            BaseHttpError: in case of validation errors
 
         Returns:
             None
@@ -194,9 +205,54 @@ class StorageVolumeResource(SecureResource):
         # dict format was already validated by schema
         table_size = sum([part['size'] for part in part_table['table']])
 
+        # assert that the total size of the partitions do not exceed the
+        # volume's assigned size
         if table_size > vol_size:
-            msg = MSG_INVALID_PTABLE.format(table_size, vol_size)
+            msg = MSG_PTABLE_SIZE_MISMATCH.format(table_size, vol_size)
             raise BaseHttpError(code=400, msg=msg)
+
+        # dasd type: make sure it has 3 partitions maximum
+        if part_table['type'] == 'dasd' and len(part_table['table']) > 3:
+            raise BaseHttpError(code=400, msg=MSG_PTABLE_DASD_PARTS)
+        # msdos type: perform checks on the primary/logical
+        # combinations
+        elif part_table['type'] == 'msdos':
+            len_ptable = len(part_table['table'])
+            # empty partition: nothing to check
+            if len_ptable == 0:
+                return
+
+            num_primary = 0
+            logical_found = False
+            if part_table['table'][0]['type'] == 'primary':
+                num_primary += 1
+            else:
+                logical_found = True
+                # a logical partition demands an extended which counts as
+                # primary
+                num_primary += 1
+
+            for i in range(1, len_ptable):
+                last_part = part_table['table'][i-1]
+                cur_part = part_table['table'][i]
+                if cur_part['type'] == 'primary':
+                    num_primary += 1
+                else:
+                    # logicals found in non contiguous areas: this is not
+                    # possible, report error
+                    if logical_found and last_part['type'] != 'logical':
+                        raise BaseHttpError(code=400, msg=MSG_PTABLE_BAD_PLACE)
+
+                    # first logical found: set flag and increase primary count
+                    # as a logical demands an extended to contain it
+                    if not logical_found:
+                        logical_found = True
+                        num_primary += 1
+
+                # more than 4 primary parts in a msdos table: report error
+                if num_primary > 4:
+                    raise BaseHttpError(code=400, msg=MSG_PTABLE_MANY_PARTS)
+
     # _assert_ptable()
 
     def _assert_type(self, server, vol_type):

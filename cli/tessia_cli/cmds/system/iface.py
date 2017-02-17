@@ -57,10 +57,11 @@ ATTR_BY_TYPE = {
 @click.option('--name', required=True, help="interface name")
 @click.option('--type', required=True,
               help="interface type (see iface-types)")
-@click.option('--osname', help="interface name in operating system (i.e. en0)")
+@click.option('--osname', required=True,
+              help="interface name in operating system (i.e. en0)")
 @click.option('mac_address', '--mac', required=True, help="mac address")
-@click.option('ip_address', '--ip', required=True,
-              help="assign subnet-name/ip-addr to interface")
+@click.option('--subnet', help="subnet of ip address to be assigned")
+@click.option('--ip', help="ip address to be assigned to interface")
 @click.option('--layer2', type=click.BOOL,
               help="enable layer2 mode (OSA only)")
 @click.option('--ccwgroup', help="device channels (OSA only)")
@@ -74,6 +75,17 @@ def iface_add(**kwargs):
     """
     create a new network interface
     """
+    ip_addr = kwargs.pop('ip')
+    subnet = kwargs.pop('subnet')
+    # one of mandatory parameters not specified: report error
+    if (subnet is not None and ip_addr is None or
+            subnet is None and ip_addr is not None):
+        raise click.ClickException(
+            '--subnet and --ip must be specified together')
+    # both parameters specified: set value for item creation
+    elif subnet is not None and ip_addr is not None:
+        kwargs['ip_address'] = '{}/{}'.format(subnet, ip_addr)
+
     client = Client()
 
     item = client.SystemIfaces()

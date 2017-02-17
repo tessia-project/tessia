@@ -152,8 +152,12 @@ def root(ctx=None):
         version_verify(logger, resp)
 
     auth_key = CONF.get_key()
-    # authorization key is missing: generate one
-    if auth_key is None:
+    # authorization key is missing and command is not to create one: force new
+    # key generation
+    if auth_key is None and not (
+            len(sys.argv) >= 3 and sys.argv[1].lower() == 'conf' and
+            sys.argv[2].lower() == 'key-gen'):
+
         click.echo(MSG_NO_KEY)
         login = click.prompt('Login')
         pwd = click.prompt('Password', hide_input=True)

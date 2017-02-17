@@ -68,22 +68,6 @@ def template_add(**kwargs):
     click.echo('Item added successfully.')
 # template_add()
 
-@autotemplate.command(name='content')
-@click.option('--name', required=True, help="template to print content")
-def template_content(**kwargs):
-    """
-    print the content of a template
-    """
-    # fetch data from server
-    client = Client()
-    item = fetch_item(
-        client.AutoTemplates,
-        {'name': kwargs['name']},
-        'template not found.')
-
-    click.echo(item.content, nl=False)
-# template_content()
-
 @autotemplate.command(name='del')
 @click.option('--name', required=True, help="template to delete")
 def template_del(name):
@@ -141,3 +125,20 @@ def template_list(**kwargs):
     print_items(
         MODEL_FIELDS, client.AutoTemplates, None, entries)
 # template_list()
+
+@autotemplate.command(name='print')
+@click.option('--name', required=True, help="template to print content")
+def template_print(**kwargs):
+    """
+    print the content of a template
+    """
+    # fetch data from server
+    client = Client()
+    item = fetch_item(
+        client.AutoTemplates,
+        {'name': kwargs['name']},
+        'template not found.')
+
+    click.echo(item.content, nl=False)
+# template_print()
+

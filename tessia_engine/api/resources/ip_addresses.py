@@ -37,6 +37,7 @@ DESC = {
     'modifier': 'Modified by',
     'project': 'Project',
     'owner': 'Owner',
+    'system': 'Associated system',
 }
 
 #
@@ -82,6 +83,8 @@ class IpAddressResource(SecureResource):
         # relations
         subnet = fields.String(
             title=DESC['subnet'], description=DESC['subnet'])
+        system = fields.String(
+            title=DESC['system'], description=DESC['system'], io='r')
 
     @staticmethod
     def _assert_address(address, subnet):

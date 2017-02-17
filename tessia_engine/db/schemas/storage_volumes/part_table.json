@@ -55,8 +55,9 @@
         "type": {
             "type": "string",
             "enum": [
-                "msdos",
-                "gpt"
+                "dasd",
+                "gpt",
+                "msdos"
             ]
         },
         "table": {
@@ -99,7 +100,6 @@
                         "type": "string",
                         "enum": [
                             "primary",
-                            "extended",
                             "logical"
                         ]
                     },

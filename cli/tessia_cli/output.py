@@ -129,6 +129,7 @@ def print_items(fields, model, format_map, items):
         None
     """
     if len(items) == 0:
+        click.echo('No results were found.')
         return
     if format_map is None:
         format_map = {}

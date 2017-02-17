@@ -1,5 +1,5 @@
 # directory where doc files are located
-docs_dir: .
+docs_dir: doc
 # where to store output files
 site_dir: ../build/html
 # TODO: create tessia logo
@@ -16,15 +16,15 @@ repo_url: https://gitlab.com/tessia-project/tessia-engine
 pages:
 - Home: 'index.md'
 - Users:
+    - Resources model: 'users/resources_model.md'
+    - Getting started with the client: 'users/client.md'
     - Client installation: 'users/client_install.md'
-    - Client usage: 'users/client_usage.md'
-    - Rest-like API: 'users/api.md'
-- Admins:
-    - Installation: 'admins/install.md'
+    - REST-like API: 'users/api.md'
 - Developers:
     - Coding guidelines: 'developers/coding_guidelines.md'
     - Development process: 'developers/dev_process.md'
     - Unit tests: 'developers/unit_tests.md'
     - Working with documentation: 'developers/documentation.md'
+    - Architecture topics: 'developers/arch.md'
     - Database considerations: 'developers/database.md'
     - Continous Integration: 'developers/continuous_integration.md'

@@ -119,7 +119,8 @@ def subnet_list(**kwargs):
     # retrieve the full list
     if kwargs['zone'] is None and kwargs['name'] is None:
         raise click.ClickException(
-            'at least one of --zone or --name must be specified')
+            'at least one of --zone or --name must be specified '
+            '(hint: use zone-list to find available zones)')
 
     # fetch data from server
     client = Client()

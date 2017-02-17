@@ -31,7 +31,8 @@ import click
 # CONSTANTS AND DEFINITIONS
 #
 FIELDS = (
-    'address', 'subnet', 'owner', 'project', 'modified', 'modifier', 'desc'
+    'address', 'subnet', 'owner', 'project', 'modified', 'modifier', 'desc',
+    'system'
 )
 
 #

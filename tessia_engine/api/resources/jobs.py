@@ -34,7 +34,7 @@ from tessia_engine.db.models import SchedulerJob
 #
 DESC = {
     'requester': 'Request owner',
-    'job_id': 'Resultant job ID',
+    'job_id': 'Job ID',
     'job_type': 'Machine type',
     'time_slot': 'Time slot',
     'state': 'State',

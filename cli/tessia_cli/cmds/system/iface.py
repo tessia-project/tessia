@@ -57,7 +57,8 @@ ATTR_BY_TYPE = {
 @click.option('--name', required=True, help="interface name")
 @click.option('--type', required=True,
               help="interface type (see iface-types)")
-@click.option('--osname', help="interface name in operating system (i.e. en0)")
+@click.option('--osname', required=True,
+              help="interface name in operating system (i.e. en0)")
 @click.option('mac_address', '--mac', required=True, help="mac address")
 @click.option('--subnet', help="subnet of ip address to be assigned")
 @click.option('--ip', help="ip address to be assigned to interface")

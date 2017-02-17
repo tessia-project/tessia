@@ -206,8 +206,8 @@ Associated system profiles :
 Description                : default gateway interface
 ```
 
-One field worth mentioning here is *Operating system name*. Under Linux the interfaces have names and this field allows the user to specify how the interface should be named in the operating
-system. You can of course leave it blank and the default naming scheme of the distro will be used. In our case we followed the recommended convention and named it after the channel number.
+One field worth mentioning here is *Operating system name*. Under Linux the interfaces have names and this field specifies how the interface should be named in the operating
+system. In our example we followed the recommended convention and named it after the channel number.
 
 For the interface to be usable we also need an IP address. Let's learn how to do it in the next section.
 
@@ -220,7 +220,7 @@ We start by checking which subnets are available with the list command of the su
 
 ```console
 [user@host ~]$ tessia net subnet-list
-Error: at least one of --zone or --name must be specified
+Error: at least one of --zone or --name must be specified (hint: use zone-list to find available zones)
 ```
 
 Oops, something went wrong. As there can be many different subnets in a given infrastructure the client asks us to be more specific so that we don't get lost in hundreds of results. Ok, we have no idea

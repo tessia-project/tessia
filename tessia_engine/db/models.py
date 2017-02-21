@@ -133,6 +133,10 @@ class User(CommonMixin, BASE):
     restricted = Column(Boolean, nullable=False)
     admin = Column(Boolean, nullable=False)
 
+    # this relationship is used to automatically delete the children keys
+    user_keys_rel = relationship(
+        'UserKey', cascade='delete')
+
     def __repr__(self):
         """Object representation"""
         return "<User(login='{}')>".format(self.login)
@@ -869,6 +873,14 @@ class System(CommonMixin, ResourceMixin, BASE):
         """Expression used for performing queries"""
         return SystemType.name
 
+    # this relationship is used to automatically delete the children ifaces
+    ifaces_rel = relationship(
+        'SystemIface', cascade='delete')
+
+    # this relationship is used to automatically delete the children profiles
+    profiles_rel = relationship(
+        'SystemProfile', cascade='delete')
+
     def __repr__(self):
         """Object representation"""
         return "<System(name='{}')>".format(self.name)
@@ -1012,11 +1024,13 @@ class SystemProfile(CommonMixin, BASE):
 
     # storage volume relationship section
     storage_volumes_rel = relationship(
-        'StorageVolume', uselist=True, secondary='profiles_storage_volumes')
+        'StorageVolume', uselist=True, secondary='profiles_storage_volumes',
+        cascade='delete')
 
     # system iface relationship section
     system_ifaces_rel = relationship(
-        'SystemIface', uselist=True, secondary='profiles_system_ifaces')
+        'SystemIface', uselist=True, secondary='profiles_system_ifaces',
+        cascade='delete')
 
     # system relationship section
     system_rel = relationship(

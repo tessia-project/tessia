@@ -23,7 +23,6 @@ from tests.unit.api.resources.secure_resource import TestSecureResource
 from tessia_engine.api.resources.subnets import SubnetResource
 from tessia_engine.db import models
 
-import ipaddress
 import json
 
 #
@@ -277,27 +276,6 @@ class TestSubnet(TestSecureResource):
         ]
         self._test_del_many_roles(combos)
     # test_del_many_roles()
-
-    def test_del_has_dependent(self):
-        """
-        Try to delete an item which has a ip address associated with it.
-        """
-        entry = self._create_many_entries(
-            'user_hw_admin@domain.com', 1)[0][0]
-
-        net_obj = ipaddress.ip_network(entry['address'])
-        # create the dependent object
-        dep_ip = models.IpAddress(
-            subnet=entry['name'],
-            address=str(net_obj[1]),
-            modifier="user_hw_admin@domain.com",
-            desc="",
-            project=self._db_entries['Project'][0]['name'],
-            owner="user_hw_admin@domain.com"
-        )
-        self._test_del_has_dependent(
-            'user_hw_admin@domain.com', entry['id'], dep_ip)
-    # test_del_has_dependent()
 
     def test_del_invalid_id(self):
         """

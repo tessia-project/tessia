@@ -48,7 +48,8 @@ FIELDS = (
 @click.option('dns_1', '--dns1', help="primary dns address (i.e. 192.168.0.5)")
 @click.option('dns_2', '--dns2',
               help="secondary dns address (i.e. 192.168.0.6)")
-@click.option('--vlan', help="vlan identifier")
+@click.option('--vlan', type=click.INT, help="vlan identifier")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning subnet")
 @click.option('--desc', help="free form field describing subnet")
 def subnet_add(**kwargs):
@@ -88,7 +89,8 @@ def subnet_del(**kwargs):
 @click.option('dns_1', '--dns1', help="primary dns address (i.e. 192.168.0.5)")
 @click.option('dns_2', '--dns2',
               help="secondary dns address (i.e. 192.168.0.6)")
-@click.option('--vlan', help="vlan identifier")
+@click.option('--vlan', type=click.INT, help="vlan identifier")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning subnet")
 @click.option('--desc', help="free form field describing subnet")
 def subnet_edit(zone, cur_name, **kwargs):
@@ -108,7 +110,7 @@ def subnet_edit(zone, cur_name, **kwargs):
 @click.option('--zone', help='the network zone to list')
 @click.option('--name', help='filter by subnet name')
 @click.option('--address', help="filter by specified address")
-@click.option('--vlan', help="filter by specified vlan")
+@click.option('--vlan', type=click.INT, help="filter by specified vlan")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 def subnet_list(**kwargs):

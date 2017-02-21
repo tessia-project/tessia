@@ -23,6 +23,7 @@ from tessia_cli.client import Client
 from tessia_cli.cmds.job.job import output
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
+from tessia_cli.types import CONSTANT
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 from tessia_cli.utils import wait_scheduler
@@ -53,9 +54,11 @@ SYSTEM_FIELDS = (
 @click.option(
     '--hostname', required=True, help="resolvable hostname or ip address")
 @click.option('hypervisor', '--hyp', help="system's hypervisor")
-@click.option('--type', required=True, help="system type (see types)")
-@click.option('--model', help="system model (see model-list)")
+@click.option('--type', required=True, type=CONSTANT,
+              help="system type (see types)")
+@click.option('--model', type=CONSTANT, help="system model (see model-list)")
 @click.option('--state', help="system state (see states)")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning system")
 @click.option('--desc', help="free form field describing system")
 def add(**kwargs):
@@ -111,9 +114,10 @@ def autoinstall(ctx=None, **kwargs):
 @click.option('cur_name', '--name', required=True, help='system to edit')
 @click.option('name', '--newname', help="new system name")
 @click.option('hypervisor', '--hyp', help="hypervisor's name")
-@click.option('--model', help="system model (see model-list)")
-@click.option('--type', help="system type (see types)")
+@click.option('--model', type=CONSTANT, help="system model (see model-list)")
+@click.option('--type', type=CONSTANT, help="system type (see types)")
 @click.option('--state', help="system state (see states)")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning system ")
 @click.option('--desc', help="free form field describing system")
 def edit(cur_name, **kwargs):
@@ -133,8 +137,8 @@ def edit(cur_name, **kwargs):
 @click.command(name='list')
 @click.option('--name', help="filter by system name")
 @click.option('hypervisor', '--hyp', help="filter by specified hypervisor")
-@click.option('--model', help="filter by specified model")
-@click.option('--type', help="filter by specified type")
+@click.option('--model', type=CONSTANT, help="filter by specified model")
+@click.option('--type', type=CONSTANT, help="filter by specified type")
 @click.option('--state', help="filter by specified state")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")

@@ -40,6 +40,7 @@ FIELDS = (
 @click.command(name='zone-add')
 # set the parameter name after the model's attribute name to save on typing
 @click.option('--name', required=True, help="name of network zone")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning zone")
 @click.option('--desc', help="free form field describing zone")
 def zone_add(**kwargs):
@@ -76,7 +77,7 @@ def zone_del(name):
               help="name of network zone")
 # set the parameter name after the model's attribute name to save on typing
 @click.option('name', '--newname', help="new name of network zone")
-@click.option('--owner', help="zone's owner login")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning zone")
 @click.option('--desc', help="free form field describing zone")
 def zone_edit(cur_name, **kwargs):

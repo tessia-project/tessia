@@ -42,6 +42,7 @@ FIELDS = (
 @click.option('--subnet', required=True, help='target subnet')
 @click.option('address', '--ip', required=True,
               help="ip address to create (i.e. 192.168.0.50)")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning ip address")
 @click.option('--desc', help="free form field describing address")
 def ip_add(**kwargs):
@@ -78,6 +79,7 @@ def ip_del(**kwargs):
 @click.option('--subnet', required=True, help='subnet containing ip')
 @click.option('cur_address', '--ip', required=True, help="ip address to edit")
 @click.option('address', '--newip', help="new ip-addr")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning ip address")
 @click.option('--desc', help="free form field describing address")
 def ip_edit(subnet, cur_address, **kwargs):

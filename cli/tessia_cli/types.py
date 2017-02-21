@@ -50,6 +50,23 @@ class AutoTemplate(click.ParamType):
 
 AUTO_TEMPLATE = AutoTemplate()
 
+class Constant(click.ParamType):
+    """
+    Represents a string constant, usually used for (storage/system/etc.)
+    types.
+    """
+    name = 'string'
+
+    def convert(self, value, param, ctx):
+        """
+        Converts to uppercase.
+        """
+        return value.upper()
+    # convert()
+# Constant
+
+CONSTANT = Constant()
+
 class QethGroup(click.ParamType):
     """
     Represents a qeth group for use with OSA cards

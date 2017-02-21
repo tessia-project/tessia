@@ -44,7 +44,7 @@ OPERATING_SYSTEMS = [
 ]
 
 USERS = [
-    'System user,System user for common resources,system,false,true'
+    'System user,System user for common resources,system,true,false'
 ]
 
 PROJECTS = [

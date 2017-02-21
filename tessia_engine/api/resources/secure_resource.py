@@ -352,9 +352,10 @@ class SecureResource(ModelResource):
         project = self._get_project_for_create(
             self.meta.model.__tablename__, properties.get('project', None))
 
-        # create the item beloging to the user requesting it
         properties['project'] = project
-        properties['owner'] = flask_global.auth_user.login
+        # if not defined create the item beloging to the user requesting it
+        properties['owner'] = properties.get('owner') or \
+            flask_global.auth_user.login
 
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,

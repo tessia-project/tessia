@@ -23,6 +23,7 @@ from flask import g as flask_global
 from flask_potion import fields
 from flask_potion.routes import Route
 from flask_potion.contrib.alchemy.fields import InlineModel
+from flask_potion.instances import Pagination
 from sqlalchemy.exc import IntegrityError
 from tessia_engine.api.app import API
 from tessia_engine.api.exceptions import BaseHttpError
@@ -216,42 +217,32 @@ class SystemProfileResource(SecureResource):
         Returns:
             int: id of created item
         """
-        project = self._get_project_for_create(
-            System.__tablename__, properties.get('project', None))
+        target_system = System.query.filter(
+            System.name == properties['system']
+        ).one_or_none()
+        if target_system is None:
+            raise ItemNotFoundError(
+                'system', properties['system'], self)
 
-        # create the item beloging to the user requesting it
-        properties['project'] = project
-        properties['owner'] = flask_global.auth_user.login
+        # we don't need the actual project, only the verification. In case of
+        # invalid permissions an exception will be raised.
+        self._get_project_for_create(
+            System.__tablename__, target_system.project_rel.name)
 
         hyp_prof_name = properties.get('hypervisor_profile')
 
-        cache_system = None
         # check if this is the first profile and make it the default
         if properties.get('default', False) is False:
-            cache_system = System.query.filter(
-                System.name == properties['system']
-            ).one_or_none()
-            if cache_system is None:
-                raise ItemNotFoundError(
-                    'system', properties['system'], self)
             profile = SystemProfile.query.filter(
-                SystemProfile.system_id == cache_system.id
+                SystemProfile.system_id == target_system.id
             ).first()
             # confirmed it's the first profile: make it default
             if profile is None:
                 properties['default'] = True
 
         if hyp_prof_name is not None:
-            if cache_system is None:
-                cache_system = System.query.filter(
-                    System.name == properties['system']
-                ).one_or_none()
-                if cache_system is None:
-                    raise ItemNotFoundError(
-                        'system', properties['system'], self)
-
             match = SystemProfile.query.join(
-                System, System.id == cache_system.hypervisor_rel.id
+                System, System.id == target_system.hypervisor_rel.id
             ).filter(
                 SystemProfile.name == hyp_prof_name
             ).one_or_none()
@@ -261,7 +252,7 @@ class SystemProfileResource(SecureResource):
                 raise ItemNotFoundError(
                     'hypervisor_profile', hyp_prof_name, self)
             properties['hypervisor_profile'] = '{}/{}'.format(
-                cache_system.hypervisor_rel.name, hyp_prof_name)
+                target_system.hypervisor_rel.name, hyp_prof_name)
 
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,
@@ -293,6 +284,41 @@ class SystemProfileResource(SecureResource):
         return True
     # do_delete()
 
+    def do_list(self, **kwargs):
+        """
+        Verify if the user attempting to list has permissions to do so.
+
+        Args:
+            kwargs (dict): contains keys like 'where' (filtering) and
+                           'per_page' (pagination), see potion doc for details
+
+        Returns:
+            list: list of items retrieved, can be an empty in case no items are
+                  found or a restricted user has no permission to see them
+        """
+        # non restricted user: regular resource listing is allowed
+        if not flask_global.auth_user.restricted:
+            return self.manager.paginated_instances(**kwargs)
+
+        # for restricted users, filter the list by the projects they have
+        # access or if they own the resource
+        allowed_instances = []
+        for instance in self.manager.instances(kwargs.get('where'),
+                                               kwargs.get('sort')):
+            # user is not the resource's owner or an administrator: verify if
+            # they have a role in resource's project
+            if not self._is_owner_or_admin(instance):
+                # no role in system's project: cannot list
+                if self._get_role_for_project(
+                        instance.system_rel.project_id) is None:
+                    continue
+
+            allowed_instances.append(instance)
+
+        return Pagination.from_list(
+            allowed_instances, kwargs['page'], kwargs['per_page'])
+    # do_list()
+
     def do_update(self, properties, id):
         """
         Custom implementation of update. Perform some sanity checks and
@@ -322,7 +348,7 @@ class SystemProfileResource(SecureResource):
         # creation
         if 'system' in properties and properties['system'] != item.system:
             raise BaseHttpError(
-                400, msg='Profiles cannot change associated system')
+                400, msg='Profiles cannot change their associated system')
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:

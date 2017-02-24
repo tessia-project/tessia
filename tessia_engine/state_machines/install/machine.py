@@ -24,7 +24,6 @@ from tessia_engine.config import CONF
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import OperatingSystem
 from tessia_engine.db.models import Template
-from tessia_engine.db.models import System
 from tessia_engine.db.models import SystemProfile
 from tessia_engine.state_machines.base import BaseMachine
 from tessia_engine.state_machines.install.sm_anaconda import SmAnaconda
@@ -136,7 +135,7 @@ class AutoInstallMachine(BaseMachine):
         os_entry = OperatingSystem.query.filter_by(
             name=os_name).one_or_none()
         if os_entry is None:
-            raise RuntimeError('OS {} not found'.format(
+            raise ValueError('OS {} not found'.format(
                 os_name))
 
         return os_entry
@@ -153,12 +152,17 @@ class AutoInstallMachine(BaseMachine):
             system_name (str): system name in db
             profile_name (str): profile name in db
 
+        Raises:
+            ValueError: in case instance cannot be found
+
         Returns:
             SystemProfile: a SystemProfile instance.
         """
         if profile_name is not None:
             profile = SystemProfile.query.filter_by(
-                name=profile_name, system=system_name).one()
+                name=profile_name, system=system_name).one_or_none()
+            if profile is None:
+                raise ValueError('Profile {} not found'.format(profile_name))
         else:
             profile = SystemProfile.query.join(
                 'system_rel'
@@ -166,7 +170,12 @@ class AutoInstallMachine(BaseMachine):
                 SystemProfile.default == bool(True)
             ).filter(
                 SystemProfile.system == system_name
-            ).one()
+            ).one_or_none()
+            if profile is None:
+                raise ValueError(
+                    'Default profile for system {} not available'.format(
+                        system_name)
+                )
 
         return profile
     # _get_profile()
@@ -179,7 +188,7 @@ class AutoInstallMachine(BaseMachine):
         template_entry = Template.query.filter_by(
             name=template_name).one_or_none()
         if template_entry is None:
-            raise RuntimeError('Template {} not found'.format(
+            raise ValueError('Template {} not found'.format(
                 template_name))
 
         return template_entry
@@ -208,6 +217,7 @@ class AutoInstallMachine(BaseMachine):
 
         Raises:
             SyntaxError: if content is in wrong format.
+            ValueError: if certain properties are not defined.
         """
         try:
             params = json.loads(params)
@@ -226,6 +236,27 @@ class AutoInstallMachine(BaseMachine):
         # check which format the profile parameter is using
         profile = cls._get_profile(params['system'], params.get("profile"))
         system = profile.system_rel
+
+        # make sure we have a valid network interface to perform installation
+        gw_iface = profile.gateway_rel
+        # gateway interface not defined: use first available
+        if gw_iface is None:
+            try:
+                gw_iface = profile.system_ifaces_rel[0]
+            except IndexError:
+                msg = 'No network interface attached to perform installation'
+                raise ValueError(msg)
+            if gw_iface.ip_address_rel is None:
+                raise ValueError(
+                    "Gateway interface '{}' has no IP address assigned".format(
+                        gw_iface.name)
+                )
+
+        # make sure the system has a hypervisor profile defined
+        if profile.hypervisor_profile_rel is None:
+            raise ValueError(
+                'System profile must have a required hypervisor profile '
+                'defined')
 
         # the system being installed is considered an exclusive resource
         result['resources']['exclusive'].append(system.name)

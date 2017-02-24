@@ -533,6 +533,10 @@ class Subnet(CommonMixin, ResourceMixin, BASE):
         """Expression used for performing queries"""
         return NetZone.name
 
+    # this relationship is used to automatically delete the children addresses
+    ip_addresses_rel = relationship(
+        'IpAddress', uselist=True, cascade='delete')
+
     def __repr__(self):
         """Object representation"""
         return "<Subnet(name='{}', zone='{}')>".format(self.name, self.zone)
@@ -877,10 +881,6 @@ class System(CommonMixin, ResourceMixin, BASE):
     ifaces_rel = relationship(
         'SystemIface', cascade='delete')
 
-    # this relationship is used to automatically delete the children profiles
-    profiles_rel = relationship(
-        'SystemProfile', cascade='delete')
-
     def __repr__(self):
         """Object representation"""
         return "<System(name='{}')>".format(self.name)
@@ -891,6 +891,7 @@ class OperatingSystem(CommonMixin, BASE):
     """A supported operating system"""
 
     __tablename__ = 'operating_systems'
+
     name = Column(String, unique=True, index=True)
     type = Column(String, nullable=False)
     major = Column(Integer, nullable=False)
@@ -908,30 +909,34 @@ class OperatingSystem(CommonMixin, BASE):
 
 # OperatingSystem
 
-class Repository(CommonMixin, BASE):
-    """A repository for an supported operating system"""
-    # Not all operating systems have repositories
-    # that is why we put this information in other table.
+class Repository(CommonMixin, ResourceMixin, BASE):
+    """A packages repository"""
+
     __tablename__ = "repositories"
 
+    name = Column(String, unique=True, nullable=False)
     url = Column(String, unique=True, nullable=False)
     # the path in the repo to the kernel and initrd
     kernel = Column(String)
     initrd = Column(String)
-    operating_system_id = Column(Integer,
-                                 ForeignKey('operating_systems.id'),
-                                 index=True)
+    operating_system_id = Column(
+        Integer, ForeignKey('operating_systems.id'), index=True)
 
     operating_system_rel = relationship("OperatingSystem", uselist=False)
 
     @hybrid_property
     def operating_system(self):
         """Defines the os attribute pointing to os's name"""
+        if self.operating_system_rel is None:
+            return None
         return self.operating_system_rel.name
 
     @operating_system.setter
     def operating_system(self, value):
         """Defines what to do when assigment occurs for the attribute"""
+        if value is None:
+            self.operating_system_id = None
+            return
         match = OperatingSystem.query.filter_by(name=value).one_or_none()
         if match is None:
             raise AssociationError(
@@ -945,8 +950,8 @@ class Repository(CommonMixin, BASE):
 
     def __repr__(self):
         """Object representation"""
-        return "<Template(name='{}', os='{}')>".format(
-            self.name, self.operating_system_rel.name)
+        return "<Repository(name='{}', url='{}')>".format(
+            self.name, self.url)
     # __repr__()
 # Repository
 
@@ -960,6 +965,7 @@ class SystemProfile(CommonMixin, BASE):
         Integer, ForeignKey('system_profiles.id'), index=True)
     system_id = Column(
         Integer, ForeignKey('systems.id'), index=True, nullable=False)
+    gateway_id = Column(Integer, ForeignKey('system_ifaces.id'))
     operating_system_id = Column(Integer, ForeignKey('operating_systems.id'))
     default = Column(Boolean, nullable=False)
     cpu = Column(Integer)
@@ -1024,13 +1030,11 @@ class SystemProfile(CommonMixin, BASE):
 
     # storage volume relationship section
     storage_volumes_rel = relationship(
-        'StorageVolume', uselist=True, secondary='profiles_storage_volumes',
-        cascade='delete')
+        'StorageVolume', uselist=True, secondary='profiles_storage_volumes')
 
     # system iface relationship section
     system_ifaces_rel = relationship(
-        'SystemIface', uselist=True, secondary='profiles_system_ifaces',
-        cascade='delete')
+        'SystemIface', uselist=True, secondary='profiles_system_ifaces')
 
     # system relationship section
     system_rel = relationship(
@@ -1084,6 +1088,43 @@ class SystemProfile(CommonMixin, BASE):
     def operating_system(cls):
         """Expression used for performing query joins"""
         return OperatingSystem.name
+
+    # gateway relationship section
+    gateway_rel = relationship('SystemIface', uselist=False)
+
+    @hybrid_property
+    def gateway(self):
+        """Defines the gateway attribute pointing to a system's iface name"""
+        if self.gateway_rel is None:
+            return None
+        return self.gateway_rel.name
+
+    @gateway.setter
+    def gateway(self, value):
+        """Defines what to do when assigment occurs for the attribute"""
+        if value is None:
+            self.gateway_id = None
+            return
+
+        match = SystemIfaceProfileAssociation.query.join(
+            'iface_rel'
+        ).filter(
+            SystemIfaceProfileAssociation.profile_id == self.id
+        ).filter(
+            SystemIfaceProfileAssociation.iface_id == SystemIface.id
+        ).filter(
+            SystemIface.name == value
+        ).one_or_none()
+        # related entry does not exist: report error
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'gateway', SystemIface, 'name', value)
+        self.gateway_id = match.iface_id
+
+    @gateway.expression
+    def gateway(cls):
+        """Expression used for performing query joins"""
+        return SystemIface.name
 
     def __repr__(self):
         """Object representation"""

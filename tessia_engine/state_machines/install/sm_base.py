@@ -21,10 +21,8 @@ Base state machine for auto installation of operating systems
 #
 from tessia_baselib.common.ssh.client import SshClient
 from socket import inet_ntoa
-from sqlalchemy.orm.exc import NoResultFound
 from tessia_engine.config import Config
 from tessia_engine.db.connection import MANAGER
-from tessia_engine.db.models import SystemIface
 from tessia_engine.state_machines.install.plat_lpar import PlatLpar
 from tessia_engine.state_machines.install.plat_kvm import PlatKvm
 from time import sleep
@@ -69,25 +67,22 @@ class SmBase(metaclass=abc.ABCMeta):
         except IndexError:
             raise RuntimeError('No repository available for the specified OS')
 
-        # the network iface used as gateway
-        # TODO: check gateway_iface early (before job is started)
-        try:
-            gw_iface = SystemIface.query.filter_by(
-                system_id=self._system.id,
-                name=self._profile.parameters['gateway_iface'],
-            ).one()
-        except KeyError:
-            raise RuntimeError('No gateway interface defined for profile')
-        except NoResultFound:
-            msg = 'Gateway interface {} does not exist'.format(
-                self._profile.parameters['gateway_iface'])
-            raise RuntimeError(msg)
-
-        # There is no need to check if gw_iface is instanciated (not None)
-        # since the one() already raises a NoResultFound if no interface
-        # is found.
-
+        gw_iface = self._profile.gateway_rel
+        # gateway interface not defined: use first available
+        if gw_iface is None:
+            try:
+                gw_iface = self._profile.system_ifaces_rel[0]
+            except IndexError:
+                msg = 'No network interface attached to perform installation'
+                raise RuntimeError(msg)
         self._gw_iface = self._parse_iface(gw_iface, True)
+
+        # make sure the system has a hypervisor profile defined otherwise
+        # usage of platform object will fail
+        if self._profile.hypervisor_profile_rel is None:
+            raise RuntimeError(
+                'System profile must have a required hypervisor profile '
+                'defined')
 
         # Create the appropriate platform object according to the system being
         # installed.
@@ -107,6 +102,7 @@ class SmBase(metaclass=abc.ABCMeta):
         # The path and url for the auto file.
         config = Config.get_config()
         autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
+        autofile_name = autofile_name.replace(' ', '-')
         self._autofile_url = urljoin(
             config["install_machine"]["url"], autofile_name)
         self._autofile_path = os.path.join(
@@ -132,8 +128,8 @@ class SmBase(metaclass=abc.ABCMeta):
         timeout_trials = [5, 10, 20, 40]
 
         hostname = self._profile.system_rel.hostname
-        user = self._profile.credentials['username']
-        password = self._profile.credentials['password']
+        user = self._profile.credentials['user']
+        password = self._profile.credentials['passwd']
 
         for timeout in timeout_trials:
             try:
@@ -165,19 +161,27 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         result = {"attributes": iface.attributes}
         result["type"] = iface.type
-        result["ip"] = iface.ip_address_rel.address
         result["mac_addr"] = iface.mac_address
-        cidr_addr = iface.ip_address_rel.subnet_rel.address
-        result["subnet"], result["mask_bits"] = cidr_addr.split("/")
-        # We need to convert the network mask from the cidr prefix format
-        # to an ip mask format.
-        result["mask"] = inet_ntoa(
-            ((0xffffffff << (32 - int(result["mask_bits"])))
-             & 0xffffffff).to_bytes(4, byteorder="big")
-        )
+        # iface has no ip associated: set empty values
+        if iface.ip_address_rel is None:
+            result["ip"] = None
+            result["subnet"] = None
+            result["mask_bits"] = None
+            result["mask"] = None
+        else:
+            result["ip"] = iface.ip_address_rel.address
+            cidr_addr = iface.ip_address_rel.subnet_rel.address
+            result["subnet"], result["mask_bits"] = cidr_addr.split("/")
+            # We need to convert the network mask from the cidr prefix format
+            # to an ip mask format.
+            result["mask"] = inet_ntoa(
+                ((0xffffffff << (32 - int(result["mask_bits"])))
+                 & 0xffffffff).to_bytes(4, byteorder="big")
+            )
         result["osname"] = iface.osname
         result["is_gateway"] = gateway_iface
         if gateway_iface:
+            # gateway interface was checked in parse for ip address existence
             result["gateway"] = iface.ip_address_rel.subnet_rel.gateway
             result["dns_1"] = iface.ip_address_rel.subnet_rel.dns_1
             result["dns_2"] = iface.ip_address_rel.subnet_rel.dns_2

@@ -43,7 +43,7 @@ from tessia_engine.db.models import StorageVolumeProfileAssociation
 DESC = {
     'name': 'Profile name',
     'system': 'System',
-    'hypervisor_profile': 'Parent hypervisor profile',
+    'hypervisor_profile': 'Required hypervisor profile',
     'os': 'Operating system',
     'default': 'Default',
     'cpu': 'CPU(s)',
@@ -52,6 +52,7 @@ DESC = {
     'credentials': 'Credentials',
     'storage_volumes': 'Storage volumes',
     'system_ifaces': 'Network interfaces',
+    'gateway': 'Gateway interface',
 }
 
 #
@@ -100,8 +101,7 @@ class SystemProfileResource(SecureResource):
             title=DESC['parameters'], description=DESC['parameters'],
             nullable=True)
         credentials = fields.Any(
-            title=DESC['credentials'], description=DESC['credentials'],
-            nullable=True)
+            title=DESC['credentials'], description=DESC['credentials'])
         # relations
         hypervisor_profile = fields.String(
             title=DESC['hypervisor_profile'],
@@ -167,6 +167,8 @@ class SystemProfileResource(SecureResource):
             # read-only field
             io='r'
         )
+        gateway = fields.String(
+            title=DESC['gateway'], description=DESC['gateway'], nullable=True)
 
     # section for storage volumes collection operations
 
@@ -229,8 +231,6 @@ class SystemProfileResource(SecureResource):
         self._get_project_for_create(
             System.__tablename__, target_system.project_rel.name)
 
-        hyp_prof_name = properties.get('hypervisor_profile')
-
         # check if this is the first profile and make it the default
         if properties.get('default', False) is False:
             profile = SystemProfile.query.filter(
@@ -240,6 +240,7 @@ class SystemProfileResource(SecureResource):
             if profile is None:
                 properties['default'] = True
 
+        hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
             match = SystemProfile.query.join(
                 System, System.id == target_system.hypervisor_rel.id

@@ -86,8 +86,8 @@ class PlatBase(metaclass=abc.ABCMeta):
             self._hyp_type,
             self._hyp_system.name,
             self._hyp_system.hostname,
-            self._hyp_prof.credentials['username'],
-            self._hyp_prof.credentials['password'],
+            self._hyp_prof.credentials['user'],
+            self._hyp_prof.credentials['passwd'],
             None)
     # _create_hyp()
 

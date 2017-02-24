@@ -35,7 +35,7 @@ import click
 PROFILE_FIELDS = (
     'name', 'system', 'hypervisor_profile', 'operating_system', 'default',
     'cpu', 'memory', 'parameters', 'credentials', 'storage_volumes',
-    'system_ifaces'
+    'system_ifaces', 'gateway'
 )
 
 #
@@ -49,11 +49,9 @@ PROFILE_FIELDS = (
               help="number of cpus")
 @click.option('--memory', default='1gb', help="memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="set as default for system")
-@click.option('hypervisor_profile', '--parent',
+@click.option('hypervisor_profile', '--hyp',
               help="hypervisor profile required for activation")
-@click.option('parameters', '--params',
-              help="activation parameters (future use)")
-@click.option('--login',
+@click.option('--login', required=True,
               help="user:passwd for admin access to operating system")
 def prof_add(**kwargs):
     """
@@ -70,16 +68,15 @@ def prof_add(**kwargs):
     if (kwargs['hypervisor_profile'] is not None and
             kwargs['hypervisor_profile'].find('/') > -1):
         raise click.ClickException(
-            'invalid format for parent, specify profile name only')
+            'invalid format for hypervisor profile, specify profile name only')
 
     # login provided: parse it to json format expected by API
-    if kwargs['login'] is not None:
-        login = kwargs.pop('login')
-        try:
-            user, passwd = login.split(':', 1)
-        except (AttributeError, ValueError):
-            raise click.ClickException('invalid format specified for login')
-        kwargs['credentials'] = {'user': user, 'passwd': passwd}
+    login = kwargs.pop('login')
+    try:
+        user, passwd = login.split(':', 1)
+    except (AttributeError, ValueError):
+        raise click.ClickException('invalid format specified for login')
+    kwargs['credentials'] = {'user': user, 'passwd': passwd}
 
     item = client.SystemProfiles()
     for key, value in kwargs.items():
@@ -112,10 +109,9 @@ def prof_del(**kwargs):
 @click.option('--cpu', type=click.IntRange(min=1), help="number of cpus")
 @click.option('--memory', help="memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="set as default for system")
-@click.option('hypervisor_profile', '--parent',
+@click.option('--gateway', help='name of interface to use as gateway')
+@click.option('hypervisor_profile', '--hyp',
               help="hypervisor profile required for activation")
-@click.option('parameters', '--params',
-              help="activation parameters (future use)")
 @click.option('--login',
               help="user:passwd for admin access to operating system")
 def prof_edit(system, cur_name, **kwargs):
@@ -131,11 +127,11 @@ def prof_edit(system, cur_name, **kwargs):
     if (kwargs['hypervisor_profile'] is not None and
             kwargs['hypervisor_profile'].find('/') > -1):
         raise click.ClickException(
-            'invalid format for parent, specify profile name only')
+            'invalid format for hypervisor profile, specify profile name only')
 
     # login provided: parse it to json format expected by API
-    if kwargs['login'] is not None:
-        login = kwargs.pop('login')
+    login = kwargs.pop('login')
+    if login is not None:
         try:
             user, passwd = login.split(':', 1)
         except (AttributeError, ValueError):
@@ -163,7 +159,7 @@ def prof_edit(system, cur_name, **kwargs):
 @click.option('--cpu', help="filter by specified number of cpus")
 @click.option('--memory', help="filter by specified memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="list only default profiles")
-@click.option('hypervisor_profile', '--parent',
+@click.option('hypervisor_profile', '--hyp',
               help="filter by required hypervisor profile")
 def prof_list(**kwargs):
     """

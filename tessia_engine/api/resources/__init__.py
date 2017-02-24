@@ -42,6 +42,7 @@ from tessia_engine.api.resources.system_states import SystemStateResource
 from tessia_engine.api.resources.systems import SystemResource
 from tessia_engine.api.resources.system_profiles import SystemProfileResource
 from tessia_engine.api.resources.volume_types import VolumeTypeResource
+from tessia_engine.api.resources.repositories import RepositoryResource
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -69,6 +70,7 @@ RESOURCES = [
     RoleResource,
     UserRoleResource,
     VolumeTypeResource,
+    RepositoryResource,
 ]
 
 #

@@ -79,7 +79,7 @@ class SmAnaconda(SmBase):
         # add our specific bits
         self._info["credentials"] = self._profile.credentials
         self._info["sha512rootpwd"] = crypt.crypt(
-            self._profile.credentials["password"])
+            self._profile.credentials["passwd"])
         self._info['hostname'] = self._system.hostname
 
         for iface in self._info["ifaces"]:

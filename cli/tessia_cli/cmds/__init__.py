@@ -26,9 +26,10 @@ from tessia_cli.cmds.conf import key_gen
 from tessia_cli.cmds.job import job
 from tessia_cli.cmds.system import system
 from tessia_cli.cmds.perm import perm
-from tessia_cli.config import CONF
 from tessia_cli.cmds.net import net
+from tessia_cli.cmds.repo import repo
 from tessia_cli.cmds.storage import storage
+from tessia_cli.config import CONF
 from tessia_cli.utils import build_expect_header
 from tessia_cli.utils import version_verify
 
@@ -46,6 +47,7 @@ CMDS = [
     job,
     net,
     perm,
+    repo,
     storage,
     system,
 ]

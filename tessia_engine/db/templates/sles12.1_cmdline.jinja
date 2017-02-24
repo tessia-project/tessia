@@ -1,1 +1,7 @@
-rammdisk_size=131072 root=/dev/ram1 ro init=/linuxrc TERM=dumb UseVNC=1 HostIP={{ config["gw_iface"]["ip"] }} Netmask={{ config["gw_iface"]["mask"] }} Gateway={{ config["gw_iface"]["gateway"] }} HOSTNAME={{ config["hostname"] }} Nameserver={{ config["gw_iface"]["dns_1"] }} linuxrclog=/dev/console vncpassword=somepasswd Install={{ config["repos"][0] }} UseSSH=1 SSHpassword=somepasswd start_shell autoyast={{ config["autofile"] }} {% if config["system_type"] == "LPAR" %} MANUAL=0 PORTNAME=OSAPORT ReadChannel=0.0.f500 WriteChannel=0.0.f501 DataChannel=0.0.f502 InstNetDev=osa Layer2=0 OSAInterface=qeth OSAMedium=eth PortNo=0 {% endif %}
+{% if config["system_type"] == "LPAR" %}
+  {% set ccwgroup = config["gw_iface"]["attributes"]["ccwgroup"].split(',') %}
+  {% set special_args %} MANUAL=0 PORTNAME={{config["gw_iface"]["attributes"]["portname"]}} ReadChannel={{ccwgroup[0]}} WriteChannel={{ccwgroup[1]}} DataChannel={{ccwgroup[2]}} InstNetDev=osa Layer2={{1 if config["gw_iface"]["attributes"]["layer2"] else 0}} OSAInterface=qeth OSAMedium=eth PortNo={{config["gw_iface"]["attributes"]["portno"]}} {% endset %}
+{% else %}
+  {% set special_args = "" %}
+{% endif %}
+rammdisk_size=131072 root=/dev/ram1 ro init=/linuxrc TERM=dumb UseVNC=1 HostIP={{ config["gw_iface"]["ip"] }} Netmask={{ config["gw_iface"]["mask"] }} Gateway={{ config["gw_iface"]["gateway"] }} HOSTNAME={{ config["hostname"] }} Nameserver={{ config["gw_iface"]["dns_1"] }} linuxrclog=/dev/console vncpassword={{config["credentials"]["passwd"]}} Install={{ config["repos"][0] }} UseSSH=1 SSHpassword={{config["credentials"]["passwd"]}} start_shell autoyast={{ config["autofile"] }} {{special_args}}

@@ -23,6 +23,7 @@ from tessia_engine.state_machines.install.sm_base import SmBase
 from time import sleep
 from time import time
 
+import crypt
 import jinja2
 import logging
 
@@ -56,6 +57,9 @@ class SmAutoyast(SmBase):
         self._info["hostname"] = self._system.hostname
         self._info["autofile"] = self._autofile_url
         self._info["gw_iface"] = self._gw_iface
+        self._info["credentials"] = self._profile.credentials
+        self._info["sha512rootpwd"] = crypt.crypt(
+            self._profile.credentials["passwd"])
 
     # collect_info()
 

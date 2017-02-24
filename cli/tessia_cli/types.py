@@ -91,7 +91,7 @@ class QethGroup(click.ParamType):
                 devno = '0.0.' + devno[2:]
             elif devno.find('.') < 0:
                 devno = '0.0.' + devno
-            ret = re.match(r"^(([a-fA-F0-9]\.){2})?[a-fA-F0-9]{4}$", devno)
+            ret = re.match(r"^([a-fA-F0-9]\.){2}[a-fA-F0-9]{4}$", devno)
             if ret is None:
                 self.fail('{} is not a valid devno'.format(devno), param, ctx)
             result.append(devno)

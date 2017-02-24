@@ -45,7 +45,7 @@ MODEL_FIELDS = (
 def autotemplate():
     """manage the autoinstallation templates"""
     pass
-# conf()
+# autotemplate()
 
 @autotemplate.command('add')
 @click.option('--name', required=True, help="template's name identifier")
@@ -141,4 +141,3 @@ def template_print(**kwargs):
 
     click.echo(item.content, nl=False)
 # template_print()
-

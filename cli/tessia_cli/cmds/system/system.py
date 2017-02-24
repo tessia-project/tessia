@@ -114,6 +114,7 @@ def autoinstall(ctx=None, **kwargs):
 @click.option('cur_name', '--name', required=True, help='system to edit')
 @click.option('name', '--newname', help="new system name")
 @click.option('hypervisor', '--hyp', help="hypervisor's name")
+@click.option('--hostname', help="resolvable hostname or ip address")
 @click.option('--model', type=CONSTANT, help="system model (see model-list)")
 @click.option('--type', type=CONSTANT, help="system type (see types)")
 @click.option('--state', help="system state (see states)")

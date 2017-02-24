@@ -19,7 +19,8 @@ Module to deal with operations on KVM guests
 #
 # IMPORTS
 #
-from copy import deepcopy
+from tessia_engine.db.connection import MANAGER
+from tessia_engine.db.models import SystemProfile
 from tessia_engine.state_machines.install.plat_base import PlatBase
 from urllib.parse import urljoin
 from xml.etree import ElementTree
@@ -74,7 +75,11 @@ class PlatKvm(PlatBase):
 
         # we make a copy to make sure any changes are not lost when objects
         # expire after some commit
-        self._vols = deepcopy(self._guest_prof.storage_volumes_rel)
+        guest_prof = SystemProfile.query.filter_by(
+            id=self._guest_prof.id).one()
+        self._vols = list(guest_prof.storage_volumes_rel)
+        for vol in self._vols:
+            MANAGER.session.expunge(vol)
         self._kvm_vol_init(self._vols)
     # __init__()
 

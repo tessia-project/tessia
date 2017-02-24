@@ -185,11 +185,19 @@ class ConflictError(BaseHttpError):
         # build the error message by combining the human description from
         # resource's schema with values from offended item
         item_desc = []
-        for field in self.resource.Meta.human_identifiers:
-            schema_field = getattr(self.resource.Schema, field)
-            field_desc = schema_field.description
-            item_desc.append('{}={}'.format(
-                field_desc, getattr(conflict_item, field)))
+        try:
+            for field in self.resource.Meta.human_identifiers:
+                schema_field = getattr(self.resource.Schema, field)
+                field_desc = schema_field.description
+                item_desc.append('{}={}'.format(
+                    field_desc, getattr(conflict_item, field)))
+        # in case the human identifier do not match a field on the item
+        except AttributeError:
+            self._logger.debug(
+                'Returning generic msg: failed to match human identifier '
+                'with item')
+            return self.GENERIC_MSG
+
         conflict_msg = ', '.join(item_desc)
 
         return self.PRECISE_MSG.format(conflict_msg)
@@ -325,11 +333,19 @@ class IntegrityError(BaseHttpError):
         # build the error message by combining the human description from
         # dependent resource's schema with its values
         item_desc = []
-        for field in dep_resource.Meta.human_identifiers:
-            schema_field = getattr(dep_resource.Schema, field)
-            field_desc = schema_field.description
-            item_desc.append('{}={}'.format(
-                field_desc, getattr(dep_item, field)))
+        try:
+            for field in dep_resource.Meta.human_identifiers:
+                schema_field = getattr(dep_resource.Schema, field)
+                field_desc = schema_field.description
+                item_desc.append('{}={}'.format(
+                    field_desc, getattr(dep_item, field)))
+        # in case the human identifier do not match a field on the item
+        except AttributeError:
+            self._logger.debug(
+                'Returning generic msg: failed to match human identifier '
+                'with item')
+            return self.GENERIC_MSG
+
         error_msg = ', '.join(item_desc)
 
         return self.PRECISE_MSG.format(dep_resource.Meta.title, error_msg)

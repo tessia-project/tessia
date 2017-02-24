@@ -19,7 +19,7 @@ Unit test for storage_volumes resource module
 #
 # IMPORTS
 #
-from tessia_engine.api.resources.storage_volumes import MSG_INVALID_PTABLE
+from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_SIZE_MISMATCH
 from tessia_engine.api.resources.storage_volumes import MSG_INVALID_TYPE
 from tessia_engine.api.resources.storage_volumes import StorageVolumeResource
 from tessia_engine.db import models
@@ -123,7 +123,6 @@ class TestStorageVolume(TestSecureResource):
         """
         # the fields to be omitted and their expected values on response
         pop_fields = [
-            ('specs', None),
             ('part_table', None),
             ('desc', None),
             ('project', self._db_entries['Project'][0]['name']),
@@ -181,6 +180,7 @@ class TestStorageVolume(TestSecureResource):
             ('specs', 'something_wrong'),
             ('specs', True),
             ('specs', {'invalid': 'something'}),
+            ('specs', None),
             ('type', 'something_wrong'),
             ('type', 5),
             ('type', None),
@@ -274,7 +274,7 @@ class TestStorageVolume(TestSecureResource):
         def validate_resp(resp, parts_size, vol_size):
             """Helper validator"""
             self.assertEqual(resp.status_code, 400) # pylint: disable=no-member
-            msg = MSG_INVALID_PTABLE.format(parts_size, vol_size)
+            msg = MSG_PTABLE_SIZE_MISMATCH.format(parts_size, vol_size)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(msg, body['message'], body)
         # validate_resp()
@@ -518,7 +518,7 @@ class TestStorageVolume(TestSecureResource):
             'volume_id': '1500',
             'type': 'DASD',
             'part_table': {'type': 'msdos', 'table': []},
-            'specs': None,
+            'specs': {},
             'size': 5000,
             'server': storage_server.name,
         }

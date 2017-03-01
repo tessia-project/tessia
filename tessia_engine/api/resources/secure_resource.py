@@ -249,14 +249,19 @@ class SecureResource(ModelResource):
         it, otherwise the method tries to find a project where user has create
         permission. In case both fail a forbidden exception is raised.
         """
-        # project specified by an admin user: no permission verification needed
-        if project is not None and flask_global.auth_user.admin:
-            return project
-
         if project is None:
             project_id = None
         else:
-            project_id = Project.query.filter_by(name=project).one().id
+            try:
+                project_id = Project.query.filter_by(name=project).first().id
+            except AttributeError:
+                raise api_exceptions.ItemNotFoundError(
+                    'project', project, self)
+
+        # project specified by an admin user: no permission verification needed
+        if project_id is not None and flask_global.auth_user.admin:
+            return project
+
         # perform the db query
         project_match = self._get_project_for_action(
             'CREATE', resource_type, project_id)

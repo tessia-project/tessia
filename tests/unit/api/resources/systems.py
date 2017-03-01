@@ -378,20 +378,22 @@ class TestSystems(TestSecureResource):
 
     # test_update_valid_fields()
 
-    def test_update_assoc_error(self):
+    def test_add_update_assoc_error(self):
         """
-        Try to update a FK field to a value that has no entry in the associated
-        table.
+        Try creation and edit while setting a FK field to a value that has no
+        entry in the associated table.
         """
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'hypervisor', 'some_hypervisor')
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'state', 'some_state')
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'type', 'some_type')
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'model', 'some_model')
-    # test_update_assoc_error()
+        wrong_fields = [
+            ('project', 'some_project'),
+            ('owner', 'some_owner'),
+            ('hypervisor', 'some_hypervisor'),
+            ('state', 'some_state'),
+            ('type', 'some_type'),
+            ('model', 'some_model'),
+        ]
+        self._test_add_update_assoc_error(
+            'user_project_admin@domain.com', wrong_fields)
+    # test_add_update_assoc_error()
 
     def test_update_no_role(self):
         """

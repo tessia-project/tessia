@@ -213,14 +213,17 @@ class TestSystemModel(TestSecureResource):
         self.db.session.commit()
     # test_list_filtered()
 
-    def test_update_assoc_error(self):
+    def test_add_update_assoc_error(self):
         """
-        Try to update a FK field to a value that has no entry in the associated
-        table.
+        Try creation and edit while setting a FK field to a value that has no
+        entry in the associated table.
         """
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'arch', 'some_arch')
-    # test_update_assoc_error()
+        wrong_fields = [
+            ('arch', 'some_arch'),
+        ]
+        self._test_add_update_assoc_error(
+            'user_admin@domain.com', wrong_fields)
+    # test_add_update_assoc_error()
 
     def test_update_valid_fields(self):
         """

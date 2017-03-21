@@ -29,6 +29,7 @@ from tessia_engine.db.models import SystemProfile
 from tessia_engine.state_machines.base import BaseMachine
 from tessia_engine.state_machines.autoinstall.sm_anaconda import SmAnaconda
 from tessia_engine.state_machines.autoinstall.sm_autoyast import SmAutoyast
+from tessia_engine.state_machines.autoinstall.sm_debian import SmDebianInstaller
 
 import json
 import logging
@@ -57,6 +58,7 @@ INSTALL_REQ_PARAMS_SCHEMA = {
 SUPPORTED_DISTROS = {
     'rhel': SmAnaconda,
     'sles': SmAutoyast,
+    'ubuntu': SmDebianInstaller
 }
 
 #

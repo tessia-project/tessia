@@ -125,7 +125,7 @@ class SmBase(metaclass=abc.ABCMeta):
         Auxiliary method to get a ssh connection and shell to the target system
         being installed.
         """
-        timeout_trials = [5, 10, 20, 40]
+        timeout_trials = [5, 10, 20, 40, 60]
 
         hostname = self._profile.system_rel.hostname
         user = self._profile.credentials['user']
@@ -137,7 +137,10 @@ class SmBase(metaclass=abc.ABCMeta):
                 ssh_client.login(hostname, user=user, passwd=password)
                 ssh_shell = ssh_client.open_shell()
                 return ssh_client, ssh_shell
-            except ConnectionError:
+            # different errors can happen depending on the state of the
+            # target system, so we just catch them all and try again until
+            # system is stable
+            except Exception:
                 self._logger.warning("connection not available yet, "
                                      "retrying in %d seconds.", timeout)
                 sleep(timeout)
@@ -211,6 +214,7 @@ class SmBase(metaclass=abc.ABCMeta):
         result["server"] = storage_vol.server
         result["system_attributes"] = storage_vol.system_attributes.copy()
         result["specs"] = storage_vol.specs.copy()
+        result["size"] = storage_vol.size
 
         result["part_table"] = storage_vol.part_table
         result["is_root"] = False

@@ -1,0 +1,18 @@
+{%macro cio_ignore(svols, ifaces) -%}
+{% set cio_ignore_devnos = [] -%}
+{% for svol in svols -%}
+  {%if svol['type'] == 'DASD' and svol['is_root'] -%}
+    {% set _ = cio_ignore_devnos.append('!0.0.' + svol['volume_id']) -%}
+  {% elif svol['type'] == 'FCP' and svol['is_root'] -%}
+     {% for adapter in svol['specs']['adapters'] -%}
+       {% set _ = cio_ignore_devnos.append('!' + adapter['devno']) -%}
+     {% endfor -%}
+  {%- endif %}
+{%- endfor -%}
+{% for iface in ifaces -%}
+   {% set iface_devnos = iface['attributes']['ccwgroup'].split(',') -%}
+   {% set _ = cio_ignore_devnos.append('!' + iface_devnos[0] + '-' + iface_devnos[2]) -%}
+{%- endfor -%}
+cio_ignore=all,!condev,{{ cio_ignore_devnos | join(',') }}
+{%- endmacro %}
+{% if config['system_type'] != 'KVM' %}{{cio_ignore(config['svols'], config['ifaces'])}} zfcp.allow_lun_scan=0 zfcp.dif=0 s390-netdevice/choose_networktype=qeth s390-netdevice/qeth/choose={{'-'.join(gw_iface['attributes']['ccwgroup'].split(','))}} s390-netdevice/qeth/layer2={{'true' if gw_iface['attributes']['layer2'] else 'false'}} s390-netdevice/qeth/port=0{% else %}s390-netdevice/choose_networktype=virtio netcfg/choose_interface={{gw_iface['mac_addr']}}{% endif %} netcfg/use_autoconfig=false netcfg/disable_autoconfig=true netcfg/get_ipaddress={{gw_iface['ip']}} netcfg/get_netmask={{gw_iface['mask']}} netcfg/get_gateway={{gw_iface['gateway']}} netcfg/get_nameservers={{gw_iface['dns_1']}} netcfg/confirm_static=true priority=critical url={{autofile}} network-console/password={{config['credentials']['passwd']}} network-console/password-again={{config['credentials']['passwd']}} network-console/start=continue

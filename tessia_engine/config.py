@@ -78,7 +78,7 @@ class Config(object):
         """
         cls._config_file = os.environ.get('TESSIA_CFG', cls.DEFAULT_CFG)
 
-        # for development environments
+        # virtual env active: place files there
         virtual_env = os.environ.get('VIRTUAL_ENV')
         if (virtual_env is not None and len(cls._config_file) > 0 and
                 cls._config_file.startswith('/')):

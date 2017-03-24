@@ -51,6 +51,11 @@ class CreateDirRotatingFileHandler(RotatingFileHandler):
         Raises:
             NotImplementedError as the class should not be instantiated
         """
+        # virtual env active: place files there
+        virtual_env = os.environ.get('VIRTUAL_ENV')
+        if virtual_env is not None:
+            filename = '{}/{}'.format(virtual_env, filename)
+
         os.makedirs(os.path.abspath(os.path.dirname(filename)), exist_ok=True)
         super().__init__(filename, *args, **kwargs)
     # __init__()

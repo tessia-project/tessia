@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+# Copyright 2017 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+fqdn=${TESSIA_FQDN:-localhost}
+
+function _db_verify() {
+    # wait for db to be available and handle initialization/schema migration
+    # as needed.
+
+    # when auto_mode is enabled db schema upgrades are done automatically
+    local auto_mode=0
+    if [ "${TESSIA_DB_AUTOMANAGE,,}" = "true" ]; then
+        auto_mode=1
+    fi
+
+    local timeout=$(($(date +%s)+90))
+    local output
+    output=$(tessia-dbmanage current 2>&1)
+    local ret_code=$?
+    echo "info: waiting for db connection to be available (timeout 90 secs)..."
+    # exit code 3 from dbmanage means failed to connect to db so we wait
+    # until the exit code is different or timeout is reached
+    while [ $(date +%s) -lt $timeout ] && [ $ret_code -eq 3 ]; do
+        sleep 5
+        output=$(tessia-dbmanage current 2>&1)
+        ret_code=$?
+    done
+
+    # still getting code 3: timeout reached and db still not reachable
+    if [ $ret_code -eq 3 ]; then
+        echo "error: timed out while waiting for db connection"
+        echo $output
+        exit 1
+    # exit code 2: db not initialized
+    elif [ $ret_code -eq 2 ]; then
+        # auto mode disabled: report error and abort
+        if [ $auto_mode -eq 0 ]; then
+            echo "error: db not initialized and automanage not set, aborting." >2
+            exit 1
+        fi
+        # initialize db automatically
+        local cmd='tessia-dbmanage init'
+        echo "info: db not initialized, initializing with '$cmd'"
+        $cmd
+        echo "info: db initialization done"
+    # unknown error: report output from dbmanage and abort
+    elif [ $ret_code -ne 0 ]; then
+        echo $output
+        exit 1
+    # db initialized but schema is outdated (not at head): try auto schema upgrade
+    elif echo $output | grep -qv '^.* (head)$'; then
+        # auto mode disabled: report error and abort
+        if [ $auto_mode -eq 0 ]; then
+            echo "error: db schema version outdated and automanage not set, upgrade manually." >2
+            exit 1
+        fi
+        # upgrade db schema automatically
+        local cmd='tessia-dbmanage upgrade head'
+        echo "info: db schema outdated, upgrading with '$cmd'"
+        $cmd
+        echo "info: db schema upgrade done"
+    else
+        echo "info: db schema up-to-date, nothing to do"
+    fi
+}
+
+function _ssl_config() {
+    # verify if ssl certificate files are present and if not generate
+    # a self-signed one
+
+    # ssl files present: nothing to do
+    if [ -f "/etc/tessia/ssl.crt" ] && [ -f "/etc/tessia/ssl.key" ]; then
+        return
+    fi
+    echo "info: generating self-signed ssl certificate"
+
+    # exit if any command fails
+    set -e
+    # steps for creating ssl certificate specific to each hostname
+    tmp=$(mktemp -d)
+    cd $tmp
+    mkdir demoCA
+    echo $(date +%Y%m%d%H%M0%N) > demoCA/serial
+    touch demoCA/index.txt
+
+    # 1- create ca
+    openssl req -new -nodes -x509 -newkey rsa:2048 -keyout ca_priv.key -out ca.crt -days 3650 -subj '/CN=TESSIA CA/O=EXAMPLE.ORG/C=DE/ST=BW'
+
+    # 2- create csr (certificate signing request)
+    openssl req -newkey rsa:2048 -nodes -keyout ${fqdn}_priv.key -out ${fqdn}.csr -days 3650 -subj "/CN=$fqdn"
+
+    # 3- sign csr with ca key
+    openssl ca -batch -keyfile ca_priv.key -cert ca.crt -out ${fqdn}.crt -outdir . -in ${fqdn}.csr -subj "/C=DE/ST=BW/O=EXAMPLE.ORG/CN=${fqdn}" -days 3650
+
+    # copy files
+    cp ${fqdn}.crt /etc/tessia/ssl.crt
+    cp ${fqdn}_priv.key /etc/tessia/ssl.key
+    install -m 600 -o tessia -g tessia /etc/tessia/ssl.crt /etc/tessia/ssl.key /etc/tessia
+
+    # delete temp directory
+    cd - &>/dev/null && [ "$tmp" != "/" ] && rm -rf $tmp
+
+    echo "info: ssl certificate created"
+    # unset exit on first error
+    set +e
+}
+
+function _tweak_cfg() {
+    # set the url where auto install machine stores the generated autofiles so
+    # that the systems being installed can reach them
+    /assets/yamlman update /etc/tessia/engine.yaml auto_install.url http://${fqdn}
+
+    # set db credentials if env variable was set
+    if [ -n "$TESSIA_DB_URI" ]; then
+        /assets/yamlman update /etc/tessia/engine.yaml db.url "$TESSIA_DB_URI"
+    fi
+}
+
+# instance specific settings to config file
+_tweak_cfg
+
+# db handling
+_db_verify
+
+# generate ssl cert if not available
+_ssl_config
+
+# start the api and scheduler via supervisor
+echo "info: starting services..."
+/usr/bin/supervisord

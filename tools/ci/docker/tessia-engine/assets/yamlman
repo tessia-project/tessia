@@ -1,0 +1,139 @@
+#!/usr/bin/env python3
+# Copyright 2017 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Utility to allow handling of yaml files from command line
+"""
+
+#
+# IMPORTS
+#
+import argparse
+import sys
+import yaml
+
+#
+# CONSTANTS AND DEFINITIONS
+#
+
+#
+# CODE
+#
+def output(args):
+    """
+    Print the value of a given key in a yaml file to stdout
+
+    Args:
+        args (argparse.Namespace): namespace expected to contain args.key
+                                   and args.yamlfile
+
+    Returns:
+        int: 0 for successful operation, 1 for failure
+
+    Raises:
+        None
+    """
+    # the path from parent to sub-keys is denoted by dots
+    key_path = args.key.split('.')
+    with open(args.yamlfile, 'r') as yaml_fd:
+        parsed_yaml = yaml.safe_load(yaml_fd.read())
+    pointer = parsed_yaml
+    # traverse each sub-key from the specified path until
+    # we reach the target key
+    for key in key_path:
+        try:
+            pointer = pointer[key]
+        except (TypeError, KeyError):
+            print('error: key not found in file', file=sys.stderr)
+            return 1
+
+    print(pointer)
+    return 0
+# output()
+
+def update(args):
+    """
+    Update the value of a given key in a yaml file
+
+    Args:
+        args (argparse.Namespace): namespace expected to contain args.key
+                                   and args.yamlfile
+
+    Returns:
+        int: 0 for successful operation, 1 for failure
+
+    Raises:
+        None
+    """
+    key_path = args.key.split('.')
+    with open(args.yamlfile, 'r') as yaml_fd:
+        parsed_yaml = yaml.safe_load(yaml_fd.read())
+    pointer = parsed_yaml
+    try:
+        # traverse each sub-key from the specified path until
+        # we reach the target key
+        for key in key_path[:-1]:
+            pointer = pointer[key]
+        pointer[key_path[-1]] = args.value
+    except (TypeError, KeyError):
+        print('error: key not found in file', file=sys.stderr)
+        return 1
+
+    with open(args.yamlfile, 'w') as yaml_fd:
+        content = yaml.dump(parsed_yaml, default_flow_style=False)
+        yaml_fd.write(content)
+
+    return 0
+# update()
+
+def main():
+    """
+    Entry point, parses arguments provided and calls the appropriate function
+    """
+    # create the argument parser object and feed it with the possible options
+    parser = argparse.ArgumentParser(
+        description='Interface to manage yaml files from command line'
+    )
+
+    subparsers = parser.add_subparsers()
+
+    # output a key value
+    output_parser = subparsers.add_parser(
+        'output', help='output the value of a given key')
+    output_parser.add_argument('yamlfile', help=".yaml file")
+    output_parser.add_argument('key', help="key path (i.e. 'foo.bar')")
+    output_parser.set_defaults(func=output)
+
+    # update a key value
+    update_parser = subparsers.add_parser(
+        'update', help='update the value of a given key')
+    update_parser.add_argument('yamlfile', help=".yaml file")
+    update_parser.add_argument('key', help="key path (i.e. 'foo.bar')")
+    update_parser.add_argument('value', help='value to set')
+    update_parser.set_defaults(func=update)
+
+    # parser error can occur here to inform user of wrong options provided
+    parsed_args = parser.parse_args()
+
+    # no subcommand entered: update help usage
+    if not hasattr(parsed_args, 'func'):
+        parser.print_help()
+        return 1
+
+    return parsed_args.func(parsed_args)
+# main()
+
+if __name__ == '__main__':
+    sys.exit(main())

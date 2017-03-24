@@ -75,13 +75,6 @@ log:
       filename: log/tessia/common.log
       maxBytes: 70000000
       backupCount: 3
-    file_scheduler:
-      class: tessia_engine.log.CreateDirRotatingFileHandler
-      formatter: default
-      level: INFO
-      filename: log/tessia/scheduler.log
-      maxBytes: 70000000
-      backupCount: 3
   loggers:
     # uncomment this logger if you need to debug db related issues
     #sqlalchemy:
@@ -94,8 +87,10 @@ log:
       handlers: [console, file_api]
       level: DEBUG
       propagate: false
+    # the scheduler runs as a standalone process therefore we don't
+    # define a file based handler for it here.
     tessia_engine.scheduler:
-      handlers: [console, file_scheduler]
+      handlers: [console]
       level: DEBUG
       propagate: false
     # state machines are executed as jobs and have their own log file,

@@ -5,10 +5,10 @@ db:
   # location of the database (in sqlalchemy format)
   url: postgresql://engine:engine@localhost/engine
 
-install_machine:
+auto_install:
   # the url must be accessible from the systems being installed
   url: http://server/
-  www_dir: /srv/www/htdocs/
+  dir: var/tessia/www
 
 # authentication subsystem
 auth:
@@ -106,4 +106,4 @@ log:
       level: DEBUG
 
 scheduler:
-  jobs_dir: tessia-jobs
+  jobs_dir: var/tessia/jobs

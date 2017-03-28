@@ -20,6 +20,7 @@ Unit test for volume_types resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.volume_types import VolumeTypeResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +38,8 @@ class TestVolumeType(TestSecureResource):
     RESOURCE_URL = '/volume-types'
     # model associated with this resource
     RESOURCE_MODEL = models.VolumeType
+    # api object associated with the resource
+    RESOURCE_API = VolumeTypeResource
 
     @staticmethod
     def _entry_gen():

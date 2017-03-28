@@ -20,6 +20,7 @@ Unit test for users resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.users import UserResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +38,8 @@ class TestUser(TestSecureResource):
     RESOURCE_URL = '/users'
     # model associated with this resource
     RESOURCE_MODEL = models.User
+    # api object associated with the resource
+    RESOURCE_API = UserResource
 
     @staticmethod
     def _entry_gen():

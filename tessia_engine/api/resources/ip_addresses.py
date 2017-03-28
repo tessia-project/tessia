@@ -131,7 +131,7 @@ class IpAddressResource(SecureResource):
         try:
             subnet = Subnet.query.filter_by(name=name).one()
         except:
-            raise ItemNotFoundError('subnet', name, self.Schema)
+            raise ItemNotFoundError('subnet', name, self)
 
         return subnet
     # _fetch_subnet()

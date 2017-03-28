@@ -1,0 +1,163 @@
+#!/usr/bin/env python3
+# Copyright 2017 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Entry point to execute the test fixtures
+"""
+
+#
+# IMPORTS
+#
+import click
+import os
+import re
+import requests
+import subprocess
+
+#
+# CONSTANTS AND DEFINITIONS
+#
+CMD_COVERAGE = 'python3 -m coverage run -a --source=tessia_cli {}'
+CMD_COVERAGE_ERASE = "python3 -m coverage erase"
+CMD_COVERAGE_REPORT = "python3 -m coverage report -m"
+CMD_WRAPPER = '-m tests.wrapper {fixture_name} {data_url} {server_url}'
+MY_DIR = os.path.dirname(os.path.abspath(__file__))
+
+#
+# CODE
+#
+def _build_fixture_list():
+    """
+    """
+    fix_map = {}
+    fixture_dir = os.path.abspath('{}/fixtures'.format(MY_DIR))
+
+    for entry in os.listdir(fixture_dir):
+        if entry.startswith('_') or not entry.endswith('.py'):
+            continue
+        fixture_name = re.sub('.py[co]?$', '', os.path.basename(entry))
+        if fixture_name not in fix_map:
+            fix_map[fixture_name] = True
+
+    return fix_map
+# _build_fixture_list()
+
+@click.command('exec')
+@click.option(
+    'fixtures', '--fixture', multiple=True,
+    help="fixture name to execute; can be specified multiple times")
+@click.option(
+    'data_url', '--data-url', required=True,
+    help="url where test data is stored")
+@click.option(
+    'server_url', '--server-url', required=True,
+    help="url where API is running")
+@click.option(
+    'cleaner', '--cleaner', type=click.Path(exists=True, resolve_path=True),
+    help="cleaner hook to use before each fixture")
+def exec_(fixtures, data_url, server_url, cleaner):
+    """
+    execute one or more fixtures
+    """
+    fix_map = _build_fixture_list()
+
+    # build the list of fixtures to execute
+    run_list = []
+    if len(fixtures) == 0:
+        run_list = fix_map.keys()
+    else:
+        for fixture in fixtures:
+            try:
+                fix_map[fixture]
+            except KeyError:
+                raise click.ClickException(
+                    "unknown fixture '{}'".format(fixture))
+            run_list.append(fixture)
+    click.echo('[init] fixtures to execute: {}'.format(', '.join(run_list)))
+
+    os.chdir(os.path.abspath('{}/..'.format(MY_DIR)))
+    subprocess.run(CMD_COVERAGE_ERASE, shell=True, check=1)
+
+    # run each fixture
+    for fixture_name in run_list:
+        if cleaner is not None:
+            click.echo("[pre-start] calling cleaner '{}'".format(cleaner))
+            clean_status = subprocess.call(cleaner, shell=True)
+            if clean_status != 0:
+                raise click.ClickException(
+                    'cleaner failed with exit code {}'.format(clean_status))
+        # make sure connection is back, sometimes there is a delay
+        while True:
+            try:
+                requests.head(server_url)
+            except requests.exceptions.HTTPError:
+                pass
+            except requests.exceptions.ConnectionError:
+                continue
+            except Exception:
+                raise
+            break
+
+        # switch to parent dir to make sure paths are found
+        exec_cmd = CMD_WRAPPER.format(
+            fixture_name=fixture_name,
+            data_url=data_url,
+            server_url=server_url)
+        cmd_str = CMD_COVERAGE.format(exec_cmd)
+
+        click.echo('[exec] {}'.format(cmd_str))
+        # execute and return exit code
+        result = subprocess.run(
+            cmd_str, shell=True, stderr=subprocess.STDOUT, check=0)
+        if result.returncode != 0:
+            click.echo(result.stdout)
+            raise click.ClickException(
+                "fixture '{}' failed with exit code {}".format(
+                    fixture_name, result.returncode)
+            )
+
+        click.echo("finished fixture '{}'".format(fixture_name))
+
+    subprocess.run(CMD_COVERAGE_REPORT, shell=True, check=1)
+# exec_()
+
+@click.command('list')
+def list_():
+    """
+    list the available fixtures
+    """
+    for fixture in _build_fixture_list():
+        click.echo(fixture)
+# list_()
+
+@click.group()
+def root():
+    """
+    Root group containing all commands.
+    """
+    pass
+# root()
+
+def main():
+    """
+    Entry point, executes the root group.
+    """
+    root.add_command(exec_)
+    root.add_command(list_)
+    root()
+# main()
+
+if __name__ == '__main__':
+    main()

@@ -77,6 +77,19 @@ def _authenticate_basic(auth_value):
     # find user entry in database
     user_entry = User.query.filter_by(login=user).first()
     if user_entry is not None:
+        # update db in case user information has changed
+        changed = False
+        if user_entry.name != result['fullname']:
+            changed = True
+            user_entry.name = result['fullname']
+        if user_entry.title != result.get('title', None):
+            changed = True
+            user_entry.title = result.get('title', None)
+
+        if changed:
+            API.db.session.add(user_entry)
+            API.db.session.commit()
+
         return user_entry
 
     allow_auto_create = CONF.get_config().get(

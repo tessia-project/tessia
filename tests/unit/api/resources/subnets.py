@@ -20,9 +20,9 @@ Unit test for subnets resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.subnets import SubnetResource
 from tessia_engine.db import models
 
-import ipaddress
 import json
 
 #
@@ -40,6 +40,8 @@ class TestSubnet(TestSecureResource):
     RESOURCE_URL = '/subnets'
     # model associated with this resource
     RESOURCE_MODEL = models.Subnet
+    # api object associated with the resource
+    RESOURCE_API = SubnetResource
 
     @classmethod
     def _entry_gen(cls):
@@ -275,27 +277,6 @@ class TestSubnet(TestSecureResource):
         self._test_del_many_roles(combos)
     # test_del_many_roles()
 
-    def test_del_has_dependent(self):
-        """
-        Try to delete an item which has a ip address associated with it.
-        """
-        entry = self._create_many_entries(
-            'user_hw_admin@domain.com', 1)[0][0]
-
-        net_obj = ipaddress.ip_network(entry['address'])
-        # create the dependent object
-        dep_ip = models.IpAddress(
-            subnet=entry['name'],
-            address=str(net_obj[1]),
-            modifier="user_hw_admin@domain.com",
-            desc="",
-            project=self._db_entries['Project'][0]['name'],
-            owner="user_hw_admin@domain.com"
-        )
-        self._test_del_has_dependent(
-            'user_hw_admin@domain.com', entry['id'], dep_ip)
-    # test_del_has_dependent()
-
     def test_del_invalid_id(self):
         """
         Test if api correctly handles the case when trying to delete an
@@ -429,14 +410,19 @@ class TestSubnet(TestSecureResource):
         self.db.session.commit()
     # test_update_valid_fields()
 
-    def test_update_assoc_error(self):
+    def test_add_update_assoc_error(self):
         """
-        Try to update a FK field to a value that has no entry in the associated
-        table.
+        Try creation and edit while setting a FK field to a value that has no
+        entry in the associated table.
         """
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'zone', 'some_zone')
-    # test_update_assoc_error()
+        wrong_fields = [
+            ('project', 'some_project'),
+            ('owner', 'some_owner'),
+            ('zone', 'some_zone'),
+        ]
+        self._test_add_update_assoc_error(
+            'user_hw_admin@domain.com', wrong_fields)
+    # test_add_update_assoc_error()
 
     def test_update_no_role(self):
         """

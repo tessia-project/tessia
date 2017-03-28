@@ -29,6 +29,8 @@ from flask_potion.routes import Route
 from tessia_engine.api import exceptions as api_exceptions
 from tessia_engine.db import exceptions as db_exceptions
 from tessia_engine.db.models import Project
+from tessia_engine.db.models import ResourceMixin
+from tessia_engine.db.models import Role
 from tessia_engine.db.models import RoleAction
 from tessia_engine.db.models import UserRole
 from werkzeug.exceptions import Forbidden
@@ -247,14 +249,19 @@ class SecureResource(ModelResource):
         it, otherwise the method tries to find a project where user has create
         permission. In case both fail a forbidden exception is raised.
         """
-        # project specified by an admin user: no permission verification needed
-        if project is not None and flask_global.auth_user.admin:
-            return project
-
         if project is None:
             project_id = None
         else:
-            project_id = Project.query.filter_by(name=project).one().id
+            try:
+                project_id = Project.query.filter_by(name=project).first().id
+            except AttributeError:
+                raise api_exceptions.ItemNotFoundError(
+                    'project', project, self)
+
+        # project specified by an admin user: no permission verification needed
+        if project_id is not None and flask_global.auth_user.admin:
+            return project
+
         # perform the db query
         project_match = self._get_project_for_action(
             'CREATE', resource_type, project_id)
@@ -297,7 +304,7 @@ class SecureResource(ModelResource):
         ).filter(
             UserRole.user_id == flask_global.auth_user.id
         ).filter(
-            RoleAction.role_id == UserRole.role_id
+            Role.id == UserRole.role_id
         ).filter(
             UserRole.project_id == project_id
         )
@@ -337,7 +344,7 @@ class SecureResource(ModelResource):
             int: id of created item
         """
         # model is a special resource: only admins can handle it
-        if not hasattr(self.meta.model, 'project_id'):
+        if not issubclass(self.meta.model, ResourceMixin):
             # user is admin: the operation is allowed
             if flask_global.auth_user.admin:
                 return self.manager.create(properties).id
@@ -350,9 +357,10 @@ class SecureResource(ModelResource):
         project = self._get_project_for_create(
             self.meta.model.__tablename__, properties.get('project', None))
 
-        # create the item beloging to the user requesting it
         properties['project'] = project
-        properties['owner'] = flask_global.auth_user.login
+        # if not defined create the item beloging to the user requesting it
+        properties['owner'] = properties.get('owner') or \
+            flask_global.auth_user.login
 
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,
@@ -378,7 +386,7 @@ class SecureResource(ModelResource):
             bool: True
         """
         # model is a special resource: only admins can handle it
-        if not hasattr(self.meta.model, 'project_id'):
+        if not issubclass(self.meta.model, ResourceMixin):
             # user is admin: the operation is allowed
             if flask_global.auth_user.admin:
                 self.manager.delete_by_id(id)
@@ -413,7 +421,7 @@ class SecureResource(ModelResource):
                   found or a restricted user has no permission to see them
         """
         # model is a special resource: listing is allowed for all
-        if not hasattr(self.meta.model, 'project_id'):
+        if not issubclass(self.meta.model, ResourceMixin):
             return self.manager.paginated_instances(**kwargs)
         # non restricted user: regular resource listing is allowed
         elif not flask_global.auth_user.restricted:
@@ -457,7 +465,7 @@ class SecureResource(ModelResource):
         item = self.manager.read(id)
 
         # model is a special resource: reading is allowed for all
-        if not hasattr(self.meta.model, 'project_id'):
+        if not issubclass(self.meta.model, ResourceMixin):
             return item
         # non restricted user: regular resource reading is allowed
         elif not flask_global.auth_user.restricted:
@@ -494,7 +502,7 @@ class SecureResource(ModelResource):
 
         """
         # model is a special resource: only admins can handle it
-        if not hasattr(self.meta.model, 'project_id'):
+        if not issubclass(self.meta.model, ResourceMixin):
             # not an admin user: action is prohibited
             if not flask_global.auth_user.admin:
                 raise Forbidden(

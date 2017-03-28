@@ -20,6 +20,7 @@ Unit test for projects resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.projects import ProjectResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +38,8 @@ class TestProject(TestSecureResource):
     RESOURCE_URL = '/projects'
     # model associated with this resource
     RESOURCE_MODEL = models.Project
+    # api object associated with the resource
+    RESOURCE_API = ProjectResource
 
     @staticmethod
     def _entry_gen():

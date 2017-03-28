@@ -20,6 +20,7 @@ Unit test for storage_servers resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.storage_servers import StorageServerResource
 from tessia_engine.db import models
 
 #
@@ -37,6 +38,8 @@ class TestStorageServer(TestSecureResource):
     RESOURCE_URL = '/storage-servers'
     # model associated with this resource
     RESOURCE_MODEL = models.StorageServer
+    # api object associated with the resource
+    RESOURCE_API = StorageServerResource
 
     @classmethod
     def _entry_gen(cls):
@@ -302,14 +305,19 @@ class TestStorageServer(TestSecureResource):
         self.db.session.commit()
     # test_update_valid_fields()
 
-    def test_update_assoc_error(self):
+    def test_add_update_assoc_error(self):
         """
-        Try to update a FK field to a value that has no entry in the associated
-        table.
+        Try creation and edit while setting a FK field to a value that has no
+        entry in the associated table.
         """
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'type', 'some_type')
-    # test_update_assoc_error()
+        wrong_fields = [
+            ('project', 'some_project'),
+            ('owner', 'some_owner'),
+            ('type', 'some_type'),
+        ]
+        self._test_add_update_assoc_error(
+            'user_hw_admin@domain.com', wrong_fields)
+    # test_add_update_assoc_error()
 
     def test_update_no_role(self):
         """

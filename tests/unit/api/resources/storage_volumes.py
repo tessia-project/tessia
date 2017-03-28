@@ -19,7 +19,7 @@ Unit test for storage_volumes resource module
 #
 # IMPORTS
 #
-from tessia_engine.api.resources.storage_volumes import MSG_INVALID_PTABLE
+from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_SIZE_MISMATCH
 from tessia_engine.api.resources.storage_volumes import MSG_INVALID_TYPE
 from tessia_engine.api.resources.storage_volumes import StorageVolumeResource
 from tessia_engine.db import models
@@ -123,7 +123,6 @@ class TestStorageVolume(TestSecureResource):
         """
         # the fields to be omitted and their expected values on response
         pop_fields = [
-            ('specs', None),
             ('part_table', None),
             ('desc', None),
             ('project', self._db_entries['Project'][0]['name']),
@@ -181,6 +180,10 @@ class TestStorageVolume(TestSecureResource):
             ('specs', 'something_wrong'),
             ('specs', True),
             ('specs', {'invalid': 'something'}),
+            ('specs', None),
+            # although type field is a fk (and would be a 422 association
+            # error) it actually returns 400 because it tries to match with the
+            # storage server type
             ('type', 'something_wrong'),
             ('type', 5),
             ('type', None),
@@ -274,7 +277,7 @@ class TestStorageVolume(TestSecureResource):
         def validate_resp(resp, parts_size, vol_size):
             """Helper validator"""
             self.assertEqual(resp.status_code, 400) # pylint: disable=no-member
-            msg = MSG_INVALID_PTABLE.format(parts_size, vol_size)
+            msg = MSG_PTABLE_SIZE_MISMATCH.format(parts_size, vol_size)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(msg, body['message'], body)
         # validate_resp()
@@ -518,7 +521,7 @@ class TestStorageVolume(TestSecureResource):
             'volume_id': '1500',
             'type': 'DASD',
             'part_table': {'type': 'msdos', 'table': []},
-            'specs': None,
+            'specs': {},
             'size': 5000,
             'server': storage_server.name,
         }
@@ -558,18 +561,19 @@ class TestStorageVolume(TestSecureResource):
         self.db.session.commit()
     # test_update_valid_fields()
 
-    def test_update_assoc_error(self):
+    def test_add_update_assoc_error(self):
         """
-        Try to update a FK field to a value that has no entry in the associated
-        table.
+        Try creation and edit while setting a FK field to a value that has no
+        entry in the associated table.
         """
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'server', 'some_server')
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'project', 'some_project')
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'owner', 'some_owner')
-    # test_update_assoc_error()
+        wrong_fields = [
+            ('project', 'some_project'),
+            ('owner', 'some_owner'),
+            ('server', 'some_server'),
+        ]
+        self._test_add_update_assoc_error(
+            'user_hw_admin@domain.com', wrong_fields)
+    # test_add_update_assoc_error()
 
     def test_update_no_role(self):
         """

@@ -23,6 +23,7 @@ from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.utils import fetch_item
 from tessia_cli.output import print_items
+from tessia_cli.types import CONSTANT
 from tessia_cli.types import LIBVIRT_XML
 from tessia_cli.types import QETH_GROUP
 from tessia_cli.utils import fetch_and_delete
@@ -55,7 +56,7 @@ ATTR_BY_TYPE = {
 @click.command(name='iface-add')
 @click.option('--system', required=True, help="target system")
 @click.option('--name', required=True, help="interface name")
-@click.option('--type', required=True,
+@click.option('--type', required=True, type=CONSTANT,
               help="interface type (see iface-types)")
 @click.option('--osname', required=True,
               help="interface name in operating system (i.e. en0)")
@@ -64,7 +65,7 @@ ATTR_BY_TYPE = {
 @click.option('--ip', help="ip address to be assigned to interface")
 @click.option('--layer2', type=click.BOOL,
               help="enable layer2 mode (OSA only)")
-@click.option('--ccwgroup', help="device channels (OSA only)")
+@click.option('--ccwgroup', type=QETH_GROUP, help="device channels (OSA only)")
 @click.option('--portno', help="port number (OSA only)")
 @click.option('--portname', help="port name (OSA only)")
 @click.option('--hostiface', help="host iface to bind (KVM only)")
@@ -211,7 +212,7 @@ def iface_detach(system, profile, iface):
 @click.option('--system', required=True, help="system containing interface")
 @click.option('cur_name', '--name', required=True, help="interface name")
 @click.option('name', '--newname', help="new interface name")
-@click.option('--type',
+@click.option('--type', type=CONSTANT,
               help="interface type (see iface-types)")
 @click.option('--osname', help="interface name in operating system (i.e. en0)")
 @click.option('mac_address', '--mac', help="mac address")
@@ -310,7 +311,7 @@ def iface_edit(system, cur_name, **kwargs):
 @click.command(name='iface-list')
 @click.option('--system', help='the system to list')
 @click.option('--name', help="filter by interface name")
-@click.option('--type',
+@click.option('--type', type=CONSTANT,
               help="filter by specified interface type")
 @click.option('--osname', help="filter by specified operating system name")
 @click.option('mac_address', '--mac',

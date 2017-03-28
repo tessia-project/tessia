@@ -1,6 +1,6 @@
 # System authorization information
 auth --enableshadow --passalgo=sha512
-sshpw --username=root {{config["credentials"]["password"]}} --plaintext
+sshpw --username=root {{config["credentials"]["passwd"]}} --plaintext
 # Use network installation
 url --url="{{config["repos"][0]}}"
 repo --name="Server-HighAvailability" --baseurl={{config["repos"][0]}}/addons/HighAvailability

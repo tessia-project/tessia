@@ -50,6 +50,23 @@ class AutoTemplate(click.ParamType):
 
 AUTO_TEMPLATE = AutoTemplate()
 
+class Constant(click.ParamType):
+    """
+    Represents a string constant, usually used for (storage/system/etc.)
+    types.
+    """
+    name = 'string'
+
+    def convert(self, value, param, ctx):
+        """
+        Converts to uppercase.
+        """
+        return value.upper()
+    # convert()
+# Constant
+
+CONSTANT = Constant()
+
 class QethGroup(click.ParamType):
     """
     Represents a qeth group for use with OSA cards
@@ -74,7 +91,7 @@ class QethGroup(click.ParamType):
                 devno = '0.0.' + devno[2:]
             elif devno.find('.') < 0:
                 devno = '0.0.' + devno
-            ret = re.match(r"^(([a-fA-F0-9]\.){2})?[a-fA-F0-9]{4}$", devno)
+            ret = re.match(r"^([a-fA-F0-9]\.){2}[a-fA-F0-9]{4}$", devno)
             if ret is None:
                 self.fail('{} is not a valid devno'.format(devno), param, ctx)
             result.append(devno)

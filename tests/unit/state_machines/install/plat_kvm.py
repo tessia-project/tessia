@@ -20,7 +20,6 @@ Module for the TestPlatKvm class.
 # IMPORTS
 #
 
-from tessia_engine.db.models import SystemIface
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.state_machines.install import plat_base, plat_kvm
 from tessia_engine.state_machines.install.sm_base import SmBase
@@ -63,12 +62,10 @@ class TestPlatKvm(TestCase):
             "kvm054/kvm_kvm054_install_dasd")
         self._hyper_profile_entry = self._profile_entry.hypervisor_profile_rel
         self._repo_entry = self._os_entry.repository_rel[0]
-        default_gw_name = self._profile_entry.parameters.get("gateway_iface")
-
-        system_id = self._profile_entry.system_rel.id
-        self._gw_iface_entry = SystemIface.query.filter_by(
-            system_id=system_id,
-            name=default_gw_name).one()
+        self._gw_iface_entry = self._profile_entry.gateway_rel
+        # gateway interface not defined: use first available
+        if self._gw_iface_entry is None:
+            self._gw_iface_entry = self._profile_entry.system_ifaces_rel[0]
 
         # TODO: this is very ugly, but it is the only way to create
         # the parameters necessary for the creation of the PlatKvm.

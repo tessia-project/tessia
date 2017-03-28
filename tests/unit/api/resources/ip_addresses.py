@@ -20,6 +20,7 @@ Unit test for ip_addresses resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.ip_addresses import IpAddressResource
 from tessia_engine.db import models
 
 import ipaddress
@@ -40,6 +41,8 @@ class TestIpAddress(TestSecureResource):
     RESOURCE_URL = '/ip-addresses'
     # model associated with this resource
     RESOURCE_MODEL = models.IpAddress
+    # api object associated with the resource
+    RESOURCE_API = IpAddressResource
 
     @classmethod
     def _entry_gen(cls):
@@ -371,14 +374,19 @@ class TestIpAddress(TestSecureResource):
         self.db.session.commit()
     # test_update_valid_fields()
 
-    def test_update_assoc_error(self):
+    def test_add_update_assoc_error(self):
         """
-        Try to update a FK field to a value that has no entry in the associated
-        table.
+        Try creation and edit while setting a FK field to a value that has no
+        entry in the associated table.
         """
-        self._test_update_assoc_error(
-            'user_admin@domain.com', 'subnet', 'some_subnet')
-    # test_update_assoc_error()
+        wrong_fields = [
+            ('project', 'some_project'),
+            ('owner', 'some_owner'),
+            ('subnet', 'some_subnet'),
+        ]
+        self._test_add_update_assoc_error(
+            'user_hw_admin@domain.com', wrong_fields)
+    # test_add_update_assoc_error()
 
     def test_update_no_role(self):
         """

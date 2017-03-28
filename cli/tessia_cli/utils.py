@@ -160,7 +160,7 @@ def size_to_str(size):
 def str_to_size(size_str):
     """
     Receives a human size (i.e. 10GB) and converts to an integer size in
-    mbytes.
+    megabytes.
 
     Args:
         size_str (str): human size to be converted to integer
@@ -175,10 +175,10 @@ def str_to_size(size_str):
         return None
 
     units = {
-        'KB': 1/1024,
+        'KB': 1/1000,
         'MB': 1,
-        'GB': 1024,
-        'TB': 1024*1024,
+        'GB': 1000,
+        'TB': 1000*1000,
     }
     size_str = size_str.upper()
     try:

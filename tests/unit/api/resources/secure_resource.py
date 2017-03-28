@@ -292,6 +292,9 @@ class TestSecureResource(TestCase):
         Create the database instance and the flask app client to allow
         requests.
         """
+        if cls.RESOURCE_API is None:
+            raise RuntimeError('Child class did not define RESOURCE_API')
+
         cls.db = DbUnit
         cls.db.create_db()
 
@@ -359,7 +362,7 @@ class TestSecureResource(TestCase):
                     "login": "user_project_admin@domain.com"
                 },
                 {
-                    "name": "hardware_admin",
+                    "name": "lab_admin",
                     "admin": False,
                     "title": "Title of user",
                     "restricted": False,
@@ -387,22 +390,22 @@ class TestSecureResource(TestCase):
                 {
                     "project": project_name,
                     "user": "user_user@domain.com",
-                    "role": "User"
+                    "role": "USER"
                 },
                 {
                     "project": project_name,
                     "user": "user_privileged@domain.com",
-                    "role": "Privileged user"
+                    "role": "USER_PRIVILEGED"
                 },
                 {
                     "project": project_name,
                     "user": "user_project_admin@domain.com",
-                    "role": "Project admin"
+                    "role": "ADMIN_PROJECT"
                 },
                 {
                     "project": project_name,
                     "user": "user_hw_admin@domain.com",
-                    "role": "Hardware admin"
+                    "role": "ADMIN_LAB"
                 }
             ],
         }
@@ -768,7 +771,7 @@ class TestSecureResource(TestCase):
         role = models.UserRole(
             project=self._db_entries['Project'][0]['name'],
             user=login_rest,
-            role="User"
+            role="USER_RESTRICTED"
         )
         self.db.session.add(role)
         self.db.session.commit()
@@ -875,41 +878,78 @@ class TestSecureResource(TestCase):
             self.db.session.commit()
     # _test_update_valid_fields()
 
-    def _test_update_assoc_error(self, login, field, value):
+    def _test_add_update_assoc_error(self, login, wrong_fields):
         """
-        Try to update a FK field to a value that has no entry in the associated
-        table.
+        Try creation and edit while setting a FK field to a value that has no
+        entry in the associated table.
         """
-        # api resource defined with description for field: use it
-        # the logic is similar to what the ItemNotFoundError exception does
-        if (hasattr(self.RESOURCE_API, 'Schema')
-                and hasattr(self.RESOURCE_API.Schema, field)):
-            schema_field = getattr(self.RESOURCE_API.Schema, field)
-            desc = schema_field.description
-        else:
-            desc = field
+        # create a map of descriptions found in the schema for each field
+        desc_by_field = {}
+        for entry in wrong_fields:
+            field = entry[0]
+            # api resource defined with description for field: use it
+            # the logic is similar to what the ItemNotFoundError exception does
+            if (hasattr(self.RESOURCE_API, 'Schema')
+                    and hasattr(self.RESOURCE_API.Schema, field)):
+                schema_field = getattr(self.RESOURCE_API.Schema, field)
+                desc = schema_field.description
+            else:
+                desc = field
+            desc_by_field[field] = desc
 
-        # create one item to work with
-        entries = self._create_many_entries(login, 1)[0]
+        data = next(self._get_next_entry)
 
-        # perform the update request
-        update_fields = {
-            'id': entries[0]['id'],
-            field: value
-        }
-        resp = self._do_request(
-            'update', '{}:a'.format(login), update_fields)
+        # apply wrong values for creation
+        for entry in wrong_fields:
+            field = entry[0]
+            value = entry[1]
+            work_data = data.copy()
+            work_data[field] = value
+            resp = self._do_request(
+                'create', '{}:a'.format(login), work_data)
 
-        # validate that an association error occurred
-        # pylint: disable=no-member
-        self.assertEqual(resp.status_code, 422)
-        body = json.loads(resp.get_data(as_text=True))
-        self.assertEqual(
-            body['message'],
-            "No associated item found with value '{}' for field '{}'".format(
-                value, desc)
-        )
-    #  _test_update_assoc_error()
+            # validate that an association error occurred
+            self.assertEqual(resp.status_code, 422) # pylint: disable=no-member
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(
+                body['message'],
+                "No associated item found with value '{}' for field "
+                "'{}'".format(
+                    value, desc_by_field[field])
+            )
+
+            # regex for error message provided: check it
+            if len(entry) > 2:
+                body = json.loads(resp.get_data(as_text=True))
+                self.assertRegex(body['message'], entry[2])
+
+        # for update, create an item with good values first
+        item = self._create_many_entries(login, 1)[0][0]
+        # apply wrong values
+        for entry in wrong_fields:
+            field = entry[0]
+            value = entry[1]
+            work_data = {'id': item['id']}
+            work_data[field] = value
+            resp = self._do_request(
+                'update', '{}:a'.format(login), work_data)
+
+            # validate that an association error occurred
+            self.assertEqual(resp.status_code, 422) # pylint: disable=no-member
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(
+                body['message'],
+                "No associated item found with value '{}' for field "
+                "'{}'".format(
+                    value, desc_by_field[field])
+            )
+
+            # regex for error message provided: check it
+            if len(entry) > 2:
+                body = json.loads(resp.get_data(as_text=True))
+                self.assertRegex(body['message'], entry[2])
+
+    #  _test_add_update_assoc_error()
 
     def _test_add_update_conflict(self, login, unique_field):
         """

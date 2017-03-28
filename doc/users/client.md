@@ -450,17 +450,17 @@ We start by creating the profile:
 Item added successfully.
 [user@host ~]$ tessia system prof-list --system=lpar65 
 
-Profile name              : profile1
-System                    : lpar65
-Parent hypervisor profile : 
-Operating system          : 
-Default                   : True
-CPU(s)                    : 2
-Memory                    : 1.0GB
-Parameters                : 
-Credentials               : {'user': 'root', 'passwd': 'mypasswd'}
-Storage volumes           : 
-Network interfaces        : 
+Profile name                : profile1
+System                      : lpar65
+Required hypervisor profile : 
+Operating system            : 
+Default                     : True
+CPU(s)                      : 2
+Memory                      : 1.0GB
+Parameters                  : 
+Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
+Storage volumes             : 
+Network interfaces          : 
 ```
 
 Most parameters are self-explanatory and the *Credentials* field is used when a new operating system is installed. We will see this working soon in the next step, but before we move to
@@ -471,17 +471,17 @@ the installation we still need to attach our network interface:
 Network interface attached successfully.
 [user@host ~]$ tessia system prof-list --system=lpar65
 
-Profile name              : profile1
-System                    : lpar65
-Parent hypervisor profile : 
-Operating system          : 
-Default                   : True
-CPU(s)                    : 2
-Memory                    : 1.0GB
-Parameters                : 
-Credentials               : {'passwd': 'mypasswd', 'user': 'root'}
-Storage volumes           : 
-Network interfaces        : [default osa/192.168.0.16]
+Profile name                : profile1
+System                      : lpar65
+Required hypervisor profile : 
+Operating system            : 
+Default                     : True
+CPU(s)                      : 2
+Memory                      : 1.0GB
+Parameters                  : 
+Credentials                 : {'passwd': 'mypasswd', 'user': 'root'}
+Storage volumes             : 
+Network interfaces          : [default osa/192.168.0.16]
 ```
 
 We can see our interface and the IP we assigned to it in the *Network interfaces*  list. We are almost done, let's not forget to attach our disk as well:
@@ -491,17 +491,17 @@ We can see our interface and the IP we assigned to it in the *Network interfaces
 Volume attached successfully.
 [user@host ~]$ tessia system prof-list --system=lpar65 
 
-Profile name              : profile1
-System                    : lpar65
-Parent hypervisor profile : 
-Operating system          : 
-Default                   : True
-CPU(s)                    : 2
-Memory                    : 1.0GB
-Parameters                : 
-Credentials               : {'user': 'root', 'passwd': 'mypasswd'}
-Storage volumes           : [DSK8K16/3950]
-Network interfaces        : [default osa/192.168.0.16]
+Profile name                : profile1
+System                      : lpar65
+Required hypervisor profile : 
+Operating system            : 
+Default                     : True
+CPU(s)                      : 2
+Memory                      : 1.0GB
+Parameters                  : 
+Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
+Storage volumes             : [DSK8K16/3950]
+Network interfaces          : [default osa/192.168.0.16]
 ```
 
 We can see the newly attached disk in the *Storage volumes* field. We are ready to do our first installation!

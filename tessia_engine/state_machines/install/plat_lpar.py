@@ -114,8 +114,8 @@ class PlatLpar(PlatBase):
         self._logger.info('Rebooting the system now!')
 
         hostname = system_profile.system_rel.hostname
-        user = system_profile.credentials['username']
-        password = system_profile.credentials['password']
+        user = system_profile.credentials['user']
+        password = system_profile.credentials['passwd']
 
         ssh_client = SshClient()
         ssh_client.login(hostname, user=user, passwd=password,

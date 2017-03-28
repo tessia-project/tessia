@@ -182,6 +182,31 @@ class TestAuth(TestCase):
 
         # validate a 200 ok was received
         self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+
+        # exercise when user information changed
+        mock_resp = {
+            'login': 'user_x_0@domain.com',
+            'fullname': 'New name of user_x_0',
+            'title': 'New job title of user_x_0',
+        }
+        self._mock_login_man.authenticate.return_value = mock_resp
+
+        # perform the request
+        auth_header = 'basic {}'.format(
+            b64encode(b'user_x_0@domain.com:a').decode('ascii'))
+        resp = self.app.get(
+            '/users',
+            headers={'Authorization': auth_header}
+        )
+
+        # validate a 200 ok was received
+        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        # see if information was updated in db
+        user = self.models.User.query.filter_by(
+            login=mock_resp['login']).one()
+        self.assertEqual(user.name, mock_resp['fullname'])
+        self.assertEqual(user.title, mock_resp['title'])
+
     # test_basic_noauto_success()
 
     def test_basic_wrong(self):

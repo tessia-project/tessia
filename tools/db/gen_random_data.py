@@ -88,16 +88,16 @@ def create_permissions():
                 restricted = True
             # hardware admin
             elif i == 2:
-                role = 'Hardware admin'
+                role = 'ADMIN_LAB'
             # project admin
             elif i == 3:
-                role = 'Project admin'
+                role = 'ADMIN_PROJECT'
             # restricted user
             elif i == 4:
-                role = 'Restricted user'
+                role = 'USER_RESTRICTED'
             # privileged user
             elif i == 5:
-                role = 'Privileged user'
+                role = 'USER_PRIVILEGED'
             # no role
             elif i == 6:
                 role = None

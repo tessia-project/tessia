@@ -248,6 +248,7 @@ def part_list(server, volume_id, **kwargs):
 @click.option('volume_id', '--id', required=True, help='volume id')
 @click.option('--size', required=True, help="volume size (i.e. 10gb)")
 @click.option('--type', required=True, help="volume type (see vol-types)")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
 def vol_add(**kwargs):
@@ -298,7 +299,7 @@ def vol_del(**kwargs):
 @click.option('--size',
               help="volume size (i.e. 10gb)")
 @click.option('--type', help="volume type (see vol-types)")
-@click.option('--owner', help="volume's owner login")
+@click.option('--owner', help="owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
 # options specific to FCP type
@@ -442,7 +443,7 @@ def vol_list(**kwargs):
     """
     # at least one qualifier must be specified so that we don't have to
     # retrieve the full list
-    if kwargs['server'] is None and kwargs['id'] is None:
+    if kwargs['server'] is None and kwargs['volume_id'] is None:
         raise click.ClickException(
             'at least one of --server or --id must be specified')
 

@@ -286,36 +286,6 @@ class TestSmBase(TestCase):
         self.addCleanup(restore_parameters)
     # _sched_restore_profile_params()
 
-    def test_no_default_gateway(self):
-        """
-        Test the case that the profile does not have a default gateway
-        defined.
-        """
-
-        profile = utils.get_profile("kvm054/kvm_kvm054_install")
-        self._sched_restore_profile_params(profile)
-        profile.parameters = {}
-        self.session.commit()
-
-        with self.assertRaisesRegex(RuntimeError, "No gateway"):
-            self._create_sm(self._child_cls, "rhel7.2",
-                            "kvm054/kvm_kvm054_install", "RHEL7.2")
-    # test_no_default_gateway()
-
-    def test_default_gateway_not_found(self):
-        """
-        Test the case that the default_gateway is not found.
-        """
-        profile = utils.get_profile("kvm054/kvm_kvm054_install")
-        self._sched_restore_profile_params(profile)
-        profile.parameters = {"gateway_iface": "non existent iface"}
-        self.session.commit()
-
-        with self.assertRaisesRegex(RuntimeError, "Gateway interface"):
-            self._create_sm(self._child_cls, "rhel7.2",
-                            "kvm054/kvm_kvm054_install", "RHEL7.2")
-    # test_no_default_gateway()
-
     def test_check_install_error(self):
         """
         Check the case an error occur when testing the installed system

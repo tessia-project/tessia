@@ -170,7 +170,7 @@ class TestAutoInstallMachine(TestCase):
             "os": "Nonono"
         })
 
-        with self.assertRaisesRegex(RuntimeError, "OS Nonono"):
+        with self.assertRaisesRegex(ValueError, "OS Nonono"):
             machine.AutoInstallMachine(request)
     # test_nonexistent_os()
 
@@ -183,7 +183,7 @@ class TestAutoInstallMachine(TestCase):
             "profile": "kvm_kvm054_install",
             "template": "Nonono"
         })
-        with self.assertRaisesRegex(RuntimeError, "Template Nonono"):
+        with self.assertRaisesRegex(ValueError, "Template Nonono"):
             machine.AutoInstallMachine(request)
     # test_nonexistent_template()
 

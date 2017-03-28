@@ -146,7 +146,7 @@ class UserKeyResource(SecureResource):
         # user that such key_id exists)
         if (user_key.user_rel.id != flask_global.auth_user.id and
                 not flask_global.auth_user.admin):
-            raise ItemNotFoundError('id', id, self.Schema)
+            raise ItemNotFoundError('id', id, self)
 
         # must be authenticated with password
         if flask_global.auth_method != 'basic':
@@ -220,7 +220,7 @@ class UserKeyResource(SecureResource):
         # user that such key_id exists)
         if (user_key.user_rel.id != flask_global.auth_user.id and
                 not flask_global.auth_user.admin):
-            raise ItemNotFoundError('id', id, self.Schema)
+            raise ItemNotFoundError('id', id, self)
 
         return self.manager.read(id)
     # do_read()

@@ -19,7 +19,8 @@ Permissions root group to which all commands are attached
 #
 # IMPORTS
 #
-from tessia_cli.cmds.perm.team import CMDS as team_cmds
+from tessia_cli.cmds.perm.project import CMDS as project_cmds
+from tessia_cli.cmds.perm.role import CMDS as role_cmds
 from tessia_cli.cmds.perm.user import CMDS as user_cmds
 
 import click
@@ -27,7 +28,7 @@ import click
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMDS = team_cmds + user_cmds
+CMDS = project_cmds + role_cmds + user_cmds
 
 #
 # CODE
@@ -35,7 +36,7 @@ CMDS = team_cmds + user_cmds
 @click.group()
 def perm():
     """
-    manage users, teams and roles
+    manage users, projects and roles
     """
     pass
 # perm()

@@ -30,8 +30,10 @@ from tessia_engine.db.models import BASE
 
 import argparse
 import logging
+import io
 import json
 import os
+import sqlalchemy
 import sys
 
 #
@@ -61,7 +63,7 @@ def create_rev(args):
                      autogenerate=True)
 # create_rev()
 
-def downgrade(args):
+def downgrade_db(args):
     """
     Downgrade (migrate) an existing db schema to a previous revision
 
@@ -76,7 +78,7 @@ def downgrade(args):
         alembic exceptions
     """
     command.downgrade(get_alembic_cfg(), args.revision, sql=args.sql)
-# downgrade()
+# downgrade_db()
 
 def feed_db(args):
     """
@@ -86,13 +88,13 @@ def feed_db(args):
         db_insert(json.loads(json_data.read()))
 # feed_db()
 
-def get_alembic_cfg():
+def get_alembic_cfg(stdout=sys.stdout):
     """
     Return alembic's config object after filling it with the correct database
     url retrieve from engine's configuration.
 
     Args:
-        None
+        stdout (io.TextIOBase): stream to use as the stdout by alembic module
 
     Returns:
         alembic.config.Config: object
@@ -105,7 +107,7 @@ def get_alembic_cfg():
     except KeyError:
         raise RuntimeError('No database configuration found')
 
-    alembic_cfg = Config(ALEMBIC_CFG)
+    alembic_cfg = Config(ALEMBIC_CFG, stdout=stdout)
     alembic_cfg.set_main_option("sqlalchemy.url", db_url)
     return alembic_cfg
 # get_alembic_cfg()
@@ -156,7 +158,12 @@ def main():
     if args is None:
         return 1
 
-    args.func(args)
+    try:
+        args.func(args)
+    # db connection failed: report error and return specific exit code 3
+    except sqlalchemy.exc.OperationalError as exc:
+        print('error: {}'.format(str(exc)), file=sys.stderr)
+        sys.exit(3)
 
     return 0
 # main()
@@ -182,11 +189,10 @@ def parse_cmdline():
 
     subparsers = parser.add_subparsers()
 
-    # create: create a new revision (migration) file
-    create_parser = subparsers.add_parser(
-        'create-rev', help='create a new revision (migration) script')
-    create_parser.add_argument('message', help='commit message')
-    create_parser.set_defaults(func=create_rev)
+    # current: output the current db revision
+    current_parser = subparsers.add_parser(
+        'current', help='show current db revision')
+    current_parser.set_defaults(func=current)
 
     # downgrade: downgrade existing schema to a previous revision
     downgrade_parser = subparsers.add_parser(
@@ -195,26 +201,18 @@ def parse_cmdline():
     downgrade_parser.add_argument(
         '-s', '--sql', help='sql output only (offline mode)',
         required=False, action='store_true')
-    downgrade_parser.set_defaults(func=downgrade)
+    downgrade_parser.set_defaults(func=downgrade_db)
 
-    # feed-db: add data to database
+    # feed: add data to database
     feed_parser = subparsers.add_parser(
-        'feed-db', help='insert data from file to database')
+        'feed', help='insert data from a file in the database')
     feed_parser.add_argument('filename', help='json file containing data')
     feed_parser.set_defaults(func=feed_db)
 
-    # init-db: initialize a brand new database
+    # init: initialize a new database
     init_parser = subparsers.add_parser(
-        'init-db', help='create all tables and content for a new db')
+        'init', help='create all tables and content for a new db')
     init_parser.set_defaults(func=init_db)
-
-    # list: list existing schema revisions
-    list_parser = subparsers.add_parser(
-        'list', help='list available db revisions')
-    list_parser.add_argument(
-        '-v', '--verbose', help='verbose output',
-        required=False, action='store_true')
-    list_parser.set_defaults(func=list_revs)
 
     # reset: drop all tables from models and reset revisions
     reset_parser = subparsers.add_parser(
@@ -225,14 +223,7 @@ def parse_cmdline():
     reset_parser.add_argument(
         '-y', '--yes', help='answer yes to confirmation question',
         required=False, action='store_true')
-    reset_parser.set_defaults(func=reset)
-
-    # show: show information about a revision
-    show_parser = subparsers.add_parser(
-        'show', help='show information about a revision')
-    show_parser.add_argument(
-        'revision', help="revision id (use 'current' for current db revision")
-    show_parser.set_defaults(func=show)
+    reset_parser.set_defaults(func=reset_db)
 
     # upgrade: upgrade existing schema to a newer revision
     upgrade_parser = subparsers.add_parser(
@@ -241,7 +232,30 @@ def parse_cmdline():
     upgrade_parser.add_argument(
         '-s', '--sql', help='sql output only (offline mode)',
         required=False, action='store_true')
-    upgrade_parser.set_defaults(func=upgrade)
+    upgrade_parser.set_defaults(func=upgrade_db)
+
+    # revision related commands
+
+    # rev-create: create a new revision (migration) file
+    create_parser = subparsers.add_parser(
+        'rev-create', help='create a new revision (migration) script')
+    create_parser.add_argument('message', help='commit message')
+    create_parser.set_defaults(func=create_rev)
+
+    # rev-list: list existing schema revisions
+    list_parser = subparsers.add_parser(
+        'rev-list', help='list available db revisions')
+    list_parser.add_argument(
+        '-v', '--verbose', help='verbose output',
+        required=False, action='store_true')
+    list_parser.set_defaults(func=list_revs)
+
+    # rev-show: show information about a revision
+    show_parser = subparsers.add_parser(
+        'rev-show', help='show information about a revision')
+    show_parser.add_argument(
+        'revision', help="revision id (use 'current' for current db revision")
+    show_parser.set_defaults(func=show_rev)
 
     # parser error can occur here to inform user of wrong options provided
     parsed_args = parser.parse_args()
@@ -254,7 +268,7 @@ def parse_cmdline():
     return parsed_args
 # parse_cmdline()
 
-def reset(args):
+def reset_db(args):
     """
     Drop all tables, and reset migration table. Optionally remove existing
     revisions (migration files).
@@ -318,9 +332,9 @@ def reset(args):
             logger.info('Removing migration file %s', file_path)
             os.remove('{}/{}'.format(versions_dir, file_path))
 
-# reset()
+# reset_db()
 
-def show(args):
+def show_rev(args):
     """
     Show details on the revision specified
 
@@ -338,9 +352,32 @@ def show(args):
         return
 
     command.show(get_alembic_cfg(), args.revision)
-# show()
+# show_rev()
 
-def upgrade(args):
+def current(args):
+    """
+    Show the current database revision
+
+    Args:
+        args (argparse.Namespace): namespace expected to contain args.revision
+
+    Returns:
+        None
+
+    Raises:
+        alembic exceptions
+    """
+    mem_stdout = io.StringIO()
+    command.current(get_alembic_cfg(stdout=mem_stdout))
+    mem_stdout.seek(0)
+    output = mem_stdout.read().strip()
+    if len(output) == 0:
+        print('error: db not initialized', file=sys.stderr)
+        sys.exit(2)
+    print(output)
+# current()
+
+def upgrade_db(args):
     """
     Upgrade (migrate) an existing db schema to a newer revision
 
@@ -355,7 +392,7 @@ def upgrade(args):
         alembic exceptions
     """
     command.upgrade(get_alembic_cfg(), args.revision, sql=args.sql)
-# upgrade()
+# upgrade_db()
 
 if __name__ == '__main__':
     sys.exit(main())

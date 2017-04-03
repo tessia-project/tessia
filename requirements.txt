@@ -15,7 +15,7 @@ ldap3>=1.3.3
 # rest-api
 flask>=0.10.1
 # manage db session from flask (requirement from potion)
-Flask-SQLAlchemy>=2.1
+Flask-SQLAlchemy>=2.2
 # help create the endpoints for the rest-api
 flask-potion>=0.12.6
 # template engine for the automatic installation files

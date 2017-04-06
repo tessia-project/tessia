@@ -16,6 +16,7 @@
 Module containing the sqlalchemy models for the database
 """
 
+# pylint: disable=too-many-lines
 #
 # IMPORTS
 #

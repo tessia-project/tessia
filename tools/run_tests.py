@@ -30,8 +30,8 @@ import sys
 CMD_COVERAGE = "python3 -m coverage run -a --source={} {}"
 CMD_COVERAGE_ERASE = "python3 -m coverage erase"
 CMD_COVERAGE_REPORT = "python3 -m coverage report -m"
-SUBCMD_UNITTEST_DISCOVER = "-m unittest discover -v {} -p '*.py'"
-SUBCMD_UNITTEST_MODULE = "-m unittest -v {}"
+SUBCMD_UNITTEST_DISCOVER = "-m unittest discover {} -p '*.py'"
+SUBCMD_UNITTEST_MODULE = "-m unittest {}"
 
 #
 # CODE

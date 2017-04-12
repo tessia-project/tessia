@@ -1,0 +1,40 @@
+version: '2'
+services:
+    tessia-engine:
+        image: tessia-engine
+        environment:
+            # for production use one should create an override compose file
+            # and set these variables
+            TESSIA_DB_AUTOMANAGE: "true"
+            TESSIA_DB_URI: "postgresql://engine:pass4engine@db/engine"
+            TESSIA_FQDN: "localhost"
+        ports:
+            - 80:80
+            - 443:443
+            - 5000:5000
+        networks:
+            - frontend
+            - backend
+        volumes:
+            - engine-etc:/etc/tessia
+            - engine-jobs:/var/tessia/jobs
+    db:
+        image: docker.io/postgres:9.6
+        environment:
+            POSTGRES_INITDB_ARGS: "-E UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8"
+            # for production use one should create an override compose file
+            # and set these variables
+            POSTGRES_PASSWORD: pass4engine
+            POSTGRES_USER: engine
+        networks:
+            - backend
+        volumes:
+            - db-data:/var/lib/postgresql/data
+networks:
+    backend:
+    frontend:
+
+volumes:
+    db-data:
+    engine-etc:
+    engine-jobs:

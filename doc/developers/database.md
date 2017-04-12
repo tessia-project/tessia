@@ -69,14 +69,14 @@ sed -i 's,^  debug:.*$,  debug: True,g' $TESSIA_CFG
 tessia-dbmanage reset
 
 # initialize the database (this will also create the basic types needed by the application)
-tessia-dbmanage init-db
+tessia-dbmanage init
 
 # if you want to populate your database with some random data you can follow the steps below
 # first, generate some random entries with the helper script:
 ../../tools/db/gen_random_data.py > /tmp/data.json
 
 # then feed the database with the generated file:
-tessia-dbmanage feed-db /tmp/data.json
+tessia-dbmanage feed /tmp/data.json
 ```
 
 ## How to make changes to the database schema
@@ -85,7 +85,7 @@ Once you have a dev environment ready to go (see previous section), follow these
 
 - Update the `db/models.py` file accordingly
 - Create a new revision in alembic to have the database migration versioned. All database handling should be done through the command `tessia-dbmanage`.
-  Assuming you have a shell with the virtualenv active, type for example `tessia-dbmanage create '0.0.2 (add new table foo)'`.
+  Assuming you have a shell with the virtualenv active, type for example `tessia-dbmanage rev-create '0.0.2 (add new table foo)'`.
   Alembic creates a new revision and a migration script (python file) under `db/alembic/versions` for you.
 - Alembic is configured to autogenerate the changes in the migration script, but it's not 100% safe. Check the file to make sure the correct changes are being applied.
   You might also want to see the resulting sql for verification, this can be accomplished by using the -s option of the upgrade option as in `tessia-dbmanage upgrade -s +1`.

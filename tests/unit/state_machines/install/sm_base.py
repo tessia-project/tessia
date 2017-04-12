@@ -201,10 +201,10 @@ class TestSmBase(TestCase):
         autofile_name = '{}-{}'.format(system_entry.name, profile_entry.name)
 
         self._mock_urljoin.assert_called_with(
-            mock_config_dict["install_machine"]["url"], autofile_name)
+            mock_config_dict["auto_install"]["url"], autofile_name)
 
         self._mock_os.path.join.assert_called_with(
-            mock_config_dict["install_machine"]["www_dir"], autofile_name)
+            mock_config_dict["auto_install"]["dir"], autofile_name)
 
         self._mock_jinja2.Template.assert_called_with(template_entry.content)
         mock_template = self._mock_jinja2.Template.return_value

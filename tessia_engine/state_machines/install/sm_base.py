@@ -104,9 +104,9 @@ class SmBase(metaclass=abc.ABCMeta):
         autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
         autofile_name = autofile_name.replace(' ', '-')
         self._autofile_url = urljoin(
-            config["install_machine"]["url"], autofile_name)
+            config["auto_install"]["url"], autofile_name)
         self._autofile_path = os.path.join(
-            config["install_machine"]["www_dir"], autofile_name)
+            config["auto_install"]["dir"], autofile_name)
         # set during collect_info state
         self._info = None
     # __init__()

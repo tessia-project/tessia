@@ -22,6 +22,7 @@ Module to handle configuration file parsing
 from logging.config import dictConfig
 
 import os
+import sys
 import yaml
 
 #
@@ -76,22 +77,38 @@ class Config(object):
         Raises:
             IOError: if config file cannot be read
         """
-        cls._config_file = os.environ.get('TESSIA_CFG', cls.DEFAULT_CFG)
+        def _read_file(file_path):
+            """Auxiliar method to read the content of a file"""
+            with open(file_path, 'r') as file_fd:
+                file_content = file_fd.read()
+            return file_content
+        # _read_file()
 
-        # for development environments
-        virtual_env = os.environ.get('VIRTUAL_ENV')
-        if (virtual_env is not None and len(cls._config_file) > 0 and
-                cls._config_file.startswith('/')):
-            cls._config_file = '{}{}'.format(virtual_env, cls._config_file)
-
-        try:
-            config_fd = open(cls._config_file, 'r')
-            config_content = config_fd.read()
-            config_fd.close()
-        except IOError as exc:
-            msg = 'Failed to read configuration file: {}'.format(
-                cls._config_file)
-            raise IOError(msg) from exc
+        cls._config_file = os.environ.get('TESSIA_CFG')
+        # env variable defined: it takes precedence
+        if cls._config_file is not None:
+            try:
+                config_content = _read_file(cls._config_file)
+            except IOError as exc:
+                msg = 'Could not read config file from {}'.format(
+                    cls._config_file)
+                raise IOError(msg) from exc
+        # no env variable: look at standard locations
+        else:
+            # try to read conf file from absolute path
+            cls._config_file = cls.DEFAULT_CFG
+            try:
+                config_content = _read_file(cls._config_file)
+            except IOError:
+                # retry at prefixed locations (virtualenv or installed
+                # by setuptools)
+                cls._config_file = '{}{}'.format(sys.prefix, cls.DEFAULT_CFG)
+                try:
+                    config_content = _read_file(cls._config_file)
+                except IOError as exc:
+                    msg = 'Could not read config file from {}'.format(
+                        ' , '.join([cls.DEFAULT_CFG, cls._config_file]))
+                    raise IOError(msg) from exc
 
         # let any exceptions from yaml lib reach the user to give a hint of
         # what to fix

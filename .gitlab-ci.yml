@@ -1,22 +1,51 @@
+before_script:
+    # make sure the deps from orc are met and up-to-date
+    - pip3 install --user -U pip -rtools/ci/requirements.txt
+    # checkout to correct branch
+    - git checkout -b ${CI_COMMIT_REF_NAME:=$CI_BUILD_REF_NAME}
+
 variables:
   GIT_STRATEGY: clone
 
 stages:
-  - prepare
-  - unit_tests
-  - pylint
+  - build
+#  - deploy
 
-prepare:
-  stage: prepare
+build:
+  stage: build
   script:
-    - pip3 install -r requirements.txt
+    - tools/ci/orc build
 
-unit_tests:
-  stage: unit_tests
-  script:
-    - tools/run_tests.py
-
-pylint:
-  stage: pylint
-  script:
-    - tools/run_pylint.py
+# TODO: further configure for deployments
+#deploy_review:
+#  stage: deploy
+#  script:
+#    - tools/ci/orc deploy
+#  environment:
+#    name: review/$CI_COMMIT_REF_NAME
+#    url: https://$CI_ENVIRONMENT_SLUG.example.com
+#  only:
+#    - branches
+#  except:
+#    master
+#
+#deploy_staging:
+#  stage: deploy
+#  script:
+#    - echo "Deploy to staging server"
+#  environment:
+#    name: staging
+#    url: https://staging.example.com
+#  only:
+#  - master
+#
+#deploy_release:
+#  stage: deploy
+#  script:
+#    - echo "Deploy to production server"
+#  environment:
+#    name: production
+#    url: https://example.com
+#  when: manual
+#  only:
+#  - master

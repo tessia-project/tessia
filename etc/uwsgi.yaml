@@ -1,0 +1,17 @@
+uwsgi:
+  # only valid uWSGI options are tolerated
+  strict: true
+  master: true
+  processes: 4
+  # allow the GIL to be enabled so that api code can run threads
+  enable-threads: true
+  manage-script-name: true
+  mount: /=tessia_engine.api.cmd:APP
+  https: 0.0.0.0:5000,/etc/tessia/ssl.crt,/etc/tessia/ssl.key
+  # docker stops containers by issuing SIGTERM, but by default uwsgi uses
+  # sigterm to reload the workers, we change this default here.
+  die-on-term: true
+  stats: 127.0.0.1:9191
+  uid: tessia
+  gid: tessia
+  static-map: /=/var/tessia/www

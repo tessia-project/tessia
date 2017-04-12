@@ -1,13 +1,14 @@
 # tessia engine configuration file
-install_machine:
-  # the url must be accessible from the systems being installed
-  url: http://server/
-  www_dir: /srv/www/htdocs/
 
 # database configuration
 db:
   # location of the database (in sqlalchemy format)
   url: postgresql://engine:engine@localhost/engine
+
+auto_install:
+  # the url must be accessible from the systems being installed
+  url: http://server/
+  dir: var/tessia/www
 
 # authentication subsystem
 auth:
@@ -60,21 +61,49 @@ log:
       formatter: default
       level: INFO
       stream: ext://sys.stderr
-    ldap:
+    file_api:
       class: tessia_engine.log.CreateDirRotatingFileHandler
       formatter: default
       level: INFO
-      filename: /var/log/tessia-engine/ldap.log
+      filename: log/tessia/api.log
+      maxBytes: 70000000
+      backupCount: 3
+    file_common:
+      class: tessia_engine.log.CreateDirRotatingFileHandler
+      formatter: default
+      level: INFO
+      filename: log/tessia/common.log
       maxBytes: 70000000
       backupCount: 3
   loggers:
+    # uncomment this logger if you need to debug db related issues
+    #sqlalchemy:
+    #  handlers: [console]
+    #  level: DEBUG
     tessia_engine:
+      handlers: [console, file_common]
+      level: DEBUG
+    tessia_engine.api:
+      handlers: [console, file_api]
+      level: DEBUG
+      propagate: false
+    # the scheduler runs as a standalone process therefore we don't
+    # define a file based handler for it here.
+    tessia_engine.scheduler:
       handlers: [console]
       level: DEBUG
-    tessia_engine.auth.ldap:
-      # it will be logged to console too by propagation
-      handlers: [ldap]
+      propagate: false
+    # state machines are executed as jobs and have their own log file,
+    # therefore we don't define a file based handler for them in this
+    # configuration.
+    tessia_engine.state_machines:
+      handlers: [console]
+      level: DEBUG
+    # tessia_baselib is used by the state machines in jobs so we don't
+    # define a file based handler either.
+    tessia_baselib:
+      handlers: [console]
       level: DEBUG
 
 scheduler:
-  jobs_dir: /var/tessia/jobs
+  jobs_dir: var/tessia/jobs

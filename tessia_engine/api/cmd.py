@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Entry point to start REST service
+Entry point to start REST-like service
 """
 
 #
@@ -31,9 +31,9 @@ import argparse
 #
 # CODE
 #
-def main():
+def setup():
     """
-    Entry point to start the rest-like service
+    Perform initial configuration before creating Flask app
     """
     # create the argument parser object and feed it with the possible options
     parser = argparse.ArgumentParser(
@@ -51,7 +51,17 @@ def main():
     # the log configuration is correctly applied after the module was imported
     # because the api itself is only created upon first attribute access
     API.app.config['DEBUG'] = parsed_args.debug
-    API.app.run()
+
+    return API.app
+# setup()
+
+APP = setup()
+
+def main():
+    """
+    Entry point to start the rest-like service in standalone mode
+    """
+    APP.run()
 # main()
 
 if __name__ == '__main__':

@@ -299,7 +299,7 @@ class TestModels(TestCase):
                     # the field name in the model
                     'attr_name': 'role',
                     # the value of the field
-                    'value': 'User',
+                    'value': 'USER',
                 },
             ]),
             (self.models.UserRole, [
@@ -317,7 +317,7 @@ class TestModels(TestCase):
                     # the field name in the model
                     'attr_name': 'role',
                     # the value of the field
-                    'value': 'User',
+                    'value': 'USER',
                 },
                 {
                     # the relationship name in the model

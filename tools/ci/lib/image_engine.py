@@ -20,10 +20,13 @@ Module specialized in handling the tessia-engine image.
 # IMPORTS
 #
 from lib.image import DockerImage
+import os
 
 #
 # CONSTANTS AND DEFINITIONS
 #
+MY_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.abspath('{}/../../..'.format(MY_DIR))
 
 #
 # CODE
@@ -52,12 +55,12 @@ class DockerImageEngine(DockerImage):
         self._logger.info(
             '[image-build] downloading tessia_baselib to context dir')
 
-        ret_code, output = self._session.run('cat {}/baselib_url'.format(
-            context_dir))
+        ret_code, output = self._session.run(
+            "grep 'egg=tessia_baselib' {}/requirements.txt".format(ROOT_DIR))
         if ret_code != 0:
             raise RuntimeError(
                 'Failed to determine tessia_baselib source url: {}'.format(output))
-        baselib_url = output.strip()
+        baselib_url = output.strip().rsplit('@', 1)[0]
 
         ret_code, output = self._session.run(
             'git clone {} {}/assets/tessia_baselib.git'.format(

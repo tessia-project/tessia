@@ -21,4 +21,4 @@ flask-potion>=0.12.6
 # template engine for the automatic installation files
 jinja2>=2.8
 # tessia_baselib and its dependencies
-https://gitlab.com/tessia-project/tessia-baselib.git#egg=tessia_baselib
+https://gitlab.com/tessia-project/tessia-baselib.git@afff743e8bff#egg=tessia_baselib

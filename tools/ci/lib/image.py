@@ -144,8 +144,9 @@ class DockerImage(object):
             '[image-build] preparing context dir at %s', context_dir)
         # send the content from source docker dir to target context dir
         self._session.send(docker_dir, work_dir)
-        ret_code, output = self._session.run('cp {}/{}.git {}/assets/'.format(
-            work_dir, self._git_name, context_dir))
+        ret_code, output = self._session.run(
+            'git clone {}/{}.git {}/assets/{}.git'.format(
+                work_dir, self._git_name, context_dir, self._git_name))
         if ret_code != 0:
             raise RuntimeError(
                 'Failed to copy git bundle to context dir: {}'.format(output))

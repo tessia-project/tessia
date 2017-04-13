@@ -242,12 +242,7 @@ class _AppManager(object):
             return BASE
         # patched_base()
 
-        config_dict = CONF.get_config()
-        try:
-            db_url = config_dict['db']['url']
-        except KeyError:
-            raise RuntimeError('No database configuration found')
-        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+        app.config['SQLALCHEMY_DATABASE_URI'] = MANAGER.engine.url
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
         flask_sa.SQLAlchemy.make_declarative_base = patched_base
         flask_sa.SQLAlchemy.create_session = lambda *args, **kwargs: \

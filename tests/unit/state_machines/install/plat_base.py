@@ -89,11 +89,7 @@ class TestPlatBase(TestCase):
         # TODO: this is very ugly, but it is the only way to create
         # the parameters necessary for the creation of the PlatBase.
         self._parsed_gw_iface = (
-            SmBase._parse_iface( # pylint: disable=protected-access
-                self._gw_iface_entry, True))
-
-        # Create a session so we can change the objects in the tests.
-        self._session = MANAGER.session()
+            SmBase._parse_iface(self._gw_iface_entry, True))
     # setUp()
 
     def _create_plat_base(self):
@@ -122,11 +118,11 @@ class TestPlatBase(TestCase):
             self._hyper_profile_entry.credentials["user"],
             self._hyper_profile_entry.credentials["passwd"],
             None)
-        hyper.login.assert_called_with() #pylint: disable=no-member
+        hyper.login.assert_called_with()
 
         # Performs the reboot operation.
         plat.reboot(self._profile_entry)
-        hyper.reboot.assert_called_with( #pylint: disable=no-member
+        hyper.reboot.assert_called_with(
             self._profile_entry.system_rel.name,
             None)
     # test_init()
@@ -144,13 +140,13 @@ class TestPlatBase(TestCase):
             after the execution of the tests.
             """
             system_entry.type_rel.name = backup_name
-            self._session.commit()
+            MANAGER.session.commit()
         # restore_system_type()
         self.addCleanup(restore_system_type)
 
         # Modify the hypervisor type.
         system_entry.type_rel.name = "unknown"
-        self._session.commit()
+        MANAGER.session.commit()
 
         with self.assertRaisesRegex(RuntimeError, "Unknown hypervisor"):
             self._create_plat_base()

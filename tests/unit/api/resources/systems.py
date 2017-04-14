@@ -168,7 +168,7 @@ class TestSystems(TestSecureResource):
         # test special cases when guest type does not match hypervisor's
         def validate_resp(resp, msg):
             """Helper validator"""
-            self.assertEqual(resp.status_code, 422) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 422)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(msg, body['message'])
         # validate_resp()

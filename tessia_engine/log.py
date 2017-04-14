@@ -43,10 +43,9 @@ class CreateDirRotatingFileHandler(RotatingFileHandler):
         if not tries to create it.
 
         Args:
-            None
-
-        Returns:
-            None
+            filename (str): path where to create log file
+            args (tuple): args to pass to parent class
+            kwargs (tuple): keyword args to pass to parent class
 
         Raises:
             NotImplementedError as the class should not be instantiated

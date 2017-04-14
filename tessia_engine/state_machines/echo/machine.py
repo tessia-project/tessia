@@ -111,7 +111,7 @@ class EchoMachine(BaseMachine):
             fields = lines[i].split('#', 1)[0].split()
 
             # empty line or comments: skip it
-            if len(fields) == 0:
+            if not fields:
                 continue
 
             if fields[0].lower() == 'cleanup':
@@ -196,10 +196,10 @@ class EchoMachine(BaseMachine):
         ret = self._execute_commands(self._params['commands'])
         ret_cleanup = self.cleanup()
 
-        if ret_cleanup == 0:
+        if not ret_cleanup:
             return ret
-        else:
-            return ret_cleanup
+
+        return ret_cleanup
     # start()
 
 # EchoMachine

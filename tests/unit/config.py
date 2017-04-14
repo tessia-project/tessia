@@ -50,9 +50,6 @@ class TestConfig(TestCase):
                           'log_good' for a valid logging config, or
                           'log_bad' for an invalid logging config
 
-        Returns:
-            None
-
         Raises:
             RuntimeError: if an unsupported option is provided
         """
@@ -110,7 +107,6 @@ log:
         self._mock_open_fd.__enter__.return_value = self._mock_open_fd
 
         # force re-read of file
-        # pylint: disable=protected-access
         config.CONF._config_dict = None
     # setUp()
 
@@ -119,9 +115,6 @@ log:
         Exercise parsing configuration file from path set by env variable
 
         Args:
-            None
-
-        Returns:
             None
 
         Raises:
@@ -143,9 +136,6 @@ log:
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             AssertionError: if any of the assertion calls fails
         """
@@ -163,9 +153,6 @@ log:
         Exercise files in the standard locations that are not readable.
 
         Args:
-            None
-
-        Returns:
             None
 
         Raises:
@@ -228,9 +215,6 @@ log:
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             AssertionError: if class instantiates fails to raise exception
         """
@@ -242,9 +226,6 @@ log:
         Exercise parsing an empty configuration file
 
         Args:
-            None
-
-        Returns:
             None
 
         Raises:
@@ -262,9 +243,6 @@ log:
         Exercise parsing configuration file from default path and caching
 
         Args:
-            None
-
-        Returns:
             None
 
         Raises:
@@ -301,9 +279,6 @@ log:
         caching.
 
         Args:
-            None
-
-        Returns:
             None
 
         Raises:
@@ -387,9 +362,6 @@ log:
         Exercise parsing log configuration with valid content
 
         Args:
-            None
-
-        Returns:
             None
 
         Raises:

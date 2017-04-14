@@ -48,7 +48,7 @@ class TestAuth(TestCase):
         DbUnit.create_db()
         # at this point we can create the app as the db configuration was
         # already stablished
-        API._api = None # pylint: disable=protected-access
+        API._api = None
         # the potion resource might be tied to a previous instance so we remove
         # the association
         from tessia_engine.api.resources import RESOURCES
@@ -108,8 +108,8 @@ class TestAuth(TestCase):
         )
 
         # validate the response
-        self.assertEqual(401, resp.status_code) # pylint: disable=no-member
-        data = json.loads(resp.data.decode('ascii')) # pylint: disable=no-member
+        self.assertEqual(401, resp.status_code)
+        data = json.loads(resp.data.decode('ascii'))
         self.assertEqual(
             data['message'],
             'User authenticated but not registered in database')
@@ -140,7 +140,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 200 ok response
-        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(200, resp.status_code)
         # validate that the user was created in database
         user = self.models.User.query.filter_by(
             login=login_resp['login']).one()
@@ -164,7 +164,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 401 unauthorized was received
-        self.assertEqual(401, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(401, resp.status_code)
     # test_basic_fail()
 
     def test_basic_noauto_success(self):
@@ -181,7 +181,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 200 ok was received
-        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(200, resp.status_code)
 
         # exercise when user information changed
         mock_resp = {
@@ -200,7 +200,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 200 ok was received
-        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(200, resp.status_code)
         # see if information was updated in db
         user = self.models.User.query.filter_by(
             login=mock_resp['login']).one()
@@ -222,7 +222,7 @@ class TestAuth(TestCase):
             )
 
             # validate a 400 badrequest or 401 unauthorized
-            self.assertIn(resp.status_code, (400, 401)) # pylint: disable=no-member
+            self.assertIn(resp.status_code, (400, 401))
     # test_key_wrong()
 
     def test_key_fail(self):
@@ -236,7 +236,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 401 unauthorized
-        self.assertEqual(401, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(401, resp.status_code)
     # test_key_fail()
 
     def test_key_success(self):
@@ -255,7 +255,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 200 ok was received
-        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(200, resp.status_code)
     # test_key_success()
 
     def test_key_wrong(self):
@@ -271,7 +271,7 @@ class TestAuth(TestCase):
             )
 
             # validate a 400 badrequest or 401 unauthorized
-            self.assertIn(resp.status_code, (400, 401)) # pylint: disable=no-member
+            self.assertIn(resp.status_code, (400, 401))
     # test_key_wrong()
 
     def test_no_auth(self):
@@ -285,9 +285,9 @@ class TestAuth(TestCase):
         )
 
         # validate a 401 unauthorized
-        self.assertEqual(resp.status_code, 401) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 401)
         # check that the error message is correct
-        data = json.loads(resp.data.decode('ascii')) # pylint: disable=no-member
+        data = json.loads(resp.data.decode('ascii'))
         self.assertEqual(
             data['message'],
             'You need to provide credentials to access this resource.')
@@ -307,7 +307,7 @@ class TestAuth(TestCase):
             )
 
             # validate a 401 unauthorized
-            self.assertEqual(resp.status_code, 401) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 401)
     # test_scheme_wrong()
 
 # TestAuth

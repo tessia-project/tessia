@@ -70,11 +70,7 @@ class TestPlatKvm(TestCase):
         # TODO: this is very ugly, but it is the only way to create
         # the parameters necessary for the creation of the PlatKvm.
         self._parsed_gw_iface = (
-            SmBase._parse_iface( # pylint: disable=protected-access
-                self._gw_iface_entry, True))
-
-        # Create a session so we can change the objects in the tests.
-        self._session = MANAGER.session()
+            SmBase._parse_iface(self._gw_iface_entry, True))
     # setUp()
 
     def _create_plat_kvm(self):
@@ -135,7 +131,7 @@ class TestPlatKvm(TestCase):
         when using operting systems that use udev version 228 or newer.
         """
         self._os_entry.major = 8
-        self.addCleanup(self._session.rollback)
+        self.addCleanup(MANAGER.session.rollback)
 
         volumes = self._profile_entry.storage_volumes_rel
         # To test the other branch, we remove all libvirt definitions
@@ -160,7 +156,7 @@ class TestPlatKvm(TestCase):
         """
         Test the case a storage volume has an invalid libvirt xml.
         """
-        self.addCleanup(self._session.rollback)
+        self.addCleanup(MANAGER.session.rollback)
         libvirt_dev1 = ("<disk type='block' device='disk'>"
                         "<driver name='qemu' type"
                         "<target dev='vda' bus='virtio'/>"
@@ -179,7 +175,7 @@ class TestPlatKvm(TestCase):
         Test the case the livbirt xml of a storage volume does not have
         the address tag.
         """
-        self.addCleanup(self._session.rollback)
+        self.addCleanup(MANAGER.session.rollback)
         libvirt_dev = ("<disk type='block' device='disk'>"
                        "<driver name='qemu' type='raw'/>"
                        "<source dev='/dev/disk/by-id/dm-uuid-mpath-"
@@ -198,7 +194,7 @@ class TestPlatKvm(TestCase):
         Test the case the livbirt xml of a storage volume does not have
         the target tag.
         """
-        self.addCleanup(self._session.rollback)
+        self.addCleanup(MANAGER.session.rollback)
         libvirt_dev = ("<disk type='block' device='disk'>"
                        "<driver name='qemu' type='raw'/>"
                        "<source dev='/dev/disk/by-id/dm-uuid-mpath-"
@@ -217,7 +213,7 @@ class TestPlatKvm(TestCase):
         """
         Test the case two volumes have the same device number.
         """
-        self.addCleanup(self._session.rollback)
+        self.addCleanup(MANAGER.session.rollback)
         libvirt_dev1 = ("<disk type='block' device='disk'>"
                         "<driver name='qemu' type='raw'/>"
                         "<source dev='/dev/disk/by-id/dm-uuid-mpath-"
@@ -243,7 +239,7 @@ class TestPlatKvm(TestCase):
         """
         Test the case two volumes have the same target device name.
         """
-        self.addCleanup(self._session.rollback)
+        self.addCleanup(MANAGER.session.rollback)
         libvirt_dev1 = ("<disk type='block' device='disk'>"
                         "<driver name='qemu' type='raw'/>"
                         "<source dev='/dev/disk/by-id/dm-uuid-mpath-"
@@ -277,12 +273,12 @@ class TestPlatKvm(TestCase):
             """
             self._profile_entry.storage_volumes_rel[0].type_rel.name = (
                 bk_type_name)
-            self._session.commit()
+            MANAGER.session.commit()
         # restore_type_name()
         self.addCleanup(restore_type_name)
 
         self._profile_entry.storage_volumes_rel[0].type_rel.name = "unknown"
-        self._session.commit()
+        MANAGER.session.commit()
         self.assertRaisesRegex(RuntimeError, "Unknown ", self._create_plat_kvm)
     # test_unknown_volume_type()
 
@@ -290,7 +286,7 @@ class TestPlatKvm(TestCase):
         """
         Test the case the architecture is not supported.
         """
-        self.addCleanup(self._session.rollback)
+        self.addCleanup(MANAGER.session.rollback)
 
         system_entry = self._profile_entry.system_rel
         system_entry.type_rel.arch_rel.name = "unknown"
@@ -304,7 +300,7 @@ class TestPlatKvm(TestCase):
         Test the case the storage volume libvirt xml has an
         unsupported communication bus.
         """
-        self.addCleanup(self._session.rollback)
+        self.addCleanup(MANAGER.session.rollback)
         libvirt_dev = ("<disk type='block' device='disk'>"
                        "<driver name='qemu' type='raw'/>"
                        "<source dev='/dev/disk/by-id/dm-uuid-mpath-"

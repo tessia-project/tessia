@@ -195,9 +195,6 @@ class StorageVolumeResource(SecureResource):
 
         Raises:
             BaseHttpError: in case of validation errors
-
-        Returns:
-            None
         """
         if part_table is None:
             return
@@ -267,9 +264,6 @@ class StorageVolumeResource(SecureResource):
         Raises:
             BaseHttpError: in case types do not match
             ItemNotFoundError: in case storage server instance is not found
-
-        Returns:
-            None
         """
         # server name provided: fetch instance from db
         if isinstance(server, str):

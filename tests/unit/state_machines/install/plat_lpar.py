@@ -71,11 +71,7 @@ class TestPlatLpar(TestCase):
         # TODO: this is very ugly, but it is the only way to create
         # the parameters necessary for the creation of the PlatLpar.
         self._parsed_gw_iface = (
-            SmBase._parse_iface( # pylint: disable=protected-access
-                self._gw_iface_entry, True))
-
-        # Create a session so we can change the objects in the tests.
-        self._session = MANAGER.session()
+            SmBase._parse_iface(self._gw_iface_entry, True))
     # setUp()
 
     def _create_plat_lpar(self):
@@ -165,12 +161,12 @@ class TestPlatLpar(TestCase):
             """
             self._profile_entry.storage_volumes_rel[0].type_rel.name = (
                 bk_type_name)
-            self._session.commit()
+            MANAGER.session.commit()
         # restore_type_name()
         self.addCleanup(restore_type_name)
 
         self._profile_entry.storage_volumes_rel[0].type_rel.name = "unknown"
-        self._session.commit()
+        MANAGER.session.commit()
         plat = self._create_plat_lpar()
 
         volumes = self._profile_entry.storage_volumes_rel

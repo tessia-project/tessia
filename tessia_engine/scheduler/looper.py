@@ -248,7 +248,7 @@ class Looper(object):
             None
         """
         for res_mode in resources_manager.MODES:
-            if len(job.resources.get(res_mode, [])) > 0:
+            if job.resources.get(res_mode, []):
                 return True
 
         return False

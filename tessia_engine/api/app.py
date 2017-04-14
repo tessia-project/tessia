@@ -111,7 +111,6 @@ class _AppManager(object):
         Raises:
             RuntimeError: in case a resource is missing mandatory attribute
         """
-        # pylint: disable=protected-access
         # these imports are made here to avoid circular import problems
         from tessia_engine.api.manager import ApiManager
         from tessia_engine.api.resources import RESOURCES
@@ -228,7 +227,6 @@ class _AppManager(object):
             Change the flask_sqlalchemy base creator function to use our custom
             declarative base in place of the default one.
             """
-            # pylint: disable=protected-access
             # add our base to the query property of each model we have
             # in case a query property was already added by the db.connection
             # module it will be overriden here, which is ok because the

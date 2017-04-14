@@ -182,9 +182,6 @@ class SecureResource(ModelResource):
             target_obj (ResourceMixin): sa's object
             target_type (str): type of the target to report in case of error
 
-        Returns:
-            None
-
         Raises:
             Forbidden: in case user has no permission
         """

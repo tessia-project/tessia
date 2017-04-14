@@ -35,7 +35,6 @@ import unittest
 #
 # CODE
 #
-# pylint: disable=protected-access
 class TestResourceManager(TestCase):
     """
     Unit test for the resource manager module

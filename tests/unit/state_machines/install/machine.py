@@ -76,12 +76,6 @@ class TestAutoInstallMachine(TestCase):
 
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
-
-        # Open the connection with the database so that it can be used in the
-        # tests. Even for tests that do not directly use the session, we must
-        # create a session in order to fullfill the models with the query
-        # object.
-        self.session = MANAGER.session()
     # setUp()
 
     def _perform_test_init(self, parameters):
@@ -215,8 +209,8 @@ class TestAutoInstallMachine(TestCase):
                                                 cmdline="foo",
                                                 desc="Unsupported OS for Test")
 
-        self.session.add(unsupported_os)
-        self.session.commit()
+        MANAGER.session.add(unsupported_os)
+        MANAGER.session.commit()
         request = json.dumps({
             "system": "kvm054",
             "profile": "kvm_kvm054_install",
@@ -225,6 +219,6 @@ class TestAutoInstallMachine(TestCase):
         })
         with self.assertRaisesRegex(RuntimeError, "OS Unsupported"):
             machine.AutoInstallMachine(request)
-        self.session.delete(unsupported_os)
+        MANAGER.session.delete(unsupported_os)
     # test_unsupported_os()
 # TestAutoInstallMachine

@@ -179,7 +179,7 @@ def authorize(decorated_view):
         # The exception takes care of providing the scheme allowed
         # via WWW-Authenticate response header
         auth_header = flask_request.headers.get('Authorization', None)
-        if auth_header is None or len(auth_header) == 0:
+        if not auth_header:
             raise UnauthorizedError(auth_provided=False)
 
         try:

@@ -27,19 +27,17 @@ from unittest.mock import patch
 #
 # CODE
 #
-# pylint: disable=protected-access
-# pylint: disable=too-many-public-methods
 class TestSpawner(TestCase):
     """
     A simple test to cover the process spawner.
     """
-
     def setUp(self):
         # Mock the MachineWrapper class inside the module since the spawner
         # only imports the module inside the spawn function.
         patcher = patch.object(wrapper, 'MachineWrapper', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)
+    # setUp()
 
     @staticmethod
     def test_spawner():
@@ -49,3 +47,5 @@ class TestSpawner(TestCase):
         # We can pass bogus parameters since they are only actually used by
         # MachineWrapper, which is mocked.
         spawner.spawn("", "", "", 0)
+    # test_spawner()
+# TestSpawner

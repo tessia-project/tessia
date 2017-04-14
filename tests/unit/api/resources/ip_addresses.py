@@ -166,7 +166,7 @@ class TestIpAddress(TestSecureResource):
 
         def validate_resp(resp, address):
             """Helper validator"""
-            self.assertEqual(resp.status_code, 400) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 400)
             msg = (
                 "The value 'address={}' is invalid: ip not within "
                 "subnet address range".format(address)

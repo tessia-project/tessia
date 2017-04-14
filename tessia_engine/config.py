@@ -52,9 +52,6 @@ class Config(object):
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             NotImplementedError: as the class should not be instantiated
         """
@@ -76,6 +73,7 @@ class Config(object):
 
         Raises:
             IOError: if config file cannot be read
+            OSError: if config file cannot be read
         """
         def _read_file(file_path):
             """Auxiliar method to read the content of a file"""
@@ -152,9 +150,6 @@ class Config(object):
         Args:
             debug (bool): in case debug level should be enabled for all
                           handlers
-
-        Returns:
-            None
 
         Raises:
             RuntimeError: if log configuration is missing or invalid

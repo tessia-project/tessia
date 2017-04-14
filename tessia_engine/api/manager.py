@@ -162,7 +162,7 @@ class ApiManager(SQLAlchemyManager):
                 expressions.append(self._expression_for_condition(condition))
 
             # more than one expression specified: build the final statement
-            if len(expressions) > 0:
+            if expressions:
                 query = self._query_filter(
                     query, self._and_expression(expressions))
 

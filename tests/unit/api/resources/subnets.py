@@ -206,7 +206,7 @@ class TestSubnet(TestSecureResource):
 
         def validate_resp(resp, item, data):
             """Helper validator for gateway not within in address range"""
-            self.assertEqual(resp.status_code, 400) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 400)
             if 'gateway' in data:
                 msg = (
                     "The value 'gateway={}' is invalid: ip not within "

@@ -84,7 +84,7 @@ class AutoInstallMachine(BaseMachine):
         super(AutoInstallMachine, self).__init__(params)
 
         # Create the first connection
-        MANAGER.session()
+        MANAGER.connect()
 
         CONF.log_config()
         self._logger = logging.getLogger(__name__)

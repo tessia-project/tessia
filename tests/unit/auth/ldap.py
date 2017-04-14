@@ -35,7 +35,6 @@ import jsonschema
 # CODE
 #
 
-# pylint: disable=no-member
 class TestLdapLoginManager(TestCase):
     """
     Unit test for the package constructor.

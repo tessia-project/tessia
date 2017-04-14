@@ -76,9 +76,6 @@ class LdapLoginManager(BaseLoginManager):
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             RuntimeError: in case db config is missing
         """
@@ -202,9 +199,6 @@ class LdapLoginManager(BaseLoginManager):
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             RuntimeError: in case ldap config is missing or wrong
         """
@@ -283,7 +277,7 @@ class LdapLoginManager(BaseLoginManager):
             attributes=list(self._conf['user_attributes'].values()),
         )
         # user not found: return nothing
-        if ret is False or len(conn.response) == 0:
+        if ret is False or not conn.response:
             self._logger.debug('user not found, result: %s', conn.result)
             return
 
@@ -302,7 +296,7 @@ class LdapLoginManager(BaseLoginManager):
                         ldap_key))
 
             if isinstance(value, list):
-                if len(value) > 0:
+                if value:
                     value = value[0]
                 else:
                     value = ''

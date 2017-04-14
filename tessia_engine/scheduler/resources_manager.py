@@ -88,7 +88,7 @@ class ResourcesManager(object):
 
         fits_before = False
 
-        if len(queue) == 0:
+        if not queue:
             self._logger.error(
                 "Job %s not present in its own wait queue for resource %s",
                 job.id,
@@ -173,12 +173,10 @@ class ResourcesManager(object):
             if start_b <= end_a:
                 return True
         # Neither interval is infinite.
-        else:
-            # There is an overlap iff A starts before B ends and ends after
-            # B starts, since the end of A must be greater than the start of A.
-            if start_a <= end_b:
-                if end_a >= start_b:
-                    return True
+        # There is an overlap if A starts before B ends and ends after
+        # B starts, since the end of A must be greater than the start of A.
+        elif start_a <= end_b and end_a >= start_b:
+            return True
 
         return False
 
@@ -292,7 +290,7 @@ class ResourcesManager(object):
         for resource in job.resources.get(MODE_SHARED, []):
             del self._active_jobs[MODE_SHARED][resource][job.id]
 
-            if len(self._active_jobs[MODE_SHARED][resource]) == 0:
+            if not self._active_jobs[MODE_SHARED][resource]:
                 del self._active_jobs[MODE_SHARED][resource]
 
     # active_pop()
@@ -307,6 +305,7 @@ class ResourcesManager(object):
 
         Args:
             job (SchedulerJob):  job to check
+
         Returns:
             bool: True if the job has no start date or if it has a start date
                  and doesn't conflict with other jobs with start dates.
@@ -517,8 +516,7 @@ class ResourcesManager(object):
 
         Args:
             job (SchedulerJob)
-        Returns:
-            None
+
         Raises:
             ValueError: in case job state is invalid
         """
@@ -584,7 +582,7 @@ class ResourcesManager(object):
             # the wait_queue from _get_wait_queues, which implies the
             # job must be present.
             wait_queue.pop(i)
-            if len(wait_queue) == 0:
+            if not wait_queue:
                 del self._wait_queues[resource]
 
     # wait_pop()

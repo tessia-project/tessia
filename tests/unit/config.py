@@ -20,10 +20,12 @@ Unit test for config module
 # IMPORTS
 #
 from tessia_engine import config
+from tempfile import NamedTemporaryFile
 from unittest import TestCase
 from unittest import mock
 from unittest.mock import patch
 
+import os
 import sys
 import yaml
 
@@ -34,6 +36,71 @@ import yaml
 #
 # CODE
 #
+class EnvConfig(object):
+    """Simple helper class to set config content in a temp file"""
+    def __init__(self):
+        self._orig_var = None
+        self._temp_tessia_cfg = None
+    # __init__()
+
+    def start(self, content):
+        """
+        Apply the passed config content to the environment.
+
+        Args:
+            content (str): valid config file content
+        """
+        # multiple patches to many modules would be needed to make sure all of
+        # them point to the same config mock. Instead we use the env variable
+        # pointing to a temp file to achieve global setup.
+        self._orig_var = os.environ.get('TESSIA_CFG')
+        self._temp_tessia_cfg = NamedTemporaryFile(mode='w')
+        os.environ['TESSIA_CFG'] = self._temp_tessia_cfg.name
+        # set the config file content
+        self._temp_tessia_cfg.write(yaml.dump(content))
+        self._temp_tessia_cfg.flush()
+        # force module to re-read file
+        config.CONF._config_dict = None
+    # start()
+
+    def stop(self):
+        """
+        Stop serving the config file content previously set with start.
+        """
+        # not started: nothing to do
+        if self._temp_tessia_cfg is None:
+            return
+
+        if self._orig_var is None:
+            os.environ.pop('TESSIA_CFG', None)
+        else:
+            os.environ['TESSIA_CFG'] = self._orig_var
+            self._orig_var = None
+        self._temp_tessia_cfg.close()
+        self._temp_tessia_cfg = None
+        # prevent module from reusing our content
+        config.CONF._config_dict = None
+    # stop()
+
+    def update(self, content):
+        """
+        Update the content of a temp file already in place.
+
+        Args:
+            content (str): valid config file content
+
+        Raises:
+            RuntimeError: in case start() was not previously called.
+        """
+        if self._temp_tessia_cfg is None:
+            raise RuntimeError('Config file not applied yet')
+        self._temp_tessia_cfg.seek(0)
+        self._temp_tessia_cfg.write(yaml.dump(content))
+        self._temp_tessia_cfg.flush()
+        # force module to re-read file
+        config.CONF._config_dict = None
+    # update()
+# EnvConfig
 
 class TestConfig(TestCase):
     """
@@ -49,6 +116,7 @@ class TestConfig(TestCase):
                           'bad' for invalid content, 'empty',
                           'log_good' for a valid logging config, or
                           'log_bad' for an invalid logging config
+                          else use the string provided as content
 
         Raises:
             RuntimeError: if an unsupported option is provided
@@ -83,7 +151,7 @@ log:
         elif option == 'empty':
             content = ''
         else:
-            raise RuntimeError("unrecognized option '{}'".format(option))
+            content = option
 
         self._mock_open_fd.read.return_value = content
     # _set_open_mock()
@@ -95,6 +163,15 @@ log:
         """
         # make sure variable was not inherited from calling environment or
         # previous test
+        orig_cfg_var = config.os.environ.get('TESSIA_CFG')
+        def restore_var():
+            """Helper to restore original variable value"""
+            if orig_cfg_var is None:
+                config.os.environ.pop('TESSIA_CFG', None)
+            else:
+                config.os.environ['TESSIA_CFG'] = orig_cfg_var
+            config.CONF._config_dict = None
+        self.addCleanup(restore_var)
         config.os.environ.pop('TESSIA_CFG', None)
 
         # patch the open function
@@ -112,7 +189,7 @@ log:
 
     def test_bad_content(self):
         """
-        Exercise parsing configuration file from path set by env variable
+        Exercise parsing configuration file with unparseable content
 
         Args:
             None
@@ -126,6 +203,26 @@ log:
         # perform the action and validate result
         self.assertRaises(yaml.scanner.ScannerError,
                           config.CONF.get_config)
+
+    # test_bad_content()
+
+    def test_bad_content_list(self):
+        """
+        Exercise parsing configuration file containing a list
+
+        Args:
+            None
+
+        Raises:
+            AssertionError: if any of the assertion calls fails
+        """
+        # set the mock to return a list
+        self._set_open_mock('- bla')
+
+        # perform the action and validate result
+        with self.assertRaisesRegex(
+            RuntimeError, 'Invalid configuration file'):
+            config.CONF.get_config()
 
     # test_bad_content()
 
@@ -233,6 +330,12 @@ log:
         """
         # set the mock to return empty config content
         self._set_open_mock('empty')
+
+        # perform the action and validate result
+        self.assertEqual({}, config.CONF.get_config())
+
+        # set the mock to return a blank
+        self._set_open_mock(' ')
 
         # perform the action and validate result
         self.assertEqual({}, config.CONF.get_config())

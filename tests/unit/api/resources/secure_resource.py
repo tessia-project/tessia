@@ -22,10 +22,11 @@ Unit test for secure_resources module
 from base64 import b64encode
 from tessia_engine import config
 from tessia_engine.api.app import API
+from tessia_engine.api.resources import RESOURCES
 from tessia_engine.db import models
+from tests.unit.config import EnvConfig
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
-from unittest.mock import patch
 
 import abc
 import json
@@ -34,6 +35,21 @@ import time
 #
 # CONSTANTS AND DEFINITIONS
 #
+DEFAULT_CONFIG = {
+    'auth': {
+        'login_method': 'free',
+        'realm': 'test realm'
+    },
+    'log': {
+        'version': 1,
+        'loggers': {
+            'tessia_engine': {
+                'level': 'ERROR'
+            }
+        },
+        'handlers': {},
+    },
+}
 
 #
 # CODE
@@ -297,27 +313,17 @@ class TestSecureResource(TestCase):
 
         # at this point we can import the app as the db configuration was
         # already stablished
-        cls._conf_patcher = patch.object(config.CONF, 'get_config')
-        mock_conf = cls._conf_patcher.start()
-        conf = {
-            'auth': {
-                'login_method': 'free', 'realm': 'test realm'
-            },
-            'log': {
-                'version': 1,
-                'loggers': {'tessia_engine': {'level': 'ERROR'}},
-                'handlers': {},
-            },
-        }
-        mock_conf.return_value = conf
-        # turn off warning messages from our custom exception handler
+
+        # use the helper class to manage the config file
+        cls._env_config = EnvConfig()
+        cls._env_config.start(DEFAULT_CONFIG)
+        # turn off warning messages by applying our log config
         config.CONF.log_config()
 
         # force recreation of objects
         API._api = None
         # the potion resource might be tied to a previous instance so we remove
         # the association
-        from tessia_engine.api.resources import RESOURCES
         for resource in RESOURCES:
             resource.api = None
         API.app.config['TESTING'] = True
@@ -412,8 +418,8 @@ class TestSecureResource(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # stop the CONF mock to avoid affecting other testcases
-        cls._conf_patcher.stop()
+        # restore original config
+        cls._env_config.stop()
     # tearDownClass()
 
     # TESTCASES SECTION: the methods below are implemented in such a way to

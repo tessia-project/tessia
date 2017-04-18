@@ -28,11 +28,7 @@ import re
 #
 # CONSTANTS AND DEFINITIONS
 #
-try:
-    AUTH_REALM = CONF.get_config()['auth']['realm']
-except KeyError:
-    raise RuntimeError(
-        'Authorization realm name (auth/realm) missing from config file')
+
 
 #
 # CODE
@@ -402,7 +398,7 @@ class UnauthorizedError(BaseHttpError):
     # Rest APIs implementation.
     HEADERS = {
         'WWW-Authenticate':
-            'Basic realm="{0}", X-Key realm="{0}"'.format(AUTH_REALM),
+            'Basic realm="{0}", X-Key realm="{0}"'
     }
 
     def __init__(self, auth_provided=True, msg=None):
@@ -433,6 +429,15 @@ class UnauthorizedError(BaseHttpError):
             'status': code,
         }
 
+        try:
+            auth_realm = CONF.get_config()['auth']['realm']
+        except KeyError:
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                'authorization realm name (auth/realm) missing from config '
+                'file, using default value instead')
+            auth_realm = 'auth-realm'
+        self.HEADERS['WWW-Authenticate'].format(auth_realm)
         super().__init__(code=code, body=body, headers=self.HEADERS)
     # __init__()
 

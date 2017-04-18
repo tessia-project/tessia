@@ -20,6 +20,7 @@ Wrapper script to execute coverage on unit tests
 #
 # IMPORTS
 #
+from tempfile import NamedTemporaryFile
 import os
 import subprocess
 import sys
@@ -83,6 +84,16 @@ def main():
 
     # display report
     cmds.append(CMD_COVERAGE_REPORT)
+
+    # given that many modules can use the config module it's possible that some
+    # tests fail to appropriately mock all the necessary modules which will
+    # cause them to 'leak' and eventually use a config file from the
+    # filesystem, which might lead to unexpected/unwanted results. To prevent
+    # that we set an env variable pointing to an empty config file so that
+    # any 'leaked' modules will reach this file instead of a random file from
+    # the filesystem.
+    temp_file = NamedTemporaryFile()
+    os.environ['TESSIA_CFG'] = temp_file.name
 
     # show command line to user
     cmd = ' && '.join(cmds)

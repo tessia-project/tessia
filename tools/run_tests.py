@@ -28,7 +28,8 @@ import sys
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMD_COVERAGE = "python3 -m coverage run -a --source={} {}"
+CMD_COVERAGE = (
+    "python3 -m coverage run -a --{import_method}={source_path} {subcmd}")
 CMD_COVERAGE_ERASE = "python3 -m coverage erase"
 CMD_COVERAGE_REPORT = "python3 -m coverage report -m"
 SUBCMD_UNITTEST_DISCOVER = "-m unittest discover {} -p '*.py'"
@@ -64,22 +65,28 @@ def main():
     # no arguments provided: execute all tests
     if len(sys.argv) < 2:
         subcmd_unittest = SUBCMD_UNITTEST_DISCOVER.format('tests/unit')
-        cmds.append(CMD_COVERAGE.format('tessia_engine', subcmd_unittest))
+        cmds.append(CMD_COVERAGE.format(
+            import_method='source',
+            source_path='tessia_engine',
+            subcmd=subcmd_unittest
+        ))
 
     # module path provided: use module's command version
     elif sys.argv[1].endswith('.py'):
         subcmd_unittest = SUBCMD_UNITTEST_MODULE.format(sys.argv[1])
         cmds.append(CMD_COVERAGE.format(
-            sys.argv[1].replace("tests/unit", "tessia_engine"),
-            subcmd_unittest
+            import_method='include',
+            source_path=sys.argv[1].replace("tests/unit", "tessia_engine"),
+            subcmd=subcmd_unittest
         ))
 
     # package path provided: use discover option
     else:
         subcmd_unittest = SUBCMD_UNITTEST_DISCOVER.format(sys.argv[1])
         cmds.append(CMD_COVERAGE.format(
-            sys.argv[1].replace("tests/unit", "tessia_engine"),
-            subcmd_unittest
+            import_method='source',
+            source_path=sys.argv[1].replace("tests/unit", "tessia_engine"),
+            subcmd=subcmd_unittest
         ))
 
     # display report

@@ -137,7 +137,7 @@ class SmBase(metaclass=abc.ABCMeta):
                 ssh_client.login(hostname, user=user, passwd=password)
                 ssh_shell = ssh_client.open_shell()
                 return ssh_client, ssh_shell
-            except (ConnectionError, ConnectionResetError):
+            except ConnectionError:
                 self._logger.warning("connection not available yet, "
                                      "retrying in %d seconds.", timeout)
                 sleep(timeout)

@@ -43,7 +43,6 @@ FAKE_JOBS_DIR = '/tmp/test-looper/jobs-dir'
 #
 # CODE
 #
-# pylint: disable=protected-access
 # pylint: disable=too-many-public-methods
 class TestLooper(TestCase):
     """
@@ -158,8 +157,7 @@ class TestLooper(TestCase):
         """
         parameters = []
         for mode in resources_manager.MODES:
-            if (resources.get(mode) is not None
-                    and len(resources.get(mode)) > 0):
+            if resources.get(mode):
                 mode_directive = []
                 mode_directive.append('USE')
                 mode_directive.append(mode.upper())

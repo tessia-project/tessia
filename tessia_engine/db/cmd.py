@@ -53,9 +53,6 @@ def create_rev(args):
     Args:
         args (argparse.Namespace): namespace expected to contain args.message
 
-    Returns:
-        None
-
     Raises:
         alembic exceptions
     """
@@ -70,9 +67,6 @@ def downgrade_db(args):
     Args:
         args (argparse.Namespace): namespace expected to contain args.revision
                                    and args.sql
-
-    Returns:
-        None
 
     Raises:
         alembic exceptions
@@ -131,9 +125,6 @@ def list_revs(args):
 
     Args:
         args (argparse.Namespace): namespace expected to contain args.verbose
-
-    Returns:
-        None
 
     Raises:
         alembic exceptions
@@ -277,9 +268,6 @@ def reset_db(args):
         args (argparse.Namespace): namespace expected to contain args.yes
                                    and args.revisions
 
-    Returns:
-        None
-
     Raises:
         sqlalchemy or alembic exceptions
     """
@@ -341,9 +329,6 @@ def show_rev(args):
     Args:
         args (argparse.Namespace): namespace expected to contain args.revision
 
-    Returns:
-        None
-
     Raises:
         alembic exceptions
     """
@@ -354,15 +339,12 @@ def show_rev(args):
     command.show(get_alembic_cfg(), args.revision)
 # show_rev()
 
-def current(args):
+def current(_):
     """
     Show the current database revision
 
     Args:
-        args (argparse.Namespace): namespace expected to contain args.revision
-
-    Returns:
-        None
+        _ (argparse.Namespace): not used
 
     Raises:
         alembic exceptions
@@ -371,7 +353,7 @@ def current(args):
     command.current(get_alembic_cfg(stdout=mem_stdout))
     mem_stdout.seek(0)
     output = mem_stdout.read().strip()
-    if len(output) == 0:
+    if not output:
         print('error: db not initialized', file=sys.stderr)
         sys.exit(2)
     print(output)
@@ -384,9 +366,6 @@ def upgrade_db(args):
     Args:
         args (argparse.Namespace): namespace expected to contain args.revision
                                    and args.sql
-
-    Returns:
-        None
 
     Raises:
         alembic exceptions

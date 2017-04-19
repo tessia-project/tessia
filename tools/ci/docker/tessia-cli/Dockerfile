@@ -13,16 +13,19 @@ ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 # Generate en_US.UTF-8 locale and update the default locale, some
 # applications use this.
-RUN locale-gen en_US.UTF-8 \
-    && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
+RUN locale-gen en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     # Install the distro dependencies.
     # ATTENTION: make sure to keep a comment for each on why is it needed.
-    apt-get update -q \
-    && DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
+    apt-get update -q  && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -yq --no-install-recommends \
     # used to install python libraries
     python3-pip \
     # used by pbr (in setuptools) to detect module version numbers
-    git && \
+    git \
+    # for wrapt (from pylint)
+    build-essential \
+    python3-dev && \
     # Install the python dependencies.
     # setuptools for installing applications (including tessia) - it must be installed
     # separately first otherwise other packages fail to install
@@ -43,7 +46,11 @@ RUN cd /assets && \
     git clone $git_repo tessia-engine && \
     cd tessia-engine/cli && \
     pip3 install -U -r requirements.txt && \
-    ./setup.py install
+    ./setup.py install && \
+    # remove unneeded dependencies used only for building
+    DEBIAN_FRONTEND=noninteractive apt-get -yq purge --auto-remove \
+    build-essential \
+    python3-dev
 
 EXPOSE 22
 

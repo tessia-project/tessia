@@ -81,16 +81,7 @@ class CommonMixin(object):
     Helper mixin to set attributes common to most classes
     """
 
-    # pylint: disable=invalid-name
-    id = Column(Integer, primary_key=True)
-
-    def __init__(self, *args, **kwargs):
-        """
-        Simple constructor which only calls parent's constructor to allow
-        cooperative multiple inheritance.
-        """
-        super().__init__(*args, **kwargs)
-    # __init__()
+    id = Column(Integer, primary_key=True) # pylint: disable=invalid-name
 # CommonMixin
 
 class SchemaMixin(object):
@@ -810,7 +801,7 @@ class System(CommonMixin, ResourceMixin, BASE):
     @hypervisor.setter
     def hypervisor(self, value):
         """Defines what to do when assigment occurs for the attribute"""
-        if value == '' or value is None:
+        if not value:
             self.hypervisor_id = None
             return
         match = System.query.filter_by(name=value).one_or_none()
@@ -1074,7 +1065,7 @@ class SystemProfile(CommonMixin, BASE):
     @operating_system.setter
     def operating_system(self, value):
         """Defines what to do when assigment occurs for the attribute"""
-        if value == '' or value is None:
+        if not value:
             self.operating_system_id = None
             return
         match = OperatingSystem.query.filter_by(name=value).one_or_none()
@@ -1517,7 +1508,7 @@ class StoragePool(CommonMixin, ResourceMixin, BASE):
     @system.setter
     def system(self, value):
         """Defines what to do when assigment occurs for the attribute"""
-        if value == '' or value is None:
+        if not value:
             self.system_id = None
             return
         match = System.query.filter_by(name=value).one_or_none()
@@ -1739,7 +1730,7 @@ class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
     @system.setter
     def system(self, value):
         """Defines what to do when assigment occurs for the attribute"""
-        if value == '' or value is None:
+        if not value:
             self.system_id = None
             return
         match = System.query.filter_by(name=value).one_or_none()
@@ -1767,7 +1758,7 @@ class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
     @pool.setter
     def pool(self, value):
         """Defines what to do when assigment occurs for the attribute"""
-        if value == '' or value is None:
+        if not value:
             self.pool_id = None
             return
         match = StoragePool.query.filter_by(name=value).one_or_none()
@@ -1968,7 +1959,7 @@ class LogicalVolume(CommonMixin, ResourceMixin, BASE):
     @system.setter
     def system(self, value):
         """Defines what to do when assigment occurs for the attribute"""
-        if value == '' or value is None:
+        if not value:
             self.system_id = None
             return
         match = System.query.filter_by(name=value).one_or_none()

@@ -53,9 +53,6 @@ class TestConnection(TestCase):
             mock_session_maker (Mock): Mock object replacing sessionmaker
             mock_scoped_session (Mock): Mock object replacing scoped_session
 
-        Returns:
-            None
-
         Raises:
             AssertionError: if any of the assertion calls fail
         """
@@ -76,7 +73,7 @@ class TestConnection(TestCase):
 
         # force a reconnection because other modules might have connected
         # before
-        connection.MANAGER._conn = None # pylint: disable=protected-access
+        connection.MANAGER._conn = None
 
         # verify the result
         self.assertIs(connection.MANAGER.engine, sentinel.sa_engine)
@@ -90,7 +87,6 @@ class TestConnection(TestCase):
             mock_session_maker.return_value)
 
         # try a second instance of the internal class
-        # pylint: disable=protected-access
         self.assertRaises(RuntimeError, connection._DbManager)
     # test_conn_valid_url()
 
@@ -102,9 +98,6 @@ class TestConnection(TestCase):
         Args:
             mock_conf (Mock): Mock object replacing config.Config
 
-        Returns:
-            None
-
         Raises:
             AssertionError: if any of assertion calls fail
         """
@@ -112,7 +105,7 @@ class TestConnection(TestCase):
 
         # force a reconnection because other modules might have connected
         # before
-        connection.MANAGER._conn = None # pylint: disable=protected-access
+        connection.MANAGER._conn = None
         self.assertRaises(RuntimeError, lambda: connection.MANAGER.session)
     # test_conn_missing_url()
 

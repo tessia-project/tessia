@@ -82,9 +82,6 @@ class UserRoleResource(SecureResource):
 
         Raises:
             Forbidden: always, since operation is not allowed
-
-        Returns:
-            None
         """
         # pylint: disable=redefined-builtin
 

@@ -22,10 +22,11 @@ Unit test for secure_resources module
 from base64 import b64encode
 from tessia_engine import config
 from tessia_engine.api.app import API
+from tessia_engine.api.resources import RESOURCES
 from tessia_engine.db import models
+from tests.unit.config import EnvConfig
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
-from unittest.mock import patch
 
 import abc
 import json
@@ -34,6 +35,21 @@ import time
 #
 # CONSTANTS AND DEFINITIONS
 #
+DEFAULT_CONFIG = {
+    'auth': {
+        'login_method': 'free',
+        'realm': 'test realm'
+    },
+    'log': {
+        'version': 1,
+        'loggers': {
+            'tessia_engine': {
+                'level': 'ERROR'
+            }
+        },
+        'handlers': {},
+    },
+}
 
 #
 # CODE
@@ -64,8 +80,6 @@ class TestSecureResource(TestCase):
         Returns:
             int: the id of the created item
         """
-        # pylint: disable=no-member
-
         # validate the response code
         self.assertEqual(200, resp.status_code, resp.data)
 
@@ -91,7 +105,6 @@ class TestSecureResource(TestCase):
             resp (Response): flask response object
             orig_id (int): the id of the deleted item
         """
-        # pylint: disable=no-member
         resp_value = bool(resp.get_data(as_text=True))
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp_value, True)
@@ -300,27 +313,17 @@ class TestSecureResource(TestCase):
 
         # at this point we can import the app as the db configuration was
         # already stablished
-        cls._conf_patcher = patch.object(config.CONF, 'get_config')
-        mock_conf = cls._conf_patcher.start()
-        conf = {
-            'auth': {
-                'login_method': 'free', 'realm': 'test realm'
-            },
-            'log': {
-                'version': 1,
-                'loggers': {'tessia_engine': {'level': 'ERROR'}},
-                'handlers': {},
-            },
-        }
-        mock_conf.return_value = conf
-        # turn off warning messages from our custom exception handler
+
+        # use the helper class to manage the config file
+        cls._env_config = EnvConfig()
+        cls._env_config.start(DEFAULT_CONFIG)
+        # turn off warning messages by applying our log config
         config.CONF.log_config()
 
         # force recreation of objects
-        API._api = None # pylint: disable=protected-access
+        API._api = None
         # the potion resource might be tied to a previous instance so we remove
         # the association
-        from tessia_engine.api.resources import RESOURCES
         for resource in RESOURCES:
             resource.api = None
         API.app.config['TESTING'] = True
@@ -415,8 +418,8 @@ class TestSecureResource(TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        # stop the CONF mock to avoid affecting other testcases
-        cls._conf_patcher.stop()
+        # restore original config
+        cls._env_config.stop()
     # tearDownClass()
 
     # TESTCASES SECTION: the methods below are implemented in such a way to
@@ -452,8 +455,7 @@ class TestSecureResource(TestCase):
             self.assertEqual(
                 resp.status_code,
                 403,
-                'Login was: {}'.format(login)
-            ) # pylint: disable=no-member
+                'Login was: {}'.format(login))
     # _test_add_all_fields_no_role()
 
     def _test_add_mandatory_fields(self, login, pop_fields):
@@ -498,7 +500,7 @@ class TestSecureResource(TestCase):
         resp = self._do_request(
             'create', '{}:a'.format(login), data)
         # validate the response received 403 forbidden
-        self.assertEqual(resp.status_code, 403) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 403)
     # _test_add_mandatory_fields_as_admin()
 
     def _test_add_missing_field(self, login, pop_fields):
@@ -520,7 +522,7 @@ class TestSecureResource(TestCase):
             resp = self._do_request(
                 'create', '{}:a'.format(login), work_data)
             # validate the response received
-            self.assertEqual(resp.status_code, 400) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 400)
     # _test_add_missing_field()
 
     def _test_add_update_wrong_field(self, login, wrong_fields):
@@ -546,7 +548,6 @@ class TestSecureResource(TestCase):
                 'create', '{}:a'.format(login), work_data)
 
             # validate the response received
-            # pylint: disable=no-member
             self.assertEqual(
                 resp.status_code,
                 400,
@@ -570,7 +571,6 @@ class TestSecureResource(TestCase):
                 'update', '{}:a'.format(login), work_data)
 
             # validate the response received
-            # pylint: disable=no-member
             self.assertEqual(resp.status_code, 400)
 
             # regex for error message provided: check it
@@ -617,7 +617,7 @@ class TestSecureResource(TestCase):
             'delete', '{}:a'.format(login), item_id)
         # validate a conflict response
         # TODO: validate return message when running under postgres
-        self.assertEqual(resp.status_code, 409) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 409)
 
         # remove associated item to avoid problems with other testcases
         if assoc_item is not None:
@@ -633,7 +633,7 @@ class TestSecureResource(TestCase):
         resp = self._do_request(
             'delete', 'user_admin@domain.com:a', -1)
         # validate deletion failed with 404 not found
-        self.assertEqual(resp.status_code, 404) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 404)
     # _test_del_invalid_id()
 
     def _test_del_no_role(self, combos):
@@ -653,7 +653,7 @@ class TestSecureResource(TestCase):
             resp = self._do_request(
                 'delete', '{}:a'.format(login_del), created_id)
             # validate deletion failed
-            self.assertEqual(resp.status_code, 403) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 403)
     # _test_del_no_role()
 
     def _test_list_and_read(self, login_add, logins_list):
@@ -909,7 +909,7 @@ class TestSecureResource(TestCase):
                 'create', '{}:a'.format(login), work_data)
 
             # validate that an association error occurred
-            self.assertEqual(resp.status_code, 422) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 422)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(
                 body['message'],
@@ -935,7 +935,7 @@ class TestSecureResource(TestCase):
                 'update', '{}:a'.format(login), work_data)
 
             # validate that an association error occurred
-            self.assertEqual(resp.status_code, 422) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 422)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(
                 body['message'],
@@ -971,7 +971,7 @@ class TestSecureResource(TestCase):
             'create', '{}:a'.format(login), add_entry)
         # validate a conflict
         # TODO: validate return message when running under postgres
-        self.assertEqual(resp.status_code, 409) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 409)
 
         # try an update
         updated_item = {
@@ -982,7 +982,7 @@ class TestSecureResource(TestCase):
             'update', '{}:a'.format(login), updated_item)
         # validate a conflict
         # TODO: validate return message when running under postgres
-        self.assertEqual(resp.status_code, 409) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 409)
     # _test_update_conflict()
 
     def _test_update_no_role(self, login_add, logins_update, update_fields):
@@ -1004,7 +1004,7 @@ class TestSecureResource(TestCase):
                 'update', '{}:a'.format(login_update), update_fields)
 
             # validate the response received, should be forbidden
-            self.assertEqual(resp.status_code, 403) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 403)
 
     # _test_update_no_role()
 

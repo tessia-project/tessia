@@ -37,115 +37,131 @@ from werkzeug.exceptions import BadRequest
 #
 # CONSTANTS AND DEFINITIONS
 #
-LOGIN_MANAGER = auth.get_manager()
 
 #
 # CODE
 #
+class _LoginManager(object):
 
-def _authenticate_basic(auth_value):
-    """
-    Basic authentication with username and password, validate against the login
-    manager defined in configured file (usually LDAP)
+    # holds the login manager object
+    _manager = None
 
-    Args:
-        auth_value (str): the value part of the Authorization header
-                          form username:password base64 encoded
+    @classmethod
+    def get_login_manager(cls):
+        """
+        Return the login manager object, as defined by the auth module.
+        """
+        if cls._manager is None:
+            cls._manager = auth.get_manager()
+        return cls._manager
+    # get_login_manager()
 
-    Raises:
-        BadRequest: if value is malformed
-        UnauthorizedError: if credentials are invalid
+    @classmethod
+    def authenticate_basic(cls, auth_value):
+        """
+        Basic authentication with username and password, validate against the
+        login manager defined in configured file (usually LDAP)
 
-    Returns:
-        User: instance of User's sqlalchemy model
-    """
-    try:
-        # http headers are always ascii
-        user, passwd = b64decode(auth_value).decode(
-            'ascii').split(':', 1)
-    except Exception:
-        raise BadRequest()
+        Args:
+            auth_value (str): the value part of the Authorization header
+                              form username:password base64 encoded
 
-    # logins should be case-insensitive
-    user = user.lower()
+        Raises:
+            BadRequest: if value is malformed
+            UnauthorizedError: if credentials are invalid
 
-    # user authentication with login provider failed: return unauthorized
-    result = LOGIN_MANAGER.authenticate(user, passwd)
-    if result is None:
-        raise UnauthorizedError()
+        Returns:
+            User: instance of User's sqlalchemy model
+        """
+        try:
+            # http headers are always ascii
+            user, passwd = b64decode(auth_value).decode(
+                'ascii').split(':', 1)
+        except Exception:
+            raise BadRequest()
 
-    # find user entry in database
-    user_entry = User.query.filter_by(login=user).first()
-    if user_entry is not None:
-        # update db in case user information has changed
-        changed = False
-        if user_entry.name != result['fullname']:
-            changed = True
-            user_entry.name = result['fullname']
-        if user_entry.title != result.get('title', None):
-            changed = True
-            user_entry.title = result.get('title', None)
+        # logins should be case-insensitive
+        user = user.lower()
 
-        if changed:
-            API.db.session.add(user_entry)
-            API.db.session.commit()
+        # user authentication with login provider failed: return unauthorized
+        result = cls.get_login_manager().authenticate(user, passwd)
+        if result is None:
+            raise UnauthorizedError()
 
-        return user_entry
+        # find user entry in database
+        user_entry = User.query.filter_by(login=user).first()
+        if user_entry is not None:
+            # update db in case user information has changed
+            changed = False
+            if user_entry.name != result['fullname']:
+                changed = True
+                user_entry.name = result['fullname']
+            if user_entry.title != result.get('title', None):
+                changed = True
+                user_entry.title = result.get('title', None)
 
-    allow_auto_create = CONF.get_config().get(
-        'auth', {}).get('allow_user_auto_create', False)
-    # auto creation of users not allowed: report unauthorized
-    if not allow_auto_create:
-        raise UnauthorizedError(
-            msg='User authenticated but not registered in database')
+            if changed:
+                API.db.session.add(user_entry)
+                API.db.session.commit()
 
-    # create user in database
-    new_user = User()
-    # important: always save login as lowercase to avoid duplicates or user
-    # having to worry about entering the right case
-    new_user.login = result['login'].lower()
-    new_user.name = result['fullname']
-    # job title is optional
-    new_user.title = result.get('title', None)
-    new_user.restricted = False
-    new_user.admin = False
-    API.db.session.add(new_user)
-    API.db.session.commit()
+            return user_entry
 
-    return new_user
-# _authenticate_basic()
+        allow_auto_create = CONF.get_config().get(
+            'auth', {}).get('allow_user_auto_create', False)
+        # auto creation of users not allowed: report unauthorized
+        if not allow_auto_create:
+            raise UnauthorizedError(
+                msg='User authenticated but not registered in database')
 
-def _authenticate_key(auth_value):
-    """
-    API key-based authentication
+        # create user in database
+        new_user = User()
+        # important: always save login as lowercase to avoid duplicates or user
+        # having to worry about entering the right case
+        new_user.login = result['login'].lower()
+        new_user.name = result['fullname']
+        # job title is optional
+        new_user.title = result.get('title', None)
+        new_user.restricted = False
+        new_user.admin = False
+        API.db.session.add(new_user)
+        API.db.session.commit()
 
-    Args:
-        auth_value (str): the value part of the Authorization header in the
-                          form key_id:key_value
+        return new_user
+    # authenticate_basic()
 
-    Raises:
-        BadRequest: if value is malformed
-        UnauthorizedError: if credentials are invalid
+    @classmethod
+    def authenticate_key(cls, auth_value):
+        """
+        API key-based authentication
 
-    Returns:
-        User: instance of User's sqlalchemy model
-    """
-    try:
-        # http headers are always ascii
-        key_id, key_secret = auth_value.split(':', 1)
-    except Exception:
-        raise BadRequest()
+        Args:
+            auth_value (str): the value part of the Authorization header in the
+                              form key_id:key_value
 
-    key_entry = UserKey.query.filter_by(
-        key_id=key_id, key_secret=key_secret).first()
-    if key_entry is None:
-        raise UnauthorizedError()
+        Raises:
+            BadRequest: if value is malformed
+            UnauthorizedError: if credentials are invalid
 
-    key_entry.last_used = func.now()
-    API.db.session.add(key_entry)
-    API.db.session.commit()
-    return key_entry.user_rel
-# _authenticate_key()
+        Returns:
+            User: instance of User's sqlalchemy model
+        """
+        try:
+            # http headers are always ascii
+            key_id, key_secret = auth_value.split(':', 1)
+        except Exception:
+            raise BadRequest()
+
+        key_entry = UserKey.query.filter_by(
+            key_id=key_id, key_secret=key_secret).first()
+        if key_entry is None:
+            raise UnauthorizedError()
+
+        key_entry.last_used = func.now()
+        API.db.session.add(key_entry)
+        API.db.session.commit()
+        return key_entry.user_rel
+    # authenticate_key()
+# _LoginManager
 
 def authorize(decorated_view):
     """
@@ -179,7 +195,7 @@ def authorize(decorated_view):
         # The exception takes care of providing the scheme allowed
         # via WWW-Authenticate response header
         auth_header = flask_request.headers.get('Authorization', None)
-        if auth_header is None or len(auth_header) == 0:
+        if not auth_header:
             raise UnauthorizedError(auth_provided=False)
 
         try:
@@ -190,9 +206,9 @@ def authorize(decorated_view):
         auth_scheme = auth_scheme.lower()
 
         if auth_scheme == 'basic':
-            user_entry = _authenticate_basic(auth_value)
+            user_entry = _LoginManager.authenticate_basic(auth_value)
         elif auth_scheme == 'x-key':
-            user_entry = _authenticate_key(auth_value)
+            user_entry = _LoginManager.authenticate_key(auth_value)
         else:
             # scheme not supported
             raise UnauthorizedError()

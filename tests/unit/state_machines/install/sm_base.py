@@ -101,13 +101,7 @@ class TestSmBase(TestCase):
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
 
-        # Open the connection with the database so that it can be used in the
-        # tests. Even for tests that does not directly use the session, we must
-        # Create a session in order to fullfill the models with the query
-        # object.
-        self.session = MANAGER.session()
-
-        # The following mock objectes are used to track the correct execution
+        # The following mock objects are used to track the correct execution
         # of the install machine, assuring that each method was called.
         mock_get_kargs = Mock()
         mock_wait_install = Mock()
@@ -239,13 +233,13 @@ class TestSmBase(TestCase):
             Inner function to restore the name of the system type
             """
             profile.system_rel.type_rel.name = system_type
-            self.session.commit()
+            MANAGER.session.commit()
         # restore_system_type()
         self.addCleanup(restore_system_type)
 
         profile.system_rel.type_rel.name = "unknown plat"
 
-        self.session.commit()
+        MANAGER.session.commit()
 
         with self.assertRaisesRegex(RuntimeError, "Platform type"):
             self._create_sm(self._child_cls, "rhel7.2",
@@ -280,7 +274,7 @@ class TestSmBase(TestCase):
             Inner function to restore the profile parameters.
             """
             profile.parameters = profile_parameters
-            self.session.commit()
+            MANAGER.session.commit()
         # restore_paremeters()
 
         self.addCleanup(restore_parameters)
@@ -322,9 +316,9 @@ class TestSmBase(TestCase):
                                          minor="0",
                                          cmdline="foo",
                                          desc="AnotherOS without repo")
-        self.session.add(unsupported_os)
-        self.session.commit()
-        self.addCleanup(self.session.delete, unsupported_os)
+        MANAGER.session.add(unsupported_os)
+        MANAGER.session.commit()
+        self.addCleanup(MANAGER.session.delete, unsupported_os)
 
         with self.assertRaisesRegex(RuntimeError, "No repository"):
             self._create_sm(self._child_cls, "AnotherOS",

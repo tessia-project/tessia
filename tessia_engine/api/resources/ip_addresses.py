@@ -97,9 +97,6 @@ class IpAddressResource(SecureResource):
 
         Raises:
             BaseHttpError: in case provided address is invalid
-
-        Returns:
-            None
         """
         try:
             address_obj = ipaddress.ip_address(address)

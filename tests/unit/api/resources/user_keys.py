@@ -73,7 +73,6 @@ class TestUserKey(TestSecureResource):
             resp (Response): flask response object
             orig_id (int): the key_id of the deleted item
         """
-        # pylint: disable=no-member
         resp_value = resp.get_data(as_text=True)
         self.assertEqual(resp.status_code, 200, resp_value)
         self.assertEqual(bool(resp_value), True)
@@ -144,7 +143,7 @@ class TestUserKey(TestSecureResource):
             data=json.dumps({})
         )
         body = json.loads(resp.get_data(as_text=True))
-        self.assertEqual(resp.status_code, 403, body) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 403, body)
         self.assertRegex(
             body,
             'For this operation login and password must be provided'
@@ -177,7 +176,6 @@ class TestUserKey(TestSecureResource):
                 'create', '{}:a'.format('user_user@domain.com'), work_data)
 
             # validate the response received
-            # pylint: disable=no-member
             self.assertEqual(
                 resp.status_code,
                 400,
@@ -234,7 +232,7 @@ class TestUserKey(TestSecureResource):
             data=None
         )
         body = json.loads(resp.get_data(as_text=True))
-        self.assertEqual(resp.status_code, 403, body) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 403, body)
         self.assertRegex(
             body,
             'For this operation login and password must be provided'
@@ -253,7 +251,7 @@ class TestUserKey(TestSecureResource):
         resp = self._do_request(
             'delete', 'user_privileged@domain.com:a', table_id)
 
-        self.assertEqual(resp.status_code, 422) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 422)
     # test_del_no_role()
 
     def test_dates(self):
@@ -411,6 +409,6 @@ class TestUserKey(TestSecureResource):
         """
         resp = self._do_request(
             'update', '{}:a'.format('user_user@domain.com'), {'id': 1})
-        self.assertEqual(resp.status_code, 403) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 403)
     # test_update_forbidden()
 # TestUser

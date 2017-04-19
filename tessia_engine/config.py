@@ -52,9 +52,6 @@ class Config(object):
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             NotImplementedError: as the class should not be instantiated
         """
@@ -76,6 +73,8 @@ class Config(object):
 
         Raises:
             IOError: if config file cannot be read
+            OSError: if config file cannot be read
+            RuntimeError: if file content evaluates to invalid content
         """
         def _read_file(file_path):
             """Auxiliar method to read the content of a file"""
@@ -116,8 +115,11 @@ class Config(object):
 
         # file is empty: set an appropriate dict type so that consumer modules
         # don't fail while accessing the dict
-        if config_dict is None:
+        if (config_dict is None or
+                (isinstance(config_dict, str) and not config_dict.strip())):
             config_dict = {}
+        elif not isinstance(config_dict, dict):
+            raise RuntimeError('Invalid configuration file')
 
         return config_dict
     # _parse_config()
@@ -152,9 +154,6 @@ class Config(object):
         Args:
             debug (bool): in case debug level should be enabled for all
                           handlers
-
-        Returns:
-            None
 
         Raises:
             RuntimeError: if log configuration is missing or invalid

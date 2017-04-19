@@ -22,6 +22,7 @@ Unit tests for Install state machine.
 from tessia_engine.db import models
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.state_machines.install import machine
+from tests.unit.config import EnvConfig
 from tests.unit.state_machines.install import utils
 from unittest.mock import patch
 from unittest import TestCase
@@ -32,6 +33,12 @@ import json
 #
 # CONSTANTS AND DEFINITIONS
 #
+DEFAULT_CONFIG = {
+    'log': {
+        'version': 1,
+        'handlers': {}
+    }
+}
 REQUEST_PARAMETERS = json.dumps({
     "system": "kvm054",
     "profile": "kvm_kvm054_install",
@@ -51,7 +58,15 @@ class TestAutoInstallMachine(TestCase):
         Called once for the setup of DbUnit.
         """
         utils.setup_dbunit()
+        cls._env_config = EnvConfig()
+        cls._env_config.start(DEFAULT_CONFIG)
     # setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        # restore original config
+        cls._env_config.stop()
+    # tearDownClass()
 
     def setUp(self):
         """
@@ -76,12 +91,6 @@ class TestAutoInstallMachine(TestCase):
 
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
-
-        # Open the connection with the database so that it can be used in the
-        # tests. Even for tests that do not directly use the session, we must
-        # create a session in order to fullfill the models with the query
-        # object.
-        self.session = MANAGER.session()
     # setUp()
 
     def _perform_test_init(self, parameters):
@@ -215,8 +224,8 @@ class TestAutoInstallMachine(TestCase):
                                                 cmdline="foo",
                                                 desc="Unsupported OS for Test")
 
-        self.session.add(unsupported_os)
-        self.session.commit()
+        MANAGER.session.add(unsupported_os)
+        MANAGER.session.commit()
         request = json.dumps({
             "system": "kvm054",
             "profile": "kvm_kvm054_install",
@@ -225,6 +234,6 @@ class TestAutoInstallMachine(TestCase):
         })
         with self.assertRaisesRegex(RuntimeError, "OS Unsupported"):
             machine.AutoInstallMachine(request)
-        self.session.delete(unsupported_os)
+        MANAGER.session.delete(unsupported_os)
     # test_unsupported_os()
 # TestAutoInstallMachine

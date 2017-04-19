@@ -13,15 +13,12 @@
 # limitations under the License.
 
 """
-This module does this and that.
-
-ome more detailed info about the module here.
+Unit test for the Anaconda-based state machine module.
 """
 
 #
 # IMPORTS
 #
-from tessia_engine.db.connection import MANAGER
 from tessia_engine.state_machines.install import sm_anaconda, sm_base
 from tests.unit.state_machines.install import utils
 from unittest.mock import MagicMock, Mock, patch
@@ -108,12 +105,6 @@ class TestSmAnaconda(TestCase):
 
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
-
-        # Open the connection with the database so that it can be used in the
-        # tests. Even for tests that does not directly use the session, we must
-        # create a session in order to fullfill the models with the query
-        # object.
-        self.session = MANAGER.session()
     # setUp()
 
     def test_init(self):

@@ -3,8 +3,8 @@ FROM ubuntu:latest
 # by default we expect the git repos to be placed by the ci process under /assets
 # but it is also possible to use this dockerfile directly and override the variables
 # to point to another location
-ARG git_repo=/assets/tessia-engine.git
-ARG baselib_repo=/assets/tessia_baselib.git
+ARG git_repo=file:///assets/tessia-engine.git
+ARG baselib_repo=file:///assets/tessia_baselib.git
 
 # whether we are building a container for production use
 ARG prod_build=true
@@ -19,8 +19,8 @@ ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 # Generate en_US.UTF-8 locale and update the default locale, some
 # applications use this.
-RUN locale-gen en_US.UTF-8 \
-    && update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
+RUN locale-gen en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     # Install the distro dependencies.
     # ATTENTION: make sure to keep a comment for each explaining why is it needed.
     apt-get update -q && \
@@ -52,20 +52,14 @@ RUN locale-gen en_US.UTF-8 \
 
 COPY assets /assets/
 
-# tessia_baselib installation
+# tessia-engine installation
 RUN cd /assets && \
-    git clone $baselib_repo tessia_baselib && \
-    cd tessia_baselib && \
-    pip3 install -U -r requirements.txt && \
-    ./setup.py install && \
-    # tessia-engine installation && \
-    cd /assets && \
     git clone $git_repo tessia-engine && \
     cd tessia-engine && \
-    # it's important not to use -U here to prevent pip from trying to clone
-    # tessia_baselib's repository as it might not be accessible from the builder
-    # machine
-    pip3 install -r requirements.txt && \
+    # use the custom url as the tessia_baselib's repository might not be accessible
+    # from the builder
+    sed -i "/egg=tessia_baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
+    pip3 install -U -r requirements.txt && \
     ./setup.py install && \
     # tessia-engine files settings
     useradd -m tessia && \
@@ -79,7 +73,10 @@ RUN cd /assets && \
     cp /assets/supervisord.conf /etc/supervisor/conf.d/supervisord.conf && \
     # remove unneeded dependencies used only for building paramiko and uwsgi
     DEBIAN_FRONTEND=noninteractive apt-get -yq purge --auto-remove \
-        build-essential libssl-dev libffi-dev python3-dev
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    python3-dev
 
 EXPOSE 80 5000
 

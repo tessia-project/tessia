@@ -204,9 +204,6 @@ class PlatKvm(PlatBase):
         Raises:
             ValueError: in case there is a conflict with resources used
             RuntimeError: if max number of devnos is reached
-
-        Returns:
-            None
         """
         # keep track of used devnos and devs (i.e. vda) to avoid conflicts
         # when dynamically generating definitions as well as for sanity check

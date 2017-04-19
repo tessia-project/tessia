@@ -211,7 +211,7 @@ class TestStorageVolume(TestSecureResource):
         # test special cases when volume type does not match storage server
         def validate_resp(resp, attempted_type, server_type):
             """Helper validator"""
-            self.assertEqual(resp.status_code, 400) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 400)
             msg = MSG_INVALID_TYPE.format(attempted_type, server_type)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(msg, body['message'])
@@ -276,7 +276,7 @@ class TestStorageVolume(TestSecureResource):
         """
         def validate_resp(resp, parts_size, vol_size):
             """Helper validator"""
-            self.assertEqual(resp.status_code, 400) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 400)
             msg = MSG_PTABLE_SIZE_MISMATCH.format(parts_size, vol_size)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(msg, body['message'], body)

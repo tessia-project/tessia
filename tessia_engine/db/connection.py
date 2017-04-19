@@ -74,7 +74,7 @@ class _DbManager(object):
         """
         Return the sqlalchemy's engine instance
         """
-        self._connect()
+        self.connect()
         return self._conn[0]
 
     @property
@@ -82,10 +82,10 @@ class _DbManager(object):
         """
         Return the sqlalchemy's session instance
         """
-        self._connect()
+        self.connect()
         return self._conn[1]
 
-    def _connect(self):
+    def connect(self):
         """
         Read the db connection parameters from the configuration file and
         create an engine instance and a scoped session factory. Scoped session
@@ -115,7 +115,6 @@ class _DbManager(object):
 
         # patch the models base to provide a convenient query attribute
         # this is similar to what flask-sqlalchemy does
-        # pylint:disable=protected-access
         for class_entry in BASE._decl_class_registry.values():
             if isinstance(class_entry, type):
                 if not hasattr(class_entry, 'query_class'):

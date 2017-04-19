@@ -61,8 +61,6 @@ class DbUnit(object):
         Do some monkey patching to allow the sa's models to work in a sqlite
         database.
         """
-        # pylint: disable=protected-access
-
         # the postgres dialect class defines this variable but it's always None
         # and falls back to json lib, so we can do the same in sqlite
         SQLiteDialect._json_serializer = None
@@ -125,7 +123,6 @@ class DbUnit(object):
         mock_conf.get_config.return_value = conf
 
         # make sure it's a new connection and not one from a previous test
-        # pylint: disable=protected-access
         connection.MANAGER._conn = None
         for class_entry in models.BASE._decl_class_registry.values():
             if isinstance(class_entry, type):
@@ -228,9 +225,6 @@ class TestModels(TestCase):
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             None
         """
@@ -284,9 +278,6 @@ class TestModels(TestCase):
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             None
         """
@@ -299,7 +290,7 @@ class TestModels(TestCase):
                     # the field name in the model
                     'attr_name': 'role',
                     # the value of the field
-                    'value': 'User',
+                    'value': 'USER',
                 },
             ]),
             (self.models.UserRole, [
@@ -317,7 +308,7 @@ class TestModels(TestCase):
                     # the field name in the model
                     'attr_name': 'role',
                     # the value of the field
-                    'value': 'User',
+                    'value': 'USER',
                 },
                 {
                     # the relationship name in the model

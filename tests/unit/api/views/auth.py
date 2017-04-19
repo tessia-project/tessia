@@ -21,8 +21,10 @@ Unit test for api.views.auth module
 #
 from base64 import b64encode
 from tessia_engine.api.app import API
+from tessia_engine.api.resources import RESOURCES
 from tessia_engine.api.views import auth
 from tessia_engine.db import models
+from tests.unit.config import EnvConfig
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
 from unittest.mock import patch
@@ -32,6 +34,12 @@ import json
 #
 # CONSTANTS AND DEFINITIONS
 #
+DEFAULT_CONFIG = {
+    'auth': {
+        'allow_user_auto_create': False,
+        'realm': 'Fake realm',
+    }
+}
 
 #
 # CODE
@@ -46,44 +54,55 @@ class TestAuth(TestCase):
         Called once before any test in this test class runs.
         """
         DbUnit.create_db()
+
         # at this point we can create the app as the db configuration was
         # already stablished
-        API._api = None # pylint: disable=protected-access
+
+        # use the helper class to manage the config file
+        cls._env_config = EnvConfig()
+        cls._env_config.start(DEFAULT_CONFIG)
+
+        # force recreation of object
+        API._api = None
         # the potion resource might be tied to a previous instance so we remove
         # the association
-        from tessia_engine.api.resources import RESOURCES
         for resource in RESOURCES:
             resource.api = None
+        # create the flask app instance
         API.app.config['TESTING'] = True
         cls.app = API.app.test_client()
         cls.models = models
     # setUpClass()
 
+    @classmethod
+    def tearDownClass(cls):
+        # restore original config
+        cls._env_config.stop()
+    # tearDownClass()
+
     def setUp(self):
         """
         Prepare mocks before each test's execution.
         """
+        # clear any previous reference to the login manager in the module
+        auth._LoginManager._manager = None
+
         # prepare a mock for the login manager used to validate credentials
-        patcher = patch.object(auth, 'LOGIN_MANAGER', autospec=True)
-        self._mock_login_man = patcher.start()
+        patcher = patch.object(auth, 'auth', autospec=True)
+        self._mock_auth = patcher.start()
+        self.addCleanup(patcher.stop)
+        self._mock_login_man = self._mock_auth.get_manager.return_value
         resp = {
             'login': 'user_x_0@domain.com',
             'fullname': 'name of user_x_0',
             'title': 'Job title of user_x_0',
         }
         self._mock_login_man.authenticate.return_value = resp
-        self.addCleanup(patcher.stop)
-
-        # mock for config file (auth section)
-        patcher = patch.object(auth, 'CONF', autospec=True)
-        self._mock_conf = patcher.start()
-        self._mock_conf.get_config.return_value = {
-            'auth': {
-                'allow_user_auto_create': False,
-                'realm': 'Fake realm',
-            }
-        }
-        self.addCleanup(patcher.stop)
+        # remove the reference to our mock when the test ends
+        def clear_ref():
+            """Helper to clear login manager mock from auth module"""
+            auth._LoginManager._manager = None
+        self.addCleanup(clear_ref)
     # setUp()
 
     def test_basic_auto_fail(self):
@@ -108,8 +127,8 @@ class TestAuth(TestCase):
         )
 
         # validate the response
-        self.assertEqual(401, resp.status_code) # pylint: disable=no-member
-        data = json.loads(resp.data.decode('ascii')) # pylint: disable=no-member
+        self.assertEqual(401, resp.status_code)
+        data = json.loads(resp.data.decode('ascii'))
         self.assertEqual(
             data['message'],
             'User authenticated but not registered in database')
@@ -128,8 +147,11 @@ class TestAuth(TestCase):
         }
         self._mock_login_man.authenticate.return_value = login_resp
         # set config to allow user auto creation
-        conf = self._mock_conf.get_config.return_value
+        conf = DEFAULT_CONFIG.copy()
         conf['auth']['allow_user_auto_create'] = True
+        self._env_config.update(conf)
+        # restore default config after test finishes
+        self.addCleanup(self._env_config.update, DEFAULT_CONFIG)
 
         # perform the request
         auth_header = 'basic {}'.format(
@@ -140,7 +162,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 200 ok response
-        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(200, resp.status_code)
         # validate that the user was created in database
         user = self.models.User.query.filter_by(
             login=login_resp['login']).one()
@@ -164,7 +186,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 401 unauthorized was received
-        self.assertEqual(401, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(401, resp.status_code)
     # test_basic_fail()
 
     def test_basic_noauto_success(self):
@@ -181,7 +203,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 200 ok was received
-        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(200, resp.status_code)
 
         # exercise when user information changed
         mock_resp = {
@@ -200,7 +222,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 200 ok was received
-        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(200, resp.status_code)
         # see if information was updated in db
         user = self.models.User.query.filter_by(
             login=mock_resp['login']).one()
@@ -222,7 +244,7 @@ class TestAuth(TestCase):
             )
 
             # validate a 400 badrequest or 401 unauthorized
-            self.assertIn(resp.status_code, (400, 401)) # pylint: disable=no-member
+            self.assertIn(resp.status_code, (400, 401))
     # test_key_wrong()
 
     def test_key_fail(self):
@@ -236,7 +258,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 401 unauthorized
-        self.assertEqual(401, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(401, resp.status_code)
     # test_key_fail()
 
     def test_key_success(self):
@@ -255,7 +277,7 @@ class TestAuth(TestCase):
         )
 
         # validate a 200 ok was received
-        self.assertEqual(200, resp.status_code) # pylint: disable=no-member
+        self.assertEqual(200, resp.status_code)
     # test_key_success()
 
     def test_key_wrong(self):
@@ -271,7 +293,7 @@ class TestAuth(TestCase):
             )
 
             # validate a 400 badrequest or 401 unauthorized
-            self.assertIn(resp.status_code, (400, 401)) # pylint: disable=no-member
+            self.assertIn(resp.status_code, (400, 401))
     # test_key_wrong()
 
     def test_no_auth(self):
@@ -285,9 +307,9 @@ class TestAuth(TestCase):
         )
 
         # validate a 401 unauthorized
-        self.assertEqual(resp.status_code, 401) # pylint: disable=no-member
+        self.assertEqual(resp.status_code, 401)
         # check that the error message is correct
-        data = json.loads(resp.data.decode('ascii')) # pylint: disable=no-member
+        data = json.loads(resp.data.decode('ascii'))
         self.assertEqual(
             data['message'],
             'You need to provide credentials to access this resource.')
@@ -307,7 +329,7 @@ class TestAuth(TestCase):
             )
 
             # validate a 401 unauthorized
-            self.assertEqual(resp.status_code, 401) # pylint: disable=no-member
+            self.assertEqual(resp.status_code, 401)
     # test_scheme_wrong()
 
 # TestAuth

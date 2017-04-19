@@ -33,7 +33,6 @@ from unittest.mock import patch
 # CODE
 #
 
-# pylint:disable=no-member
 class TestAuthPackageAndBase(TestCase):
     """
     Unit test for the package constructor.
@@ -86,9 +85,6 @@ class TestAuthPackageAndBase(TestCase):
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             AssertionError: if class instantiates fails to raise exception
         """
@@ -116,9 +112,6 @@ class TestAuthPackageAndBase(TestCase):
     def test_import_valid_config(self):
         """
         Test if the package fails to import in case configuration is wrong
-
-        Returns:
-            None
 
         Raises:
             AssertionError: if class instantiates fails to raise exception

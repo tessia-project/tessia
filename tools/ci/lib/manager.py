@@ -262,7 +262,7 @@ class Manager(object):
                 controller['passwd'], verbose)
             controllers.append(
                 {'hostname': controller['hostname'], 'session': session})
-        if len(controllers) == 0:
+        if not controllers:
             raise RuntimeError(
                 "No controller available for the chosen build "
                 "type '{}'".format(build_type))
@@ -389,7 +389,7 @@ class Manager(object):
         else:
             dang_images = output.replace('\n', ' ').strip()
             # delete dangling images
-            if len(dang_images) > 0:
+            if dang_images:
                 ret_code, output = self._session.run(
                     'docker rmi {}'.format(dang_images)
                 )

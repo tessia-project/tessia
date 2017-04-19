@@ -55,9 +55,6 @@ class SmAnaconda(SmBase):
 
         Args:
             iface (dict): network interface information dict
-
-        Returns:
-            None
         """
         ccwgroup = iface['attributes']["ccwgroup"].split(",")
         # The control read device number is used to create a predictable
@@ -150,7 +147,7 @@ class SmAnaconda(SmBase):
         while time() <= timeout_installation:
             ret, out = shell.run(cmd_read_line.format(line_offset))
             out = out.rstrip('\n')
-            if len(out) == 0:
+            if not out:
                 sleep(frequency_check)
                 continue
 

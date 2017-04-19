@@ -39,7 +39,6 @@ MACHINE_NAME = "test-machine"
 #
 # CODE
 #
-# pylint: disable=protected-access
 class TestWrapper(TestCase):
     """
     Unit test for the machine wrapper module
@@ -103,7 +102,7 @@ class TestWrapper(TestCase):
 
         # A trailing newline causes an empty line to appear at the end
         # of the split array.
-        if written_lines[-1] == '':
+        if not written_lines[-1]:
             written_lines = written_lines[:-1]
 
         written_ret = int(written_lines[0])

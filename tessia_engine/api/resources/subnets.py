@@ -110,9 +110,6 @@ class SubnetResource(SecureResource):
 
         Raises:
             BaseHttpError: in case provided address is invalid
-
-        Returns:
-            None
         """
         if address is None:
             return
@@ -140,9 +137,6 @@ class SubnetResource(SecureResource):
 
         Raises:
             BaseHttpError: in case provided gateway ip is invalid
-
-        Returns:
-            None
         """
         if gateway is None:
             return

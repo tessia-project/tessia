@@ -20,6 +20,7 @@ Wrapper script to execute coverage on unit tests
 #
 # IMPORTS
 #
+from tempfile import NamedTemporaryFile
 import os
 import subprocess
 import sys
@@ -27,7 +28,8 @@ import sys
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMD_COVERAGE = "python3 -m coverage run -a --source={} {}"
+CMD_COVERAGE = (
+    "python3 -m coverage run -a --{import_method}={source_path} {subcmd}")
 CMD_COVERAGE_ERASE = "python3 -m coverage erase"
 CMD_COVERAGE_REPORT = "python3 -m coverage report -m"
 SUBCMD_UNITTEST_DISCOVER = "-m unittest discover {} -p '*.py'"
@@ -63,26 +65,42 @@ def main():
     # no arguments provided: execute all tests
     if len(sys.argv) < 2:
         subcmd_unittest = SUBCMD_UNITTEST_DISCOVER.format('tests/unit')
-        cmds.append(CMD_COVERAGE.format('tessia_engine', subcmd_unittest))
+        cmds.append(CMD_COVERAGE.format(
+            import_method='source',
+            source_path='tessia_engine',
+            subcmd=subcmd_unittest
+        ))
 
     # module path provided: use module's command version
     elif sys.argv[1].endswith('.py'):
         subcmd_unittest = SUBCMD_UNITTEST_MODULE.format(sys.argv[1])
         cmds.append(CMD_COVERAGE.format(
-            sys.argv[1].replace("tests/unit", "tessia_engine"),
-            subcmd_unittest
+            import_method='include',
+            source_path=sys.argv[1].replace("tests/unit", "tessia_engine"),
+            subcmd=subcmd_unittest
         ))
 
     # package path provided: use discover option
     else:
         subcmd_unittest = SUBCMD_UNITTEST_DISCOVER.format(sys.argv[1])
         cmds.append(CMD_COVERAGE.format(
-            sys.argv[1].replace("tests/unit", "tessia_engine"),
-            subcmd_unittest
+            import_method='source',
+            source_path=sys.argv[1].replace("tests/unit", "tessia_engine"),
+            subcmd=subcmd_unittest
         ))
 
     # display report
     cmds.append(CMD_COVERAGE_REPORT)
+
+    # given that many modules can use the config module it's possible that some
+    # tests fail to appropriately mock all the necessary modules which will
+    # cause them to 'leak' and eventually use a config file from the
+    # filesystem, which might lead to unexpected/unwanted results. To prevent
+    # that we set an env variable pointing to an empty config file so that
+    # any 'leaked' modules will reach this file instead of a random file from
+    # the filesystem.
+    temp_file = NamedTemporaryFile()
+    os.environ['TESSIA_CFG'] = temp_file.name
 
     # show command line to user
     cmd = ' && '.join(cmds)

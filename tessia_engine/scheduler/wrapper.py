@@ -266,6 +266,8 @@ class MachineWrapper(object):
         orig_print = builtins.print
         def new_print(*args, **kwargs):
             """Print function with auto-flush"""
+            if 'flush' in kwargs:
+                kwargs.pop('flush')
             orig_print(*args, **kwargs, flush=True)
         builtins.print = new_print
 

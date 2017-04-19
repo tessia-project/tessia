@@ -119,7 +119,7 @@ class Config(object):
                 (isinstance(config_dict, str) and not config_dict.strip())):
             config_dict = {}
         elif not isinstance(config_dict, dict):
-            raise RuntimeError('Invalid configuration file')
+            raise RuntimeError('Invalid configuration file content')
 
         return config_dict
     # _parse_config()

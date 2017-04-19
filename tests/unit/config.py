@@ -154,6 +154,8 @@ log:
             content = option
 
         self._mock_open_fd.read.return_value = content
+        # force re-read of file
+        config.CONF._config_dict = None
     # _set_open_mock()
 
     def setUp(self):
@@ -204,24 +206,20 @@ log:
         self.assertRaises(yaml.scanner.ScannerError,
                           config.CONF.get_config)
 
-    # test_bad_content()
+        # set the mock to return a random string
+        self._set_open_mock(' random-string ')
 
-    def test_bad_content_list(self):
-        """
-        Exercise parsing configuration file containing a list
+        # perform the action and validate result
+        with self.assertRaisesRegex(
+            RuntimeError, 'Invalid configuration file content'):
+            config.CONF.get_config()
 
-        Args:
-            None
-
-        Raises:
-            AssertionError: if any of the assertion calls fails
-        """
         # set the mock to return a list
         self._set_open_mock('- bla')
 
         # perform the action and validate result
         with self.assertRaisesRegex(
-            RuntimeError, 'Invalid configuration file'):
+            RuntimeError, 'Invalid configuration file content'):
             config.CONF.get_config()
 
     # test_bad_content()

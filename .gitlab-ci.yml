@@ -11,7 +11,7 @@ build:
     # make sure the deps from orc are met and up-to-date
     - pip3 install --user -U pip -rtools/ci/requirements.txt
     # checkout to correct branch
-    - git checkout -b ${CI_COMMIT_REF_NAME:=$CI_BUILD_REF_NAME}
+    - git checkout ${CI_COMMIT_REF_NAME:=$CI_BUILD_REF_NAME}
     - tools/ci/orc build
 
 # TODO: further configure for deployments

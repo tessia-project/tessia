@@ -24,6 +24,8 @@ from tessia_engine.api.resources.storage_volumes import MSG_INVALID_TYPE
 from tessia_engine.api.resources.storage_volumes import StorageVolumeResource
 from tessia_engine.db import models
 from tests.unit.api.resources.secure_resource import TestSecureResource
+from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_MANY_PARTS
+from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_DASD_PARTS
 
 import json
 
@@ -148,6 +150,42 @@ class TestStorageVolume(TestSecureResource):
         self._test_add_missing_field('user_hw_admin@domain.com', pop_fields)
     # test_add_missing_field()
 
+    def test_add_same_volid_other_server(self):
+        """
+        Test adding a volume with a volume_id of an existing volume but in a
+        different storage server.
+        """
+        user_pass = '{}:a'.format('user_hw_admin@domain.com')
+        # first, create an existing entry with same vol id but different
+        # storage server
+        alternate_server = models.StorageServer(
+            name='DSK8_2x_0',
+            type='DASD-FCP',
+            model='DS8K',
+            owner='user_hw_admin@domain.com',
+            modifier='user_hw_admin@domain.com',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(alternate_server)
+        self.db.session.commit()
+        vol_existing = next(self._get_next_entry)
+        vol_existing['server'] = alternate_server.name
+        vol_existing['id'] = self._request_and_assert(
+            'create', user_pass, vol_existing)
+
+        # finally, create the vol with same id on the original server
+        # and confirm that it works
+        vol_new = next(self._get_next_entry)
+        vol_new['volume_id'] = vol_existing['volume_id']
+        self._request_and_assert(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), vol_new)
+
+        # cleanup
+        self._request_and_assert('delete', user_pass, vol_existing['id'])
+        self.db.session.delete(alternate_server)
+        self.db.session.commit()
+    # test_add_same_volid_other_server()
+
     def test_add_update_conflict(self):
         """
         Test two scenarios:
@@ -265,6 +303,7 @@ class TestStorageVolume(TestSecureResource):
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
         validate_resp(resp, item['type'], iscsi_server_type)
 
+        # cleanup
         self.db.session.delete(iscsi_server)
         self.db.session.commit()
     # test_add_update_wrong_field()
@@ -329,6 +368,170 @@ class TestStorageVolume(TestSecureResource):
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
         validate_resp(resp, parts_size, entry['size'])
     # test_add_update_wrong_ptable()
+
+    def test_add_wrong_msdos_primary_ptable(self):
+        """
+        Test the scenario where the partition table has five primary partitions
+        on a msdos labeled disk.
+        """
+        def validate_resp(resp):
+            """Helper validator"""
+            self.assertEqual(resp.status_code, 400)
+            msg = MSG_PTABLE_MANY_PARTS
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(msg, body['message'], body)
+        # validate_resp()
+
+        # prepare a new entry for creation
+        data = next(self._get_next_entry)
+        part_size = int(data['size'] / 5)
+        data['part_table'] = {
+            'type': 'msdos',
+            'table': [
+                {
+                    'mp': '/',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/home',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/var',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/tmp',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/boot',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+            ]
+        }
+        # perform create request and validate response
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+        validate_resp(resp)
+    # test_add_wrong_msdos_primary_ptable()
+
+    def test_add_wrong_dasd_primary_ptable(self):
+        """
+        Test the scenario where the partition table has four primary partitions
+        on a dasd labeled disk
+        """
+        def validate_resp(resp):
+            """Helper validator"""
+            self.assertEqual(resp.status_code, 400)
+            msg = MSG_PTABLE_DASD_PARTS
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(msg, body['message'], body)
+        # validate_resp()
+
+        # prepare a new entry for creation
+        data = next(self._get_next_entry)
+        part_size = int(data['size'] / 4)
+        data['part_table'] = {
+            'type': 'dasd',
+            'table': [
+                {
+                    'mp': '/',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/home',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/var',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/tmp',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+            ]
+        }
+        # perform create request and validate response
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+        validate_resp(resp)
+    # test_add_wrong_dasd_primary_ptable()
+
+    def test_add_wrong_msdos_extended_ptable(self):
+        """
+        Test the scenario where the partition table has primary / logical /
+        primary / logical on a msdos labeled disk
+        """
+        # prepare a new entry for creation
+        data = next(self._get_next_entry)
+        part_size = int(data['size'] / 4)
+        data['part_table'] = {
+            'type': 'msdos',
+            'table': [
+                {
+                    'mp': '/boot',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'logical',
+                    'mo': None
+                },
+                {
+                    'mp': '/home',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/home/tmp',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'logical',
+                    'mo': None
+                },
+            ]
+        }
+        # perform create request and validate response
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+        self.assertNotEqual(resp.status_code, 200)
+    # test_add_wrong_msdos_extended_ptable()
 
     def test_del_many_roles(self):
         """
@@ -593,8 +796,6 @@ class TestStorageVolume(TestSecureResource):
     # test_update_no_role()
 
     # TODO:
-    # test add same volume_id but different server
-    # test invalid partition table combinations
     # storage server: do not allow to change type when volumes exist
     # filter by modifier and modified fields
 

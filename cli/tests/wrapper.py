@@ -13,14 +13,13 @@
 # limitations under the License.
 
 """
-Helper to encapsulate the execution of a test fixture
+Helper to encapsulate the execution of a python testcase executor class
 """
 
 #
 # IMPORTS
 #
-from importlib.machinery import SourceFileLoader
-
+from util.static_executor import StaticExecutor
 import os
 import sys
 import traceback
@@ -34,46 +33,40 @@ MY_DIR = os.path.dirname(os.path.abspath(__file__))
 # CODE
 #
 
-def _run(fixture_name, data_url, server_url):
+def _run(testcase, server_url):
     """
-    Dynamically imports the module containing the fixture and run it
+    Wrap the testcase file in the python executor class and run it
 
     Args:
-        fixture_name (str): name of fixture
-        data_url (str): url where fixture variable data can be found
+        testcase (str): name of testcase
         server_url (str): url where api is running
 
     Returns:
         int: 0 if test succeeded, 1 otherwise
     """
-    module_path = '{}/fixtures/{}.py'.format(MY_DIR, fixture_name)
-    module_name = 'tests.fixtures.{}'.format(fixture_name)
-
-    module = SourceFileLoader(module_name, module_path).load_module()
-    obj = module.Fixture(data_url=data_url, server_url=server_url)
-    print("[run] fixture '{}'".format(fixture_name))
+    executor = StaticExecutor(testcase, server_url)
+    print("[run] testcase '{}'".format(testcase))
     ret_code = 0
     try:
-        obj.run()
+        executor.run()
     except Exception:
         ret_code = 1
         print("[stop] caught exception")
         traceback.print_exc()
 
-    if hasattr(obj, 'cleanup'):
-        print("[cleanup] fixture '{}'".format(fixture_name))
-        try:
-            obj.cleanup()
-        except Exception:
-            print('[cleanup] warning: cleanup failed')
-            traceback.print_exc()
-            ret_code = 1
+    print("[cleanup] testcase '{}'".format(testcase))
+    try:
+        executor.cleanup()
+    except Exception:
+        print('[cleanup] warning: cleanup failed')
+        traceback.print_exc()
+        ret_code = 1
 
-    print("[end] fixture '{}'".format(fixture_name))
+    print("[end] testcase '{}'".format(testcase))
     return ret_code
 # _run()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         raise RuntimeError('Missing arguments')
-    sys.exit(_run(*(sys.argv[1:])))
+    sys.exit(_run(*(sys.argv[1:]), **{}))

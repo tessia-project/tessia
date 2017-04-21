@@ -27,61 +27,9 @@ Below it is possible to see a visual representation of the database models. Some
 
 Even though we use sqlalchemy to abstract database access and in theory could use different backends, we are currently relying on specific postgres types (like INET and JSONB) so only postgres is supported by the application.
 
-## How to get a dev environment
-
-First of all, you need a database ready to go and it's a good idea to also use a virtualenv. Here's how you can accomplish this:
-
-```bash
-# install postgres server
-dnf install postgresql-server
-
-# initialize db and start service
-postgresql-setup --initdb
-
-# allow user to connect
-sed -i '1 s,\(^.*$\),local\tall\tengine\tmd5\n\1,' /var/lib/pgsql/data/pg_hba.conf
-
-# start/restart the service
-systemctl restart postgresql
-
-# create a user, a database and appropriate permissions
-runuser -u postgres createuser engine
-runuser -u postgres createdb -E UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8 engine
-runuser -u postgres -- psql engine -c 'ALTER DATABASE engine OWNER TO engine'
-runuser -u postgres -- psql engine -c "ALTER ROLE engine WITH PASSWORD 'pass4engine';"
-
-# create the virtualenv
-tox -e devenv
-
-# switch to your virtualenv
-cd .tox/devenv && source bin/activate
-
-# set the path to the engine conf file
-export TESSIA_CFG=etc/tessia/engine.yaml
-
-# edit the engine config file to point to your development database
-sed -i 's,^  url:.*$,  url: postgresql://engine:pass4engine@/engine,g' $TESSIA_CFG
-
-# it's a good idea to enable echo too to see everything sa and alembic are doing
-sed -i 's,^  debug:.*$,  debug: True,g' $TESSIA_CFG
-
-# make sure your database is clean
-tessia-dbmanage reset
-
-# initialize the database (this will also create the basic types needed by the application)
-tessia-dbmanage init
-
-# if you want to populate your database with some random data you can follow the steps below
-# first, generate some random entries with the helper script:
-../../tools/db/gen_random_data.py > /tmp/data.json
-
-# then feed the database with the generated file:
-tessia-dbmanage feed /tmp/data.json
-```
-
 ## How to make changes to the database schema
 
-Once you have a dev environment ready to go (see previous section), follow these steps:
+Once you have a dev environment ready to go (see [How to get a dev environment](dev_env.md)), follow these steps:
 
 - Update the `db/models.py` file accordingly
 - Create a new revision in alembic to have the database migration versioned. All database handling should be done through the command `tessia-dbmanage`.

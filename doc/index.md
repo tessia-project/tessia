@@ -40,7 +40,9 @@ This section is for people wanting to collaborate with tessia's development.
 
 - [Coding guidelines](developers/coding_guidelines.md)
 - [Development process](developers/dev_process.md)
+- [How to get a server-side dev environment](developers/dev_env.md)
 - [Unit tests](developers/unit_tests.md)
+- [Integration tests/cmdline client tests](developers/client_tests.md)
 - [Working with documentation](developers/documentation.md)
 - [Database considerations](developers/database.md)
 - [Continuous Integration](developers/continuous_integration.md)

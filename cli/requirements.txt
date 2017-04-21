@@ -4,3 +4,4 @@ Potion-client>=2.4.1
 click>=6.6
 # support to yaml file format
 PyYAML>=3.11
+jsonschema>=2.5.1

@@ -30,5 +30,5 @@ source .tox/devenv/bin/activate
 
 tools/control_daemons stop
 tessia-dbmanage reset -y
-tessia-dbmanage init-db
+tessia-dbmanage init
 tools/control_daemons start

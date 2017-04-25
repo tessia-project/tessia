@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-# Getting started with the client
+# Getting started
 
 If you are not yet familiar with the different types of resources available in the tool we strongly suggest that you read about them first. You can learn about tessia's resources
 model [here](resources_model.md).

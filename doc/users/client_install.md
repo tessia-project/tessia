@@ -78,4 +78,4 @@ export LANG=C.UTF-8
 You might want to make it permanent by adding it to your ```.bashrc``` file.
 
 At this point the installation process is complete. In order to start using the client you need to tell it where the API server is and generate an authentication token for
-secure communication. For instructions on how to do it, see [Getting started with the client](client.md)
+secure communication. For instructions on how to do it, see [Getting started](getting_started.md)

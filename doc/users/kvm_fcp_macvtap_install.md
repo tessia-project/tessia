@@ -23,7 +23,7 @@ For this task you should have:
 - FCP disk parameters: `LUN`, `ADAPTER_DEVNO` and `WWPN` (with multipathing or not),`SCSI_WWID`;
 - `IP address` provided for a KVM guest and `MAC-address`.
 
-We suppose that you are already familiar with the [Resources model](resources_model.md).
+We assume that you are already familiar with the [Resources model](resources_model.md).
 
 ## Checking the client's configuration
 
@@ -40,7 +40,7 @@ Server address            : http://localhost:5000
 Server API version        : 20160916
 ```
 
-For more details see [here](client.md#first-steps).
+For more details see [here](getting_started.md#first-steps).
 
 ## Creating a new KVM system
 
@@ -89,7 +89,7 @@ Modified by     : user@domain.com
 Description     : System for database performance tests
 ```
 
-Yes, it is present. If it isn't you should create it at first. How to do this and also for more details see [here](client.md#creating-your-first-system). 
+Yes, it is present. If it isn't you should create it at first. How to do this and also for more details see [here](getting_started.md#creating-your-first-system).
 
 And what about KVM systems?
 
@@ -254,7 +254,7 @@ Modified by                : user@domain.com
 Description                :
 ```
 
-The disk is ready but it is empty. We also need to initialize  a partition table and to create partitions:
+The disk is ready but it is empty. We also need to initialize a partition table and to create partitions:
 
 ```console
 $ tessia storage part-init --server=DS8K22 --id=1020304500000000 --label=msdos
@@ -279,6 +279,9 @@ Partition table type: msdos
 ```
 
 So, the FCP disk is ready.
+
+**Note**: this action has no real effect on the disk yet, it's just information stored in tessia's database.
+The defined changes will only be applied to the disk at installation time.
 
 ## Creating a network interface
 
@@ -416,13 +419,13 @@ It's all right now.
 
 ## Defining an activation profile
 
-There are left several steps that we should complete before installing a KVM guest:
+There are several steps left that we should complete before installing a KVM guest:
 
 - define an activation profile for the 'kvm25' system (`system prof-add`);
 - attach our network interface to the 'kvm25' system (`system iface-attach`);
 - attach the FCP disk to the 'kvm25' system (`system vol-attach`).
 
-More details and explanations about an activation profile you can find [here](client.md#defining-an-activation-profile).
+More details and explanations about an activation profile you can find [here](getting_started.md#defining-an-activation-profile).
 Let's first look at the options of the command `system prof-add`:
 
 ```console
@@ -571,7 +574,7 @@ Modified by   : system
 Description   : Template for RHEL7.2
 ```
 
-For more details about templates and about installing see [here](client.md#installing-an-operating-system-with-an-autotemplate).
+For more details about templates and about installing see [here](getting_started.md#installing-an-operating-system-with-an-autotemplate).
 
 Let's perform a RHEL installation:
 

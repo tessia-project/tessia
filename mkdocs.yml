@@ -17,7 +17,7 @@ pages:
 - Home: 'index.md'
 - Users:
     - Resources model: 'users/resources_model.md'
-    - Getting started with the client: 'users/client.md'
+    - Getting started: 'users/getting_started.md'
     - Howtos: 'users/howtos.md'
     - Client installation: 'users/client_install.md'
     - REST-like API: 'users/api.md'

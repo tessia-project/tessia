@@ -69,7 +69,7 @@ The database installation commands should be executed as the root user.
 [root@host ~]# apt-get install postgresql
 
 # allow user to connect
-[root@host ~]# sed -i '1 s,\(^.*$\),local\tall\tengine\tmd5\n\1,' /etc/postgresql/9.5/main/postgresql.conf
+[root@host ~]# sed -i '1 s,\(^.*$\),local\tall\tengine\tmd5\n\1,' /etc/postgresql/9.5/main/pg_hba.conf
 
 # start/restart the service
 [root@host ~]# systemctl restart postgresql

@@ -21,6 +21,3 @@ Here you can find a useful material for a specific task that you need. Please lo
 
 - [Installing a kvm guest with fcp disk and macvtap interface](kvm_fcp_macvtap_install.md)
 
-- ...
-
-## **...**

@@ -14,84 +14,84 @@
 # limitations under the License.
 
 """
-Entry point to execute the test fixtures
+Entry point to execute the testcases
 """
 
 #
 # IMPORTS
 #
+from util.static_executor import STATIC_DIR, StaticExecutor
+
 import click
 import os
-import re
 import requests
 import subprocess
 
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMD_COVERAGE = 'python3 -m coverage run -a --source=tessia_cli {}'
+CMD_COVERAGE = 'python3 -m coverage run -a --source=../tessia_cli {}'
 CMD_COVERAGE_ERASE = "python3 -m coverage erase"
 CMD_COVERAGE_REPORT = "python3 -m coverage report -m"
-CMD_WRAPPER = '-m tests.wrapper {fixture_name} {data_url} {server_url}'
+CMD_WRAPPER = '-m tests.wrapper {test_name} {api_url}'
 MY_DIR = os.path.dirname(os.path.abspath(__file__))
 
 #
 # CODE
 #
-def _build_fixture_list():
+def _build_test_list():
     """
+    Create a dictionary containing all the testcases found in the corresponding
+    folder.
     """
-    fix_map = {}
-    fixture_dir = os.path.abspath('{}/fixtures'.format(MY_DIR))
+    test_map = {}
 
-    for entry in os.listdir(fixture_dir):
-        if entry.startswith('_') or not entry.endswith('.py'):
+    for entry in os.listdir(STATIC_DIR):
+        if not entry.endswith('.yaml'):
             continue
-        fixture_name = re.sub('.py[co]?$', '', os.path.basename(entry))
-        if fixture_name not in fix_map:
-            fix_map[fixture_name] = True
 
-    return fix_map
-# _build_fixture_list()
+        test_name = entry[:-5]
+        testcase = StaticExecutor.load_testcase(test_name)
+        test_map[test_name] = testcase['description']
+
+    return test_map
+# _build_test_list()
 
 @click.command('exec')
 @click.option(
-    'fixtures', '--fixture', multiple=True,
-    help="fixture name to execute; can be specified multiple times")
+    'names', '--name', multiple=True,
+    help="testcase to execute; can be specified multiple times")
 @click.option(
-    'data_url', '--data-url', required=True,
-    help="url where test data is stored")
-@click.option(
-    'server_url', '--server-url', required=True,
+    'api_url', '--api-url', required=True,
     help="url where API is running")
 @click.option(
     'cleaner', '--cleaner', type=click.Path(exists=True, resolve_path=True),
-    help="cleaner hook to use before each fixture")
-def exec_(fixtures, data_url, server_url, cleaner):
+    help="cleaner hook to use before each testcase")
+def exec_(names, api_url, cleaner):
     """
-    execute one or more fixtures
+    execute one or more testcases
     """
-    fix_map = _build_fixture_list()
+    fix_map = _build_test_list()
 
-    # build the list of fixtures to execute
+    # build the list of tests to execute
     run_list = []
-    if len(fixtures) == 0:
+    if not names:
         run_list = fix_map.keys()
     else:
-        for fixture in fixtures:
+        for testcase in names:
             try:
-                fix_map[fixture]
+                fix_map[testcase]
             except KeyError:
                 raise click.ClickException(
-                    "unknown fixture '{}'".format(fixture))
-            run_list.append(fixture)
-    click.echo('[init] fixtures to execute: {}'.format(', '.join(run_list)))
+                    "unknown testcase '{}'".format(testcase))
+            run_list.append(testcase)
+    click.echo('[init] testcases to execute: {}'.format(', '.join(run_list)))
 
-    os.chdir(os.path.abspath('{}/..'.format(MY_DIR)))
+    os.chdir(MY_DIR)
     subprocess.run(CMD_COVERAGE_ERASE, shell=True, check=1)
 
-    # run each fixture
-    for fixture_name in run_list:
+    # run each testcase
+    for test_name in run_list:
         if cleaner is not None:
             click.echo("[pre-start] calling cleaner '{}'".format(cleaner))
             clean_status = subprocess.call(cleaner, shell=True)
@@ -101,7 +101,7 @@ def exec_(fixtures, data_url, server_url, cleaner):
         # make sure connection is back, sometimes there is a delay
         while True:
             try:
-                requests.head(server_url)
+                requests.head(api_url)
             except requests.exceptions.HTTPError:
                 pass
             except requests.exceptions.ConnectionError:
@@ -112,9 +112,7 @@ def exec_(fixtures, data_url, server_url, cleaner):
 
         # switch to parent dir to make sure paths are found
         exec_cmd = CMD_WRAPPER.format(
-            fixture_name=fixture_name,
-            data_url=data_url,
-            server_url=server_url)
+            test_name=test_name, api_url=api_url)
         cmd_str = CMD_COVERAGE.format(exec_cmd)
 
         click.echo('[exec] {}'.format(cmd_str))
@@ -124,11 +122,11 @@ def exec_(fixtures, data_url, server_url, cleaner):
         if result.returncode != 0:
             click.echo(result.stdout)
             raise click.ClickException(
-                "fixture '{}' failed with exit code {}".format(
-                    fixture_name, result.returncode)
+                "testcase '{}' failed with exit code {}".format(
+                    test_name, result.returncode)
             )
 
-        click.echo("finished fixture '{}'".format(fixture_name))
+        click.echo("finished testcase '{}'".format(test_name))
 
     subprocess.run(CMD_COVERAGE_REPORT, shell=True, check=1)
 # exec_()
@@ -136,16 +134,43 @@ def exec_(fixtures, data_url, server_url, cleaner):
 @click.command('list')
 def list_():
     """
-    list the available fixtures
+    list the available testcases
     """
-    for fixture in _build_fixture_list():
-        click.echo(fixture)
+    headers = ['Testcase', 'Description']
+    rows = [(test, desc) for test, desc in _build_test_list().items()]
+
+    # determine biggest width for each column
+    cols_width = [(len(header) + 2) for header in headers]
+    for row in rows:
+        for i in range(0, len(row)):
+            row_width = len(row[i]) + 2
+            if row_width > cols_width[i]:
+                cols_width[i] = row_width
+
+    output_cols = []
+    output_sep = []
+    for i in range(0, len(headers)):
+        output_cols.append(headers[i].center(cols_width[i]))
+        sep = '-' * cols_width[i]
+        output_sep.append(sep)
+    output = '\n' + '|'.join(output_cols)
+    output += '\n'
+    output += '+'.join(output_sep)
+    # print rows
+    for row in rows:
+        output_row = []
+        for i in range(0, len(row)):
+            output_value = ' {}'.format(row[i])
+            output_row.append(output_value.ljust(cols_width[i]))
+
+        output += '\n{}'.format('|'.join(output_row))
+    click.echo(output)
 # list_()
 
 @click.group()
 def root():
     """
-    Root group containing all commands.
+    Tessia cmdline client test runner
     """
     pass
 # root()

@@ -671,6 +671,7 @@ class TestStorageVolume(TestSecureResource):
             'pool': pool.name,
             'type': 'FCP',
             'server': storage_server.name,
+            'modifier': 'user_project_admin@domain.com',
         }
         self._test_list_filtered('user_hw_admin@domain.com', filter_values)
 
@@ -794,9 +795,4 @@ class TestStorageVolume(TestSecureResource):
         self._test_update_no_role(
             'user_hw_admin@domain.com', logins, update_fields)
     # test_update_no_role()
-
-    # TODO:
-    # storage server: do not allow to change type when volumes exist
-    # filter by modifier and modified fields
-
 # TestStorageVolume

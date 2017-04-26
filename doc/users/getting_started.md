@@ -20,8 +20,8 @@ model [here](resources_model.md).
 
 ## First steps
 
-Upon first usage the client needs to create an authentication token in order to validate you with the server (for a detailed explanation about the authentication system,
-see [Authentication explained](../developers/arch.md#authentication-explained)). So when no token exists yet any attempt to execute a command will trigger the client to request
+Upon first usage the client needs to create an authentication token in order to validate you with the server (for a detailed explanation about the authentication system
+read this [section](../developers/design.md#authentication-subsystem)). So when no token exists yet any attempt to execute a command will trigger the client to request
 your username and password, as you can see in the example below:
 
 ```console

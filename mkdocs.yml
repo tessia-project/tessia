@@ -29,6 +29,5 @@ pages:
     - Unit tests: 'developers/unit_tests.md'
     - Integration tests/cmdline client tests: 'developers/client_tests.md'
     - Working with documentation: 'developers/documentation.md'
-    - Architecture topics: 'developers/arch.md'
-    - Database considerations: 'developers/database.md'
     - Continous Integration: 'developers/continuous_integration.md'
+    - Design topics: 'developers/design.md'

@@ -22,6 +22,7 @@ Unit test for storage_volumes resource module
 from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_SIZE_MISMATCH
 from tessia_engine.api.resources.storage_volumes import MSG_INVALID_TYPE
 from tessia_engine.api.resources.storage_volumes import StorageVolumeResource
+from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_BAD_PLACE
 from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_MANY_PARTS
 from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_DASD_PARTS
 from tessia_engine.db import models
@@ -89,6 +90,20 @@ class TestStorageVolume(TestSecureResource):
             index += 1
             yield data
     # _entry_gen()
+
+    def _assert_bad_request(self, resp, msg):
+        """
+        Help assert that a given request failed with 'bad request' and the
+        specified message.
+
+        Args:
+            resp (Response): flask response object
+            msg (str): specified message in response
+        """
+        self.assertEqual(resp.status_code, 400)
+        body = json.loads(resp.get_data(as_text=True))
+        self.assertEqual(msg, body['message'])
+    # _assert_bad_request()
 
     def test_add_all_fields_many_roles(self):
         """
@@ -247,14 +262,6 @@ class TestStorageVolume(TestSecureResource):
             'user_hw_admin@domain.com', wrong_data)
 
         # test special cases when volume type does not match storage server
-        def validate_resp(resp, attempted_type, server_type):
-            """Helper validator"""
-            self.assertEqual(resp.status_code, 400)
-            msg = MSG_INVALID_TYPE.format(attempted_type, server_type)
-            body = json.loads(resp.get_data(as_text=True))
-            self.assertEqual(msg, body['message'])
-        # validate_resp()
-
         # exercise a failed creation due to mismatched types
         data = next(self._get_next_entry)
         orig_server_type = models.StorageServer.query.filter_by(
@@ -263,7 +270,8 @@ class TestStorageVolume(TestSecureResource):
 
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        validate_resp(resp, data['type'], orig_server_type)
+        self._assert_bad_request(
+            resp, MSG_INVALID_TYPE.format(data['type'], orig_server_type))
 
         # exercise update, create an item with good values first
         item = self._create_many_entries('user_hw_admin@domain.com', 1)[0][0]
@@ -287,78 +295,83 @@ class TestStorageVolume(TestSecureResource):
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        validate_resp(resp, update_fields['type'], orig_server_type)
+        self._assert_bad_request(
+            resp,
+            MSG_INVALID_TYPE.format(update_fields['type'], orig_server_type))
 
         # 2- update type and server
         update_fields['type'] = 'FCP'
         update_fields['server'] = 'iSCSI Server'
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        validate_resp(resp, update_fields['type'], iscsi_server_type)
+        self._assert_bad_request(
+            resp,
+            MSG_INVALID_TYPE.format(update_fields['type'], iscsi_server_type))
 
         # 3- only update the server
         update_fields.pop('type')
         update_fields['server'] = 'iSCSI Server'
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        validate_resp(resp, item['type'], iscsi_server_type)
+        self._assert_bad_request(
+            resp,
+            MSG_INVALID_TYPE.format(item['type'], iscsi_server_type))
 
         # cleanup
         self.db.session.delete(iscsi_server)
         self.db.session.commit()
     # test_add_update_wrong_field()
 
-    def test_add_update_wrong_ptable(self):
+    def test_add_update_wrong_ptable_dasd_primary(self):
         """
-        Test the scenario where the partitions in the ptable exceed the size of
-        the volume
+        Test the scenario where the partition table has four primary partitions
+        on a dasd labeled disk
         """
-        def validate_resp(resp, parts_size, vol_size):
-            """Helper validator"""
-            self.assertEqual(resp.status_code, 400)
-            msg = MSG_PTABLE_SIZE_MISMATCH.format(parts_size, vol_size)
-            body = json.loads(resp.get_data(as_text=True))
-            self.assertEqual(msg, body['message'], body)
-        # validate_resp()
-
         # prepare a new entry for creation
         data = next(self._get_next_entry)
+        part_size = int(data['size'] / 4)
         data['part_table'] = {
-            'type': 'msdos',
+            'type': 'dasd',
             'table': [
                 {
                     'mp': '/',
-                    'size': int(data['size']/2),
+                    'size': part_size,
                     'fs': 'ext4',
                     'type': 'primary',
                     'mo': None
                 },
                 {
                     'mp': '/home',
-                    'size': (int(data['size']/2)) + 1000,
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/var',
+                    'size': part_size,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/tmp',
+                    'size': part_size,
                     'fs': 'ext4',
                     'type': 'primary',
                     'mo': None
                 },
             ]
         }
-        parts_size = sum(
-            [part['size'] for part in data['part_table']['table']])
         # perform create request and validate response
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        validate_resp(resp, parts_size, data['size'])
+        self._assert_bad_request(resp, MSG_PTABLE_DASD_PARTS)
 
-        # prepare an existing entry for update
+        # try an update, prepare an existing entry
         entry = self._create_many_entries(
             'user_hw_admin@domain.com', 1)[0][0]
         entry['part_table'] = data['part_table']
-        entry['part_table']['table'][0]['size'] = int(entry['size'] / 2)
-        entry['part_table']['table'][1]['size'] = (
-            int(entry['size'] / 2) + 1000)
-        parts_size = sum(
-            [part['size'] for part in entry['part_table']['table']])
-
         # perform update request and validate response
         update_fields = {
             'id': entry['id'],
@@ -366,22 +379,14 @@ class TestStorageVolume(TestSecureResource):
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        validate_resp(resp, parts_size, entry['size'])
-    # test_add_update_wrong_ptable()
+        self._assert_bad_request(resp, MSG_PTABLE_DASD_PARTS)
+    # test_add_update_wrong_ptable_dasd_primary()
 
-    def test_add_wrong_msdos_primary_ptable(self):
+    def test_add_update_wrong_ptable_msdos_primary(self):
         """
         Test the scenario where the partition table has five primary partitions
         on a msdos labeled disk.
         """
-        def validate_resp(resp):
-            """Helper validator"""
-            self.assertEqual(resp.status_code, 400)
-            msg = MSG_PTABLE_MANY_PARTS
-            body = json.loads(resp.get_data(as_text=True))
-            self.assertEqual(msg, body['message'], body)
-        # validate_resp()
-
         # prepare a new entry for creation
         data = next(self._get_next_entry)
         part_size = int(data['size'] / 5)
@@ -428,68 +433,26 @@ class TestStorageVolume(TestSecureResource):
         # perform create request and validate response
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        validate_resp(resp)
-    # test_add_wrong_msdos_primary_ptable()
+        self._assert_bad_request(resp, MSG_PTABLE_MANY_PARTS)
 
-    def test_add_wrong_dasd_primary_ptable(self):
-        """
-        Test the scenario where the partition table has four primary partitions
-        on a dasd labeled disk
-        """
-        def validate_resp(resp):
-            """Helper validator"""
-            self.assertEqual(resp.status_code, 400)
-            msg = MSG_PTABLE_DASD_PARTS
-            body = json.loads(resp.get_data(as_text=True))
-            self.assertEqual(msg, body['message'], body)
-        # validate_resp()
-
-        # prepare a new entry for creation
-        data = next(self._get_next_entry)
-        part_size = int(data['size'] / 4)
-        data['part_table'] = {
-            'type': 'dasd',
-            'table': [
-                {
-                    'mp': '/',
-                    'size': part_size,
-                    'fs': 'ext4',
-                    'type': 'primary',
-                    'mo': None
-                },
-                {
-                    'mp': '/home',
-                    'size': part_size,
-                    'fs': 'ext4',
-                    'type': 'primary',
-                    'mo': None
-                },
-                {
-                    'mp': '/var',
-                    'size': part_size,
-                    'fs': 'ext4',
-                    'type': 'primary',
-                    'mo': None
-                },
-                {
-                    'mp': '/tmp',
-                    'size': part_size,
-                    'fs': 'ext4',
-                    'type': 'primary',
-                    'mo': None
-                },
-            ]
+        # try an update, prepare an existing entry
+        entry = self._create_many_entries(
+            'user_hw_admin@domain.com', 1)[0][0]
+        entry['part_table'] = data['part_table']
+        # perform update request and validate response
+        update_fields = {
+            'id': entry['id'],
+            'part_table': entry['part_table'],
         }
-        # perform create request and validate response
         resp = self._do_request(
-            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        validate_resp(resp)
-    # test_add_wrong_dasd_primary_ptable()
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        self._assert_bad_request(resp, MSG_PTABLE_MANY_PARTS)
+    # test_add_update_wrong_ptable_msdos_primary()
 
-    def test_add_wrong_msdos_extended_ptable(self):
+    def test_add_update_wrong_ptable_msdos_sparsed_logicals(self):
         """
         Test the scenario where the partition table has primary / logical /
-        primary / logical on a msdos labeled disk
+        primary / logical on a msdos labeled disk (sparsed)
         """
         # prepare a new entry for creation
         data = next(self._get_next_entry)
@@ -530,8 +493,97 @@ class TestStorageVolume(TestSecureResource):
         # perform create request and validate response
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        self.assertNotEqual(resp.status_code, 200)
-    # test_add_wrong_msdos_extended_ptable()
+        self._assert_bad_request(resp, MSG_PTABLE_BAD_PLACE)
+
+        # try different combination with logical as first partition
+        orig_ptable = data['part_table'].copy()
+        data['part_table']['table'][0]['type'] = 'logical'
+        data['part_table']['table'][1]['type'] = 'primary'
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+        self._assert_bad_request(resp, MSG_PTABLE_BAD_PLACE)
+
+        # try updates, prepare an existing entry
+        entry = self._create_many_entries(
+            'user_hw_admin@domain.com', 1)[0][0]
+        # first variant, primary as first partition
+        entry['part_table'] = orig_ptable
+
+        # perform update request and validate response
+        update_fields = {
+            'id': entry['id'],
+            'part_table': entry['part_table'],
+        }
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        self._assert_bad_request(resp, MSG_PTABLE_BAD_PLACE)
+
+        # second variant, logical as first partition
+        entry['part_table'] = data['part_table']
+        # perform update request and validate response
+        update_fields = {
+            'id': entry['id'],
+            'part_table': entry['part_table'],
+        }
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        self._assert_bad_request(resp, MSG_PTABLE_BAD_PLACE)
+    # test_add_update_wrong_ptable_msdos_sparsed_logicals()
+
+    def test_add_update_wrong_ptable_size(self):
+        """
+        Test the scenario where the partitions in the ptable exceed the size of
+        the volume
+        """
+        # prepare a new entry for creation
+        data = next(self._get_next_entry)
+        data['part_table'] = {
+            'type': 'msdos',
+            'table': [
+                {
+                    'mp': '/',
+                    'size': int(data['size']/2),
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+                {
+                    'mp': '/home',
+                    'size': (int(data['size']/2)) + 1000,
+                    'fs': 'ext4',
+                    'type': 'primary',
+                    'mo': None
+                },
+            ]
+        }
+        parts_size = sum(
+            [part['size'] for part in data['part_table']['table']])
+        # perform create request and validate response
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+        self._assert_bad_request(
+            resp, MSG_PTABLE_SIZE_MISMATCH.format(parts_size, data['size']))
+
+        # prepare an existing entry for update
+        entry = self._create_many_entries(
+            'user_hw_admin@domain.com', 1)[0][0]
+        entry['part_table'] = data['part_table']
+        entry['part_table']['table'][0]['size'] = int(entry['size'] / 2)
+        entry['part_table']['table'][1]['size'] = (
+            int(entry['size'] / 2) + 1000)
+        parts_size = sum(
+            [part['size'] for part in entry['part_table']['table']])
+
+        # perform update request and validate response
+        update_fields = {
+            'id': entry['id'],
+            'part_table': entry['part_table'],
+        }
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        self._assert_bad_request(
+            resp, MSG_PTABLE_SIZE_MISMATCH.format(parts_size, entry['size']))
+    # test_add_update_wrong_ptable_size()
 
     def test_del_many_roles(self):
         """

@@ -43,7 +43,7 @@ FIELDS = (
 @click.option('--project', required=True, help="target project")
 def role_deny(**kwargs):
     """
-    grant a role to a user on a project
+    remove a role of a user from a project
     """
     client = Client()
 

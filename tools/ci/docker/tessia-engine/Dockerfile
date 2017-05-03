@@ -14,17 +14,12 @@ ARG prod_build=true
 # as you might lose db data.
 ENV TESSIA_DB_AUTOMANAGE false
 
-# Set the locale for this container to UTF-8 for this session
-ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
-
-# Generate en_US.UTF-8 locale and update the default locale, some
-# applications use this.
-RUN locale-gen en_US.UTF-8 && \
-    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
+RUN apt-get update -q && \
     # Install the distro dependencies.
     # ATTENTION: make sure to keep a comment for each explaining why is it needed.
-    apt-get update -q && \
     DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends \
+    # to manage the system locale
+    locales \
     # used to install python libraries
     python3-pip \
     # used by pbr (in setuptools) to detect module version numbers
@@ -34,6 +29,11 @@ RUN locale-gen en_US.UTF-8 && \
     build-essential libssl-dev libffi-dev python3-dev \
     # init-like daemon to manage our services' processes
     supervisor && \
+    # clean the cache to free up space
+    DEBIAN_FRONTEND=noninteractive apt-get clean && \
+    # generate the locale/encoding and set it as default
+    locale-gen en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     # Install the python dependencies.
     # setuptools for installing applications (including tessia) - it must be installed
     # separately first otherwise other packages fail to install
@@ -49,6 +49,9 @@ RUN locale-gen en_US.UTF-8 && \
     # dependencies used for testing builds
     pylint \
     coverage
+
+# set the locale/encoding for the session
+ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 COPY assets /assets/
 

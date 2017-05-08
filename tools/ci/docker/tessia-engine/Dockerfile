@@ -9,15 +9,17 @@ ARG baselib_repo=file:///assets/tessia_baselib.git
 # whether we are building a container for production use
 ARG prod_build=true
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 # this flag determines whether the entrypoint should try to automatically initialize
 # an empty database or perform schema upgrades via tessia-dbmanage. Use with care
 # as you might lose db data.
 ENV TESSIA_DB_AUTOMANAGE false
 
-RUN apt-get update -q && \
+RUN apt-get -q update > /dev/null && \
     # Install the distro dependencies.
     # ATTENTION: make sure to keep a comment for each explaining why is it needed.
-    DEBIAN_FRONTEND=noninteractive apt-get -yq install --no-install-recommends \
+    apt-get -yq install --no-install-recommends \
     # to manage the system locale
     locales \
     # used to install python libraries
@@ -28,18 +30,18 @@ RUN apt-get update -q && \
     # cryptography) and uwsgi
     build-essential libssl-dev libffi-dev python3-dev \
     # init-like daemon to manage our services' processes
-    supervisor && \
+    supervisor > /dev/null && \
     # clean the cache to free up space
-    DEBIAN_FRONTEND=noninteractive apt-get clean && \
+    apt-get -q clean && \
     # generate the locale/encoding and set it as default
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     # Install the python dependencies.
     # setuptools for installing applications (including tessia) - it must be installed
     # separately first otherwise other packages fail to install
-    pip3 install -U setuptools && \
+    pip3 -q install -U setuptools && \
     # ATTENTION: make sure to keep a comment for each explaining why is it needed.
-    pip3 install -U \
+    pip3 -q install -U \
     # this is to update the pip version if necessary
     pip \
     # pbr is used by tessia for installation
@@ -62,8 +64,12 @@ RUN cd /assets && \
     # use the custom url as the tessia_baselib's repository might not be accessible
     # from the builder
     sed -i "/egg=tessia_baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
-    pip3 install -U -r requirements.txt && \
-    ./setup.py install && \
+    pip3 -q install -U -r requirements.txt && \
+    # linting and unit testing
+    tools/run_pylint.py && \
+    tools/run_tests.py && \
+    # installation
+    ./setup.py -q install && \
     # tessia-engine files settings
     useradd -m tessia && \
     install -m 700 -g tessia -o tessia -d /etc/tessia && \
@@ -74,12 +80,20 @@ RUN cd /assets && \
     sed -i 's,^\( \+filename:\) log/\(.*\)$,\1 /var/log/\2,g' /etc/tessia/engine.yaml && \
     # used to manage startup of the api and scheduler daemons
     cp /assets/supervisord.conf /etc/supervisor/conf.d/supervisord.conf && \
-    # remove unneeded dependencies used only for building paramiko and uwsgi
-    DEBIAN_FRONTEND=noninteractive apt-get -yq purge --auto-remove \
+    # cleanup section
+    cd / && \
+    # remove source repository
+    rm -rf /assets/tessia-engine.git /assets/tessia-engine && \
+    # remove unneeded packages
+    apt-get -yq purge --auto-remove \
     build-essential \
     libssl-dev \
     libffi-dev \
-    python3-dev
+    # remove unneeded python libs
+    python3-dev > /dev/null && \
+    pip3 -q uninstall -y \
+    pylint \
+    coverage
 
 EXPOSE 80 5000
 

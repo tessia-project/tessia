@@ -12,7 +12,7 @@ build:
     - pip3 install --user -U pip -rtools/ci/requirements.txt
     # checkout to correct branch
     - git checkout ${CI_COMMIT_REF_NAME:=$CI_BUILD_REF_NAME}
-    - tools/ci/orc build
+    - tools/ci/orc build --verbose
 
 # TODO: further configure for deployments
 #deploy_review:

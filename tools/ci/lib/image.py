@@ -192,16 +192,6 @@ class DockerImage(object):
                         '[clean-up] failed to remove containers for %s: %s',
                         image_fullname,
                         output)
-
-        # delete the image (use --no-prune to keep parent layers so that they
-        # can be used as cache for other builds)
-        ret_code, output = self._session.run(
-            'docker rmi --no-prune {}'.format(image_fullname))
-        if ret_code != 0:
-            self._logger.warning(
-                '[clean-up] failed to remove image %s: %s',
-                image_fullname,
-                output)
     # cleanup()
 
     def deploy(self):

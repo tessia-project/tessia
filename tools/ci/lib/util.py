@@ -32,7 +32,7 @@ import subprocess
 #
 class Shell(object):
     """
-    Simple wrapper for executing local commands in a login shell environment.
+    Simple wrapper for executing local commands in a shell environment.
     """
     def __init__(self, verbose=False):
         """
@@ -48,7 +48,7 @@ class Shell(object):
 
     def run(self, cmd, error_msg=None, stdout=False):
         """
-        Execute a local command in a login shell environment.
+        Execute a local command in a shell environment.
 
         Args:
             cmd (str): command to execute
@@ -64,9 +64,8 @@ class Shell(object):
         """
         if self._verbose:
             print('$ ' + cmd)
-        # use a login shell to assure any aliases are loaded from user profile
         proc = subprocess.Popen(
-            ['bash', '--login', '-c', cmd], stdout=subprocess.PIPE,
+            ['bash', '-c', cmd], stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT, universal_newlines=True)
         # read from pipe in an non-blocking way to avoid hanging in ssh related
         # commands (i.e. git clone) due to stderr left open by ssh

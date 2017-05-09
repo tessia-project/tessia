@@ -35,7 +35,7 @@ import time
 #
 class TestUserKey(TestSecureResource):
     """
-    Validates the User resource
+    Validates the UserKey resource
     """
     # entry point for resource in api
     RESOURCE_URL = '/user-keys'

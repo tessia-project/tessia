@@ -35,7 +35,7 @@ import json
 #
 class TestSystems(TestSecureResource):
     """
-    Validates the StorageVolume resource
+    Validates the Systems resource
     """
     # entry point for resource in api
     RESOURCE_URL = '/systems'

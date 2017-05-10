@@ -29,6 +29,10 @@ RUN apt-get -q update > /dev/null && \
     # these are needed to build cryptography (dep chain is tessia_baselib -> paramiko ->
     # cryptography) and uwsgi
     build-essential libssl-dev libffi-dev python3-dev \
+    # build python postgres connector (psycopg2)
+    libpq-dev \
+    # to use python postgres connector (psycopg2)
+    libpq5 \
     # init-like daemon to manage our services' processes
     supervisor > /dev/null && \
     # clean the cache to free up space
@@ -89,8 +93,8 @@ RUN cd /assets && \
     build-essential \
     libssl-dev \
     libffi-dev \
+    libpq-dev > /dev/null && \
     # remove unneeded python libs
-    python3-dev > /dev/null && \
     pip3 -q uninstall -y \
     pylint \
     coverage

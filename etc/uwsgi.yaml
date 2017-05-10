@@ -1,6 +1,4 @@
 uwsgi:
-  # only valid uWSGI options are tolerated
-  strict: true
   master: true
   processes: 4
   # allow the GIL to be enabled so that api code can run threads
@@ -14,4 +12,10 @@ uwsgi:
   stats: 127.0.0.1:9191
   uid: tessia
   gid: tessia
-  static-map: /=/var/tessia/www
+  # static content section
+  # listen to port through a socket (because it's privileged and we drop
+  # privileges)
+  shared-socket: :80
+  http: =0
+  static-map: /static=/var/tessia/www
+  route: ^/static redirect-permanent:https://${HTTP_HOST}${REQUEST_URI}

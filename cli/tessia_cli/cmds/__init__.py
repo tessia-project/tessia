@@ -30,6 +30,7 @@ from tessia_cli.cmds.net import net
 from tessia_cli.cmds.repo import repo
 from tessia_cli.cmds.storage import storage
 from tessia_cli.config import CONF
+from tessia_cli.session import SESSION
 from tessia_cli.utils import build_expect_header
 from tessia_cli.utils import version_verify
 
@@ -88,7 +89,7 @@ def _config_server():
         # try a connection to the provided address
         click.echo("Checking server's availability...")
         try:
-            resp = requests.head(
+            resp = SESSION.head(
                 schema_url,
                 headers={'Expect': build_expect_header()}
             )
@@ -123,10 +124,16 @@ def root(ctx=None):
     """
     Tessia command line client
     """
-    # command to set server url specified: don't do anything and let the
-    # subcommand be called
-    if (len(sys.argv) >= 3 and sys.argv[1].lower() == 'conf' and
-            sys.argv[2].lower() == 'set-server'):
+    # certain commands should bypass server connection verification
+    # any command with one argument will trigger help page
+    if len(sys.argv) == 2:
+        return
+    # explicit call to help page
+    elif len(sys.argv) > 2 and sys.argv[2].lower() in ('-h', '--help'):
+        return
+    # set-server should be reachable to establish server connectivity
+    elif (len(sys.argv) > 2 and sys.argv[1].lower() == 'conf' and
+          sys.argv[2].lower() == 'set-server'):
         return
 
     logger = logging.getLogger(__name__)
@@ -139,7 +146,7 @@ def root(ctx=None):
     # server found in configuration: verify api version compatibility
     else:
         server_url = '{}/schema'.format(server_url)
-        resp = requests.head(
+        resp = SESSION.head(
             server_url,
             headers={'Expect': build_expect_header()}
         )

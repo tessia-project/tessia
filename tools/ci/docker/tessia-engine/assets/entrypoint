@@ -87,35 +87,23 @@ function _ssl_config() {
     fi
     echo "info: generating self-signed ssl certificate"
 
-    # exit if any command fails
-    set -e
-    # steps for creating ssl certificate specific to each hostname
-    tmp=$(mktemp -d)
-    cd $tmp
-    mkdir demoCA
-    echo $(date +%Y%m%d%H%M0%N) > demoCA/serial
-    touch demoCA/index.txt
+    local config="
+[req]
+prompt=no
+distinguished_name=req_dn
+[req_dn]
+CN=${fqdn}
+OU=TESSIA
+[v3_ca]
+subjectAltName=DNS:${fqdn}
+"
+    openssl req -new -nodes -x509 -newkey rsa:4098 -keyout /etc/tessia/ssl.key -out /etc/tessia/ssl.crt -days 3650 -reqexts v3_ca -extensions v3_ca -config <(printf "$config")
 
-    # 1- create ca
-    openssl req -new -nodes -x509 -newkey rsa:2048 -keyout ca_priv.key -out ca.crt -days 3650 -subj '/CN=TESSIA CA/O=EXAMPLE.ORG/C=DE/ST=BW'
-
-    # 2- create csr (certificate signing request)
-    openssl req -newkey rsa:2048 -nodes -keyout ${fqdn}_priv.key -out ${fqdn}.csr -days 3650 -subj "/CN=$fqdn"
-
-    # 3- sign csr with ca key
-    openssl ca -batch -keyfile ca_priv.key -cert ca.crt -out ${fqdn}.crt -outdir . -in ${fqdn}.csr -subj "/C=DE/ST=BW/O=EXAMPLE.ORG/CN=${fqdn}" -days 3650
-
-    # copy files
-    cp ${fqdn}.crt /etc/tessia/ssl.crt
-    cp ${fqdn}_priv.key /etc/tessia/ssl.key
-    install -m 600 -o tessia -g tessia /etc/tessia/ssl.crt /etc/tessia/ssl.key /etc/tessia
-
-    # delete temp directory
-    cd - &>/dev/null && [ "$tmp" != "/" ] && rm -rf $tmp
+    # set appropriate permissions
+    chown tessia. /etc/tessia/ssl.crt /etc/tessia/ssl.key
+    chmod 600 /etc/tessia/ssl.crt /etc/tessia/ssl.key
 
     echo "info: ssl certificate created"
-    # unset exit on first error
-    set +e
 }
 
 function _tweak_cfg() {

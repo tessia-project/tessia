@@ -87,9 +87,6 @@ class Config(object):
         Args:
             None
 
-        Returns:
-            None
-
         Raises:
             NotImplementedError: as the class should not be instantiated
         """
@@ -110,6 +107,7 @@ class Config(object):
 
         Raises:
             IOError: if config file cannot be accessed
+            OSError: see IOError
             RuntimeError: in case a parsing error occurs
         """
         try:
@@ -164,6 +162,31 @@ class Config(object):
     # get_api_version()
 
     @classmethod
+    def get_cacert_path(cls):
+        """
+        Return the filesystem path to server's trusted ca certificate file.
+
+        Args:
+            None
+
+        Returns:
+            str: filepath
+
+        Raises:
+            None
+        """
+        ca_file = '/etc/tessia-cli/ca.crt'
+        if os.path.exists(ca_file):
+            return ca_file
+
+        ca_file = '{}/ca.crt'.format(os.path.dirname(cls.CONF_PATH))
+        if os.path.exists(ca_file):
+            return ca_file
+
+        return None
+    # get_cacert_path()
+
+    @classmethod
     def get_config(cls):
         """
         Return the dict containing the parameters from config file.
@@ -199,6 +222,7 @@ class Config(object):
 
         Raises:
             IOError: in case token file is not accessible
+            OSError: see IOError
             ValueError: in case key is not in expected format
         """
         if cls._auth_key is not None:
@@ -261,6 +285,7 @@ class Config(object):
 
         Raises:
             IOError: in case accessing configuration file fails
+            OSError: see IOError
         """
         try:
             os.makedirs(
@@ -296,6 +321,7 @@ class Config(object):
 
         Raises:
             IOError: in case token file is not accessible
+            OSError: see IOError
         """
         try:
             key_fd = open(cls.KEY_PATH, 'w')

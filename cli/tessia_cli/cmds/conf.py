@@ -23,6 +23,7 @@ from tessia_cli.config import CONF
 from tessia_cli.client import Client
 from tessia_cli.output import print_items
 from tessia_cli.output import print_hor_table
+from tessia_cli.session import SESSION
 from tessia_cli.utils import build_expect_header
 from tessia_cli.utils import fetch_item
 from tessia_cli.utils import fetch_and_delete
@@ -140,7 +141,7 @@ def show():
     )
 
     conf_dict = CONF.get_config()
-    resp = requests.head('{}/schema'.format(conf_dict['server_url']))
+    resp = SESSION.head('{}/schema'.format(conf_dict['server_url']))
     resp.raise_for_status()
     try:
         server_version = int(resp.headers['X-Tessia-Api-Version'])
@@ -182,7 +183,7 @@ def set_server(url):
 
     schema_url = '{}/schema'.format(url)
     try:
-        resp = requests.head(
+        resp = SESSION.head(
             schema_url,
             headers={'Expect': build_expect_header()}
         )

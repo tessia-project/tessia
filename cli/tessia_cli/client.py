@@ -101,15 +101,20 @@ class Client(PotionClient):
                 raise PermissionError('Credentials not available')
             kwargs['auth'] = Client.XKeyAuth(auth_token[0], auth_token[1])
 
+        # use server url provided in method call
+        if args:
+            server = args[0]
         # no server url provided: use from config file
-        if len(args) == 0:
+        else:
             try:
                 server = CONF.get_config()['server_url']
             except KeyError:
                 raise RuntimeError('Server address missing')
-        # use server url provided in method call
-        else:
-            server = args[0]
+
+        ca_file = CONF.get_cacert_path()
+        # trusted ca file available: use it to verify ssl connection
+        if ca_file:
+            kwargs['verify'] = ca_file
 
         # add the default 'Expect' header to tell server which api version the
         # client wants

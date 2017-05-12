@@ -20,7 +20,6 @@ Auxiliary class used for managing the CI process
 # IMPORTS
 #
 from lib.image import DockerImage
-from lib.image_cli import DockerImageCli
 from lib.image_engine import DockerImageEngine
 from lib.session import Session
 from lib.util import Shell
@@ -223,8 +222,6 @@ class Manager(object):
         """
         if name == 'tessia-engine':
             image_cls = DockerImageEngine
-        elif name == 'tessia-cli':
-            image_cls = DockerImageCli
         else:
             image_cls = DockerImage
         return image_cls(name, image_tag, self._build_type == 'production',

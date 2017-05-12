@@ -13,13 +13,14 @@
 # limitations under the License.
 
 """
-Module specialized in handling the tessia-cli image.
+Define a requests Session to be used throughout the client
 """
 
 #
 # IMPORTS
 #
-from lib.image import DockerImage
+from tessia_cli.config import CONF
+import requests
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -28,16 +29,16 @@ from lib.image import DockerImage
 #
 # CODE
 #
-class DockerImageCli(DockerImage):
+def get_session():
     """
-    Specialized class for dealing with the tessia-cli image
+    Create a pre-configured Session object
     """
-    def lint(self):
-        """
-        Run the container to perform lint verification.
-        """
-        # TODO: add lint script to cli subdir
-        # until then, do nothing here.
-        pass
-    # lint()
-# DockerImageCli
+    session = requests.Session()
+    ca_file = CONF.get_cacert_path()
+    if ca_file:
+        session.verify = ca_file
+
+    return session
+# get_session()
+
+SESSION = get_session()

@@ -25,6 +25,7 @@ from tessia_cli.cmds import root
 import click
 import json
 import logging
+import os
 import requests
 import sys
 
@@ -42,8 +43,8 @@ def _log_exc_info(msg, exc):
     # exception caused by a failed http request: log it's information
 
     if hasattr(exc, 'response') and exc.response is not None:
-        msg += '\ndebug info:\n'
         msg = 'An error occurred during a request, debug info:\n'
+        msg += 'URL: {}\n'.format(exc.request.url)
         msg += 'Status code: {} {}\n'.format(
             exc.response.status_code, exc.response.reason)
         msg += 'Response headers: {}\n'.format(exc.response.headers)
@@ -141,11 +142,27 @@ def main(*args, **kwargs):
                 'Error: the server did not understand our request. '
                 'The error is: {}'.format(str(exc)), err=True)
         sys.exit(1)
+    except requests.exceptions.SSLError as exc:
+        _log_exc_info('SSL connection failed', exc)
+        ssl_error = str(exc)
+        if '[SSL: CERTIFICATE_VERIFY_FAILED]' not in ssl_error:
+            click.echo('Error: {}'.format(ssl_error), err=True)
+            click.echo('See the logs for details.', err=True)
+            sys.exit(1)
+        click.echo(
+            "The validation of the server's SSL certificate from '{}' failed. "
+            "In order to assure the connection is safe, place a copy of the "
+            "trusted CA's certificate file in {}/ca.crt".format(
+                exc.request.url, os.path.dirname(CONF.CONF_PATH)),
+            err=True
+        )
+        sys.exit(1)
+
     except requests.exceptions.RequestException as exc:
         _log_exc_info('Server connection failed', exc)
         click.echo(
-            'Error: server connection failed, see the logs for details.',
-            err=True)
+            "Error: connection to server '{}' failed, see the logs for "
+            "details.".format(exc.request.url), err=True)
         sys.exit(1)
     except Exception as exc:
         _log_exc_info('The client encountered an unexpected problem', exc)

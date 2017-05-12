@@ -71,36 +71,4 @@ class DockerImageEngine(DockerImage):
 
         return context_dir
     # _prepare_context()
-
-    def lint(self):
-        """
-        Run a container with the image to perform lint verification.
-        """
-        self._logger.info(
-            '[lint-check] executing tools/run_pylint.py on %s',
-            self._image_name)
-        cmd = self._gen_docker_cmd(
-            'run',
-            args='--entrypoint /assets/tessia-engine/tools/run_pylint.py')
-        ret_code, _ = self._session.run(cmd, stdout=True)
-        if ret_code != 0:
-            raise RuntimeError('lint check for {} failed'.format(
-                self._image_name))
-    # lint()
-
-    def unit_test(self):
-        """
-        Run a container with the image to perform unit testing.
-        """
-        self._logger.info(
-            '[unittest-run] executing tools/run_tests.py on %s',
-            self._image_name)
-        cmd = self._gen_docker_cmd(
-            'run',
-            args='--entrypoint /assets/tessia-engine/tools/run_tests.py')
-        ret_code, _ = self._session.run(cmd, stdout=True)
-        if ret_code != 0:
-            raise RuntimeError('unit test for {} failed'.format(
-                self._image_name))
-    # unit_test()
 # DockerImageEngine

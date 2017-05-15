@@ -153,7 +153,7 @@ def main(*args, **kwargs):
             "The validation of the server's SSL certificate from '{}' failed. "
             "In order to assure the connection is safe, place a copy of the "
             "trusted CA's certificate file in {}/ca.crt".format(
-                exc.request.url, os.path.dirname(CONF.CONF_PATH)),
+                exc.request.url, os.path.dirname(CONF.USER_CONF_PATH)),
             err=True
         )
         sys.exit(1)

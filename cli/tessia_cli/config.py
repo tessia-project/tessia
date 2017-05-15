@@ -21,7 +21,9 @@ Module to handle configuration file parsing
 #
 from logging.config import dictConfig
 
+import click
 import os
+import sys
 import yaml
 
 #
@@ -44,7 +46,7 @@ DEFAULT_CONF = {
                     'logging.handlers.RotatingFileHandler',
                 'formatter': 'default',
                 'level': 'DEBUG',
-                'filename': '~/.tessia/cli.log',
+                'filename': '~/.tessia-cli/cli.log',
                 'maxBytes': 10000000,
                 'backupCount': 0,
             },
@@ -65,11 +67,14 @@ DEFAULT_CONF = {
 class Config(object):
     """Handles parsing of the configuration file"""
 
-    # cfg file path
-    CONF_PATH = os.path.expanduser('~/.tessia/tessia.conf')
+    # global cfg file path
+    GLOBAL_CONF_PATH = '/etc/tessia-cli/config.yaml'
+
+    # user's cfg file path
+    USER_CONF_PATH = os.path.expanduser('~/.tessia-cli/config.yaml')
 
     # key file path
-    KEY_PATH = os.path.expanduser('~/.tessia/auth.key')
+    KEY_PATH = os.path.expanduser('~/.tessia-cli/auth.key')
 
     # config parameters dictionary
     _config_dict = None
@@ -111,21 +116,10 @@ class Config(object):
             RuntimeError: in case a parsing error occurs
         """
         try:
-            try:
-                config_fd = open(cls.CONF_PATH, 'r')
+            with open(cls.USER_CONF_PATH, 'r') as config_fd:
                 config_content = config_fd.read()
-                config_fd.close()
-            except FileNotFoundError:
-                # create the file with default values
-                os.makedirs(
-                    os.path.abspath(os.path.dirname(cls.CONF_PATH)),
-                    exist_ok=True
-                )
-                config_fd = open(cls.CONF_PATH, 'w')
-                config_content = yaml.dump(
-                    DEFAULT_CONF, default_flow_style=False)
-                config_fd.write(config_content)
-                config_fd.close()
+        except FileNotFoundError:
+            config_content = cls._set_init_config()
         except IOError as exc:
             msg = 'Failed to access configuration file: {}'.format(str(exc))
             raise IOError(msg)
@@ -149,6 +143,79 @@ class Config(object):
 
         return config_dict
     # _parse_config()
+
+    @classmethod
+    def _set_init_config(cls):
+        """
+        Auxiliar method to create an initial client configuration for the user.
+
+        Raises:
+            IOError: if user config file can't be created
+            OSError: see IOError
+
+        Returns:
+            str: initial configuration created
+        """
+        global_config = ''
+
+        # look for global config file in default locations
+        default_paths = [
+            cls.GLOBAL_CONF_PATH,
+            # check if there's a config file in prefixed locations
+            # (for cases like virtualenv or deployed via setuptools)
+            '{}{}'.format(sys.prefix, cls.GLOBAL_CONF_PATH)
+        ]
+        for global_path in default_paths:
+            try:
+                with open(global_path, 'r') as config_fd:
+                    global_config = config_fd.read().strip()
+                break
+            except FileNotFoundError:
+                pass
+            except IOError:
+                click.echo(
+                    'warning: could not read global config file {}, '
+                    'skipping.'.format(global_path),
+                    err=True)
+
+        global_dict = {}
+
+        # global config found: parse its yaml content
+        if global_config:
+            try:
+                read_dict = yaml.safe_load(global_config)
+                # content is valid: use it
+                if isinstance(read_dict, dict):
+                    global_dict = read_dict
+                # malformed content, inform user and skip it
+                else:
+                    click.echo(
+                        'warning: malformed global config file, ignoring.',
+                        err=True)
+            #  malformed yaml file
+            except yaml.YAMLError as exc:
+                click.echo(
+                    'warning: malformed global config file, ignoring.',
+                    err=True)
+
+        # create the user config file by merging the default and global confs
+        content_dict = DEFAULT_CONF.copy()
+        content_dict.update(global_dict)
+        content_str = yaml.dump(
+            content_dict, default_flow_style=False)
+        try:
+            os.makedirs(
+                os.path.abspath(os.path.dirname(cls.USER_CONF_PATH)),
+                exist_ok=True
+            )
+            with open(cls.USER_CONF_PATH, 'w') as config_fd:
+                config_fd.write(content_str)
+        except IOError as exc:
+            msg = 'Failed to write configuration file: {}'.format(str(exc))
+            raise IOError(msg)
+
+        return content_str
+    # _set_init_config()
 
     @classmethod
     def get_api_version(cls):
@@ -179,7 +246,7 @@ class Config(object):
         if os.path.exists(ca_file):
             return ca_file
 
-        ca_file = '{}/ca.crt'.format(os.path.dirname(cls.CONF_PATH))
+        ca_file = '{}/ca.crt'.format(os.path.dirname(cls.USER_CONF_PATH))
         if os.path.exists(ca_file):
             return ca_file
 
@@ -289,10 +356,10 @@ class Config(object):
         """
         try:
             os.makedirs(
-                os.path.abspath(os.path.dirname(cls.CONF_PATH)),
+                os.path.abspath(os.path.dirname(cls.USER_CONF_PATH)),
                 exist_ok=True
             )
-            config_fd = open(cls.CONF_PATH, 'w')
+            config_fd = open(cls.USER_CONF_PATH, 'w')
             config_content = yaml.dump(
                 new_dict, default_flow_style=False)
             config_fd.write(config_content)

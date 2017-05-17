@@ -80,7 +80,7 @@ class TestWrapper(TestCase):
         # Mock the state machine registry so the wrapper will find
         # the mocked state machine class.
         dict_patcher = patch.dict(
-            wrapper.state_machines.MACHINES,
+            wrapper.MACHINES.classes,
             {MACHINE_NAME: machine_class})
         dict_patcher.start()
         self.addCleanup(dict_patcher.stop)

@@ -20,7 +20,7 @@ Module to handle state machine output, signals and result reports.
 # IMPORTS
 #
 from datetime import datetime
-from tessia_engine import state_machines
+from tessia_engine.state_machines import MACHINES
 from tessia_engine.scheduler import exceptions
 
 import builtins
@@ -275,7 +275,7 @@ class MachineWrapper(object):
 
         os.chdir(self._run_dir)
 
-        self._machine = state_machines.MACHINES[self._job_type](
+        self._machine = MACHINES.classes[self._job_type](
             self._job_params)
 
         timed_out = False
@@ -366,7 +366,7 @@ class MachineWrapper(object):
         Returns:
         Raises:
         """
-        machine = state_machines.MACHINES[self._job_type](
+        machine = MACHINES.classes[self._job_type](
             self._job_params)
 
         try:

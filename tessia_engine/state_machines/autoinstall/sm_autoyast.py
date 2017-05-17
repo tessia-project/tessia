@@ -19,7 +19,7 @@ Machine for auto installation of Autoyast based operating systems
 #
 # IMPORTS
 #
-from tessia_engine.state_machines.install.sm_base import SmBase
+from tessia_engine.state_machines.autoinstall.sm_base import SmBase
 from time import sleep
 from time import time
 

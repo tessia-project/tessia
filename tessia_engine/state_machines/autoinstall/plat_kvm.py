@@ -21,7 +21,7 @@ Module to deal with operations on KVM guests
 #
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import SystemProfile
-from tessia_engine.state_machines.install.plat_base import PlatBase
+from tessia_engine.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
 from xml.etree import ElementTree
 

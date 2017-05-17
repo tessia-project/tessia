@@ -34,8 +34,6 @@ class EchoMachine(BaseMachine):
     """
     Simple state machine which echoes the messages specified.
     """
-    NAME = 'echo'
-
     def __init__(self, params):
         """
         See base class docstring

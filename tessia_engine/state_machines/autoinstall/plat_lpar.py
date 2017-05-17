@@ -20,7 +20,7 @@ Module to deal with operations on LPARs
 # IMPORTS
 #
 from tessia_baselib.common.ssh.client import SshClient
-from tessia_engine.state_machines.install.plat_base import PlatBase
+from tessia_engine.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
 
 import logging

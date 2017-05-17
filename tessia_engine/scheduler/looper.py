@@ -21,7 +21,7 @@ The main module containing the daemon processing the job requests
 #
 from datetime import datetime
 from jsonschema import validate
-from tessia_engine import state_machines
+from tessia_engine.state_machines import MACHINES
 from tessia_engine.config import CONF
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import SchedulerRequest
@@ -86,7 +86,7 @@ class Looper(object):
         # which job can execute next
         self._resources_man = resources_manager.ResourcesManager()
         # dict with state machine parsers keyed by name
-        self._machines = state_machines.MACHINES
+        self._machines = MACHINES.classes
         # store our working directory to be used for validation of job's
         # processes
         self._cwd = os.getcwd()

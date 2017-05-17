@@ -25,7 +25,7 @@ from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import System
 from tessia_engine.db.models import SystemProfile
 from tessia_engine.state_machines.base import BaseMachine
-from tessia_engine.state_machines.install.machine import AutoInstallMachine
+from tessia_engine.state_machines.autoinstall.machine import AutoInstallMachine
 from urllib.parse import urlsplit
 
 import json
@@ -120,8 +120,6 @@ class AnsibleMachine(BaseMachine):
     performing preparation steps like fetching the ansible repo from a given
     url and creating an inventory file of the systems reserved for the job.
     """
-    NAME = 'ansible'
-
     def __init__(self, params):
         """
         See base class docstring.

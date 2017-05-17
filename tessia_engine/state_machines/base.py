@@ -33,8 +33,6 @@ class BaseMachine(metaclass=abc.ABCMeta):
     Abstract state machine class which defines the mininum interface that any
     state machine class needs to implement.
     """
-    NAME = 'base'
-
     @abc.abstractmethod
     def __init__(self, params):
         """

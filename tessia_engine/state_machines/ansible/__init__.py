@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Package initializer which defines the machine name and its class
+Package initializer which defines the machine python class
 """
 
 #

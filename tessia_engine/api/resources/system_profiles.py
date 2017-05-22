@@ -215,6 +215,7 @@ class SystemProfileResource(SecureResource):
         Raises:
             ItemNotFoundError: in case hypervisor profile is specified but not
                                found
+            BaseHttpError: in case provided hypervisor profile is invalid
 
         Returns:
             int: id of created item
@@ -242,6 +243,10 @@ class SystemProfileResource(SecureResource):
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
+            if target_system.hypervisor_rel is None:
+                raise BaseHttpError(
+                    400, msg='System has no hypervisor, '
+                             'you need to define one first')
             match = SystemProfile.query.join(
                 System, System.id == target_system.hypervisor_rel.id
             ).filter(
@@ -353,6 +358,10 @@ class SystemProfileResource(SecureResource):
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
+            if item.system_rel.hypervisor_rel is None:
+                raise BaseHttpError(
+                    400, msg='System has no hypervisor, '
+                             'you need to define one first')
             match = SystemProfile.query.join(
                 System, System.id == item.system_rel.hypervisor_rel.id
             ).filter(

@@ -40,7 +40,9 @@ RUN apt-get -q update > /dev/null && \
     # dependencies used for testing builds - they must come
     # after setuptools installation
     pylint \
-    coverage
+    coverage && \
+    # add the admin user for administrative work
+    useradd -ms /bin/bash admin
 
 # set the locale/encoding for the session
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
@@ -55,9 +57,8 @@ RUN cd /assets && \
     # remove unneeded dependencies used only for building
     apt-get -yq purge --auto-remove \
     build-essential \
-    python3-dev > /dev/null
+    python3-dev > /dev/null && \
+    mv /assets/entrypoint /entrypoint && \
+    rm -rf /assets
 
-EXPOSE 22
-
-# entry point should be ssh daemon
-CMD ["/assets/entrypoint"]
+CMD ["/entrypoint"]

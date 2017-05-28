@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-fqdn=${TESSIA_FQDN:-localhost}
+fqdn=${TESSIA_ENGINE_FQDN:-engine}
 
 function _db_verify() {
     # wait for db to be available and handle initialization/schema migration

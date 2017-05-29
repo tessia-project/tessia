@@ -22,6 +22,7 @@ The administratives entries required in the database
 from tessia_engine.db.feeder import db_insert
 
 import os
+import uuid
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -44,16 +45,17 @@ OPERATING_SYSTEMS = [
 ]
 
 USERS = [
-    'System user,System user for common resources,system,true,false'
+    'Admin user,User for built-in resources and administrative tasks,admin,'
+    'true,false'
 ]
 
 PROJECTS = [
-    'System project,System project for common resources'
+    'Admins,Group for built-in resources and admin users'
 ]
 
 TEMPLATES = [
-    "RHEL7.2,Template for RHEL7.2,system,System project,rhel7.2",
-    "SLES12.1,Template for SLES12.1,system,System project,sles12.1"
+    "RHEL7.2,Template for RHEL7.2,admin,Admins,rhel7.2",
+    "SLES12.1,Template for SLES12.1,admin,Admins,sles12.1"
 ]
 
 ROLES = [
@@ -216,7 +218,7 @@ def get_oses():
 
 def get_projects():
     """
-    Create the default projects
+    Create the built-in projects
     """
     data = []
     for row in PROJECTS:
@@ -233,7 +235,7 @@ def get_projects():
 
 def get_roles():
     """
-    Create the default system roles for users
+    Create the built-in roles for users
     """
     data = []
     for row in ROLES:
@@ -356,9 +358,27 @@ def get_templates():
     return {'Template': data}
 # get_templates()
 
+def get_token_users():
+    """
+    Generate an auth token for each of the built-in users.
+    """
+    data = []
+    for row in USERS:
+        row = row.split(',', 5)
+        data.append(
+            {
+                'user': row[2],
+                'key_id': str(uuid.uuid4()).replace('-', ''),
+                'key_secret': str(uuid.uuid4()).replace('-', '')
+            }
+        )
+
+    return {'UserKey': data}
+# get_token_users()
+
 def get_users():
     """
-    Create the default users in the application.
+    Create the built-in users in the application.
     """
     data = []
     for row in USERS:
@@ -405,6 +425,7 @@ def create_all():
     data.update(get_system_states())
     data.update(get_volume_types())
     data.update(get_users())
+    data.update(get_token_users())
     data.update(get_projects())
     data.update(get_oses())
     data.update(get_templates())

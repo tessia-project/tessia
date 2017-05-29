@@ -120,6 +120,12 @@ The database installation commands should be executed as the root user.
 # password, convenient for development purposes
 sed -i 's,^  login_method:.*$,  login_method: free,g' .tox/devenv/etc/tessia/engine.yaml
 
+# if you don't want to use the free authenticator, the initial token of the admin user
+# can be retrieved and stored in your local client file. With that you have the initial access
+# to start creating users, resources, etc.:
+(devenv) [user@host tessia-engine]$ test -d ~/.tessia-cli || mkdir ~/.tessia-cli
+(devenv) [user@host tessia-engine]$ tessia-dbmanage get-token > ~/.tessia-cli/auth.key
+
 # to manage the two daemon services (api and scheduler) use the helper tools/control_daemons
 # to see the status of the daemons:
 (devenv) [user@host tessia-engine]$ tools/control_daemons status

@@ -26,6 +26,7 @@ import click
 import os
 import requests
 import subprocess
+import time
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -99,16 +100,21 @@ def exec_(names, api_url, cleaner):
                 raise click.ClickException(
                     'cleaner failed with exit code {}'.format(clean_status))
         # make sure connection is back, sometimes there is a delay
-        while True:
+        timeout = time.time() + 30
+        failed = True
+        while time.time() < timeout:
             try:
-                requests.head(api_url)
+                requests.head(api_url, verify=False)
             except requests.exceptions.HTTPError:
                 pass
             except requests.exceptions.ConnectionError:
                 continue
             except Exception:
                 raise
+            failed = False
             break
+        if failed:
+            raise click.ClickException('Timed out while waiting for server')
 
         # switch to parent dir to make sure paths are found
         exec_cmd = CMD_WRAPPER.format(

@@ -152,6 +152,8 @@ Test a update fail scenario by specifying only the fields that are not allowed:
 
 By basing yourself on an existing test you will have already a good headstart and from there you can check the coverage level report and add more tests until 100% is reached.
 
+But keep in mind that this is just one of the metrics for evaluating code coverage. Additional test cases might be needed to cover all possible scenarios (i.e. using invalid values in order to force parse errors) so it is important to use different approaches to achieve meaningful unit testing.
+
 If you find yourself in a situation where none of the pre-existing _test_* methods fit your needs you still can make use of some useful functions to make your life easier.
 They are:
 

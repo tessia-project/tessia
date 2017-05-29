@@ -31,10 +31,10 @@ import time
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMD_COVERAGE = 'python3 -m coverage run -a --source=../tessia_cli {}'
+CMD_COVERAGE = 'python3 -m coverage run -a --source=tessia_cli {}'
 CMD_COVERAGE_ERASE = "python3 -m coverage erase"
 CMD_COVERAGE_REPORT = "python3 -m coverage report -m"
-CMD_WRAPPER = '-m tests.wrapper {test_name} {api_url}'
+CMD_WRAPPER = '-m wrapper {test_name} {api_url}'
 MY_DIR = os.path.dirname(os.path.abspath(__file__))
 
 #

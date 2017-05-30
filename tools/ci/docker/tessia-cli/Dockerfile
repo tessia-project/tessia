@@ -36,11 +36,7 @@ RUN apt-get -q update > /dev/null && \
     # this is to update the pip version if necessary
     pip \
     # pbr is used in setuptools
-    pbr \
-    # dependencies used for testing builds - they must come
-    # after setuptools installation
-    pylint \
-    coverage && \
+    pbr && \
     # add the admin user for administrative work
     useradd -ms /bin/bash admin
 

@@ -141,6 +141,19 @@ class StaticExecutor(object):
         self.switch_user(self._data['base_user'], 'somepassword')
     # __init__()
 
+    @staticmethod
+    def _print(*args, **kwargs):
+        """
+        Simple wrapper for 'print' built-in to enable flush by default
+        """
+        if 'flush' not in kwargs:
+            # by default force line to be flushed right away to provide better
+            # user feedback
+            kwargs['flush'] = True
+
+        print(*args, **kwargs)
+    # _print()
+
     def cleanup(self):
         """
         Process the cleanup statements
@@ -178,25 +191,28 @@ class StaticExecutor(object):
     # exec_statement()
 
     @staticmethod
-    def load_testcase(testcase):
+    def load_testcase(test_path):
         """
         Retrieve and load the yaml testcase file
 
         Args:
-            testcase (str): name of testcase
+            test_path (str): testcase's file location
+
+        Returns:
+            str: testcase content
 
         Raises:
             SyntaxError: if tasks_order entry is invalid
         """
-        file_path = '{}/{}.yaml'.format(STATIC_DIR, testcase)
-        with open(file_path, 'r') as file_fd:
+        with open(test_path, 'r') as file_fd:
             testcase = yaml.load(file_fd.read())
 
         try:
             jsonschema.validate(testcase, STATIC_SCHEMA)
         # in case of validation error print a nice error message to the user
         except jsonschema.exceptions.ValidationError as exc:
-            print(exc.message, file=sys.stderr)
+            print('file {}: {}'.format(test_path, exc.message),
+                  file=sys.stderr)
             sys.exit(1)
 
         # make sure all tasks listed in the order list are really defined
@@ -224,7 +240,8 @@ class StaticExecutor(object):
             exc: exception raised by the command function
             AssertionError: if regex (when specified) does not match output
         """
-        print('[cmd] ' + cmd_str)
+        # force line to be flushed right away to provide better user feedback
+        self._print('[cmd] ' + cmd_str)
         parts = shlex.split(cmd_str)
         # small tweak - add attribute to pretend our function is a click
         # command
@@ -237,7 +254,7 @@ class StaticExecutor(object):
         # restore argv
         sys.argv = orig_argv
 
-        print('[output] ' + result.output)
+        self._print('[output] ' + result.output)
 
         if check and result.exit_code != 0:
             exc = AssertionError(
@@ -262,7 +279,7 @@ class StaticExecutor(object):
         tasks = self._data['tasks_order']
 
         for task in tasks:
-            print("[exec-task] '{}'".format(task))
+            self._print("[exec-task] '{}'".format(task))
             for statement in self._data['tasks'][task]:
                 self.exec_statement(statement)
     # run()

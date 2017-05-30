@@ -35,37 +35,32 @@ class DockerImage(object):
     """
     Represents a docker image to build, test, deploy
     """
-    def __init__(self, image_name, image_tag, prod_build, session, git_name):
+    def __init__(self, image_name, image_tag, session):
         """
         Constructor, store values (usually provided by manager)
 
         Args:
             image_name (str): docker image name
             image_tag (str): docker image tag
-            prod_build (bool): whether to build for production
-            session (Session): object conected to builder system
-            git_name (str): name of source git repository
+            session (Session): object connected to builder system
         """
         self._logger = logging.getLogger(__name__)
         # docker image name
         self._image_name = image_name
         # docker image tag
         self._image_tag = image_tag
-        # whether it's a production build
-        self._prod_build = prod_build
         # open session to the build machine
         self._session = session
-        # git repository name where source code is located
-        self._git_name = git_name
     # __init__()
 
-    def _gen_docker_cmd(self, action, args='', context_dir=None):
+    def _gen_docker_cmd(self, action, args='', cmd='', context_dir=None):
         """
         Helper method to generate docker command strings
 
         Args:
-            action (str): build, run
+            action (str): build, exec, rm, run
             args (str): additional arguments to include in cmd string
+            cmd (str): for actions 'run' and 'exec', define cmd to execute
             context_dir (str): path of context dir, mandatory for build action
 
         Returns:
@@ -74,35 +69,48 @@ class DockerImage(object):
         Raises:
             RuntimeError: in case of missing parameters
         """
-        cmd = ''
+        docker_cmd = ''
+        container_name = '{name}-{tag}'.format(
+            name=self._image_name, tag=self._image_tag)
+        image_name = '{}:{}'.format(self._image_name, self._image_tag)
         if action == 'build':
             if context_dir is None:
                 raise RuntimeError(
                     'cannot generate docker build string without context dir')
 
             docker_build = (
-                'docker build --force-rm --build-arg prod_build={prod_build} '
-                '-t {image_name}:{image_tag} {args} {context_dir}'
+                'docker build --force-rm -t {image_name} {args} '
+                '{context_dir}'
             )
-            cmd = docker_build.format(
-                prod_build=str(self._prod_build).lower(),
-                image_name=self._image_name,
+            docker_cmd = docker_build.format(
+                image_name=image_name,
                 image_tag=self._image_tag,
                 context_dir=context_dir,
                 args=args
             )
         elif action == 'run':
             docker_run = (
-                'docker run -t --rm --name {container_name} {args} '
-                '{image_name}'
+                'docker run -t --name {container_name} {args} '
+                '{image_name} {cmd}'
             )
-            cmd = docker_run.format(
-                container_name=self._image_name,
-                image_name='{}:{}'.format(self._image_name, self._image_tag),
-                args=args
+            docker_cmd = docker_run.format(
+                container_name=container_name,
+                image_name=image_name,
+                args=args,
+                cmd=cmd
+            )
+        elif action == 'exec':
+            docker_cmd = (
+                'docker exec {args} {container_name} {cmd}'.format(
+                    container_name=container_name, args=args, cmd=cmd)
+            )
+        elif action == 'rm':
+            docker_cmd = (
+                'docker rm {args} {container_name}'.format(
+                    args=args, container_name=container_name)
             )
 
-        return cmd
+        return docker_cmd
     # _gen_docker_cmd()
 
     def _exec_build(self, context_dir):
@@ -116,18 +124,19 @@ class DockerImage(object):
             RuntimeError: in case build process fails
         """
         cmd = self._gen_docker_cmd('build', context_dir=context_dir)
-        self._logger.info('[image-build] build start at %s', context_dir)
+        self._logger.info('[build] build start at %s', context_dir)
         ret_code, output = self._session.run(cmd)
         if ret_code != 0:
             raise RuntimeError('build of {} failed: {}'.format(
                 self._image_name, output))
     # _exec_build()
 
-    def _prepare_context(self, work_dir):
+    def _prepare_context(self, git_name, work_dir):
         """
         Prepare the context directory in the work dir of the builder
 
         Args:
+            git_name (str): repository name where source code is located
             work_dir (str): path to work dir
 
         Returns:
@@ -141,12 +150,12 @@ class DockerImage(object):
         # target location for context dir
         context_dir = '{}/{}'.format(work_dir, self._image_name)
         self._logger.info(
-            '[image-build] preparing context dir at %s', context_dir)
+            '[build] preparing context dir at %s', context_dir)
         # send the content from source docker dir to target context dir
         self._session.send(docker_dir, work_dir)
         ret_code, output = self._session.run(
             'git clone {}/{}.git {}/assets/{}.git'.format(
-                work_dir, self._git_name, context_dir, self._git_name))
+                work_dir, git_name, context_dir, git_name))
         if ret_code != 0:
             raise RuntimeError(
                 'Failed to copy git bundle to context dir: {}'.format(output))
@@ -154,15 +163,16 @@ class DockerImage(object):
         return context_dir
     # _prepare_context()
 
-    def build(self, work_dir):
+    def build(self, git_name, work_dir):
         """
         Use the passed work directory as staging area to store the context and
         start the image build.
 
         Args:
+            git_name (str): repository name where source code is located
             work_dir (str): path to work dir in builder
         """
-        context_dir = self._prepare_context(work_dir)
+        context_dir = self._prepare_context(git_name, work_dir)
         self._exec_build(context_dir)
     # build()
 
@@ -177,45 +187,67 @@ class DockerImage(object):
         )
         if ret_code != 0:
             self._logger.warning(
-                '[clean-up] failed to list containers for %s: %s',
+                '[cleanup] failed to list containers for %s: %s',
                 image_fullname,
                 output)
         else:
             containers = output.replace('\n', ' ').strip()
             # containers found: delete them
-            if len(containers) > 0:
+            if containers:
                 ret_code, output = self._session.run(
                     'docker rm -v {}'.format(containers)
                 )
                 if ret_code != 0:
                     self._logger.warning(
-                        '[clean-up] failed to remove containers for %s: %s',
+                        '[cleanup] failed to remove containers for %s: %s',
                         image_fullname,
                         output)
+
+        # delete the image (use --no-prune to keep parent layers so that they
+        # can be used as cache for other builds)
+        ret_code, output = self._session.run(
+            'docker rmi --no-prune {}'.format(image_fullname))
+        if ret_code != 0:
+            self._logger.warning(
+                '[cleanup] failed to remove image %s: %s',
+                image_fullname,
+                output)
     # cleanup()
 
-    def deploy(self):
+    def push(self, registry_url, rel_version):
         """
-        Deploy the image on the controller. To be implemented.
-        """
-        pass
-    # deploy()
+        Push the image to the docker registry.
 
-    def int_test(self):
-        """
-        Run a container from the image to perform integration testing. Does
-        nothing by default.
-        """
-        pass
-    # int_test()
+        Args:
+            registry_url (str): location of docker registry
+            rel_version (str): release version used to tag image on registry
 
-    def lint(self):
+        Raises:
+            RuntimeError: in case push command fails
         """
-        Run a container from the image to perform lint verification. Does
-        nothing by default.
-        """
-        pass
-    # lint()
+        # name of image on builder
+        local_name = '{}:{}'.format(self._image_name, self._image_tag)
+        # how image will be named on registry
+        remote_name = '{}/{}:{}'.format(
+            registry_url, self._image_name, rel_version)
+        self._logger.info(
+            'pushing image %s to %s', local_name, remote_name)
+
+        ret_code, output = self._session.run(
+            'docker tag {local_image} {remote_image} && '
+            'docker push {remote_image}'.format(
+                local_image=local_name, remote_image=remote_name)
+        )
+        # regardless of success or failure, remove the tag created
+        rm_code, rm_output = self._session.run(
+            'docker rmi {}'.format(remote_name))
+        if rm_code != 0:
+            self._logger.warning(
+                'failed to remove remote tag: %s', rm_output)
+        # push operation failed: report error
+        if ret_code != 0:
+            raise RuntimeError('failed to push to registry: {}'.format(output))
+    # push()
 
     def unit_test(self):
         """

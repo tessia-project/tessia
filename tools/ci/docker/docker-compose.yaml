@@ -16,7 +16,6 @@ services:
     networks:
       - cli_net
       - db_net
-      - external
     volumes:
       - engine-etc:/etc/tessia
       - engine-jobs:/var/tessia/jobs
@@ -48,7 +47,6 @@ services:
 networks:
   cli_net:
   db_net:
-  external:
 
 volumes:
   db-data:

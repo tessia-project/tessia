@@ -1,49 +1,52 @@
 variables:
-  GIT_STRATEGY: clone
+  GIT_STRATEGY: fetch
+  # replace by CI_COMMIT_SHA when gitlab gets updated to 9.0+
+  COMMIT_SHA: $CI_BUILD_REF
+  REGISTRY: tessia-dev.domain.com:5000
 
 stages:
+  - prepare
   - build
-#  - deploy
+  - unittests
+  - clitests
+  - push
+  - cleanup
 
-build:
-  stage: build
+prepare:
+  stage: prepare
   script:
     # make sure the deps from orc are met and up-to-date
     - pip3 install --user -U pip -rtools/ci/requirements.txt
-    # checkout to correct branch
-    - git checkout ${CI_COMMIT_REF_NAME:=$CI_BUILD_REF_NAME}
-    - tools/ci/orc build --verbose
 
-# TODO: further configure for deployments
-#deploy_review:
-#  stage: deploy
-#  script:
-#    - tools/ci/orc deploy
-#  environment:
-#    name: review/$CI_COMMIT_REF_NAME
-#    url: https://$CI_ENVIRONMENT_SLUG.example.com
-#  only:
-#    - branches
-#  except:
-#    master
-#
-#deploy_staging:
-#  stage: deploy
-#  script:
-#    - echo "Deploy to staging server"
-#  environment:
-#    name: staging
-#    url: https://staging.example.com
-#  only:
-#  - master
-#
-#deploy_release:
-#  stage: deploy
-#  script:
-#    - echo "Deploy to production server"
-#  environment:
-#    name: production
-#    url: https://example.com
-#  when: manual
-#  only:
-#  - master
+build_cli:
+  stage: build
+  script:
+    - tools/ci/orc build --image=tessia-cli --tag=${COMMIT_SHA}
+
+build_engine:
+  stage: build
+  script:
+    - tools/ci/orc build --image=tessia-engine --tag=${COMMIT_SHA}
+
+unittests_engine:
+  stage: unittests
+  script:
+    - tools/ci/orc unittest --image=tessia-engine --tag=${COMMIT_SHA}
+
+clitests:
+  stage: clitests
+  script:
+    - tools/ci/orc clitest --tag=${COMMIT_SHA} --fieldtests=/home/tessia-builder/field_tests --baselibfile=/home/tessia-builder/cfg/tessia_baselib.yaml
+
+push:
+  stage: push
+  script:
+    - tools/ci/orc push --tag=${COMMIT_SHA} --registry=${REGISTRY}
+  only:
+    - master
+
+cleanup:
+  stage: cleanup
+  script:
+    - tools/ci/orc cleanup --tag=${COMMIT_SHA}
+  when: always

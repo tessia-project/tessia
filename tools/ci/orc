@@ -21,8 +21,8 @@ Script to orchestrate the executing of the tessia CI process
 # IMPORTS
 #
 from lib.manager import Manager
+from lib.util import build_image_map
 import logging
-import os
 import sys
 
 try:
@@ -35,80 +35,187 @@ except ImportError:
 #
 # CONSTANTS AND DEFINITIONS
 #
-MY_DIR = os.path.dirname(os.path.abspath(__file__))
-DOCKER_DIR = os.path.abspath('{}/docker'.format(MY_DIR))
 
 #
 # CODE
 #
-def _build_image_map():
+@click.command('all')
+@click.option('tag', '--tag',
+              help='docker tag to use (if not specified uses sha of HEAD)')
+@click.option(
+    'field_tests', '--fieldtests',
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    help='dir path with field tests to execute')
+@click.option(
+    'baselib_file', '--baselibfile',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help='path to tessia_baselib conf file (required when fieldtests are '
+         'specified)')
+@click.option('--registry', help='docker registry url to push image(s)')
+@click.option(
+    'install_server_hostname', '--install-server-hostname',
+    help='custom hostname/ip to use as install server (when detected fqdn is '
+         'not reachable by installed systems)')
+@click.option('--quiet', is_flag=True, default=False,
+              help='suppress output from commands')
+def all_(tag, field_tests, baselib_file, registry, install_server_hostname, quiet):
     """
-    Parse the set of images available for building.
+    execute all ci stages in one run
     """
-    image_map = {}
+    if field_tests and not baselib_file:
+        raise click.ClickException(
+            '--baselibfile is required when --fieldtests is specified')
 
-    for entry in os.listdir(DOCKER_DIR):
-        # description not accessible: not a image dir
-        try:
-            with open('{}/{}/description'.format(
-                DOCKER_DIR, entry)) as file_fd:
-                desc = file_fd.read()
-        except (IOError, FileNotFoundError):
-            continue
-        image_map[entry] = desc.strip()
-
-    return image_map
-# _build_image_map()
+    manager = Manager(
+        'all', tag, registry_url=registry, field_tests=field_tests,
+        baselib_file=baselib_file, install_server_hostname=install_server_hostname,
+        verbose=not quiet)
+    manager.run()
+# all_()
 
 @click.command('build')
-@click.option('config_url', '--configurl',
-              help='url containing CI configuration')
 @click.option('images', '--image', multiple=True,
-              help='name of image to build (leave empty to build all)')
-@click.option('prod_tag', '--prodtag',
-              help='build in production mode for specified tag')
-@click.option('no_clean', '--noclean', is_flag=True, default=False,
-              help='do not clean up work dir (useful for debugging)')
-@click.option('--verbose', is_flag=True, default=False,
-              help='report all output from commands')
-def build(config_url, images, prod_tag, no_clean, verbose):
+              help='name of image to build (if not specified build all)')
+@click.option('tag', '--tag',
+              help='docker tag to use (if not specified uses sha of HEAD)')
+@click.option('--quiet', is_flag=True, default=False,
+              help='suppress output from commands')
+def build(images, tag, quiet):
     """
     build one or more images
     """
+    # images to build
+    build_images = None
+
     # list of available images
-    image_list = _build_image_map().keys()
-    # list of images to build
-    build_list = []
-    # no image specified: build all
-    if len(images) == 0:
-        click.echo('No image specified: building all ({})'.format(
-            ', '.join(images)))
-        build_list = image_list
+    image_list = build_image_map().keys()
+
     # image specified: check if it exists
-    else:
+    if images:
+        build_images = []
         for check_name in images:
             if check_name in image_list:
-                build_list.append(check_name)
+                build_images.append(check_name)
                 continue
             raise click.ClickException(
                 "invalid image name '{}'".format(check_name))
+        click.echo('building images {}'.format(', '.join(build_images)))
+    # no image specified: build all
+    else:
+        click.echo('building images {}'.format(', '.join(image_list)))
 
-    manager = Manager(build_list, config_url, prod_tag, not no_clean, verbose)
+    manager = Manager('build', tag, images=build_images, verbose=not quiet)
     manager.run()
 # build()
 
-@click.command('list')
-def list_():
+@click.command('cleanup')
+@click.option('tag', '--tag', help='docker tag to locate images')
+def cleanup(tag):
     """
-    list the available images
+    execute the cleanup stage
     """
-    image_map = _build_image_map()
+    manager = Manager('cleanup', tag)
+    manager.run()
+# cleanup()
+
+@click.command('clitest')
+@click.option('tag', '--tag', help='docker tag to locate images')
+@click.option(
+    'field_tests', '--fieldtests',
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    help='dir path with additional field tests to execute')
+@click.option(
+    'baselib_file', '--baselibfile',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help='path to tessia_baselib conf file (required when '
+         'fieldtests are specified)')
+@click.option(
+    'install_server_hostname', '--install-server-hostname',
+    help='custom hostname/ip to use as install server (when detected fqdn is '
+         'not reachable by installed systems)')
+def clitest(tag, field_tests, baselib_file, install_server_hostname):
+    """
+    execute the client integration tests
+    """
+    if field_tests and not baselib_file:
+        raise click.ClickException(
+            '--baselibfile is required when --fieldtests is specified')
+
+    manager = Manager(
+        'clitest', tag, field_tests=field_tests, baselib_file=baselib_file,
+        install_server_hostname=install_server_hostname)
+    manager.run()
+# clitest()
+
+@click.command(
+    'devmode',
+    short_help='start and keep services running until manually stopped')
+@click.option('tag', '--tag', help='docker tag to locate images')
+@click.option(
+    'baselib_file', '--baselibfile',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help='path to tessia_baselib conf file to be injected in container')
+@click.option(
+    'install_server_hostname', '--install-server-hostname',
+    help='custom hostname/ip to use as install server (when detected fqdn is '
+         'not reachable by installed systems)')
+def devmode(tag, baselib_file, install_server_hostname):
+    """
+    start and keep services running until manually stopped
+    """
+    manager = Manager(
+        'devmode', tag, baselib_file=baselib_file,
+        install_server_hostname=install_server_hostname)
+    manager.run()
+# devmode()
+
+@click.command('list-images')
+def list_images():
+    """
+    list the docker images available for build
+    """
+    image_map = build_image_map()
     click.echo('')
     click.echo('List of available images (Name - Description)')
     click.echo('')
     for name in image_map:
         click.echo('{} -> {}'.format(name, image_map[name]))
-# list_()
+# list_images()
+
+@click.command('list-stages')
+def list_stages():
+    """
+    list the available ci stages for execution
+    """
+    for name in Manager.STAGES:
+        click.echo('{}'.format(name))
+# list_stages()
+
+@click.command('push')
+@click.option('--registry', required=True,
+              help='docker registry url to push images')
+@click.option('images', '--image', multiple=True,
+              help='name of image to push (if not specified pushes all)')
+@click.option('tag', '--tag', help='docker tag to locate images')
+def push(images, tag, registry):
+    """
+    push images to a docker registry
+    """
+    manager = Manager('push', tag, images=images, registry_url=registry)
+    manager.run()
+# push()
+
+@click.command('unittest')
+@click.option('images', '--image', multiple=True,
+              help='name of image to test (if not specified tests all)')
+@click.option('tag', '--tag', help='docker tag to locate images')
+def unittest(images, tag):
+    """
+    execute unit test on docker images
+    """
+    manager = Manager('unittest', tag, images=images)
+    manager.run()
+# unittest()
 
 @click.group()
 def root():
@@ -124,8 +231,15 @@ def main():
     """
     logging.basicConfig(
         level=logging.DEBUG, format="%(levelname)s: %(message)s")
+    root.add_command(all_)
     root.add_command(build)
-    root.add_command(list_)
+    root.add_command(cleanup)
+    root.add_command(clitest)
+    root.add_command(devmode)
+    root.add_command(push)
+    root.add_command(unittest)
+    root.add_command(list_images)
+    root.add_command(list_stages)
     root()
 # main()
 

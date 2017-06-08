@@ -94,10 +94,6 @@ class TestSmBase(TestCase):
         self._mock_os = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(sm_base, 'urljoin', autospec=True)
-        self._mock_urljoin = patcher.start()
-        self.addCleanup(patcher.stop)
-
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
 
@@ -194,8 +190,9 @@ class TestSmBase(TestCase):
         mock_config_dict = self._mock_config.get_config.return_value
         autofile_name = '{}-{}'.format(system_entry.name, profile_entry.name)
 
-        self._mock_urljoin.assert_called_with(
+        autofile_url = '{}/{}'.format(
             mock_config_dict["auto_install"]["url"], autofile_name)
+        self.assertEqual(mach._autofile_url, autofile_url)
 
         self._mock_os.path.join.assert_called_with(
             mock_config_dict["auto_install"]["dir"], autofile_name)

@@ -135,7 +135,7 @@ def part_del(server, volume_id, num):
 @click.option('--mo', help="mount options")
 @click.option('--mp', help="mount point")
 @click.option(
-    '--type', default='primary', type=click.Choice(['primary', 'logical']),
+    '--type', type=click.Choice(['primary', 'logical']),
     help="partition type (no effect for gpt)")
 def part_edit(server, volume_id, num, **kwargs):
     """

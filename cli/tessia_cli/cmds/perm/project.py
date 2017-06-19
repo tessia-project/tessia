@@ -40,7 +40,8 @@ FIELDS = (
 
 @click.command(name='project-add')
 @click.option('--name', required=True, help="project's name")
-@click.option('--desc', help="free form field describing project")
+@click.option('--desc', required=True,
+              help="free form field describing project")
 def project_add(**kwargs):
     """
     create a new project
@@ -72,7 +73,8 @@ def project_del(name):
 @click.option('cur_name', '--name', required=True,
               help="name of project to edit")
 @click.option('name', '--newname', help="new name of project")
-@click.option('--desc', help="free form field describing project")
+@click.option('--desc', required=True,
+              help="free form field describing project")
 def project_edit(cur_name, **kwargs):
     """
     change properties of an project

@@ -31,6 +31,7 @@ from tessia_cli.utils import version_verify
 
 import click
 import logging
+import os
 import requests
 
 #
@@ -187,17 +188,38 @@ def set_server(url):
             schema_url,
             headers={'Expect': build_expect_header()}
         )
+    except requests.exceptions.HTTPError as exc:
+        logger.debug(
+            'Failed to connect to %s', schema_url, exc_info=exc)
+        raise click.ClickException(
+            'error: the address provided failed to provide a valid answer.'
+        ) from None
+    except requests.exceptions.SSLError as exc:
+        logger.debug(
+            'Failed to connect to %s', schema_url, exc_info=exc)
+        ssl_error = str(exc)
+        if '[SSL: CERTIFICATE_VERIFY_FAILED]' not in ssl_error:
+            raise click.ClickException(
+                'error: {}'.format(ssl_error)) from None
+        raise click.ClickException(
+            "The validation of the server's SSL certificate failed. "
+            "In order to assure the connection is safe, place a copy of the "
+            "trusted CA's certificate file in {}/ca.crt and try again.".format(
+                os.path.dirname(CONF.USER_CONF_PATH))
+        ) from None
     except requests.exceptions.RequestException as exc:
         logger.debug(
             'Failed to connect to %s', schema_url, exc_info=exc)
         raise click.ClickException(
-            'operation failed. The address provided did not respond.')
+            'operation failed. The address provided did not respond.'
+        ) from None
 
     # verify api version compatibility
     if not version_verify(logger, resp, silent=True):
         raise click.ClickException(
             'operation failed. The address provided returned an invalid '
-            'response.')
+            'response.'
+        ) from None
 
     conf_dict = CONF.get_config()
     conf_dict['server_url'] = url

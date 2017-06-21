@@ -7,7 +7,7 @@ db:
 
 auto_install:
   # the url must be accessible from the systems being installed
-  url: http://server/
+  url: http://localhost/static
   dir: var/tessia/www
 
 # authentication subsystem
@@ -99,6 +99,7 @@ log:
     tessia_engine.state_machines:
       handlers: [console]
       level: DEBUG
+      propagate: false
     # tessia_baselib is used by the state machines in jobs so we don't
     # define a file based handler either.
     tessia_baselib:

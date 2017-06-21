@@ -3,56 +3,56 @@
         {
             "address": "192.168.161.225",
             "desc": null,
-            "modifier": "system",
-            "owner": "system",
-            "project": "System project",
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
             "subnet": "CPC3 shared"
         },
         {
             "address": "192.168.160.54",
             "desc": null,
-            "modifier": "system",
-            "owner": "system",
-            "project": "System project",
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
             "subnet": "CPC3 shared"
         },
         {
             "address": "192.168.161.224",
             "desc": null,
-            "modifier": "system",
-            "owner": "system",
-            "project": "System project",
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
             "subnet": "CPC3 shared"
         }
     ],
     "NetZone": [
         {
             "desc": "Network zone for CPC CPC3",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "CPC3",
-            "owner": "system",
-            "project": "System project"
+            "owner": "admin",
+            "project": "Admins"
         }
     ],
     "Repository": [
         {
             "initrd": "/images/initrd.img",
             "kernel": "/images/kernel.img",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "RHEL7.2-GA",
             "operating_system": "rhel7.2",
-            "owner": "system",
-            "project": "System project",
+            "owner": "admin",
+            "project": "Admins",
             "url": "http://installserver.domain.com/redhat/s390x/RHEL7.2/DVD"
         },
         {
             "initrd": "/boot/s390x/initrd",
             "kernel": "/boot/s390x/linux",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "SLES12.1-GA",
             "operating_system": "sles12.1",
-            "owner": "system",
-            "project": "System project",
+            "owner": "admin",
+            "project": "Admins",
             "url": "http://installserver.domain.com/suse/s390x/SLES12.1/DVD"
         }
     ],
@@ -60,10 +60,10 @@
         {
             "attributes": "{'chunksize': '512'}",
             "desc": "- Storage pool for creating qcow2 images",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "Pool for system CPC3LP55",
-            "owner": "system",
-            "project": "System project",
+            "owner": "admin",
+            "project": "Admins",
             "system": "CPC3LP55",
             "total_size": 40000,
             "type": "LVM_VG",
@@ -76,11 +76,11 @@
             "fw_level": null,
             "hostname": null,
             "model": "DS8800",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "DSK7K16",
-            "owner": "system",
+            "owner": "admin",
             "password": null,
-            "project": "System project",
+            "project": "Admins",
             "type": "DASD-FCP",
             "username": null
         }
@@ -88,8 +88,8 @@
     "StorageVolume": [
         {
             "desc": "- DASD disk for regression tests",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -109,7 +109,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 10000,
             "specs": {},
@@ -120,8 +120,8 @@
         },
         {
             "desc": "- DASD disk for regression tests",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -134,7 +134,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 10000,
             "specs": {},
@@ -145,8 +145,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -166,7 +166,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 20000,
             "specs": {
@@ -188,8 +188,8 @@
         },
         {
             "desc": "- DASD disk for regression tests",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -209,7 +209,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 10000,
             "specs": {},
@@ -220,8 +220,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -241,7 +241,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -264,8 +264,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -278,7 +278,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -300,8 +300,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -314,7 +314,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -337,8 +337,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -351,7 +351,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -376,8 +376,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -390,7 +390,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -412,8 +412,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -426,7 +426,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -449,8 +449,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -470,7 +470,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -494,8 +494,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -508,7 +508,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -530,8 +530,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -544,7 +544,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -568,8 +568,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -582,7 +582,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -604,8 +604,8 @@
         },
         {
             "desc": "FCP-SCSI DISK",
-            "modifier": "system",
-            "owner": "system",
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
                 "table": [
                     {
@@ -618,7 +618,7 @@
                 ],
                 "type": "msdos"
             },
-            "project": "System project",
+            "project": "Admins",
             "server": "DSK7K16",
             "size": 4095,
             "specs": {
@@ -712,10 +712,10 @@
             "dns_1": "192.168.200.241",
             "dns_2": null,
             "gateway": "192.168.160.1",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "CPC3 shared",
-            "owner": "system",
-            "project": "System project",
+            "owner": "admin",
+            "project": "Admins",
             "vlan": 1801,
             "zone": "CPC3"
         }
@@ -725,10 +725,10 @@
             "desc": "CPC for project System project",
             "hostname": "hmcserver.domain.com",
             "model": "ZEC12_H20",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "CPC3",
-            "owner": "system",
-            "project": "System project",
+            "owner": "admin",
+            "project": "Admins",
             "state": "AVAILABLE",
             "type": "cpc"
         },
@@ -737,10 +737,10 @@
             "hostname": "CPC3LP55.domain.com",
             "hypervisor": "CPC3",
             "model": "ZEC12_H20",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "CPC3LP55",
-            "owner": "system",
-            "project": "System project",
+            "owner": "admin",
+            "project": "Admins",
             "state": "AVAILABLE",
             "type": "lpar"
         },
@@ -749,10 +749,10 @@
             "hostname": "CPC3LP54.domain.com",
             "hypervisor": "CPC3",
             "model": "ZEC12_H20",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "CPC3LP54",
-            "owner": "system",
-            "project": "System project",
+            "owner": "admin",
+            "project": "Admins",
             "state": "AVAILABLE",
             "type": "lpar"
         },
@@ -761,10 +761,10 @@
             "hostname": "kvm054.domain.com",
             "hypervisor": "CPC3LP55",
             "model": "ZGENERIC",
-            "modifier": "system",
+            "modifier": "admin",
             "name": "kvm054",
-            "owner": "system",
-            "project": "System project",
+            "owner": "admin",
+            "project": "Admins",
             "state": "AVAILABLE",
             "type": "kvm"
         }

@@ -27,6 +27,7 @@ from tessia_engine.db import types
 from tessia_engine.db.feeder import db_insert
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import BASE
+from tessia_engine.db.models import UserKey
 
 import argparse
 import logging
@@ -105,6 +106,22 @@ def get_alembic_cfg(stdout=sys.stdout):
     alembic_cfg.set_main_option("sqlalchemy.url", db_url)
     return alembic_cfg
 # get_alembic_cfg()
+
+def get_token(_):
+    """
+    Return the authorization token of the admin user so that the sysadmin
+    can have initial access to the tool.
+    """
+    try:
+        obj = MANAGER.session.query(UserKey).filter_by(user='admin').one()
+    except (sqlalchemy.exc.ProgrammingError,
+            sqlalchemy.orm.exc.NoResultFound,
+            sqlalchemy.orm.exc.MultipleResultsFound):
+        print('error: db not initialized', file=sys.stderr)
+        sys.exit(2)
+
+    print('{0.key_id}:{0.key_secret}'.format(obj))
+# get_token()
 
 def init_db(_):
     """
@@ -199,6 +216,13 @@ def parse_cmdline():
         'feed', help='insert data from a file in the database')
     feed_parser.add_argument('filename', help='json file containing data')
     feed_parser.set_defaults(func=feed_db)
+
+    # get-token: return the initial token of the admin user,
+    # this is used in a new deployment to provide initial access
+    # to the tool
+    get_token_parser = subparsers.add_parser(
+        'get-token', help="return the admin user's token")
+    get_token_parser.set_defaults(func=get_token)
 
     # init: initialize a new database
     init_parser = subparsers.add_parser(

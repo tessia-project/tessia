@@ -22,41 +22,18 @@ Auxiliary class used for managing the CI process
 from lib.image import DockerImage
 from lib.image_engine import DockerImageEngine
 from lib.session import Session
-from lib.util import Shell
-from urllib.parse import urlsplit
+from lib.util import Shell, build_image_map
 
 import logging
 import os
-import re
-import requests
 import signal
 import tempfile
-import yaml
+import time
 
 #
 # CONSTANTS AND DEFINITIONS
 #
-# local based configuration used when no config url is provided
-LOCAL_CFG = {
-    'builders': [
-        {
-            'hostname': 'localhost',
-            'user': None,
-            'passwd': None,
-        }
-    ],
-    'zones': [
-        {
-            'name': 'local',
-            'controller': {
-                'hostname': 'localhost',
-                'user': None,
-                'passwd': None,
-            },
-            'type': 'test'
-        }
-    ]
-}
+COMPOSE_PROJECT_NAME = 'tessia'
 MY_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_DIR = os.path.abspath('{}/../../..'.format(MY_DIR))
 
@@ -67,90 +44,124 @@ class Manager(object):
     """
     Coordinates the actions for each docker image
     """
-    def __init__(self, images, config_url, prod_tag, cleanup=True,
-                 verbose=False):
+    # supported stages - order is important because the list is used
+    # when stage='all' is specified
+    STAGES = ['build', 'unittest', 'clitest', 'push', 'cleanup']
+
+    def __init__(self, stage, docker_tag, images=None, registry_url=None,
+                 field_tests=None, baselib_file=None, install_server_hostname=None,
+                 verbose=True):
         """
-        Create the image objects and fetch necessary configuration data
+        Create the image objects and set necessary configuration parameters
 
         Args:
-            images (list): names of images to process
-            config_url (str): location where CI config is available
-            prod_tag (str): if not None means to build in production mode for
-                            the specified git tag
-            cleanup (bool): if False do not remove work dir after
-                             failing/finishing
+            stage (str): one of STAGES or 'all'
+            docker_tag (str): which tag to use for building or finding images,
+                              None means to use sha of HEAD
+            images (list): names of images to process, may only be specified
+                           for stages build, push, unittest
+            registry_url (str): a docker registry url to where images should
+                                be pushed, if None then push stage is skipped
+            field_tests (str): a path on the builder containing additional
+                               tests for the client, as recognized by the
+                               cli test runner
+            baselib_file (str): path to tessia_baselib conf file on builder, this is
+                           required if field_tests is specified
+            install_server_hostname (str): used by clitest stage, custom
+                hostname to use as install server for cases where the detected
+                fqdn is not reachable by systems being installed during tests
             verbose (bool): whether to print output from commands
 
         Raises:
-            RuntimeError: in case a work dir cannot be prepared on builder
+            RuntimeError: in case fqdn of builder cannot be determined
+            ValueError: 1- if a wrong stage is specified, 2- if 'images' var is
+                        specified but stage is not build or push, 3- if
+                        tessia_baselib file is missing/invalid when clitests is
+                        specified
         """
         self._logger = logging.getLogger(__name__)
+        self._registry_url = registry_url
+        self._field_tests = field_tests
+        self._baselib_file = baselib_file
+        self._install_server_hostname = install_server_hostname
+
+        # string 'all' specified: run all stages
+        if stage == 'all':
+            self._stages = [
+                getattr(self, '_stage_{}'.format(stg)) for stg in self.STAGES]
+        elif stage == 'devmode':
+            self._stages = [self._devmode]
+        # invalid stage specified
+        elif stage not in self.STAGES:
+            raise ValueError("invalid stage '{}'".format(stage))
+        # incompatible combination as other stages might fail if one of the
+        # images is missing
+        elif stage not in ('build', 'push', 'unittest') and images:
+            raise ValueError(
+                "images may not be specified for stage '{}'".format(stage))
+        # one-stage run specified
+        else:
+            self._stages = [getattr(self, '_stage_{}'.format(stage))]
+
         # used to execute commands on a local shell
         self._shell = Shell(verbose)
 
-        # section to determine build type (production/testing)
-        if prod_tag is None:
-            self._build_type = 'test'
-            self._logger.info('[init] going to perform a test build')
-        else:
-            self._build_type = 'production'
-            self._logger.info('[init] going to perform a production build')
-
-        # section to determine build mode
-        # no url: local mode
-        if config_url is None:
-            self._logger.info(
-                '[init] no config url set: local build mode')
-            self._config = LOCAL_CFG
-            # for local mode there is no distinction between zone types so set
-            # the local zone to what the user chose to do
-            for zone in self._config['zones']:
-                zone['type'] = self._build_type
-        else:
-            self._logger.info(
-                '[init] fetching build configuration from %s', config_url)
-            # fetch config from url
-            self._config = self._fetch_conf(config_url)
-
-        # today we just use the first available builder in the list but
-        # this could be improved to use some smart policy
-        self._builder = self._config['builders'][0]
+        # TODO: add support to cmdline parameters to allow connection
+        # to remote builders via ssh
+        self._builder = {
+            'hostname': 'localhost',
+            'user': None,
+            'passwd': None,
+        }
         self._logger.info(
             '[init] using builder %s', self._builder['hostname'])
-
         # open the connection to the builder
         self._session = Session(
             self._builder['hostname'], self._builder['user'],
             self._builder['passwd'], verbose)
 
-        # open connections to the zone controllers
-        self._controllers = self._open_controllers(
-            self._config['zones'],
-            self._build_type,
-            verbose)
+        # field tests demand a tessia_baselib file otherwise tests with
+        # LPAR installations will fail as there won't be an auxiliar disk
+        # configured to boot them
+        if self._field_tests:
+            if not self._baselib_file:
+                raise ValueError(
+                    'Field tests specified but no tessia_baselib file provided')
+            # validate that baselib file exists
+            ret_code, _ = self._session.run('test -f {}'.format(self._baselib_file))
+            if ret_code != 0:
+                raise ValueError(
+                    'tessia-baselib file {} not found on {}'
+                    .format(self._baselib_file, self._builder['hostname']))
 
-        # determine the name of the git repository - used when
-        # copying it to the staging/work directory
-        cmd = 'cd {} && git remote get-url origin'.format(REPO_DIR)
-        _, stdout = self._shell.run(
-            cmd, error_msg='Failed to determine git repo name')
-        self._repo_name = stdout.strip().split('/')[-1][:-4]
-        self._logger.info('[init] detected git repo name is %s',
-                          self._repo_name)
+        # determine builder's fqdn
+        ret_code, output = self._session.run('hostname --fqdn')
+        if ret_code != 0:
+            raise RuntimeError(
+                "failed to determine fqdn of {}: {}"
+                .format(self._builder['hostname'], output))
+        self._builder['fqdn'] = output.strip()
+
+        # docker tag specified: use it
+        if docker_tag:
+            self._tag = docker_tag
+        # determine the docker tag to be used
+        else:
+            self._tag = self._create_tag()
+        self._logger.info('[init] tag for images is %s', self._tag)
 
         # create the image objects
         self._images = []
-        image_tag = self._process_tag(prod_tag)
-        self._logger.info('[init] detected tag for images is %s', image_tag)
+        # no image specified: use all
+        if not images:
+            images = build_image_map().keys()
         for name in images:
-            # each image object gets it's own session to the builder, this
-            # could be used later to speed up builds by doing parallel builds
+            # each image object gets it's own session to the builder so
+            # that parallel builds can happen if threading is used
             session = Session(
                 self._builder['hostname'], self._builder['user'],
                 self._builder['passwd'], verbose)
-            self._images.append(self._new_image(name, image_tag, session))
-
-        self._cleanup_flag = cleanup
+            self._images.append(self._new_image(name, self._tag, session))
 
         # work dir is created when build process starts
         self._work_dir = None
@@ -159,6 +170,241 @@ class Manager(object):
         for catch_signal in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
             signal.signal(catch_signal, self._stop_handler)
     # __init__()
+
+    def _clitest_exec(self):
+        """
+        Execute the client based tests
+        """
+        # copy the cli tests to container and run them
+        ret_code, output = self._session.run(
+            "git archive HEAD cli | docker exec -i --user admin {}_cli_1 "
+            "bash -c 'tar -C /home/admin -xf -'".format(COMPOSE_PROJECT_NAME)
+        )
+        if ret_code != 0:
+            raise RuntimeError(
+                'failed to copy cli repo to container: {}'.format(
+                    output))
+
+        # clear any coverage data and get the list of tests to execute
+        ret_code, output = self._session.run(
+            "docker exec --user admin tessia_cli_1 "
+            "bash -c '/home/admin/cli/tests/runner erase && "
+            "/home/admin/cli/tests/runner list --terse'")
+        if ret_code != 0:
+            raise RuntimeError(
+                'failed to retrieve the list of tests')
+        test_list = [(name, None) for name in output.split()]
+        # call auxiliar method to run each test
+        self._clitest_loop(test_list)
+
+        # field tests section (uses real resources)
+        if self._field_tests:
+            ret_code, _ = self._session.run(
+                "test -d {}".format(self._field_tests))
+            if ret_code != 0:
+                raise RuntimeError(
+                    'specified field tests path not found or not a '
+                    'directory: {}'.format(output))
+
+            # copy the tests from builder to cli container
+            target_test_dir = '/home/admin/cli/tests/field_tests'
+            ret_code, output = self._session.run(
+                "docker cp {} tessia_cli_1:{}"
+                .format(self._field_tests, target_test_dir))
+
+            # get the list of tests and execute them
+            ret_code, output = self._session.run(
+                "docker exec --user admin tessia_cli_1 "
+                "bash -c '/home/admin/cli/tests/runner list --src={} --terse'"
+                .format(target_test_dir))
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to retrieve the list of field tests: {}'.format(
+                        output))
+            test_list = [(name, target_test_dir) for name in output.split()]
+            # call auxiliar method to run each test
+            self._clitest_loop(test_list)
+
+        # report coverage level
+        self._session.run(
+            'docker exec --user admin tessia_cli_1 '
+            '/home/admin/cli/tests/runner report', stdout=True)
+    # _clitest_exec()
+
+    def _clitest_loop(self, test_list):
+        """
+        Auxiliar function to execute each client test and perform db
+        cleanup by the end of it.
+
+        Args:
+            test_list (list): [(test_name, source_dir)]
+
+        Raises:
+            RuntimeError: in case any operation fails
+        """
+        # execute each test by calling the cli test runner
+        for test, src_dir in test_list:
+            test_param = '--name={}'.format(test)
+            if src_dir:
+                test_param += ' --src={}'.format(src_dir)
+
+            self._logger.info('[clitest] starting test %s', test)
+            # do not erase existing coverage data (so that results are
+            # cumulative) and do not display report (it will be displayed after
+            # all tests have finished)
+            ret_code, _ = self._session.run(
+                'docker exec --user admin tessia_cli_1 '
+                '/home/admin/cli/tests/runner exec --cov-erase=no '
+                '--cov-report=no --api-url=https://{}:5000 {}'
+                .format(self._builder['fqdn'], test_param)
+            )
+            # test failed: stop testing
+            if ret_code != 0:
+                raise RuntimeError(
+                    'test {} failed'.format(test))
+
+            # clear the database in preparation for next test
+            self._logger.info('[clitest] cleaning db for next test')
+            ret_code, output = self._session.run(
+                'docker-compose stop && '
+                'docker-compose rm -vf db && '
+                'docker volume rm tessia_db-data && '
+                # no-recreate is important to keep previous coverage results in
+                # cli container
+                'docker-compose up --no-recreate -d'
+            )
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to clean db after test: {}'.format(output))
+    # _clitest_loop()
+
+    def _compose_start(self):
+        """
+        Bring up and configure the services by using docker-compose.
+        """
+        # create compose's .env file
+        cmd = (
+            r"echo -e 'COMPOSE_FILE=tools/ci/docker/docker-compose.yaml\n"
+            r"COMPOSE_PROJECT_NAME={}\n"
+            r"TESSIA_DOCKER_TAG={}\n"
+            r"TESSIA_ENGINE_FQDN={}\n'"
+            r" > .env".format(COMPOSE_PROJECT_NAME, self._tag,
+                              self._builder['fqdn'])
+        )
+        ret_code, output = self._session.run(cmd)
+        if ret_code != 0:
+            raise RuntimeError(
+                'failed to create .env file: {}'.format(output))
+
+        ret_code, output = self._session.run('docker-compose up -d')
+        if ret_code != 0:
+            raise RuntimeError(
+                'failed to start services: {}'.format(output))
+
+        # user-provided hostname for http install server: use it in place of
+        # fqdn (for cases where fqdn is not reachable)
+        if self._install_server_hostname:
+            ret_code, output = self._session.run(
+                'docker exec tessia_engine_1 yamlman update '
+                '/etc/tessia/engine.yaml auto_install.url http://{}/static'
+                .format(self._install_server_hostname)
+            )
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to set custom install server hostname: {}'.format(
+                        output))
+
+        # current we have to use 'docker exec' directly due to the way
+        # 'docker-compose exec' works, where it always tries to hijack the
+        # shell's tty even when there isn't one allocated (which is the case
+        # with gitlab-runner's ssh executor).
+        # A possible alternative solution is to use gitlab's shell executor
+        # instead and use orc itself to connect to the builder via ssh.
+
+        # wait for api service to come up
+        ret_code = 1
+        timeout = time.time() + 60
+        self._logger.info('waiting for api to come up (60 secs)')
+        while ret_code != 0 and time.time() < timeout:
+            ret_code, _ = self._session.run(
+                "docker exec tessia_cli_1 bash -c '"
+                "openssl s_client -connect {}:5000 "
+                "< /dev/null &>/dev/null'".format(self._builder['fqdn'])
+            )
+            time.sleep(5)
+        if ret_code != 0:
+            raise RuntimeError('timed out while waiting for api')
+
+        # download ssl certificate to client
+        cmd = (
+            'docker exec tessia_cli_1 bash -c \''
+            'openssl s_client -showcerts -connect {}:5000 '
+            '< /dev/null 2>/dev/null | '
+            'sed -ne "/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p" '
+            '> /etc/tessia-cli/ca.crt\''.format(self._builder['fqdn'])
+        )
+        ret_code, output = self._session.run(cmd)
+        if ret_code != 0:
+            raise RuntimeError(
+                'failed to retrieve ssl cert: {}'.format(output))
+
+        # set the free authenticator in api
+        ret_code, output = self._session.run(
+            'docker exec tessia_engine_1 yamlman update '
+            '/etc/tessia/engine.yaml auth.login_method free && '
+            'docker exec tessia_engine_1 supervisorctl restart tessia-api')
+        if ret_code != 0:
+            raise RuntimeError(
+                'failed to set authenticator config: {}'.format(output))
+
+        if self._baselib_file:
+            # copy the tessia_baselib file to enable lpar installations
+            ret_code, output = self._session.run(
+                "docker cp {} tessia_engine_1:/etc/tessia/tessia_baselib.yaml"
+                .format(self._baselib_file))
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to copy tessia_baselib file: {}'.format(output))
+
+    # _compose_start()
+
+    def _compose_stop(self):
+        """
+        Stop services and remove docker associated entities (volumes, networks,
+        etc.)
+        """
+        ret_code, output = self._session.run(
+            'test -e .env && docker-compose kill && '
+            'docker-compose rm -vf && '
+            'rm -f .env && '
+            'docker volume rm {proj_name}_db-data '
+            '{proj_name}_engine-etc {proj_name}_engine-jobs && '
+            'docker network rm {proj_name}_cli_net '
+            '{proj_name}_db_net'.format(proj_name=COMPOSE_PROJECT_NAME)
+        )
+        if ret_code != 0:
+            self._logger.warning(
+                'failed to clean compose services: %s', output)
+    # _compose_stop()
+
+    def _create_tag(self):
+        """
+        Create a tag by checking the HEAD commit's checksum in git.
+
+        Raises:
+            RuntimeError: in case any git command fails
+
+        Returns:
+            str: created tag
+        """
+        # determine the sha of the HEAD commit
+        cmd = "cd {} && git show -s --oneline".format(REPO_DIR)
+        _, stdout = self._shell.run(
+            cmd, error_msg='Failed to determine sha of HEAD commit')
+        head_sha = stdout.strip().split()[0]
+
+        return head_sha
+    # _create_tag()
 
     def _create_work_dir(self):
         """
@@ -169,8 +415,8 @@ class Manager(object):
         ret_code, output = self._session.run('mktemp -p /tmp -d')
         if ret_code != 0:
             raise RuntimeError(
-                'Failed to create work directory on builder: {}'.format(
-                    output))
+                'Failed to create work directory on {}: {}'
+                .format(self._builder['fqdn'], output))
         self._work_dir = output.strip()
     # _create_work_dir()
 
@@ -181,11 +427,11 @@ class Manager(object):
         # work dir does not exist: nothing to do
         if self._work_dir is None:
             return
-        self._logger.info('[image-build] cleaning up work directory')
+        self._logger.info('[build] cleaning up work directory')
         # be extra cautious before deleting
         if not self._work_dir.startswith('/tmp/'):
             self._logger.warning(
-                '[image-build] unexpected work directory name, skipped '
+                '[build] unexpected work directory name, skipped '
                 'dir removal')
             return
         self._session.run('rm -rf {}'.format(self._work_dir))
@@ -194,29 +440,35 @@ class Manager(object):
         self._work_dir = None
     # _del_work_dir()
 
+    def _devmode(self):
+        """
+        Start all the containers and keep them running until manually
+        stopped.
+        """
+        self._logger.info('[devmode] starting services')
+        try:
+            self._compose_start()
+            self._logger.info(
+                '[devmode] you can now work, press Ctrl+C when done')
+            try:
+                while True:
+                    time.sleep(999)
+            # use the catch only to suppress traceback printing
+            except RuntimeError:
+                pass
+        finally:
+            self._logger.info('[devmode] cleaning compose services')
+            # clean up before dying/finishing
+            try:
+                self._compose_stop()
+            except Exception as clean_exc:
+                self._logger.warning(
+                    '[devmode] failed to clean compose services: %s',
+                    str(clean_exc))
+    # _devmode()
+
     @staticmethod
-    def _fetch_conf(cfg_url):
-        """
-        Download the file specified by the url and return its contents.
-        """
-        parsed_url = urlsplit(cfg_url)
-        if parsed_url.scheme == 'file':
-            with open(parsed_url.path, 'r') as file_fd:
-                file_content = file_fd.read()
-        elif parsed_url.scheme in ['http', 'https']:
-            response = requests.get(cfg_url)
-            if response.status_code == 400:
-                raise FileNotFoundError()
-            file_content = response.text
-        else:
-            raise RuntimeError(
-                'Unsupported url scheme {}'.format(parsed_url.scheme))
-
-        # TODO: validate against a schema
-        return yaml.load(file_content)
-    # _fetch_conf()
-
-    def _new_image(self, name, image_tag, session):
+    def _new_image(name, image_tag, session):
         """
         Simple factory function to create DockerImage objects.
         """
@@ -224,155 +476,71 @@ class Manager(object):
             image_cls = DockerImageEngine
         else:
             image_cls = DockerImage
-        return image_cls(name, image_tag, self._build_type == 'production',
-                         session, self._repo_name)
+        return image_cls(name, image_tag, session)
     # _new_image()
 
-    def _open_controllers(self, zones, build_type, verbose):
-        """
-        Receives a list of zones and open a session to each of its
-        controllers.
-
-        Args:
-            zones (list): dict of zones to use
-            build_type (str): production, testing
-            verbose (bool): to be passed as argument to the Session object
-
-        Returns:
-            list: [{'hostname': 'controller_hostname', 'session': Session}]
-
-        Raises:
-            RuntimeError: in case no suitable controller is found in zones list
-        """
-        controllers = []
-        for zone in zones:
-            # zone type is not target of this build: skip
-            if zone['type'] != build_type:
-                continue
-            controller = zone['controller']
-            self._logger.info(
-                '[init] deploying to zone %s using controller %s',
-                zone['name'],
-                controller['hostname'])
-            session = Session(
-                controller['hostname'], controller['user'],
-                controller['passwd'], verbose)
-            controllers.append(
-                {'hostname': controller['hostname'], 'session': session})
-        if not controllers:
-            raise RuntimeError(
-                "No controller available for the chosen build "
-                "type '{}'".format(build_type))
-
-        return controllers
-    # _open_controllers()
-
-    def _process_tag(self, prod_tag=None):
-        """
-        Validate the passed tag or calculate one by checking the branch name
-        and HEAD commit's checksum of the git repository.
-
-        Args:
-            prod_tag (str): tag to validate, if None means to calculate one
-
-        Raises:
-            RuntimeError: in case any git command fails
-            ValueError: in case a tag is provided but not found in git repo
-
-        Returns:
-            str: validated/calculated tag
-        """
-        # tag specified: validate it
-        if prod_tag is not None:
-            # specify the tag in the command to check if it exists
-            cmd = "cd {} && git show -s --oneline {}".format(
-                REPO_DIR, prod_tag)
-            # an exception is raised in case tag is not found
-            self._shell.run(
-                cmd,
-                error_msg='Specified tag {} not found in git repo'.format(
-                    prod_tag))
-            return prod_tag
-
-        # determine on which branch we are
-        cmd = "cd {} && git status -b --porcelain".format(REPO_DIR)
-        _, stdout = self._shell.run(
-            cmd, error_msg='Failed to determine current git branch')
-        cur_branch = None
-        for line in stdout.splitlines():
-            if line.startswith('## '):
-                cur_branch = line.split('...')[0][3:]
-                break
-        # failed to find line containing branch name in output: abort
-        if cur_branch is None:
-            raise RuntimeError(
-                'Current git branch not found in output: \n'
-                'cmd: {}\noutput: {}\n'.format(cmd, stdout))
-        # replace any characters not accepted by docker as a tag
-        cur_branch = re.sub('[^A-Za-z0-9]', '_', cur_branch)
-
-        # determine the sha of the HEAD commit
-        cmd = "cd {} && git show -s --oneline".format(REPO_DIR)
-        _, stdout = self._shell.run(
-            cmd, error_msg='Failed to determine sha of HEAD commit')
-        head_sha = stdout.strip().split()[0]
-
-        return '{}-{}'.format(cur_branch, head_sha)
-    # _process_tag()
-
-    def _send_repo(self):
+    def _send_repo(self, repo_name):
         """
         Prepare the work directory so that the build process can happen.
         Basically that means copying the git repository to it.
+
+        Args:
+            repo_name (str): name of git repo to be used when creating bundle
         """
         # create a bundle of the git repository and send it to the work
         # directory on the builder
         with tempfile.TemporaryDirectory(prefix='tessia-build-') as tmp_dir:
-            bundle_path = '{}/{}.git'.format(tmp_dir, self._repo_name)
+            bundle_path = '{}/{}.git'.format(tmp_dir, repo_name)
             cmd = "cd {} && git bundle create {} HEAD".format(
                 REPO_DIR, bundle_path)
-            self._logger.info('[image-build] creating bundle of git repo')
+            self._logger.info('[build] creating bundle of git repo')
             self._shell.run(cmd, error_msg='Failed to create git bundle')
             # send the bundle to the work dir
-            self._logger.info('[image-build] sending git bundle to builder')
+            self._logger.info(
+                '[build] sending git bundle to %s', self._builder['fqdn'])
             self._session.send(bundle_path, self._work_dir)
     # _send_repo()
 
-    def _state_build_images(self):
+    def _stage_build(self):
         """
         Tell each image object to perform the build.
         """
-        self._logger.info('new state: image-build')
+        self._logger.info('new stage: build')
+
         try:
             # create work dir on builder
             self._create_work_dir()
 
-            # copy git repository to builder
-            self._send_repo()
+            # determine the name of the git repository - it's how
+            # the image objects can find it in work directory
+            cmd = 'cd {} && git remote get-url origin'.format(REPO_DIR)
+            _, stdout = self._shell.run(
+                cmd, error_msg='Failed to determine git repo name')
+            repo_name = stdout.strip().split('/')[-1][:-4]
+            self._logger.info(
+                '[build] detected git repo name is %s', repo_name)
 
-            for image in self._images:
-                image.build(self._work_dir)
-        except Exception as exc:
-            # clean up before dying
+            # copy git repository to builder
+            self._send_repo(repo_name)
+
+            # tell each image object to perform build
+            for image_obj in self._images:
+                image_obj.build(repo_name, self._work_dir)
+        finally:
+            # clean up before dying/finishing
             try:
                 self._del_work_dir()
             except Exception as clean_exc:
                 self._logger.warning(
-                    '[image-build] failed to delete work dir: %s',
+                    '[build] failed to delete work dir: %s',
                     str(clean_exc))
-            raise exc
+    # _stage_build()
 
-        self._del_work_dir()
-    # _state_build_images()
-
-    def _state_cleanup(self):
+    def _stage_cleanup(self):
         """
-        Perform housekeeping and tell each image object to clean up (remove
-        associated image and containers)
+        Tell each image object to clean up (remove associated image and
+        containers)
         """
-        if not self._cleanup_flag:
-            return
-        self._logger.info('new state: clean-up')
         # delete dangling (unreachable) images, that helps keeping the disk
         # usage low as docker does not have a gc available.
         # By doing this before removing the actual images we assure that
@@ -381,51 +549,84 @@ class Manager(object):
             'docker images -a -q -f "dangling=true"')
         if ret_code != 0:
             self._logger.warning(
-                '[clean-up] failed to list dangling images: %s',
+                '[cleanup] failed to list dangling images: %s',
                 output)
         else:
             dang_images = output.replace('\n', ' ').strip()
             # delete dangling images
             if dang_images:
+                self._logger.info('[cleanup] deleting dangling images')
                 ret_code, output = self._session.run(
                     'docker rmi {}'.format(dang_images)
                 )
                 if ret_code != 0:
                     self._logger.warning(
-                        '[clean-up] failed to remove dangling images: %s',
+                        '[cleanup] failed to remove dangling images: %s',
                         output)
 
         # tell each image to remove its associated image and containers
-        for image in self._images:
-            image.cleanup()
-    # _state_cleanup()
+        for image_obj in self._images:
+            image_obj.cleanup()
+    # _stage_cleanup
 
-    def _state_lint_check(self):
+    def _stage_clitest(self):
         """
-        Tell each image object to execute lint verification.
+        Start the client based tests stage
         """
-        self._logger.info('new state: lint-check')
-        for image in self._images:
-            image.lint()
-    # _state_lint_check()
+        self._logger.info('new stage: clitest')
+        try:
+            self._compose_start()
+            self._clitest_exec()
+        finally:
+            self._logger.info('[clitest] cleaning compose services')
+            # clean up before dying/finishing
+            try:
+                self._compose_stop()
+            except Exception as clean_exc:
+                self._logger.warning(
+                    '[clitest] failed to clean compose services: %s',
+                    str(clean_exc))
+    # _stage_clitest()
 
-    def _state_inttest_run(self):
+    def _stage_push(self):
         """
-        Tell each image object to execute integration tests.
+        Tell each image object to push its docker image to the registry.
         """
-        self._logger.info('new state: inttest-run')
-        for image in self._images:
-            image.int_test()
-    # _state_inttest_run()
+        self._logger.info('new stage: push')
+        if not self._registry_url:
+            self._logger.warning(
+                '[push] registry url not specified; skipping')
+            return
 
-    def _state_unittest_run(self):
+        # release version is created from the date of the HEAD commit in the
+        # following format:
+        # {YEAR}.{MONTH}{DAY}.{HOUR}{MINUTE}-{BUILD_NUMBER}
+        # where {BUILD_NUMBER} is the number of seconds elapsed since the
+        # date of the given commit.
+        cmd = (
+            "cd {} && "
+            "commit_date=$(git show -s --pretty='%cd' --date=unix) && "
+            "version=$(TZ=UTC0 date -d @$commit_date +%Y.%m%d.%H%M) && "
+            "build_number=$((`date -d now +%s` - $commit_date)) && "
+            "echo $version-$build_number".format(REPO_DIR))
+        _, stdout = self._shell.run(
+            cmd, error_msg='failed to generate release version')
+        rel_version = stdout.strip()
+        self._logger.info(
+            '[push] release version for images is %s', rel_version)
+
+        for image in self._images:
+            image.push(self._registry_url, rel_version)
+    # _stage_push()
+
+    def _stage_unittest(self):
         """
         Tell each image object to execute unit tests.
         """
-        self._logger.info('new state: unittest-run')
+        self._logger.info('new stage: unittest')
         for image in self._images:
             image.unit_test()
-    # _state_unittest_run()
+    # _stage_unittest()
 
     def _stop_handler(self, signum, *args, **kwargs):
         """
@@ -443,22 +644,9 @@ class Manager(object):
         """
         Executes the CI process
         """
-        try:
-            self._state_build_images()
-            self._state_lint_check()
-            self._state_unittest_run()
-            self._state_inttest_run()
-        except Exception as exc:
-            self._logger.error('exception caught; canceling process')
-            # clean up before dying
-            try:
-                self._state_cleanup()
-            except Exception as clean_exc:
-                self._logger.warning(
-                    'cleanup failed: %s', str(clean_exc))
-            raise exc
+        for stage in self._stages:
+            stage()
 
-        self._state_cleanup()
         self._logger.info('done')
     # run()
 # Manager

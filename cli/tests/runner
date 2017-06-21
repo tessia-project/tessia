@@ -26,33 +26,51 @@ import click
 import os
 import requests
 import subprocess
+import sys
+import time
 
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMD_COVERAGE = 'python3 -m coverage run -a --source=../tessia_cli {}'
+CMD_COVERAGE = 'python3 -m coverage run -a --source=tessia_cli {}'
 CMD_COVERAGE_ERASE = "python3 -m coverage erase"
 CMD_COVERAGE_REPORT = "python3 -m coverage report -m"
-CMD_WRAPPER = '-m tests.wrapper {test_name} {api_url}'
+CMD_WRAPPER = '-m wrapper {test_path} {api_url}'
 MY_DIR = os.path.dirname(os.path.abspath(__file__))
 
 #
 # CODE
 #
-def _build_test_list():
+def _build_test_list(src_dir=None):
     """
     Create a dictionary containing all the testcases found in the corresponding
     folder.
+
+    Args:
+        src_dir (str): source directory containing test files, if None defaults
+                       to STATIC_DIR
+
+    Returns:
+        dict: {'test_name': {'description': 'desc', 'path':
+               '/path/to/test.yaml'}}
     """
     test_map = {}
+    if src_dir:
+        test_dir = src_dir
+    else:
+        test_dir = STATIC_DIR
 
-    for entry in os.listdir(STATIC_DIR):
+    for entry in os.listdir(test_dir):
         if not entry.endswith('.yaml'):
             continue
 
+        test_path = '{}/{}'.format(test_dir, entry)
         test_name = entry[:-5]
-        testcase = StaticExecutor.load_testcase(test_name)
-        test_map[test_name] = testcase['description']
+        testcase = StaticExecutor.load_testcase(test_path)
+        test_map[test_name] = {
+            'description': testcase['description'],
+            'path': test_path
+        }
 
     return test_map
 # _build_test_list()
@@ -65,33 +83,45 @@ def _build_test_list():
     'api_url', '--api-url', required=True,
     help="url where API is running")
 @click.option(
+    'src_dir', '--src',
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    help="dir containing test files, defaults to /static_testcases")
+@click.option(
     'cleaner', '--cleaner', type=click.Path(exists=True, resolve_path=True),
     help="cleaner hook to use before each testcase")
-def exec_(names, api_url, cleaner):
+@click.option(
+    'cov_erase', '--cov-erase', type=click.BOOL, default=True,
+    help="whether to erase previous collected coverage data (default yes)")
+@click.option(
+    'cov_report', '--cov-report', type=click.BOOL, default=True,
+    help="whether to print coverage report at the end (default yes)")
+def exec_(names, api_url, src_dir, cleaner, cov_erase, cov_report):
     """
     execute one or more testcases
     """
-    fix_map = _build_test_list()
+    avail_map = _build_test_list(src_dir=src_dir)
 
     # build the list of tests to execute
-    run_list = []
     if not names:
-        run_list = fix_map.keys()
+        run_map = avail_map
     else:
+        run_map = {}
         for testcase in names:
             try:
-                fix_map[testcase]
+                run_map[testcase] = avail_map[testcase]
             except KeyError:
                 raise click.ClickException(
                     "unknown testcase '{}'".format(testcase))
-            run_list.append(testcase)
-    click.echo('[init] testcases to execute: {}'.format(', '.join(run_list)))
+    click.echo(
+        '[init] testcases to execute: {}'.format(', '.join(run_map.keys()))
+    )
 
     os.chdir(MY_DIR)
-    subprocess.run(CMD_COVERAGE_ERASE, shell=True, check=1)
+    if cov_erase:
+        subprocess.run(CMD_COVERAGE_ERASE, shell=True, check=1)
 
     # run each testcase
-    for test_name in run_list:
+    for test_name, test_entry in run_map.items():
         if cleaner is not None:
             click.echo("[pre-start] calling cleaner '{}'".format(cleaner))
             clean_status = subprocess.call(cleaner, shell=True)
@@ -99,20 +129,25 @@ def exec_(names, api_url, cleaner):
                 raise click.ClickException(
                     'cleaner failed with exit code {}'.format(clean_status))
         # make sure connection is back, sometimes there is a delay
-        while True:
+        timeout = time.time() + 30
+        failed = True
+        while time.time() < timeout:
             try:
-                requests.head(api_url)
+                requests.head(api_url, verify=False)
             except requests.exceptions.HTTPError:
                 pass
             except requests.exceptions.ConnectionError:
                 continue
             except Exception:
                 raise
+            failed = False
             break
+        if failed:
+            raise click.ClickException('Timed out while waiting for server')
 
         # switch to parent dir to make sure paths are found
         exec_cmd = CMD_WRAPPER.format(
-            test_name=test_name, api_url=api_url)
+            test_path=test_entry['path'], api_url=api_url)
         cmd_str = CMD_COVERAGE.format(exec_cmd)
 
         click.echo('[exec] {}'.format(cmd_str))
@@ -128,16 +163,31 @@ def exec_(names, api_url, cleaner):
 
         click.echo("finished testcase '{}'".format(test_name))
 
-    subprocess.run(CMD_COVERAGE_REPORT, shell=True, check=1)
+    if cov_report:
+        subprocess.run(CMD_COVERAGE_REPORT, shell=True, check=1)
 # exec_()
 
 @click.command('list')
-def list_():
+@click.option(
+    'src_dir', '--src',
+    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    help="dir containing test files, defaults to /static_testcases")
+@click.option('terse', '--terse', is_flag=True,
+              help="display only the test names")
+def list_(src_dir, terse):
     """
     list the available testcases
     """
     headers = ['Testcase', 'Description']
-    rows = [(test, desc) for test, desc in _build_test_list().items()]
+    rows = [
+        (test, entry['description']) for test, entry in _build_test_list(
+            src_dir=src_dir).items()
+    ]
+
+    if terse:
+        for row in rows:
+            click.echo(row[0])
+        return
 
     # determine biggest width for each column
     cols_width = [(len(header) + 2) for header in headers]
@@ -167,6 +217,26 @@ def list_():
     click.echo(output)
 # list_()
 
+@click.command('erase')
+def erase():
+    """
+    erase collected coverage data
+    """
+    os.chdir(MY_DIR)
+    proc = subprocess.run(CMD_COVERAGE_ERASE, shell=True)
+    sys.exit(proc.returncode)
+# erase()
+
+@click.command('report')
+def report():
+    """
+    print current coverage report
+    """
+    os.chdir(MY_DIR)
+    proc = subprocess.run(CMD_COVERAGE_REPORT, shell=True)
+    sys.exit(proc.returncode)
+# report()
+
 @click.group()
 def root():
     """
@@ -179,8 +249,10 @@ def main():
     """
     Entry point, executes the root group.
     """
+    root.add_command(erase)
     root.add_command(exec_)
     root.add_command(list_)
+    root.add_command(report)
     root()
 # main()
 

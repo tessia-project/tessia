@@ -82,10 +82,6 @@ class TestSmAutoyast(TestCase):
         self._mock_os = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(sm_base, 'urljoin', autospec=True)
-        self._mock_urljoin = patcher.start()
-        self.addCleanup(patcher.stop)
-
         patcher = patch.object(sm_autoyast, 'sleep', autospec=True)
         self._mock_sleep_autoyast = patcher.start()
         self.addCleanup(patcher.stop)

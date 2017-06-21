@@ -26,7 +26,6 @@ from tessia_engine.db.connection import MANAGER
 from tessia_engine.state_machines.install.plat_lpar import PlatLpar
 from tessia_engine.state_machines.install.plat_kvm import PlatKvm
 from time import sleep
-from urllib.parse import urljoin
 
 import abc
 import jinja2
@@ -103,7 +102,7 @@ class SmBase(metaclass=abc.ABCMeta):
         config = Config.get_config()
         autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
         autofile_name = autofile_name.replace(' ', '-')
-        self._autofile_url = urljoin(
+        self._autofile_url = '{}/{}'.format(
             config["auto_install"]["url"], autofile_name)
         self._autofile_path = os.path.join(
             config["auto_install"]["dir"], autofile_name)

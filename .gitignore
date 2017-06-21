@@ -6,3 +6,5 @@ __pycache__/
 build/
 .tox/
 .coverage
+# created by orc for docker-compose
+.env

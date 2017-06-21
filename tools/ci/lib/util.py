@@ -69,19 +69,19 @@ class Shell(object):
             stderr=subprocess.STDOUT, universal_newlines=True)
         # read from pipe in an non-blocking way to avoid hanging in ssh related
         # commands (i.e. git clone) due to stderr left open by ssh
-        # controlpersis background process
+        # controlpersist background process
         # (https://bugzilla.mindrot.org/show_bug.cgi?id=1988)
         os.set_blocking(proc.stdout.fileno(), False)
         output = ''
         while True:
             output_buffer = proc.stdout.readline()
-            if len(output_buffer) == 0:
+            if not output_buffer:
                 if proc.poll() is not None:
                     break
                 time.sleep(0.2)
                 continue
             if self._verbose or stdout:
-                print(output_buffer, end='')
+                print(output_buffer, end='', flush=True)
             output += output_buffer
 
         if proc.returncode != 0 and error_msg is not None:
@@ -91,3 +91,25 @@ class Shell(object):
         return proc.returncode, output
     # run()
 # Shell
+
+def build_image_map():
+    """
+    Parse the set of images available for building.
+    """
+    image_map = {}
+
+    my_dir = os.path.dirname(os.path.abspath(__file__))
+    docker_dir = os.path.abspath('{}/../docker'.format(my_dir))
+    for entry in os.listdir(docker_dir):
+        # fetch image description
+        try:
+            with open('{}/{}/description'.format(
+                docker_dir, entry)) as file_fd:
+                desc = file_fd.read()
+        # description not accessible: not an image dir, skip it
+        except IOError:
+            continue
+        image_map[entry] = desc.strip()
+
+    return image_map
+# build_image_map()

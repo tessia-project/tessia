@@ -266,8 +266,11 @@ class TestAuth(TestCase):
         Exercise the scenario where a key based authentication works.
         """
         # retrieve the key entry in db
-        key = self.models.UserKey.query.filter_by(
-            user='user_x_0@domain.com').one()
+        key = self.models.UserKey.query.join(
+            'user_rel'
+        ).filter(
+            self.models.UserKey.user == 'user_x_0@domain.com'
+        ).one()
 
         # perform the request
         auth_header = 'x-key {}:{}'.format(key.key_id, key.key_secret)

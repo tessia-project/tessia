@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-fqdn=${TESSIA_FQDN:-localhost}
+fqdn=${TESSIA_ENGINE_FQDN:-engine}
 
 function _db_verify() {
     # wait for db to be available and handle initialization/schema migration
@@ -109,11 +109,11 @@ subjectAltName=DNS:${fqdn}
 function _tweak_cfg() {
     # set the url where auto install machine stores the generated autofiles so
     # that the systems being installed can reach them
-    /assets/yamlman update /etc/tessia/engine.yaml auto_install.url http://${fqdn}
+    yamlman update /etc/tessia/engine.yaml auto_install.url http://${fqdn}/static
 
     # set db credentials if env variable was set
     if [ -n "$TESSIA_DB_URI" ]; then
-        /assets/yamlman update /etc/tessia/engine.yaml db.url "$TESSIA_DB_URI"
+        yamlman update /etc/tessia/engine.yaml db.url "$TESSIA_DB_URI"
     fi
 }
 

@@ -1,5 +1,5 @@
 description: Exercise creation and deletion of cpc/lpar/kvm guest
-base_user: system
+base_user: admin
 tasks_order:
   - base_add
   - lpar_add

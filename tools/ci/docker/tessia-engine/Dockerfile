@@ -22,6 +22,8 @@ RUN apt-get -q update > /dev/null && \
     apt-get -yq install --no-install-recommends \
     # to manage the system locale
     locales \
+    # used by tessia_baselib to check if hosts are up
+    iputils-ping \
     # used to install python libraries
     python3-pip \
     # used by pbr (in setuptools) to detect module version numbers
@@ -51,10 +53,7 @@ RUN apt-get -q update > /dev/null && \
     # pbr is used by tessia for installation
     pbr \
     # web server for api service
-    uwsgi \
-    # dependencies used for testing builds
-    pylint \
-    coverage
+    uwsgi
 
 # set the locale/encoding for the session
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
@@ -69,9 +68,6 @@ RUN cd /assets && \
     # from the builder
     sed -i "/egg=tessia_baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
     pip3 -q install -U -r requirements.txt && \
-    # linting and unit testing
-    tools/run_pylint.py && \
-    tools/run_tests.py && \
     # installation
     ./setup.py -q install && \
     # tessia-engine files settings
@@ -80,27 +76,27 @@ RUN cd /assets && \
     install -m 600 -g tessia -o tessia /usr/local/etc/tessia/* /etc/tessia && \
     rm -rf /usr/local/etc/tessia && \
     install -m 755 -g tessia -o tessia -d /var/tessia /var/tessia/jobs /var/tessia/www /var/log/tessia && \
+    # used to manage startup of the api and scheduler daemons
+    cp /assets/supervisord.conf /etc/supervisor/conf.d/tessia.conf && \
+    # tool used to handle yaml files from cmdline
+    cp /assets/yamlman /usr/local/bin/ && \
     # by default log files are relative paths for use in virtualenvs, we change it here
     sed -i 's,^\( \+filename:\) log/\(.*\)$,\1 /var/log/\2,g' /etc/tessia/engine.yaml && \
-    # used to manage startup of the api and scheduler daemons
-    cp /assets/supervisord.conf /etc/supervisor/conf.d/supervisord.conf && \
-    # cleanup section
+    # same for www/jobs dirs
+    yamlman update /etc/tessia/engine.yaml auto_install.dir /var/tessia/www && \
+    yamlman update /etc/tessia/engine.yaml scheduler.jobs_dir /var/tessia/jobs && \
+    # cleanup section - remove unneeded resources
     cd / && \
-    # remove source repository
-    rm -rf /assets/tessia-engine.git /assets/tessia-engine && \
-    # remove unneeded packages
+    mv /assets/entrypoint /entrypoint && \
+    rm -rf /assets && \
     apt-get -yq purge --auto-remove \
     build-essential \
     libssl-dev \
     libffi-dev \
-    libpq-dev > /dev/null && \
-    # remove unneeded python libs
-    pip3 -q uninstall -y \
-    pylint \
-    coverage
+    libpq-dev > /dev/null
 
 EXPOSE 80 5000
 
 VOLUME ["/etc/tessia", "/var/tessia/jobs"]
 
-CMD ["/assets/entrypoint"]
+CMD ["/entrypoint"]

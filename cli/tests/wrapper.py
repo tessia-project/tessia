@@ -38,7 +38,7 @@ def _run(testcase, server_url):
     Wrap the testcase file in the python executor class and run it
 
     Args:
-        testcase (str): name of testcase
+        testcase (str): path of testcase
         server_url (str): url where api is running
 
     Returns:

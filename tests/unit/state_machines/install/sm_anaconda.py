@@ -86,10 +86,6 @@ class TestSmAnaconda(TestCase):
         self._mock_ssh_client = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(sm_base, 'urljoin', autospec=True)
-        self._mock_urljoin = patcher.start()
-        self.addCleanup(patcher.stop)
-
         patcher = patch.object(sm_base, 'sleep', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)

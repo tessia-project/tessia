@@ -1,5 +1,8 @@
 # order is the order pip will install, so if package A depends on B make sure B comes first
 setuptools>=17.1.1
+# unit testing
+pylint>=1.7.0
+coverage>=4.3.4
 # postgres python driver
 psycopg2>=2.6.1
 # ORM tool
@@ -21,4 +24,4 @@ flask-potion>=0.12.6
 # template engine for the automatic installation files
 jinja2>=2.8
 # tessia_baselib and its dependencies
-https://gitlab.com/tessia-project/tessia-baselib.git@afff743e8bff#egg=tessia_baselib
+https://gitlab.com/tessia-project/tessia-baselib.git@d265d1fd8b9b74ac#egg=tessia_baselib

@@ -605,7 +605,7 @@ class Manager(object):
         # date of the given commit.
         cmd = (
             "cd {} && "
-            "commit_date=$(git show -s --pretty='%cd' --date=unix) && "
+            "commit_date=$(git show -s --pretty='%ct') && "
             "version=$(TZ=UTC0 date -d @$commit_date +%Y.%m%d.%H%M) && "
             "build_number=$((`date -d now +%s` - $commit_date)) && "
             "echo $version-$build_number".format(REPO_DIR))

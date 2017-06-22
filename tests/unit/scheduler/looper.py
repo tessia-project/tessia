@@ -1077,7 +1077,7 @@ class TestLooper(TestCase):
         # Patch the returned state machine to None, which will cause
         # None.parse to raise an AttributeError
         echo_patcher = patch.dict(
-            looper.state_machines.MACHINES, {'echo': None})
+            looper.MACHINES.classes, {'echo': None})
         echo_patcher.start()
         self.addCleanup(echo_patcher.stop)
 

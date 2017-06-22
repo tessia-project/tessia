@@ -26,8 +26,8 @@ from tessia_engine.db.models import OperatingSystem
 from tessia_engine.db.models import Template
 from tessia_engine.db.models import SystemProfile
 from tessia_engine.state_machines.base import BaseMachine
-from tessia_engine.state_machines.install.sm_anaconda import SmAnaconda
-from tessia_engine.state_machines.install.sm_autoyast import SmAutoyast
+from tessia_engine.state_machines.autoinstall.sm_anaconda import SmAnaconda
+from tessia_engine.state_machines.autoinstall.sm_autoyast import SmAutoyast
 
 import json
 import logging
@@ -67,8 +67,6 @@ class AutoInstallMachine(BaseMachine):
     to the real machine since at instantiation time we don't know which distro
     is being installed and thus can't determine the right class to use.
     """
-    NAME = 'autoinstall'
-
     def __init__(self, params):
         """
         See base class docstring.

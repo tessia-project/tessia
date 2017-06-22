@@ -23,8 +23,8 @@ from tessia_baselib.common.ssh.client import SshClient
 from socket import inet_ntoa
 from tessia_engine.config import Config
 from tessia_engine.db.connection import MANAGER
-from tessia_engine.state_machines.install.plat_lpar import PlatLpar
-from tessia_engine.state_machines.install.plat_kvm import PlatKvm
+from tessia_engine.state_machines.autoinstall.plat_lpar import PlatLpar
+from tessia_engine.state_machines.autoinstall.plat_kvm import PlatKvm
 from time import sleep
 
 import abc

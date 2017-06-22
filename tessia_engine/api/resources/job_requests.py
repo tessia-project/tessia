@@ -29,7 +29,6 @@ from flask_potion.routes import Route
 from tessia_engine.api import exceptions as api_exceptions
 from tessia_engine.db import exceptions as db_exceptions
 from tessia_engine.db.models import SchedulerRequest
-# TODO: find a way to retrieve machines' names without loading the modules
 from tessia_engine.state_machines import MACHINES
 
 import re
@@ -93,7 +92,7 @@ class JobRequestResource(ModelResource):
             title=DESC['job_id'], description=DESC['job_id'], nullable=True)
         job_type = fields.String(
             title=DESC['job_type'], description=DESC['job_type'],
-            nullable=True, enum=MACHINES.keys())
+            nullable=True, enum=MACHINES.names)
         time_slot = fields.String(
             title=DESC['time_slot'], description=DESC['time_slot'],
             enum=SchedulerRequest.SLOTS, default=SchedulerRequest.SLOT_DEFAULT)

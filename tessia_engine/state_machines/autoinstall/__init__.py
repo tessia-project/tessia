@@ -13,13 +13,13 @@
 # limitations under the License.
 
 """
-Package initializer which defines the machine name and its class
+Package initializer which defines the machine python class
 """
 
 #
 # IMPORTS
 #
-from tessia_engine.state_machines.install.machine import AutoInstallMachine
+from tessia_engine.state_machines.autoinstall.machine import AutoInstallMachine
 
 #
 # CONSTANTS AND DEFINITIONS

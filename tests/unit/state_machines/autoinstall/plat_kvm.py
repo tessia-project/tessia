@@ -21,9 +21,9 @@ Module for the TestPlatKvm class.
 #
 
 from tessia_engine.db.connection import MANAGER
-from tessia_engine.state_machines.install import plat_base, plat_kvm
-from tessia_engine.state_machines.install.sm_base import SmBase
-from tests.unit.state_machines.install import utils
+from tessia_engine.state_machines.autoinstall import plat_base, plat_kvm
+from tessia_engine.state_machines.autoinstall.sm_base import SmBase
+from tests.unit.state_machines.autoinstall import utils
 from unittest import mock, TestCase
 from unittest.mock import patch
 

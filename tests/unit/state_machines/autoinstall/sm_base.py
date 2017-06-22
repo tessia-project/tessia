@@ -23,8 +23,8 @@ ome more detailed info about the module here.
 #
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import OperatingSystem
-from tessia_engine.state_machines.install import sm_base
-from tests.unit.state_machines.install import utils
+from tessia_engine.state_machines.autoinstall import sm_base
+from tests.unit.state_machines.autoinstall import utils
 from unittest import mock, TestCase
 from unittest.mock import call, Mock, MagicMock, patch
 

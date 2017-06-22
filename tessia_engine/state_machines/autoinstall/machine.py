@@ -235,6 +235,24 @@ class AutoInstallMachine(BaseMachine):
         profile = cls._get_profile(params['system'], params.get("profile"))
         system = profile.system_rel
 
+        # check all required FCP parameters
+        volumes = profile.storage_volumes_rel
+        for vol in volumes:
+            if vol.type_rel.name == 'FCP':
+
+                # list of all required FCP parameters
+                fcp_req = ['adapters', 'multipath', 'wwid', 'devno', 'wwpns']
+
+                for fcp_param in fcp_req:
+                    try:
+                        vol.specs[fcp_param]
+                    except (KeyError, IndexError):
+                        try:
+                            vol.specs['adapters'][0][fcp_param]
+                        except (KeyError, IndexError):
+                            raise ValueError(
+                                'Required FCP parameters are missing')
+
         # make sure we have a valid network interface to perform installation
         gw_iface = profile.gateway_rel
         # gateway interface not defined: use first available

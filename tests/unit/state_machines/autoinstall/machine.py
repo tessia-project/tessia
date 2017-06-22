@@ -21,6 +21,7 @@ Unit tests for Install state machine.
 #
 from tessia_engine.db import models
 from tessia_engine.db.connection import MANAGER
+from tessia_engine.db.models import SystemProfile
 from tessia_engine.state_machines.autoinstall import machine
 from tests.unit.config import EnvConfig
 from tests.unit.state_machines.autoinstall import utils
@@ -28,6 +29,7 @@ from unittest.mock import patch
 from unittest import TestCase
 from unittest.mock import Mock
 
+import copy
 import json
 
 #
@@ -236,4 +238,24 @@ class TestAutoInstallMachine(TestCase):
             machine.AutoInstallMachine(request)
         MANAGER.session.delete(unsupported_os)
     # test_unsupported_os()
+
+    def test_incorrect_fcp_options(self):
+        """
+        Test the case when required FCP parameter is missing
+        """
+        # Take correct FCP parameters from db
+        profile = SystemProfile.query.filter_by(
+            name='kvm_kvm054_install', system='kvm054').one_or_none()
+        volumes = profile.storage_volumes_rel
+        correct_specs = copy.deepcopy(volumes[0].specs)
+
+        # Distort correct FCP parameters and check result
+        volumes[0].specs['adapters'][0].pop('devno', None)
+        self.assertRaises(ValueError,
+                          machine.AutoInstallMachine.parse,
+                          REQUEST_PARAMETERS)
+
+        # Restore the correct FCP parameters entry for other tests
+        volumes[0].specs = copy.deepcopy(correct_specs)
+    # test_incorrect_fcp_options()
 # TestAutoInstallMachine

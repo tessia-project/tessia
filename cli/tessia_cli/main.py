@@ -60,11 +60,12 @@ def _parse_resp_error(response):
     """
     Parse the content of the error response for more friendly messages
     """
+    raw_answer = response.text.strip()
     try:
-        answer = json.loads(response.text.strip())
+        answer = json.loads(raw_answer)
     # not a json content: just return the raw content
     except Exception:
-        return answer
+        return raw_answer
 
     msg = ''
     try:

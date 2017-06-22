@@ -115,7 +115,7 @@ def part_del(server, volume_id, num):
 
     try:
         part_table['table'].pop(num-1)
-    except AttributeError:
+    except (AttributeError, TypeError):
         raise click.ClickException(EMPTY_PART_MSG)
     except (IndexError, KeyError):
         raise click.ClickException('specified partition not found')
@@ -165,10 +165,8 @@ def part_edit(server, volume_id, num, **kwargs):
 
     try:
         part_table['table'][num-1].update(parsed_args)
-    except AttributeError:
-        raise click.ClickException(
-            'partition table undefined; initialize it with the part-init '
-            'command.')
+    except (AttributeError, TypeError):
+        raise click.ClickException(EMPTY_PART_MSG)
     except (KeyError, IndexError):
         raise click.ClickException('specified partition not found')
 
@@ -217,9 +215,7 @@ def part_list(server, volume_id, **kwargs):
     part_table = item.part_table
     if (not isinstance(part_table, dict) or not
             isinstance(part_table.get('table'), list)):
-        raise click.ClickException(
-            'partition table undefined; initialize it with the part-init '
-            'command.')
+        raise click.ClickException(EMPTY_PART_MSG)
 
     rows = []
     table_list = part_table.get('table', [])

@@ -36,6 +36,7 @@ from tessia_engine.db.models import SystemIfaceProfileAssociation
 from tessia_engine.db.models import SystemProfile
 from tessia_engine.db.models import StorageVolume
 from tessia_engine.db.models import StorageVolumeProfileAssociation
+from werkzeug.exceptions import Forbidden
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -100,7 +101,8 @@ class SystemProfileResource(SecureResource):
         parameters = fields.Object(
             title=DESC['parameters'], description=DESC['parameters'],
             nullable=True)
-        credentials = fields.Any(
+        credentials = fields.Custom(
+            schema=SystemProfile.get_schema('credentials'),
             title=DESC['credentials'], description=DESC['credentials'])
         # relations
         hypervisor_profile = fields.String(
@@ -215,6 +217,7 @@ class SystemProfileResource(SecureResource):
         Raises:
             ItemNotFoundError: in case hypervisor profile is specified but not
                                found
+            BaseHttpError: in case provided hypervisor profile is invalid
 
         Returns:
             int: id of created item
@@ -242,6 +245,10 @@ class SystemProfileResource(SecureResource):
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
+            if target_system.hypervisor_rel is None:
+                raise BaseHttpError(
+                    400, msg='System has no hypervisor, '
+                             'you need to define one first')
             match = SystemProfile.query.join(
                 System, System.id == target_system.hypervisor_rel.id
             ).filter(
@@ -308,7 +315,7 @@ class SystemProfileResource(SecureResource):
                                                kwargs.get('sort')):
             # user is not the resource's owner or an administrator: verify if
             # they have a role in resource's project
-            if not self._is_owner_or_admin(instance):
+            if not self._is_owner_or_admin(instance.system_rel):
                 # no role in system's project: cannot list
                 if self._get_role_for_project(
                         instance.system_rel.project_id) is None:
@@ -319,6 +326,41 @@ class SystemProfileResource(SecureResource):
         return Pagination.from_list(
             allowed_instances, kwargs['page'], kwargs['per_page'])
     # do_list()
+
+    def do_read(self, id):
+        """
+        Custom implementation of profile reading. Use permissions from the
+        associated system to validate access.
+
+        Args:
+            id (any): id of the item, usually an integer corresponding to the
+                      id field in the table's database
+
+        Raises:
+            Forbidden: in case user has no rights to read profile
+
+        Returns:
+            json: json representation of item
+        """
+        # pylint: disable=redefined-builtin
+
+        item = self.manager.read(id)
+
+        # non restricted user: regular resource reading is allowed
+        if not flask_global.auth_user.restricted:
+            return item
+
+        # validate permission on the object - use the associated system
+        # user is not the system's owner or an administrator: verify if
+        # they have a role in system's project
+        if not self._is_owner_or_admin(item.system_rel):
+            # no role in system's project: access forbidden
+            if self._get_role_for_project(item.system_rel.project_id) is None:
+                msg = 'User has no READ permission for the specified resource'
+                raise Forbidden(description=msg)
+
+        return item
+    # do_read()
 
     def do_update(self, properties, id):
         """
@@ -349,10 +391,14 @@ class SystemProfileResource(SecureResource):
         # creation
         if 'system' in properties and properties['system'] != item.system:
             raise BaseHttpError(
-                400, msg='Profiles cannot change their associated system')
+                422, msg='Profiles cannot change their associated system')
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
+            if item.system_rel.hypervisor_rel is None:
+                raise BaseHttpError(
+                    400, msg='System has no hypervisor, '
+                             'you need to define one first')
             match = SystemProfile.query.join(
                 System, System.id == item.system_rel.hypervisor_rel.id
             ).filter(

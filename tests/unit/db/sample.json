@@ -97,7 +97,7 @@
             "ip_address": "cpc0 shared/10.1.0.4",
             "type": "OSA",
             "mac_address": "26:8d:db:b1:12:b2",
-            "system": "cpc0"
+            "system": "lpar0"
         }
     ],
     "StorageServer": [
@@ -235,13 +235,16 @@
             "name": "default cpc0",
             "default": true,
             "cpu": 2,
-            "credentials": "{}",
+            "credentials": {},
             "system": "cpc0",
             "memory": 1024
         },
         {
             "cpu": 2,
-            "credentials": "{'username': 'root', 'password': 'somepasswd'}",
+            "credentials": {
+                "user": "root",
+                "password": "somepasswd"
+            },
             "name": "default lpar0",
             "default": true,
             "memory": 1024,
@@ -253,13 +256,13 @@
     "StorageVolumeProfileAssociation": [
         {
             "volume": "DSK8_x_0/1800",
-            "profile": "cpc0/default cpc0"
+            "profile": "lpar0/default lpar0"
         }
     ],
     "SystemIfaceProfileAssociation": [
         {
-            "iface": "cpc0/external osa",
-            "profile": "cpc0/default cpc0"
+            "iface": "lpar0/external osa",
+            "profile": "lpar0/default lpar0"
         }
     ],
     "LogicalVolumeProfileAssociation": [

@@ -947,7 +947,7 @@ class Repository(CommonMixin, ResourceMixin, BASE):
     # __repr__()
 # Repository
 
-class SystemProfile(CommonMixin, BASE):
+class SystemProfile(CommonMixin, SchemaMixin, BASE):
     """A system activation profile"""
 
     __tablename__ = 'system_profiles'

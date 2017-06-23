@@ -713,7 +713,11 @@ class TestSecureResource(TestCase):
         new_entries, time_range = self._create_many_entries(login_add, 5)
         entries += new_entries
 
-        is_resource = hasattr(self.RESOURCE_MODEL, 'project_id')
+        # system profile is a special case as it does not have a project
+        # associated but still use from the system for permission validation
+        is_resource = (
+            hasattr(self.RESOURCE_MODEL, 'project_id') or
+            self.RESOURCE_MODEL is models.SystemProfile)
 
         # retrieve the existing entries
         resp = self._do_request('list', '{}:a'.format(login_rest))

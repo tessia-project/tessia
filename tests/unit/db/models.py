@@ -419,12 +419,12 @@ class TestModels(TestCase):
                 {
                     'rel_name': 'iface_rel',
                     'attr_name': 'iface',
-                    'value': 'cpc0/external osa',
+                    'value': 'lpar0/external osa',
                 },
                 {
                     'rel_name': 'profile_rel',
                     'attr_name': 'profile',
-                    'value': 'cpc0/default cpc0',
+                    'value': 'lpar0/default lpar0',
                 },
             ]),
             (self.models.SystemIface, [
@@ -441,7 +441,7 @@ class TestModels(TestCase):
                 {
                     'rel_name': 'system_rel',
                     'attr_name': 'system',
-                    'value': 'cpc0',
+                    'value': 'lpar0',
                 },
             ]),
             (self.models.StorageServer, [
@@ -472,7 +472,7 @@ class TestModels(TestCase):
                 {
                     'rel_name': 'profile_rel',
                     'attr_name': 'profile',
-                    'value': 'cpc0/default cpc0',
+                    'value': 'lpar0/default lpar0',
                 },
             ]),
             (self.models.StorageVolume, [

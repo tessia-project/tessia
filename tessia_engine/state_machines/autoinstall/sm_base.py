@@ -31,6 +31,7 @@ import abc
 import jinja2
 import logging
 import os
+import random
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -281,6 +282,15 @@ class SmBase(metaclass=abc.ABCMeta):
                 iface, iface.osname == self._gw_iface['osname']))
 
         info['repos'].append(self._repo.url)
+        info['credentials'] = self._profile.credentials
+
+        # generate pseudo-random password for vnc session
+        vncpasswd = ''.join(random.choice('abcdefghijklm'
+                                          'nopqrstuvwxyz'
+                                          'ABCDEFGHIJKLM'
+                                          'NOPQRSTUVWXYZ'
+                                          '0123456789') for _ in range(7))
+        info['credentials']['vncpasswd'] = vncpasswd
 
         self._info = info
     # collect_info()

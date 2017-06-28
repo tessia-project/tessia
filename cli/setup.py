@@ -33,13 +33,12 @@ import subprocess
 #
 # CODE
 #
-def _run(cmd, error_msg=None):
+def _run(cmd):
     """
     Simple wrapper to run shell commands
 
     Args:
         cmd (str): description
-        error_msg (str): description
 
     Returns:
         str: stdout+stderr
@@ -51,11 +50,8 @@ def _run(cmd, error_msg=None):
         cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         universal_newlines=True)
     if result.returncode != 0:
-        if error_msg:
-            msg = error_msg
-        else:
-            msg = "command '{}' failed: {}".format(cmd, result.stdout)
-        raise RuntimeError(msg)
+        raise RuntimeError(
+            "command '{}' failed: {}".format(cmd, result.stdout))
 
     return result.stdout.strip()
 # _run()
@@ -68,6 +64,12 @@ def _gen_version():
     In case the current HEAD is not master, the fork point commit from master
     will be used and a suffix 1.dev{HEAD_SHA} is added
     to denote it's a development version.
+
+    Returns:
+        str: the calculated version
+
+    Raises:
+        RuntimeError: if one of the git commands fail
     """
     # determine if it's a dev build by checking if the current HEAD is the
     # same as the master branch
@@ -95,11 +97,9 @@ def _gen_version():
     )
     # dev build: add dev version string
     if dev_build:
-        # warning: the leading .1 is useful to make the dev version newer than
-        # the official version in case of upgrades in devel environment.
-        version += '.1.dev{}'.format(
-            int((datetime.utcnow() - date_obj).total_seconds())
-        )
+        # this scheme allows setuptools to recognize the dev version as newer
+        # than the official version for upgrades in devel environment.
+        version += '+dev{}'.format(head_sha[:7])
 
     return version
 # _gen_version()

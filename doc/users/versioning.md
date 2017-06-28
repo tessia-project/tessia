@@ -33,8 +33,8 @@ A release version is generated according to the following steps:
 - if current HEAD is not the master branch:
     - find the point where this branch forked from master by using the merge-base command `git merge-base --fork-point master HEAD`
     - extract the commiter's date of the fork point commit (the commit where master and the current branch diverged)
-    - create release version in the same format as for master: {YEAR}.{MONTH}{DAY}.{HOUR}{MINUTE}
-    - add a suffix 1.dev{HEAD_SHA} to denote it's a local development version
+    - create release version in the same format as for master: `{YEAR}.{MONTH}{DAY}.{HOUR}{MINUTE}`
+    - add a suffix `+dev{HEAD_SHA}` to denote it's a local development version according to the PEP 440 [1]
 
 For implementation details, see the setup.py file of the project's root directory.
 
@@ -42,10 +42,12 @@ The year is the last two digits and the months/days/hours/minutes are always wit
 
 Pay attention to the fact that the date used is the committer's date, not the author's date (commonly the latter is displayed when `git log` is executed).
 We use the committer's date to make sure a commit date is always unique, which might not be the case for the author's date when two developers create a patch at
-the same time but in separate branches. From the git manual [1]:
+the same time but in separate branches. From the git manual [2]:
 > You may be wondering what the difference is between author and committer. The author is the person who originally wrote the work, whereas the
 > committer is the person who last applied the work. So, if you send in a patch to a project and one of the core members applies the patch, both
 > of you get credit – you as the author, and the core member as the committer.
 
-[1] https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History
+[1] https://www.python.org/dev/peps/pep-0440/#local-version-identifiers
+
+[2] https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History
 

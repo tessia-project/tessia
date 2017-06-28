@@ -57,7 +57,7 @@ class Manager(object):
         Args:
             stage (str): one of STAGES or 'all'
             docker_tag (str): which tag to use for building or finding images,
-                              None means to use sha of HEAD
+                              None means to use project's versioning scheme
             images (list): names of images to process, may only be specified
                            for stages build, push, unittest
             registry_url (str): a docker registry url to where images should
@@ -389,7 +389,7 @@ class Manager(object):
 
     def _create_tag(self):
         """
-        Create a tag by checking the HEAD commit's checksum in git.
+        Create a tag by using the project's versioning scheme
 
         Raises:
             RuntimeError: in case any git command fails
@@ -397,13 +397,16 @@ class Manager(object):
         Returns:
             str: created tag
         """
-        # determine the sha of the HEAD commit
-        cmd = "cd {} && git show -s --oneline".format(REPO_DIR)
+        # call version generator method
+        cmd = (
+            "cd {} && python3 -c 'from setup import gen_version; "
+            "print(gen_version())'".format(REPO_DIR))
         _, stdout = self._shell.run(
-            cmd, error_msg='Failed to determine sha of HEAD commit')
-        head_sha = stdout.strip().split()[0]
+            cmd,
+            error_msg="Failed to determine project's version for tag creation")
 
-        return head_sha
+        # replace plus sign as it is not allowed by docker
+        return stdout.replace('+', '-').strip()
     # _create_tag()
 
     def _create_work_dir(self):
@@ -485,20 +488,20 @@ class Manager(object):
         Basically that means copying the git repository to it.
 
         Args:
-            repo_name (str): name of git repo to be used when creating bundle
+            repo_name (str): name of git repo to be used when creating mirror
         """
-        # create a bundle of the git repository and send it to the work
+        # create a mirror of the git repository and send it to the work
         # directory on the builder
         with tempfile.TemporaryDirectory(prefix='tessia-build-') as tmp_dir:
-            bundle_path = '{}/{}.git'.format(tmp_dir, repo_name)
-            cmd = "cd {} && git bundle create {} HEAD".format(
-                REPO_DIR, bundle_path)
-            self._logger.info('[build] creating bundle of git repo')
-            self._shell.run(cmd, error_msg='Failed to create git bundle')
-            # send the bundle to the work dir
+            clone_path = '{}/{}.git'.format(tmp_dir, repo_name)
+            cmd = "cd {} && git clone --mirror {} {}.git".format(
+                tmp_dir, REPO_DIR, repo_name)
+            self._logger.info('[build] creating mirror of git repo')
+            self._shell.run(cmd, error_msg='Failed to create git mirror')
+            # send the mirror to the work dir
             self._logger.info(
-                '[build] sending git bundle to %s', self._builder['fqdn'])
-            self._session.send(bundle_path, self._work_dir)
+                '[build] sending git mirror to %s', self._builder['fqdn'])
+            self._session.send(clone_path, self._work_dir)
     # _send_repo()
 
     def _stage_build(self):
@@ -598,25 +601,36 @@ class Manager(object):
                 '[push] registry url not specified; skipping')
             return
 
-        # release version is created from the date of the HEAD commit in the
-        # following format:
-        # {YEAR}.{MONTH}{DAY}.{HOUR}{MINUTE}-{BUILD_NUMBER}
-        # where {BUILD_NUMBER} is the number of seconds elapsed since the
-        # date of the given commit.
-        cmd = (
-            "cd {} && "
-            "commit_date=$(git show -s --pretty='%ct') && "
-            "version=$(TZ=UTC0 date -d @$commit_date +%Y.%m%d.%H%M) && "
-            "build_number=$((`date -d now +%s` - $commit_date)) && "
-            "echo $version-$build_number".format(REPO_DIR))
-        _, stdout = self._shell.run(
-            cmd, error_msg='failed to generate release version')
-        rel_version = stdout.strip()
-        self._logger.info(
-            '[push] release version for images is %s', rel_version)
+        # create work dir on builder to upload dregman tool
+        ret_code, output = self._session.run('mktemp -p /tmp -d')
+        if ret_code != 0:
+            raise RuntimeError(
+                'Failed to create work directory on {}: {}'
+                .format(self._builder['fqdn'], output))
+        work_dir = output.strip()
 
-        for image in self._images:
-            image.push(self._registry_url, rel_version)
+        try:
+            self._session.send(
+                os.path.abspath('{}/tools/dregman'.format(REPO_DIR)), work_dir)
+            dregman_path = '{}/dregman'.format(work_dir)
+            for image in self._images:
+                image.push(self._registry_url, dregman_path)
+
+        finally:
+            # clean up before dying/finishing
+            self._logger.info('[push] cleaning work dir')
+            try:
+                # be extra cautious before deleting
+                if not work_dir.startswith('/tmp/'):
+                    self._logger.warning(
+                        '[push] unexpected work directory name, skipped '
+                        'dir removal')
+                else:
+                    self._session.run('rm -rf {}'.format(work_dir))
+            except Exception as clean_exc:
+                self._logger.warning(
+                    '[push] failed to clean work dir: %s', str(clean_exc))
+
     # _stage_push()
 
     def _stage_unittest(self):

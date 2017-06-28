@@ -40,8 +40,9 @@ except ImportError:
 # CODE
 #
 @click.command('all')
-@click.option('tag', '--tag',
-              help='docker tag to use (if not specified uses sha of HEAD)')
+@click.option(
+    'tag', '--tag',
+    help="docker tag to use (if not specified uses project's versioning)")
 @click.option(
     'field_tests', '--fieldtests',
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
@@ -76,8 +77,9 @@ def all_(tag, field_tests, baselib_file, registry, install_server_hostname, quie
 @click.command('build')
 @click.option('images', '--image', multiple=True,
               help='name of image to build (if not specified build all)')
-@click.option('tag', '--tag',
-              help='docker tag to use (if not specified uses sha of HEAD)')
+@click.option(
+    'tag', '--tag',
+    help="docker tag to use (if not specified uses project's versioning)")
 @click.option('--quiet', is_flag=True, default=False,
               help='suppress output from commands')
 def build(images, tag, quiet):

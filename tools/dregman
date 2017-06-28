@@ -1,0 +1,470 @@
+#!/usr/bin/env python3
+# Copyright 2017 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+Utility to manage images in a docker private registry v2
+"""
+
+#
+# IMPORTS
+#
+from functools import cmp_to_key
+from pkg_resources import parse_version
+from urllib.parse import urlsplit
+import click
+import datetime
+import re
+import requests
+
+#
+# CONSTANTS AND DEFINITIONS
+#
+DOCKER_CERTS_DIR = '/etc/docker/certs.d'
+# how many images allowed in registry for each repo
+MAX_IMAGES = 10
+
+#
+# CODE
+#
+def _compare_version(image_1, image_2):
+    """
+    Compare two image versions, returning an integer which determines whether
+    image_1 is greater, equal or lesser than image_2.
+
+    Args:
+        image_1 (tuple, list): any tuple/list containing a version string on
+                               first position
+
+    Returns:
+        int: 0 = image_1 == image-2, -1 = image_1 < image_2,
+             1 = image_1 > image_2
+    """
+    version_1 = image_1[0]
+    version_2 = image_2[0]
+
+    # special case for docker rags
+    if version_1 == 'latest' and version_2 == 'latest':
+        return 0
+    elif version_1 == 'latest':
+        return 1
+    elif version_2 == 'latest':
+        return -1
+
+    parsed_version_1 = parse_version(version_1)
+    parsed_version_2 = parse_version(version_2)
+
+    if parsed_version_1 == parsed_version_2:
+        return 0
+    elif parsed_version_1 > parsed_version_2:
+        return 1
+
+    return -1
+# _compare_version()
+
+def _date_to_human(date_obj):
+    """
+    Convert a datetime object to a string describing the time in relation to
+    current time.
+
+    Args:
+        date_obj (datetime): datetime object in the past
+
+    Returns:
+        str: text describing time in relation to current time
+    """
+    total_secs = (
+        datetime.datetime.now(datetime.timezone.utc) - date_obj
+    ).total_seconds()
+
+    magnitudes = [
+        (60, 'minute(s)'),
+        (60, 'hour(s)'),
+        (24, 'day(s)'),
+        (7, 'week(s)'),
+        (4, 'month(s)'),
+        (12, 'year(s)'),
+    ]
+    human_date = 'second(s) ago'
+    final_value = total_secs
+    for divisor, description in magnitudes:
+        result = int(final_value / divisor)
+
+        if result < 1:
+            break
+
+        final_value = result
+        human_date = description
+
+    return '{} {} ago'.format(final_value, human_date)
+# _date_to_human()
+
+def _do_request(url, kwargs, method='GET'):
+    """
+    Perform a http request using requests library.
+
+    Args:
+        url (str): http/https url
+        kwargs (dict): additional args to pass to requests call
+        method (str): one of the supported http methods (i.e. get, post, head)
+
+    Returns:
+        requests.Response: response object
+
+    Raises:
+        RuntimeError: in case an unsupported method is specified
+        click.ClickException: in case http request fails
+    """
+    try:
+        req_method = getattr(requests, method.lower())
+    except AttributeError:
+        raise RuntimeError('unsupported method {}'.format(method))
+
+    try:
+        resp = req_method(url, **kwargs) # pylint: disable=not-callable
+        resp.raise_for_status()
+    except requests.exceptions.RequestException as exc:
+        msg = '{} {} failed: '.format(method.upper(), url)
+        if hasattr(exc, 'response') and exc.response is not None:
+            msg += '{} {}'.format(
+                exc.response.status_code, exc.response.reason)
+        else:
+            msg += str(exc)
+        raise click.ClickException(msg)
+
+    return resp
+# _do_request()
+
+def _prepare_headers(registry_url, cacert=None):
+    """
+    Prepare the http headers to be used in the requests.
+
+    Args:
+        registry_url (str): url to be used for requests
+        cacert (str): path to certificate file for ssl verification
+
+    Returns:
+        dict: containing crafted headers
+
+    Raises:
+        click.ClickException: in case cert file is not accessible
+    """
+    # we communicate with the registry using the v2 format
+    kwargs = {
+        'headers': {
+            'Accept': 'application/vnd.docker.distribution.manifest.v2+json'
+        }
+    }
+
+    # user provided cert file: use it
+    if cacert:
+        kwargs['verify'] = cacert
+    # ssl enabled: a cert is mandatory otherwise connection will fail so we try
+    # to find a default one
+    elif registry_url.startswith('https://'):
+        # look for the cert used for registry validation by the docker client
+        registry_cert = '{}/{}/ca.crt'.format(
+            DOCKER_CERTS_DIR, urlsplit(registry_url).netloc)
+        kwargs['verify'] = registry_cert
+
+    # make sure cert file is accessible
+    if 'verify' in kwargs:
+        try:
+            with open(kwargs['verify'], 'r') as _:
+                pass
+        except IOError as exc:
+            raise click.ClickException(
+                'failed to open cert file: {}'.format(exc))
+
+    return kwargs
+# _prepare_headers()
+
+def _print_table(headers, rows):
+    """
+    Print to the screen one or more items in vertical orientation.
+
+    Args:
+        headers (list): in format (header1, header2, header3)
+        rows (list): in format [(entry1_1, entry1_2, entry1_3),
+                     (entry2_1, entry2_2, entry2_3)]
+
+    Raises:
+        None
+    """
+    # determine largest width for each column
+    cols_width = [(len(header) + 2) for header in headers]
+    for row in rows:
+        for i in range(0, len(row)):
+            row_width = len(row[i]) + 2
+            if row_width > cols_width[i]:
+                cols_width[i] = row_width
+
+    output = ''
+    output_cols = []
+    # build headers
+    for i in range(0, len(headers)):
+        header_padded = ' {}'.format(headers[i])
+        output_cols.append(header_padded.ljust(cols_width[i]))
+    output = ' '.join(output_cols)
+
+    # build rows
+    for row in rows:
+        output_row = []
+        for i in range(0, len(row)):
+            output_value = ' {}'.format(row[i])
+            output_row.append(output_value.ljust(cols_width[i]))
+
+        output += '\n{}'.format('|'.join(output_row))
+
+    click.echo(output)
+# _print_table()
+
+# commands section
+@click.command(name='clean')
+@click.option(
+    '--cacert',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help='custom cert file to validate peer (defaults to {})'.format(
+        DOCKER_CERTS_DIR))
+@click.option(
+    '--keep', type=click.INT, default=MAX_IMAGES,
+    help='number of images to keep (defaults to {})'.format(MAX_IMAGES))
+@click.argument('registry_url')
+@click.argument('repo_name')
+def clean(cacert, keep, registry_url, repo_name):
+    """
+    clean older images that exceed the max allowed quantity
+    """
+    if keep < 1:
+        raise click.ClickException('Invalid keep value')
+
+    # default to ssl connection
+    if not urlsplit(registry_url).scheme:
+        registry_url = 'https://' + registry_url
+    kwargs = _prepare_headers(registry_url, cacert)
+
+    # collect repository's images
+    resp = _do_request(
+        '{}/v2/{}/tags/list'.format(registry_url, repo_name), kwargs)
+    try:
+        tag_list = resp.json()['tags']
+    except Exception as exc:
+        raise click.ClickException(
+            "Unexpected registry's response: {}".format(str(exc)))
+
+    # create a map of each image indexed by id so that we don't add
+    # duplicated entries
+    repo_images_by_id = {}
+    for image_tag in tag_list:
+        # fetch image's manifest
+        resp = _do_request('{}/v2/{}/manifests/{}'.format(
+            registry_url, repo_name, image_tag), kwargs)
+        try:
+            manifest_digest = resp.headers['docker-content-digest']
+            image_id = resp.json()['config']['digest']
+        except Exception as exc:
+            raise click.ClickException(
+                "Unexpected manifest v2 schema 2 format: {}".format(
+                    str(exc)))
+        if not image_id.startswith('sha256:'):
+            raise click.ClickException(
+                "Unexpected image id digest format: 'sha256:' prefix not "
+                "found")
+
+        # image already exists with an older tag: skip it
+        if image_id in repo_images_by_id and _compare_version(
+                [image_tag],
+                [repo_images_by_id[image_id]['tag']]) >= 0:
+            continue
+
+        repo_images_by_id[image_id] = {
+            'tag': image_tag,
+            'manifest_digest': manifest_digest
+        }
+
+    # convert the map to a list to be sorted by version
+    repo_images = [
+        [entry['tag'], entry['manifest_digest'], image_id]
+        for image_id, entry in repo_images_by_id.items()
+    ]
+    repo_images.sort(key=cmp_to_key(_compare_version))
+
+    if len(repo_images_by_id) <= keep:
+        click.echo('nothing to delete')
+        return
+
+    # remove images until the max number allowed is reached
+    while len(repo_images) > keep:
+        entry = repo_images.pop(0)
+        target_url = '{}/v2/{}/manifests/{}'.format(
+            registry_url, repo_name, entry[1])
+        _do_request(target_url, kwargs, 'DELETE')
+        click.echo('{} ({}) deleted'.format(entry[2][7:], entry[0]))
+# clean()
+
+# commands section
+@click.command(name='del')
+@click.option(
+    '--cacert',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help='custom cert file to validate peer (defaults to {})'.format(
+        DOCKER_CERTS_DIR))
+@click.argument('registry_url')
+@click.argument('image_name')
+def del_(cacert, registry_url, image_name):
+    """
+    delete an image from registry
+    """
+    try:
+        image_repo, image_tag = image_name.rsplit(':', 1)
+    except ValueError:
+        raise click.ClickException('invalid image name format')
+
+    # default to ssl connection
+    if not urlsplit(registry_url).scheme:
+        registry_url = 'https://' + registry_url
+    kwargs = _prepare_headers(registry_url, cacert)
+
+    # retrieve the image's digest manifest
+    resp = _do_request(
+        '{}/v2/{}/manifests/{}'.format(registry_url, image_repo, image_tag),
+        kwargs, 'HEAD')
+    try:
+        image_digest = resp.headers['docker-content-digest']
+    except Exception as exc:
+        raise click.ClickException(
+            "Unexpected manifest v2 schema 2 format: {}".format(
+                str(exc)))
+
+    # delete the image's manifest - docker gc will later remove the blobs
+    target_url = '{}/v2/{}/manifests/{}'.format(
+        registry_url, image_repo, image_digest)
+    _do_request(target_url, kwargs, 'DELETE')
+# del_()
+
+@click.command(name='list')
+@click.option(
+    '--cacert',
+    type=click.Path(exists=True, dir_okay=False, resolve_path=True),
+    help='custom cert file to validate peer (defaults to {})'.format(
+        DOCKER_CERTS_DIR))
+@click.option('--repo', help='filter by specified repository')
+@click.argument('registry_url')
+def list_(cacert, repo, registry_url):
+    """
+    list available repositories and image tags.
+    """
+    # default to ssl connection
+    if not urlsplit(registry_url).scheme:
+        registry_url = 'https://' + registry_url
+    kwargs = _prepare_headers(registry_url, cacert)
+
+    # fetch repositories' list
+    resp = _do_request(registry_url + '/v2/_catalog', kwargs)
+
+    # convert the json response to a python object
+    try:
+        repo_list = resp.json()['repositories']
+    except Exception as exc:
+        raise click.ClickException(
+            "Unexpected registry's response: {}".format(str(exc)))
+
+    # repo specified: restrict output to its tags
+    if repo:
+        # repo not found in registry: report error
+        if repo not in repo_list:
+            raise click.ClickException(
+                "Specified repository '{}' not found.".format(repo))
+        repo_list = [repo]
+
+    # go over each repo and collect its tags
+    all_tags = []
+    for check_repo in repo_list:
+        resp = _do_request(
+            '{}/v2/{}/tags/list'.format(registry_url, check_repo), kwargs)
+        try:
+            tag_list = resp.json()['tags']
+        except Exception as exc:
+            raise click.ClickException(
+                "Unexpected registry's response: {}".format(str(exc)))
+
+        if tag_list is None:
+            break
+        repo_tags = []
+        # collect the necessary information of each tag's image
+        for image_tag in tag_list:
+            # fetch image's manifest
+            resp = _do_request('{}/v2/{}/manifests/{}'.format(
+                registry_url, check_repo, image_tag), kwargs)
+            try:
+                image_digest = resp.json()['config']['digest']
+            except Exception as exc:
+                raise click.ClickException(
+                    "Unexpected manifest v2 schema 2 format: {}".format(
+                        str(exc)))
+            if not image_digest.startswith('sha256:'):
+                raise click.ClickException(
+                    "Unexpected image digest format: 'sha256:' prefix not "
+                    "found")
+            image_id = image_digest[7:19]
+
+            # fetch image information
+            resp = _do_request('{}/v2/{}/blobs/{}'.format(
+                registry_url, check_repo, image_digest), kwargs)
+            try:
+                # extract creation date
+                timestamp = resp.json()['created']
+            except Exception as exc:
+                raise click.ClickException(
+                    "Unexpected image blob format: {}".format(str(exc)))
+
+            # remove the fractional seconds and utc timezone indication
+            timestamp_match = re.match(r'^(.*)\.[0-9]+[zZ]$', timestamp)
+            if timestamp_match is None:
+                raise click.ClickException(
+                    "Unexpected creation date format '{}'".format(
+                        timestamp))
+            # create a datetime object from the string
+            date_obj = datetime.datetime.strptime(
+                timestamp_match.group(1).replace('-', ''), "%Y%m%dT%H:%M:%S")
+            # convert to operating system's timezone
+            date_obj = date_obj.replace(
+                tzinfo=datetime.timezone.utc).astimezone(tz=None)
+
+            repo_tags.append(
+                [image_tag, image_id, _date_to_human(date_obj)]
+            )
+
+        repo_tags.sort(key=cmp_to_key(_compare_version))
+        # order fields in list according to how we expected them to be printed
+        # on screen
+        for tag_entry in repo_tags:
+            tag_entry.insert(0, check_repo)
+        all_tags.extend(repo_tags)
+
+    headers = ['REPOSITORY', 'TAG', 'IMAGE ID', 'CREATED']
+    _print_table(headers, all_tags)
+# list_()
+
+if __name__ == '__main__':
+    @click.group()
+    def root():
+        """
+        docker private registry manager
+        """
+        pass
+    root.add_command(clean)
+    root.add_command(del_)
+    root.add_command(list_)
+    root()

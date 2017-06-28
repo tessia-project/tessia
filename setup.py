@@ -56,7 +56,7 @@ def _run(cmd):
     return result.stdout.strip()
 # _run()
 
-def _gen_version():
+def gen_version():
     """
     Release version is created from the commiter date of the HEAD of the master
     branch in the following format:
@@ -64,8 +64,14 @@ def _gen_version():
     In case the current HEAD is not master, the fork point commit from master
     will be used and a suffix 1.dev{HEAD_SHA} is added
     to denote it's a development version.
+
+    Returns:
+        str: the calculated version
+
+    Raises:
+        RuntimeError: if one of the git commands fail
     """
-    # determine if it's a dev build by checkinf if the current HEAD is the
+    # determine if it's a dev build by checking if the current HEAD is the
     # same as the master branch
     head_sha = _run('git show -s --oneline --no-abbrev-commit').split()[0]
     # make sure branch master exists; it might not exist yet when the repo
@@ -91,26 +97,25 @@ def _gen_version():
     )
     # dev build: add dev version string
     if dev_build:
-        # warning: the leading .1 is useful to make the dev version newer than
-        # the official version in case of upgrades in devel environment.
-        version += '.1.dev{}'.format(
-            int((datetime.utcnow() - date_obj).total_seconds())
-        )
+        # this scheme allows setuptools to recognize the dev version as newer
+        # than the official version for upgrades in devel environment.
+        version += '+dev{}'.format(head_sha[:7])
 
     return version
-# _gen_version()
+# gen_version()
 
-# do not generate AUTHORS file
-os.environ['SKIP_GENERATE_AUTHORS'] = '1'
-# do not generate ChangeLog file
-os.environ['SKIP_WRITE_GIT_CHANGELOG'] = '1'
-# do not include everything in tarball
-#os.environ['SKIP_GIT_SDIST'] = '1'
-# use date based versioning scheme
-os.environ['PBR_VERSION'] = _gen_version()
+if __name__ == '__main__':
+    # do not generate AUTHORS file
+    os.environ['SKIP_GENERATE_AUTHORS'] = '1'
+    # do not generate ChangeLog file
+    os.environ['SKIP_WRITE_GIT_CHANGELOG'] = '1'
+    # do not include everything in tarball
+    #os.environ['SKIP_GIT_SDIST'] = '1'
+    # use date based versioning scheme
+    os.environ['PBR_VERSION'] = gen_version()
 
-# entry point to setup actions
-setup(
-    setup_requires=['pbr>=1.8.0', 'setuptools>=17.1.1'],
-    pbr=True,
-)
+    # entry point to setup actions
+    setup(
+        setup_requires=['pbr>=1.8.0', 'setuptools>=17.1.1'],
+        pbr=True,
+    )

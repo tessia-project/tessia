@@ -20,9 +20,11 @@ Entry point to setuptools, used for installing and packaging
 #
 # IMPORTS
 #
+from datetime import datetime
 from setuptools import setup
 
 import os
+import subprocess
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -31,6 +33,72 @@ import os
 #
 # CODE
 #
+def _run(cmd):
+    """
+    Simple wrapper to run shell commands
+
+    Args:
+        cmd (str): description
+
+    Returns:
+        str: stdout+stderr
+
+    Raises:
+        RuntimeError: in case command's exit code is not 0
+    """
+    result = subprocess.run(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            "command '{}' failed: {}".format(cmd, result.stdout))
+
+    return result.stdout.strip()
+# _run()
+
+def _gen_version():
+    """
+    Release version is created from the commiter date of the HEAD of the master
+    branch in the following format:
+    {YEAR}.{MONTH}{DAY}.{HOUR}{MINUTE}
+    In case the current HEAD is not master, the fork point commit from master
+    will be used and a suffix 1.dev{HEAD_SHA} is added
+    to denote it's a development version.
+    """
+    # determine if it's a dev build by checkinf if the current HEAD is the
+    # same as the master branch
+    head_sha = _run('git show -s --oneline --no-abbrev-commit').split()[0]
+    # make sure branch master exists; it might not exist yet when the repo
+    # was cloned from a different HEAD as it is the case when creating the
+    # docker image
+    _run('git branch master origin/master || true')
+    fork_point_sha = _run('git merge-base --fork-point master HEAD')
+    dev_build = bool(head_sha != fork_point_sha)
+
+    # determine date of reference commit
+    try:
+        commit_time = float(_run(
+            "git show -s --pretty='%ct' {}".format(fork_point_sha)))
+    except (RuntimeError, ValueError) as exc:
+        raise RuntimeError('failed to determine commit date of {}: {}'.format(
+            fork_point_sha, str(exc)))
+    date_obj = datetime.utcfromtimestamp(commit_time)
+
+    # build version string, remove leading zeroes
+    version = '{}.{}.{}'.format(
+        date_obj.strftime('%y'), date_obj.strftime('%m%d').lstrip('0'),
+        date_obj.strftime('%H%M').lstrip('0')
+    )
+    # dev build: add dev version string
+    if dev_build:
+        # warning: the leading .1 is useful to make the dev version newer than
+        # the official version in case of upgrades in devel environment.
+        version += '.1.dev{}'.format(
+            int((datetime.utcnow() - date_obj).total_seconds())
+        )
+
+    return version
+# _gen_version()
 
 # do not generate AUTHORS file
 os.environ['SKIP_GENERATE_AUTHORS'] = '1'
@@ -38,6 +106,8 @@ os.environ['SKIP_GENERATE_AUTHORS'] = '1'
 os.environ['SKIP_WRITE_GIT_CHANGELOG'] = '1'
 # do not include everything in tarball
 #os.environ['SKIP_GIT_SDIST'] = '1'
+# use date based versioning scheme
+os.environ['PBR_VERSION'] = _gen_version()
 
 # entry point to setup actions
 setup(

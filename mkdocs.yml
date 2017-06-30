@@ -19,6 +19,7 @@ pages:
     - Resources model: 'users/resources_model.md'
     - Getting started: 'users/getting_started.md'
     - Howtos: 'users/howtos.md'
+    - Project versioning scheme: 'users/versioning.md'
     - Client installation: 'users/client_install.md'
     - REST-like API: 'users/api.md'
     - Installing a kvm guest with fcp disk and macvtap interface: 'users/kvm_fcp_macvtap_install.md'

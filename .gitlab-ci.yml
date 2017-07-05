@@ -1,7 +1,5 @@
 variables:
   GIT_STRATEGY: fetch
-  # replace by CI_COMMIT_SHA when gitlab gets updated to 9.0+
-  COMMIT_SHA: $CI_BUILD_REF
   REGISTRY: tessia-dev.domain.com:5000
 
 stages:
@@ -21,32 +19,35 @@ prepare:
 build_cli:
   stage: build
   script:
-    - tools/ci/orc build --image=tessia-cli --tag=${COMMIT_SHA}
+    - tools/ci/orc build --image=tessia-cli
 
 build_engine:
   stage: build
   script:
-    - tools/ci/orc build --image=tessia-engine --tag=${COMMIT_SHA}
+    - tools/ci/orc build --image=tessia-engine
 
 unittests_engine:
   stage: unittests
   script:
-    - tools/ci/orc unittest --image=tessia-engine --tag=${COMMIT_SHA}
+    - tools/ci/orc unittest --image=tessia-engine
 
 clitests:
   stage: clitests
   script:
-    - tools/ci/orc clitest --tag=${COMMIT_SHA} --fieldtests=/home/tessia-builder/field_tests --baselibfile=/home/tessia-builder/cfg/tessia_baselib.yaml
+    - tools/ci/orc clitest --fieldtests=/home/tessia-builder/field_tests --baselibfile=/home/tessia-builder/cfg/tessia_baselib.yaml
 
 push:
   stage: push
   script:
-    - tools/ci/orc push --tag=${COMMIT_SHA} --registry=${REGISTRY}
+    - tools/ci/orc push --registry=${REGISTRY}
+    # keep registry size under control
+    - tools/dregman clean ${REGISTRY} tessia-cli
+    - tools/dregman clean ${REGISTRY} tessia-engine
   only:
     - master
 
 cleanup:
   stage: cleanup
   script:
-    - tools/ci/orc cleanup --tag=${COMMIT_SHA}
+    - tools/ci/orc cleanup
   when: always

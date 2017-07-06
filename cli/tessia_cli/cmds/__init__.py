@@ -19,6 +19,7 @@ Root group to which all commands are attached
 #
 # IMPORTS
 #
+from pkg_resources import get_distribution
 from tessia_cli.client import Client
 from tessia_cli.cmds.autotemplate import autotemplate
 from tessia_cli.cmds.conf import conf
@@ -69,6 +70,7 @@ MSG_NO_KEY = (
     'There is no authentication key configured. Please enter your login and '
     'password so that the client can generate one for you.'
 )
+PKG_DIST = get_distribution('tessia-cli')
 
 #
 # CODE
@@ -119,6 +121,8 @@ def _config_server():
 # _config_server()
 
 @click.group(context_settings=CONTEXT_SETTINGS)
+@click.version_option(
+    prog_name='tessia command line client', version=PKG_DIST.version)
 @click.pass_context
 def root(ctx=None):
     """

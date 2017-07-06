@@ -6,9 +6,6 @@ FROM ubuntu:latest
 ARG git_repo=file:///assets/tessia-engine.git
 ARG baselib_repo=file:///assets/tessia_baselib.git
 
-# whether we are building a container for production use
-ARG prod_build=true
-
 ARG DEBIAN_FRONTEND=noninteractive
 
 # this flag determines whether the entrypoint should try to automatically initialize

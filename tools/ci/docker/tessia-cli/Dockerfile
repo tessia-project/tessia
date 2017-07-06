@@ -5,9 +5,6 @@ FROM ubuntu:latest
 # to point to another location
 ARG git_repo=/assets/tessia-engine.git
 
-# whether we are building a container for production use
-ARG prod_build=true
-
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -q update > /dev/null && \

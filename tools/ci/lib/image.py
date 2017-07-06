@@ -21,6 +21,7 @@ Module containing the class used to represent a docker image
 #
 import logging
 import os
+import re
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -154,11 +155,11 @@ class DockerImage(object):
         # send the content from source docker dir to target context dir
         self._session.send(docker_dir, work_dir)
         ret_code, output = self._session.run(
-            'git clone {}/{}.git {}/assets/{}.git'.format(
+            'cp -r {}/{}.git {}/assets/{}.git'.format(
                 work_dir, git_name, context_dir, git_name))
         if ret_code != 0:
             raise RuntimeError(
-                'Failed to copy git bundle to context dir: {}'.format(output))
+                'Failed to copy git mirror to context dir: {}'.format(output))
 
         return context_dir
     # _prepare_context()
@@ -214,39 +215,100 @@ class DockerImage(object):
                 output)
     # cleanup()
 
-    def push(self, registry_url, rel_version):
+    def push(self, registry_url, dregman_path):
         """
         Push the image to the docker registry.
 
         Args:
             registry_url (str): location of docker registry
-            rel_version (str): release version used to tag image on registry
+            dregman_path (str): path to dregman tool (registry handling) on
+                                builder
 
         Raises:
             RuntimeError: in case push command fails
         """
-        # name of image on builder
+        # full image name
         local_name = '{}:{}'.format(self._image_name, self._image_tag)
-        # how image will be named on registry
-        remote_name = '{}/{}:{}'.format(
-            registry_url, self._image_name, rel_version)
+        # prefix the image name with the registry url
+        remote_name = '{}/{}'.format(registry_url, local_name)
         self._logger.info(
-            'pushing image %s to %s', local_name, remote_name)
+            '[push] pushing image %s to %s', local_name, remote_name)
 
         ret_code, output = self._session.run(
             'docker tag {local_image} {remote_image} && '
             'docker push {remote_image}'.format(
                 local_image=local_name, remote_image=remote_name)
         )
-        # regardless of success or failure, remove the tag created
+        # regardless of success or failure, remove the remote tag created
         rm_code, rm_output = self._session.run(
             'docker rmi {}'.format(remote_name))
         if rm_code != 0:
             self._logger.warning(
-                'failed to remove remote tag: %s', rm_output)
+                '[push] failed to remove remote tag: %s', rm_output)
         # push operation failed: report error
         if ret_code != 0:
             raise RuntimeError('failed to push to registry: {}'.format(output))
+
+        # verify if this image should be tagged as latest, fetch the list of
+        # existing images on registry
+        ret_code, output = self._session.run(
+            '{dregman} list --repo={repo} {url}'.format(
+                dregman=dregman_path, repo=self._image_name, url=registry_url)
+        )
+        if ret_code != 0:
+            raise RuntimeError(
+                'Failed to list images from registry: {}'.format(output))
+
+        # keep only the tag lines and parse them
+        registry_tags = []
+        for line in output.splitlines():
+            if not re.match('^ *{} '.format(self._image_name), line):
+                continue
+            line_fields = line.split('|')
+            registry_tags.append({
+                'tag': line_fields[1].strip(),
+                'image_id': line_fields[2].strip()
+            })
+
+        # the list is sorted by version, so check the last line for the newest
+        # version
+        try:
+            newest_version = registry_tags[-1]['tag']
+        except IndexError:
+            raise RuntimeError('No images found in registry')
+        # a latest tag already exists: pick the previous line instead
+        if newest_version == 'latest':
+            try:
+                newest_version = registry_tags[-2]['tag'].strip()
+            except IndexError:
+                raise RuntimeError(
+                    'Failed to find newest versioned image in registry')
+        # our image is not the newest: skip tagging, nothing more to do
+        if newest_version != self._image_tag:
+            self._logger.info(
+                '[push] image is not newest version, not tagging as latest')
+        else:
+            self._logger.info(
+                '[push] image is the newest version, tagging as latest')
+            latest_name = '{}/{}:latest'.format(registry_url, self._image_name)
+            ret_code, output = self._session.run(
+                'docker tag {local_image} {latest_name} && '
+                'docker push {latest_name}'.format(
+                    local_image=local_name, latest_name=latest_name)
+            )
+            # regardless of success or failure, remove the remote tag created
+            rm_code, rm_output = self._session.run(
+                'docker rmi {}'.format(latest_name)
+            )
+            if rm_code != 0:
+                self._logger.warning(
+                    '[push] failed to remove remote tag: %s', rm_output)
+
+            # push operation failed: report error
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to push to registry: {}'.format(output))
+
     # push()
 
     def unit_test(self):

@@ -54,4 +54,4 @@ RUN cd /assets && \
     mv /assets/entrypoint /entrypoint && \
     rm -rf /assets
 
-CMD ["/entrypoint"]
+ENTRYPOINT ["/entrypoint"]

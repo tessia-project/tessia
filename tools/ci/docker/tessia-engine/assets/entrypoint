@@ -128,4 +128,4 @@ _ssl_config
 
 # start the api and scheduler via supervisor
 echo "info: starting services..."
-/usr/bin/supervisord
+exec /usr/bin/supervisord

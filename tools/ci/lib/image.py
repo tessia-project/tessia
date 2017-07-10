@@ -80,14 +80,15 @@ class DockerImage(object):
                     'cannot generate docker build string without context dir')
 
             docker_build = (
-                'docker build --force-rm -t {image_name} {args} '
-                '{context_dir}'
+                'docker build --force-rm --label com.tessia.version={version} '
+                '-t {image_name} {args} {context_dir}'
             )
             docker_cmd = docker_build.format(
                 image_name=image_name,
                 image_tag=self._image_tag,
                 context_dir=context_dir,
-                args=args
+                args=args,
+                version=self._image_tag
             )
         elif action == 'run':
             docker_run = (

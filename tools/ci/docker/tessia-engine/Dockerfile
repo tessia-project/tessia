@@ -96,4 +96,4 @@ EXPOSE 80 5000
 
 VOLUME ["/etc/tessia", "/var/tessia/jobs"]
 
-CMD ["/entrypoint"]
+ENTRYPOINT ["/entrypoint"]

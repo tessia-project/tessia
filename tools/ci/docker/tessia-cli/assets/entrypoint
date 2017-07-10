@@ -25,5 +25,7 @@ function _set_url() {
 # instance specific settings to config file
 _set_url
 
-echo "info: starting shell..."
-bash
+trap "exit" TERM QUIT INT
+
+echo "info: waiting forever... if you need a shell, use docker exec -ti {container_name} /bin/bash"
+while true; do sleep 1; done

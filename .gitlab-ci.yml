@@ -1,5 +1,5 @@
 variables:
-  GIT_STRATEGY: fetch
+  GIT_STRATEGY: clone
   REGISTRY: tessia-dev.domain.com:5000
 
 stages:

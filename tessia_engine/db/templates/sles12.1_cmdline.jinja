@@ -4,4 +4,4 @@
 {% else %}
   {% set special_args = "" %}
 {% endif %}
-rammdisk_size=131072 root=/dev/ram1 ro init=/linuxrc TERM=dumb UseVNC=1 HostIP={{ config["gw_iface"]["ip"] }} Netmask={{ config["gw_iface"]["mask"] }} Gateway={{ config["gw_iface"]["gateway"] }} HOSTNAME={{ config["hostname"] }} Nameserver={{ config["gw_iface"]["dns_1"] }} linuxrclog=/dev/console vncpassword={{config["credentials"]["passwd"]}} Install={{ config["repos"][0] }} UseSSH=1 SSHpassword={{config["credentials"]["passwd"]}} start_shell autoyast={{ config["autofile"] }} {{special_args}}
+rammdisk_size=131072 root=/dev/ram1 ro init=/linuxrc TERM=dumb UseVNC=1 HostIP={{ config["gw_iface"]["ip"] }} Netmask={{ config["gw_iface"]["mask"] }} Gateway={{ config["gw_iface"]["gateway"] }} HOSTNAME={{ config["hostname"] }} Nameserver={{ config["gw_iface"]["dns_1"] }} linuxrclog=/dev/console vncpassword={{config["credentials"]["vncpasswd"]}} Install={{ config["repos"][0] }} UseSSH=1 SSHpassword={{config["credentials"]["passwd"]}} start_shell autoyast={{ config["autofile"] }} {{special_args}}

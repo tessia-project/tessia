@@ -74,7 +74,6 @@ class SmAnaconda(SmBase):
         super().collect_info()
 
         # add our specific bits
-        self._info["credentials"] = self._profile.credentials
         self._info["sha512rootpwd"] = crypt.crypt(
             self._profile.credentials["passwd"])
         self._info['hostname'] = self._system.hostname

@@ -57,7 +57,6 @@ class SmAutoyast(SmBase):
         self._info["hostname"] = self._system.hostname
         self._info["autofile"] = self._autofile_url
         self._info["gw_iface"] = self._gw_iface
-        self._info["credentials"] = self._profile.credentials
         self._info["sha512rootpwd"] = crypt.crypt(
             self._profile.credentials["passwd"])
 

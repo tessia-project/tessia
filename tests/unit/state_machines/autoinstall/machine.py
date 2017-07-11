@@ -19,9 +19,9 @@ Unit tests for Install state machine.
 #
 # IMPORTS
 #
+from copy import deepcopy
 from tessia_engine.db import models
 from tessia_engine.db.connection import MANAGER
-from tessia_engine.db.models import SystemProfile
 from tessia_engine.state_machines.autoinstall import machine
 from tests.unit.config import EnvConfig
 from tests.unit.state_machines.autoinstall import utils
@@ -29,7 +29,6 @@ from unittest.mock import patch
 from unittest import TestCase
 from unittest.mock import Mock
 
-import copy
 import json
 
 #
@@ -138,6 +137,38 @@ class TestAutoInstallMachine(TestCase):
         self._perform_test_init(request)
     # test_init_default_profile()
 
+    def test_invalid_fcp_parameters(self):
+        """
+        Test the case when a required FCP parameter is missing
+        """
+        # fetch correct FCP parameters from db
+        profile = models.SystemProfile.query.filter_by(
+            name='kvm_kvm054_install', system='kvm054').one()
+        volumes = profile.storage_volumes_rel
+
+        # distort correct FCP parameters and check result
+        test_vol = volumes[0]
+        orig_specs = test_vol.specs
+        # for some reason sqlalchemy does not detect the object as dirty if we
+        # change the dictionary directly, so we force a copy here
+        test_vol.specs = deepcopy(test_vol.specs)
+        test_vol.specs['adapters'][0].pop('devno')
+        MANAGER.session.add(test_vol)
+        MANAGER.session.commit()
+        error_re = (
+            'failed to validate FCP parameters .* of volume {}: '.format(
+                test_vol.id))
+        self.assertRaisesRegex(
+            ValueError,
+            error_re,
+            machine.AutoInstallMachine.parse,
+            REQUEST_PARAMETERS)
+
+        test_vol.specs = orig_specs
+        MANAGER.session.add(test_vol)
+        MANAGER.session.commit()
+    # test_invalid_fcp_parameters()
+
     def test_invalid_request_parameters(self):
         """
         Test the case that the state machine receives an invalid
@@ -238,24 +269,4 @@ class TestAutoInstallMachine(TestCase):
             machine.AutoInstallMachine(request)
         MANAGER.session.delete(unsupported_os)
     # test_unsupported_os()
-
-    def test_incorrect_fcp_options(self):
-        """
-        Test the case when required FCP parameter is missing
-        """
-        # Take correct FCP parameters from db
-        profile = SystemProfile.query.filter_by(
-            name='kvm_kvm054_install', system='kvm054').one_or_none()
-        volumes = profile.storage_volumes_rel
-        correct_specs = copy.deepcopy(volumes[0].specs)
-
-        # Distort correct FCP parameters and check result
-        volumes[0].specs['adapters'][0].pop('devno', None)
-        self.assertRaises(ValueError,
-                          machine.AutoInstallMachine.parse,
-                          REQUEST_PARAMETERS)
-
-        # Restore the correct FCP parameters entry for other tests
-        volumes[0].specs = copy.deepcopy(correct_specs)
-    # test_incorrect_fcp_options()
 # TestAutoInstallMachine

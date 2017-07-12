@@ -76,7 +76,7 @@ def prof_add(**kwargs):
         user, passwd = login.split(':', 1)
     except (AttributeError, ValueError):
         raise click.ClickException('invalid format specified for login')
-    kwargs['credentials'] = {'user': user, 'password': passwd}
+    kwargs['credentials'] = {'user': user, 'passwd': passwd}
 
     item = client.SystemProfiles()
     for key, value in kwargs.items():
@@ -136,7 +136,7 @@ def prof_edit(system, cur_name, **kwargs):
             user, passwd = login.split(':', 1)
         except (AttributeError, ValueError):
             raise click.ClickException('invalid format specified for login')
-        kwargs['credentials'] = {'user': user, 'password': passwd}
+        kwargs['credentials'] = {'user': user, 'passwd': passwd}
     # default not provided: remove from dict otherwise it will force setting to
     # false
     if kwargs['default'] is False:

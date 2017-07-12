@@ -131,10 +131,13 @@ class TestPlatLpar(TestCase):
         """
         plat = self._create_plat_lpar()
 
+        mock_ssh_client = self._mock_ssh_client_cls.return_value
+        mock_shell = mock_ssh_client.open_shell.return_value
+        mock_shell.run.side_effect = TimeoutError
+
         # Performs the reboot operation.
         plat.reboot(self._profile_entry)
 
-        mock_ssh_client = self._mock_ssh_client_cls.return_value
         hostname = self._profile_entry.system_rel.hostname
         user = self._profile_entry.credentials['user']
         password = self._profile_entry.credentials['passwd']
@@ -143,9 +146,8 @@ class TestPlatLpar(TestCase):
         mock_ssh_client.login.assert_called_with(hostname, user=user,
                                                  passwd=password,
                                                  timeout=10)
-        mock_shell = mock_ssh_client.open_shell.return_value
-        mock_shell.run.assert_called_with('nohup reboot -f; killall sshd',
-                                          ignore_ret=True)
+        mock_shell.run.assert_called_with(
+            'nohup reboot -f; nohup killall sshd', timeout=1)
 
     # test_reboot()
 

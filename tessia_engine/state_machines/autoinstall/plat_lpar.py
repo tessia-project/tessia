@@ -121,7 +121,10 @@ class PlatLpar(PlatBase):
         ssh_client.login(hostname, user=user, passwd=password,
                          timeout=10)
         shell = ssh_client.open_shell()
-        shell.run('nohup reboot -f; killall sshd', ignore_ret=True)
+        try:
+            shell.run('nohup reboot -f; nohup killall sshd', timeout=1)
+        except TimeoutError:
+            pass
         shell.close()
         ssh_client.logoff()
     # reboot()

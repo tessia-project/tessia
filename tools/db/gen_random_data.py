@@ -890,11 +890,11 @@ def create_systems(data):
             # linux kvm host
             if i % 2 == 0:
                 lpar_profile['credentials'] = (
-                    "{'user': 'root', 'password': 'somepasswd'}")
+                    "{'user': 'root', 'passwd': 'somepasswd'}")
             # zvm hypervisor
             else:
                 lpar_profile['credentials'] = (
-                    "{'user': 'vmuser', 'password': 'pass4vm'}")
+                    "{'user': 'vmuser', 'passwd': 'pass4vm'}")
                 lpar_profile['parameters'] = "{'loadparams': 'smt'}"
 
             activation_profiles.append(lpar_profile)

@@ -19,6 +19,7 @@ Unit tests for Install state machine.
 #
 # IMPORTS
 #
+from copy import deepcopy
 from tessia_engine.db import models
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.state_machines.autoinstall import machine
@@ -135,6 +136,38 @@ class TestAutoInstallMachine(TestCase):
 
         self._perform_test_init(request)
     # test_init_default_profile()
+
+    def test_invalid_fcp_parameters(self):
+        """
+        Test the case when a required FCP parameter is missing
+        """
+        # fetch correct FCP parameters from db
+        profile = models.SystemProfile.query.filter_by(
+            name='kvm_kvm054_install', system='kvm054').one()
+        volumes = profile.storage_volumes_rel
+
+        # distort correct FCP parameters and check result
+        test_vol = volumes[0]
+        orig_specs = test_vol.specs
+        # for some reason sqlalchemy does not detect the object as dirty if we
+        # change the dictionary directly, so we force a copy here
+        test_vol.specs = deepcopy(test_vol.specs)
+        test_vol.specs['adapters'][0].pop('devno')
+        MANAGER.session.add(test_vol)
+        MANAGER.session.commit()
+        error_re = (
+            'failed to validate FCP parameters .* of volume {}: '.format(
+                test_vol.id))
+        self.assertRaisesRegex(
+            ValueError,
+            error_re,
+            machine.AutoInstallMachine.parse,
+            REQUEST_PARAMETERS)
+
+        test_vol.specs = orig_specs
+        MANAGER.session.add(test_vol)
+        MANAGER.session.commit()
+    # test_invalid_fcp_parameters()
 
     def test_invalid_request_parameters(self):
         """

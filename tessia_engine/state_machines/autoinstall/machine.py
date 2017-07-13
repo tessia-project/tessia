@@ -20,6 +20,7 @@ State machine that performs the installation of Linux Distros.
 # IMPORTS
 #
 from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 from tessia_engine.config import CONF
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import OperatingSystem
@@ -234,6 +235,18 @@ class AutoInstallMachine(BaseMachine):
         # check which format the profile parameter is using
         profile = cls._get_profile(params['system'], params.get("profile"))
         system = profile.system_rel
+
+        # check required FCP parameters- use schema to validate specs field
+        volumes = profile.storage_volumes_rel
+        for vol in volumes:
+            if vol.type_rel.name == 'FCP':
+                fcp_schema = vol.get_schema('specs')['oneOf'][0]
+                try:
+                    validate(vol.specs, fcp_schema)
+                except ValidationError as exc:
+                    raise ValueError(
+                        'failed to validate FCP parameters {} of volume {}: '
+                        '{}'.format(vol.specs, vol.id, exc.message))
 
         # make sure we have a valid network interface to perform installation
         gw_iface = profile.gateway_rel

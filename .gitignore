@@ -8,3 +8,4 @@ build/
 .coverage
 # created by orc for docker-compose
 .env
+.docker-compose.override.yaml

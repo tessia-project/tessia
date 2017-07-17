@@ -56,11 +56,15 @@ def main():
     my_dir = os.path.dirname(os.path.abspath(__file__))
     lib_dir = os.path.abspath('{}/..'.format(my_dir))
 
+    home_dir = os.environ.get('HOME', None)
+    if not home_dir:
+        home_dir = '/tmp'
+    os.environ['COVERAGE_FILE'] = '{}/.tessia_engine.coverage'.format(home_dir)
     # switch to root dir to make sure paths are found
-    cmds = ['cd {}'.format(lib_dir)]
+    os.chdir(lib_dir)
 
     # erase previously collected coverage data
-    cmds.append(CMD_COVERAGE_ERASE)
+    cmds = [CMD_COVERAGE_ERASE]
 
     # no arguments provided: execute all tests
     if len(sys.argv) < 2:

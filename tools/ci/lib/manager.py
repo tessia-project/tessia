@@ -50,7 +50,7 @@ class Manager(object):
 
     def __init__(self, stage, docker_tag, images=None, registry_url=None,
                  field_tests=None, baselib_file=None, install_server_hostname=None,
-                 verbose=True):
+                 verbose=True, **stage_args):
         """
         Create the image objects and set necessary configuration parameters
 
@@ -71,6 +71,7 @@ class Manager(object):
                 hostname to use as install server for cases where the detected
                 fqdn is not reachable by systems being installed during tests
             verbose (bool): whether to print output from commands
+            stage_args (any): additional specific arguments to the stage
 
         Raises:
             RuntimeError: in case fqdn of builder cannot be determined
@@ -102,6 +103,8 @@ class Manager(object):
         # one-stage run specified
         else:
             self._stages = [getattr(self, '_stage_{}'.format(stage))]
+        # additional parameters specific to the stage
+        self._stage_args = stage_args
 
         # used to execute commands on a local shell
         self._shell = Shell(verbose)
@@ -175,16 +178,6 @@ class Manager(object):
         """
         Execute the client based tests
         """
-        # copy the cli tests to container and run them
-        ret_code, output = self._session.run(
-            "git archive HEAD cli | docker exec -i --user admin {}_cli_1 "
-            "bash -c 'tar -C /home/admin -xf -'".format(COMPOSE_PROJECT_NAME)
-        )
-        if ret_code != 0:
-            raise RuntimeError(
-                'failed to copy cli repo to container: {}'.format(
-                    output))
-
         # clear any coverage data and get the list of tests to execute
         ret_code, output = self._session.run(
             "docker exec --user admin tessia_cli_1 "
@@ -207,10 +200,14 @@ class Manager(object):
                     'directory: {}'.format(output))
 
             # copy the tests from builder to cli container
-            target_test_dir = '/home/admin/cli/tests/field_tests'
+            target_test_dir = '/home/admin/field_tests'
             ret_code, output = self._session.run(
                 "docker cp {} tessia_cli_1:{}"
                 .format(self._field_tests, target_test_dir))
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to copy field tests to container: {}'.format(
+                        output))
 
             # get the list of tests and execute them
             ret_code, output = self._session.run(
@@ -278,13 +275,55 @@ class Manager(object):
                     'failed to clean db after test: {}'.format(output))
     # _clitest_loop()
 
-    def _compose_start(self):
+    def _compose_start(self, dev_mode=False):
         """
         Bring up and configure the services by using docker-compose.
+
+        Args:
+            devmode (bool): if True, local git repository will be bind mounted
+                            inside the container.
         """
+        # dev mode: mount bind git repo files from host in the container
+        if dev_mode:
+            override_yaml_lines = [
+                'version: "2.1"',
+                'services:',
+                '  engine:',
+                '    volumes:',
+                '      - {0}/tessia_engine:{1}/tessia_engine:ro',
+                '      - {0}:/root/tessia-engine:ro',
+                '  cli:',
+                '    volumes:',
+                '      - {0}/cli/tessia_cli:{1}/tessia_cli:ro',
+                '      - {0}/cli:/home/admin/cli:ro'
+            ]
+            override_yaml_str = '\n'.join(override_yaml_lines).format(
+                REPO_DIR, '/usr/local/lib/python3.5/dist-packages/')
+        # non dev mode: only mount bind cli files (for client tests)
+        else:
+            override_yaml_lines = [
+                'version: "2.1"',
+                'services:',
+                '  cli:',
+                '    volumes:',
+                '      - {0}/cli:/home/admin/cli:ro'
+            ]
+            override_yaml_str = '\n'.join(override_yaml_lines).format(
+                REPO_DIR)
+
+        # create compose's override file with the bind mounts
+        override_cmd = "echo -e '{}' > .docker-compose.override.yaml".format(
+            override_yaml_str)
+        ret_code, output = self._session.run(override_cmd)
+        if ret_code != 0:
+            raise RuntimeError(
+                'failed to create .docker-compose.override.yaml file: {}'
+                .format(output))
+
         # create compose's .env file
         cmd = (
-            r"echo -e 'COMPOSE_FILE=tools/ci/docker/docker-compose.yaml\n"
+            r"echo -e 'COMPOSE_FILE=tools/ci/docker/docker-compose.yaml:"
+            r".docker-compose.override.yaml\n"
             r"COMPOSE_PROJECT_NAME={}\n"
             r"TESSIA_DOCKER_TAG={}\n"
             r"TESSIA_ENGINE_FQDN={}\n'"
@@ -366,6 +405,25 @@ class Manager(object):
                 raise RuntimeError(
                     'failed to copy tessia_baselib file: {}'.format(output))
 
+        # dev mode enabled: add auth token to admin user in cli container to
+        # make it ready for usage
+        if dev_mode:
+            ret_code, output = self._session.run(
+                'docker exec tessia_engine_1 tessia-dbmanage get-token')
+            if ret_code != 0:
+                raise RuntimeError(
+                    "failed to fetch admin's authorization token: {}'"
+                    .format(output))
+            ret_code, output = self._session.run(
+                "docker exec tessia_cli_1 bash -c 'mkdir {0} && "
+                "echo {1} > {0}/auth.key && chown -R admin. {0}'".format(
+                    '/home/admin/.tessia-cli', output.strip())
+            )
+            if ret_code != 0:
+                raise RuntimeError(
+                    "failed to create admin user's auth.key file: {}"
+                    .format(output))
+
     # _compose_start()
 
     def _compose_stop(self):
@@ -374,9 +432,9 @@ class Manager(object):
         etc.)
         """
         ret_code, output = self._session.run(
-            'test -e .env && docker-compose kill && '
+            'test -e .env && docker-compose stop && '
             'docker-compose rm -vf && '
-            'rm -f .env && '
+            'rm -f .env .docker-compose.override.yaml && '
             'docker volume rm {proj_name}_db-data '
             '{proj_name}_engine-etc {proj_name}_engine-jobs && '
             'docker network rm {proj_name}_cli_net '
@@ -450,15 +508,19 @@ class Manager(object):
         """
         self._logger.info('[devmode] starting services')
         try:
-            self._compose_start()
-            self._logger.info(
-                '[devmode] you can now work, press Ctrl+C when done')
-            try:
-                while True:
-                    time.sleep(999)
-            # use the catch only to suppress traceback printing
-            except RuntimeError:
-                pass
+            self._compose_start(dev_mode=True)
+            if 'clitests' in self._stage_args and self._stage_args['clitests']:
+                self._logger.info('[devmode] clitests requested')
+                self._clitest_exec()
+            else:
+                self._logger.info(
+                    '[devmode] you can now work, press Ctrl+C when done')
+                try:
+                    while True:
+                        time.sleep(999)
+                # use the catch only to suppress traceback printing
+                except RuntimeError:
+                    pass
         finally:
             self._logger.info('[devmode] cleaning compose services')
             # clean up before dying/finishing

@@ -161,13 +161,15 @@ def clitest(tag, field_tests, baselib_file, install_server_hostname):
     'install_server_hostname', '--install-server-hostname',
     help='custom hostname/ip to use as install server (when detected fqdn is '
          'not reachable by installed systems)')
-def devmode(tag, baselib_file, install_server_hostname):
+@click.option('clitests', '--clitests', is_flag=True, default=False,
+              help='execute all client tests')
+def devmode(tag, baselib_file, install_server_hostname, clitests):
     """
     start and keep services running until manually stopped
     """
     manager = Manager(
         'devmode', tag, baselib_file=baselib_file,
-        install_server_hostname=install_server_hostname)
+        install_server_hostname=install_server_hostname, clitests=clitests)
     manager.run()
 # devmode()
 

@@ -75,6 +75,17 @@ def _build_test_list(src_dir=None):
     return test_map
 # _build_test_list()
 
+def _prepare_env():
+    """
+    Prepare a sane environment before running the tests.
+    """
+    home_dir = os.environ.get('HOME', None)
+    if not home_dir:
+        home_dir = '/tmp'
+    os.environ['COVERAGE_FILE'] = '{}/.tessia_cli.coverage'.format(home_dir)
+    os.chdir(MY_DIR)
+# _prepare_env()
+
 @click.command('exec')
 @click.option(
     'names', '--name', multiple=True,
@@ -116,7 +127,7 @@ def exec_(names, api_url, src_dir, cleaner, cov_erase, cov_report):
         '[init] testcases to execute: {}'.format(', '.join(run_map.keys()))
     )
 
-    os.chdir(MY_DIR)
+    _prepare_env()
     if cov_erase:
         subprocess.run(CMD_COVERAGE_ERASE, shell=True, check=1)
 
@@ -222,7 +233,7 @@ def erase():
     """
     erase collected coverage data
     """
-    os.chdir(MY_DIR)
+    _prepare_env()
     proc = subprocess.run(CMD_COVERAGE_ERASE, shell=True)
     sys.exit(proc.returncode)
 # erase()
@@ -232,7 +243,7 @@ def report():
     """
     print current coverage report
     """
-    os.chdir(MY_DIR)
+    _prepare_env()
     proc = subprocess.run(CMD_COVERAGE_REPORT, shell=True)
     sys.exit(proc.returncode)
 # report()

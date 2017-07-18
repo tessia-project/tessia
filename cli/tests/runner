@@ -20,6 +20,7 @@ Entry point to execute the testcases
 #
 # IMPORTS
 #
+from tessia_cli.config import CONF
 from util.static_executor import STATIC_DIR, StaticExecutor
 
 import click
@@ -91,8 +92,7 @@ def _prepare_env():
     'names', '--name', multiple=True,
     help="testcase to execute; can be specified multiple times")
 @click.option(
-    'api_url', '--api-url', required=True,
-    help="url where API is running")
+    'api_url', '--api-url', help="url where API is running")
 @click.option(
     'src_dir', '--src',
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
@@ -126,6 +126,15 @@ def exec_(names, api_url, src_dir, cleaner, cov_erase, cov_report):
     click.echo(
         '[init] testcases to execute: {}'.format(', '.join(run_map.keys()))
     )
+    if not api_url:
+        api_url = CONF.get_config().get('server_url')
+        if not api_url:
+            raise click.ClickException(
+                'error: --api-url not specified and api url not found in '
+                'config file.')
+        click.echo(
+            '[init] warning: --api-url not specified, defaulting to {} from '
+            'config file.'.format(api_url))
 
     _prepare_env()
     if cov_erase:
@@ -142,6 +151,7 @@ def exec_(names, api_url, src_dir, cleaner, cov_erase, cov_report):
         # make sure connection is back, sometimes there is a delay
         timeout = time.time() + 30
         failed = True
+        click.echo('[init] waiting for API server to come up (30 secs)')
         while time.time() < timeout:
             try:
                 requests.head(api_url, verify=False)

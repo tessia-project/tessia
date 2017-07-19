@@ -1,0 +1,53 @@
+#!/bin/bash -e
+# Copyright 2017 IBM Corp.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# simple script to handle cleaning of db and restart of daemons
+# for use in testing/development activities
+
+function clean_container {
+    supervisorctl stop tessia-api tessia-scheduler
+    tessia-dbmanage reset -y
+    tessia-dbmanage init
+    supervisorctl start tessia-api tessia-scheduler
+}
+
+function clean_virtualenv {
+    function cleanup {
+        deactivate
+        popd &>/dev/null
+    }
+
+    my_dir=$(realpath `dirname $0`)
+    pushd "$my_dir/.." &>/dev/null
+    source .tox/devenv/bin/activate
+    trap cleanup EXIT
+
+    tools/control_daemons stop
+    tessia-dbmanage reset -y
+    tessia-dbmanage init
+    tools/control_daemons start
+}
+
+if $(which supervisorctl &>/dev/null); then
+    echo "info: detected supervisorctl, assuming docker container mode"
+    clean_container
+elif [ -e ".tox/devenv/bin/activate" ]; then
+    echo "info: detected tox devenv, assuming virtualenv mode"
+    clean_virtualenv
+else
+    echo "error: no valid mode detected"
+    exit 1
+fi

@@ -48,8 +48,13 @@ Pre-requisite: to go forward with this section, you must have the docker images 
 
 Executing all client tests is pretty straightforward, all you have to do is to use the `orc` tool in development mode while specifiying the `clitests` parameter:
 
-```console
+```
 [user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740 --baselibfile=/home/user/files/tessia_baselib.yaml --clitests
+```
+
+And the output:
+
+```
 INFO: [init] using builder localhost
 $ hostname --fqdn
 normandy
@@ -92,10 +97,15 @@ INFO: done
 
 Pre-requisite: to go forward with this section, you must have the docker images already built. Learn how in [How to setup a development environment](dev_env.md).
 
-Starts the containers in development mode, open a shell to the tessia-cli container and enter the bind mounted cli directory:
+Start the containers in development mode:
 
 ```console
 [user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia_baselib.yaml
+```
+
+Wait for the ready message:
+
+```
 INFO: [init] using builder localhost
 $ hostname --fqdn
 myhost
@@ -105,7 +115,11 @@ INFO: [devmode] starting services
 (output suppressed...)
 
 INFO: [devmode] you can now work, press Ctrl+C when done
+```
 
+Open a shell to the tessia-cli container and enter the bind mounted cli directory:
+
+```
 # in a different shell ...
 [user@myhost ~]$ docker exec -u admin -ti tessia_cli_1 /bin/bash
 admin@tessia-cli:/$ cd /home/admin/cli
@@ -114,7 +128,7 @@ admin@tessia-cli:~/cli$
 
 Now have a look at the test runner utility `tests/runner`. Its usage is pretty straightforward, here's an example of how to list the available tests and run them:
 
-```console
+```
 admin@tessia-cli:~/cli$ tests/runner list
 
      Testcase    |                     Description                      
@@ -173,7 +187,7 @@ admin@tessia-cli:~/cli$
 **Note**: after a test is executed, the database will be in a 'dirty' state which might cause a second run or a run of another test to fail. To restore the database
 to a pristine state, run the cleaner script from within the tessia-engine container:
 
-```console
+```
 # stop the api and scheduler services, call tessia-dbmanage to re-initialize the database, start the services again
 [user@myhost ~]$ docker exec -ti tessia_engine_1 /root/tessia-engine/tools/cleanup_db
 info: detected supervisorctl, assuming docker container mode
@@ -255,13 +269,8 @@ An alternative method is to use a virtualenv created via [tox](https://tox.readt
 
 First step is to start the containers in devmode using the orc tool:
 
-```console
+```
 [user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740
-INFO: [init] using builder localhost
-$ hostname --fqdn
-normandy
-INFO: [init] tag for images is 17.713.740
-INFO: [devmode] starting services
 
 (output suppressed...)
 
@@ -270,7 +279,7 @@ INFO: [devmode] you can now work, press Ctrl+C when done
 
 Then in a different shell (or by sending the current process to background), execute the helper script according to which tests you want do execute:
 
-```console
+```
 # to run all unit tests at once, use the following:
 [user@myhost tessia-engine]$ docker exec tessia_engine_1 /root/tessia-engine/tools/run_tests.py
 ...............................................................................................................................................................................................
@@ -295,8 +304,11 @@ tessia_engine/state_machines/echo/machine.py                 75      0   100%
 TOTAL                                                     4697    720    85%
 python3 -m coverage erase && python3 -m coverage run -a --source=tessia_engine -m unittest discover tests/unit -p '*.py' && python3 -m coverage report -m
 [user@myhost tessia-engine]$
+```
 
-# if you don't want to run the full set of tests but only a specific module (the one you are developing for example), just specify its path in the script call:
+If you don't want to run the full set of tests but only a specific module (the one you are developing for example), just specify its path in the script call:
+
+```
 [user@myhost tessia-engine]$ docker exec tessia_engine_1 /root/tessia-engine/tools/run_tests.py tests/unit/api/resources/storage_volumes.py
 /usr/local/lib/python3.5/dist-packages/werkzeug/local.py:347: DeprecationWarning: json is deprecated.  Use get_json() instead.
   return getattr(self._get_current_object(), name)
@@ -464,13 +476,8 @@ An alternative method is to use a virtualenv created via [tox](https://tox.readt
 Similar to how the unit tests are executed, there is a helper script to execute the pylint validator.
 The first step is to start the containers in devmode using the orc tool:
 
-```console
+```
 [user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740
-INFO: [init] using builder localhost
-$ hostname --fqdn
-normandy
-INFO: [init] tag for images is 17.713.740
-INFO: [devmode] starting services
 
 (output suppressed...)
 
@@ -479,7 +486,7 @@ INFO: [devmode] you can now work, press Ctrl+C when done
 
 Then in a different shell (or by sending the current process to background), execute the helper script `run_pylint.py`:
 
-```console
+```
 [user@myhost tessia-engine]$ docker exec tessia_engine_1 /root/tessia-engine/tools/run_pylint.py
 
 ------------------------------------

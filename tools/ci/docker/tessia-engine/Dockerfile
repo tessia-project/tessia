@@ -65,8 +65,10 @@ RUN cd /assets && \
     # from the builder
     sed -i "/egg=tessia_baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
     pip3 -q install -U -r requirements.txt && \
-    # installation
-    ./setup.py -q install && \
+    # installation - tell pbr not to create requirements.txt in egg-info folder as it
+    # is incorrectly creating tessia_baselib's 'git+file://' entry with a missing 
+    # 'egg=' suffix
+    PBR_REQUIREMENTS_FILES=/dev/null ./setup.py -q install && \
     # tessia-engine files settings
     useradd -m tessia && \
     install -m 700 -g tessia -o tessia -d /etc/tessia && \

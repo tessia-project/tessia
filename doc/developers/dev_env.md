@@ -27,9 +27,14 @@ There's also the python virtualenv approach which demands more manual steps, thi
 
 First and foremost, make sure you have docker installed. Then, build the project's containers with the `orc` tool:
 
-```console
+```
 # the build command will prepare a context dir and trigger the docker build process:
 [user@myhost tessia-engine]$ tools/ci/orc build
+```
+
+And the corresponding output:
+
+```
 building images tessia-cli, tessia-engine
 INFO: [init] using builder localhost
 $ hostname --fqdn
@@ -73,15 +78,16 @@ $ rm -rf /tmp/tmp.UiFhfNktQn
 INFO: done
 
 [user@myhost tessia-engine]$
+```
 
-# you can check the available images now directly in docker:
+You can check the available images now directly in docker:
+
+```
 [user@myhost tessia-engine]$ docker images
 REPOSITORY          TAG                     IMAGE ID            CREATED              SIZE
 tessia-engine        17.713.740-devd40c703   2ec8da956542        About a minute ago   637MB
 tessia-cli           17.713.740-devd40c703   c5db457007e2        2 minutes ago        505MB
-postgres            latest                  f8d91fbcfa35        2 weeks ago          269MB
 ubuntu              latest                  d355ed3537e9        3 weeks ago          119MB
-postgres            9.6-alpine              4ddf1c7ef6b3        8 weeks ago          37.7MB
 [user@myhost tessia-engine]$
 ```
 
@@ -99,8 +105,13 @@ Failure to use an adequate hostname will cause systems installations to fail.
 
 Now that we have the parameters clarified, here's how you start your development environment:
 
-```console
+```
 [user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia_baselib.yaml
+```
+
+You should see a message informing it's ready:
+
+```
 INFO: [init] using builder localhost
 $ hostname --fqdn
 myhost
@@ -116,7 +127,7 @@ At this point the containers and the tessia services are running. You can keep t
 the process to the background (don't forget to type `bg` otherwise the process gets halted).
 It's possible to see the containers running:
 
-```console
+```
 [user@myhost tessia-engine]$ docker ps
 CONTAINER ID        IMAGE                                COMMAND                  CREATED             STATUS              PORTS                                        NAMES
 40a7ff59bf22        tessia-cli:17.713.740-devd40c703      "/entrypoint"            5 minutes ago       Up 5 minutes                                                     tessia_cli_1
@@ -126,7 +137,7 @@ dd3cfb801868        tessia-engine:17.713.740-devd40c703   "/entrypoint"         
 
 Your local git repository is bind mounted inside the containers, so any changes you do locally will be reflected in the running container. For example:
 
-```console
+```
 # add new code to the api authentication module:
 [user@myhost tessia-engine]$ vi tessia_engine/api/views/auth.py # do some work
 
@@ -154,7 +165,7 @@ exit
 
 You can also open a shell for the `admin` user in the cli container and use the command line client from there:
 
-```console
+```
 # the cli container has a pre-configured user called 'admin' ready for usage:
 [user@myhost tessia-engine]$ docker exec -u admin -ti tessia_cli_1 /bin/bash
 admin@tessia-cli:/$ tessia conf show
@@ -178,7 +189,7 @@ This will stop all containers and remove everything (containers, volumes, networ
 The database installation commands should be executed as the root user.
 
 #### Fedora
-```console
+```
 # install postgres server
 [root@host ~]# dnf install postgresql-server
 
@@ -199,7 +210,7 @@ The database installation commands should be executed as the root user.
 
 ```
 #### RHEL 7
-```console
+```
 # install postgres server
 [root@host ~]# yum install postgresql-server
 
@@ -220,7 +231,7 @@ The database installation commands should be executed as the root user.
 ```
 
 #### Ubuntu 16
-```console
+```
 # install postgres server
 [root@host ~]# apt-get install postgresql
 
@@ -239,7 +250,7 @@ The database installation commands should be executed as the root user.
 
 ### Virtualenv installation
 
-```console
+```
 # install tox (virtualenv manager)
 [user@host ~]$ sudo pip3 install -U tox
 
@@ -303,7 +314,7 @@ Due to the fact that the library dependencies are different between server-side 
 
 The process is pretty straightforward, use tox to create a virtualenv and then activate it:
 
-```console
+```
 # enter the repo dir and create the virtualenv
 # WARNING: remember to deactivate your server-side virtualenv first with 'deactivate'
 [user@host ~]$ cd tessia-engine/cli && tox -e devenv

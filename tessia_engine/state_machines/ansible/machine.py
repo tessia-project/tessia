@@ -28,13 +28,13 @@ from tessia_engine.state_machines.base import BaseMachine
 from tessia_engine.state_machines.autoinstall.machine import AutoInstallMachine
 from urllib.parse import urlsplit
 
-import json
 import logging
 import os
 import requests
 import tempfile
 import time
 import subprocess
+import yaml
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -139,7 +139,7 @@ class AnsibleMachine(BaseMachine):
 
         # validate params and store them
         self.parse(params)
-        self._params = json.loads(params)
+        self._params = yaml.safe_load(params)
 
         # work directory (to be created in download stage)
         self._temp_dir = None
@@ -265,9 +265,9 @@ class AnsibleMachine(BaseMachine):
         # determine how to extract the source file
         tar_flags = ''
         if file_name.endswith('tgz') or file_name.endswith('.tar.gz'):
-            tar_flags = 'tar zxf'
+            tar_flags = 'zxf'
         elif file_name.endswith('.tar.bz2'):
-            tar_flags = 'tar jxf'
+            tar_flags = 'jxf'
         # should never happen as it was validated by parse before
         if not tar_flags:
             raise RuntimeError('Unsupported source file format')
@@ -292,9 +292,9 @@ class AnsibleMachine(BaseMachine):
                                '({}MB)'.format(MAX_REPO_MB_SIZE))
 
         # download the file
-        file_target_path = '{}/{}'.format(self._temp_dir, file_name)
+        file_target_path = '{}/{}'.format(self._temp_dir.name, file_name)
         chunk_size = 10 * 1024
-        with open(file_target_path, 'w') as file_fd:
+        with open(file_target_path, 'wb') as file_fd:
             for chunk in resp.iter_content(chunk_size=chunk_size):
                 file_fd.write(chunk)
 
@@ -502,9 +502,11 @@ class AnsibleMachine(BaseMachine):
 
         process_env = os.environ.copy()
         process_env['ANSIBLE_SSH_PIPELINING'] = 'true'
+        process_env['ANSIBLE_HOST_KEY_CHECKING'] = 'false'
         proc = subprocess.Popen(
-            ansible_cmd.split(), stdout=subprocess.PIPE, cwd=self._repo_dir,
-            stderr=subprocess.STDOUT, universal_newlines=True)
+            ansible_cmd.split(), cwd=self._repo_dir,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            env=process_env, universal_newlines=True)
         # read from pipe in an non-blocking way to avoid hanging in ssh related
         # commands (i.e. git clone) due to stderr left open by ssh
         # controlpersist background process
@@ -552,21 +554,22 @@ class AnsibleMachine(BaseMachine):
         # connecting to db
         MANAGER.connect()
         try:
-            params = json.loads(params)
-            validate(params, REQUEST_SCHEMA)
+            obj_params = yaml.safe_load(params)
+            validate(obj_params, REQUEST_SCHEMA)
         except Exception as exc:
-            raise SyntaxError("Invalid request parameters") from exc
+            raise SyntaxError(
+                "Invalid request parameters: {}".format(str(exc)))
 
         # resources used in this job
-        used_resources = cls._get_resources(params['systems'])
+        used_resources = cls._get_resources(obj_params['systems'])
 
         # validate the source specified
-        cls._assert_source(params['source'])
+        cls._assert_source(obj_params['source'])
 
         result = {
             'resources': used_resources,
             'description': MACHINE_DESCRIPTION.format(
-                params['playbook'], params['source'])
+                obj_params['playbook'], obj_params['source'])
         }
         return result
     # parse()

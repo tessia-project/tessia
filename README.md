@@ -1,6 +1,6 @@
 # Tessia - Task Execution Supporter and System Installation Assistant
 
-A tool to automate and simplify systems provisioning and testcase execution activities.
+A tool to automate and simplify systems provisioning and task execution activities.
 
 Go to [documentation](doc/index.md).
 

@@ -245,12 +245,12 @@ class SystemProfileResource(SecureResource):
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
-            if target_system.hypervisor_rel is None:
+            if target_system.hypervisor_id is None:
                 raise BaseHttpError(
                     400, msg='System has no hypervisor, '
                              'you need to define one first')
-            match = SystemProfile.query.join(
-                System, System.id == target_system.hypervisor_rel.id
+            match = SystemProfile.query.filter(
+                SystemProfile.system_id == target_system.hypervisor_id
             ).filter(
                 SystemProfile.name == hyp_prof_name
             ).one_or_none()
@@ -395,12 +395,12 @@ class SystemProfileResource(SecureResource):
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
-            if item.system_rel.hypervisor_rel is None:
+            if item.system_rel.hypervisor_id is None:
                 raise BaseHttpError(
                     400, msg='System has no hypervisor, '
                              'you need to define one first')
-            match = SystemProfile.query.join(
-                System, System.id == item.system_rel.hypervisor_rel.id
+            match = SystemProfile.query.filter(
+                SystemProfile.system_id == item.system_rel.hypervisor_id
             ).filter(
                 SystemProfile.name == hyp_prof_name
             ).one_or_none()

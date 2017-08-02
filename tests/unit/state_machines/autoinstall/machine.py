@@ -157,7 +157,7 @@ class TestAutoInstallMachine(TestCase):
         MANAGER.session.commit()
         error_re = (
             'failed to validate FCP parameters .* of volume {}: '.format(
-                test_vol.id))
+                test_vol.volume_id))
         self.assertRaisesRegex(
             ValueError,
             error_re,
@@ -200,6 +200,38 @@ class TestAutoInstallMachine(TestCase):
         with self.assertRaises(SyntaxError):
             machine.AutoInstallMachine.parse(malformed_request_parameters)
     # test_malformed_request_parameters()
+
+    def test_missing_part_table(self):
+        """
+        Test the case when a volume has no partition table defined
+        """
+        # fetch correct FCP parameters from db
+        profile = models.SystemProfile.query.filter_by(
+            name='kvm_kvm054_install', system='kvm054').one()
+        volumes = profile.storage_volumes_rel
+
+        # remove partition table and check result
+        test_vol = volumes[0]
+        orig_table = test_vol.part_table
+        # for some reason sqlalchemy does not detect the object as dirty if we
+        # change the dictionary directly, so we force a copy here
+        test_vol.part_table = deepcopy(test_vol.part_table)
+        test_vol.part_table.pop('table')
+        MANAGER.session.add(test_vol)
+        MANAGER.session.commit()
+        error_re = (
+            'volume {} has no partition table defined'.format(
+                test_vol.volume_id))
+        self.assertRaisesRegex(
+            ValueError,
+            error_re,
+            machine.AutoInstallMachine.parse,
+            REQUEST_PARAMETERS)
+
+        test_vol.part_table = orig_table
+        MANAGER.session.add(test_vol)
+        MANAGER.session.commit()
+    # test_missing_part_table()
 
     def test_nonexistent_os(self):
         """

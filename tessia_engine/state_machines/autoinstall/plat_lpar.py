@@ -19,6 +19,7 @@ Module to deal with operations on LPARs
 #
 # IMPORTS
 #
+from copy import deepcopy
 from tessia_baselib.common.ssh.client import SshClient
 from tessia_engine.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
@@ -61,6 +62,8 @@ class PlatLpar(PlatBase):
         initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
 
         # parameters argument, see tessia_baselib schema for details
+        options = deepcopy(self._gw_iface['attributes'])
+        options.pop('ccwgroup')
         params = {
             "cpc_name": self._hyp_system.name.upper(),
             "boot_params": {
@@ -74,6 +77,7 @@ class PlatLpar(PlatBase):
                 "gateway": self._gw_iface['gateway'],
                 "device": self._gw_iface['attributes']
                           ['ccwgroup'].split(",")[0].split('.')[-1],
+                "options": options
             }
         }
 

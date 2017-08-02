@@ -319,4 +319,5 @@ class TestSystemProfile(TestSecureResource):
     # TODO: add tests with hypervisor_profile (need to improve handling of
     # indirect value hyp_name/hyp_profile_name first)
     # TODO: add tests for attach/detach of volumes/network interfaces
+    # TODO: add tests with same hyp_profile name
 # TestSystemProfile

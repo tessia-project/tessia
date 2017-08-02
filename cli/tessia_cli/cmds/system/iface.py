@@ -60,7 +60,7 @@ ATTR_BY_TYPE = {
               help="interface type (see iface-types)")
 @click.option('--osname', required=True,
               help="interface name in operating system (i.e. en0)")
-@click.option('mac_address', '--mac', required=True, help="mac address")
+@click.option('mac_address', '--mac', help="mac address")
 @click.option('--subnet', help="subnet of ip address to be assigned")
 @click.option('--ip', help="ip address to be assigned to interface")
 @click.option('--layer2', type=click.BOOL,
@@ -109,6 +109,14 @@ def iface_add(**kwargs):
             setattr(item, key, value)
 
     # sanity checks
+    if not kwargs['mac_address']:
+        # when layer2 is off no mac address is used, so specify a dummy value
+        if 'layer2' in item.attributes and item.attributes['layer2'] is False:
+            item.mac_address = 'ff:ff:ff:ff:ff:ff'
+        else:
+            raise click.ClickException(
+                'a mac address must be specified')
+
     if kwargs['type'] == 'OSA':
         try:
             item.attributes['ccwgroup']
@@ -254,7 +262,7 @@ def iface_edit(system, cur_name, **kwargs):
     # both parameters specified: set value for update on item
     elif subnet is not None and ip_addr is not None:
         # both parameters are empty: unassign ip address
-        if subnet == '' and ip_addr == '':
+        if subnet and ip_addr:
             update_dict['ip_address'] = None
         else:
             update_dict['ip_address'] = '{}/{}'.format(subnet, ip_addr)
@@ -274,7 +282,7 @@ def iface_edit(system, cur_name, **kwargs):
             update_dict.setdefault('attributes', item.attributes)
 
             # allow unsetting parameters
-            if value == '' and key in update_dict['attributes']:
+            if value and key in update_dict['attributes']:
                 update_dict['attributes'].pop(key)
             else:
                 update_dict['attributes'][key] = value
@@ -283,7 +291,7 @@ def iface_edit(system, cur_name, **kwargs):
         else:
             update_dict[key] = value
 
-    if len(update_dict) == 0:
+    if not update_dict:
         raise click.ClickException('no update criteria provided.')
 
     # attributes changed: perform sanity checks

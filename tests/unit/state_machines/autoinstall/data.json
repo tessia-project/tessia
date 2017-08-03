@@ -23,6 +23,22 @@
             "owner": "admin",
             "project": "Admins",
             "subnet": "CPC3 shared"
+        },
+        {
+            "address": "10.100.54.2",
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
+            "subnet": "Int. 10GbE-SR"
+        },
+        {
+            "address": "10.100.55.2",
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
+            "subnet": "Int. 10GbE-SR"
         }
     ],
     "NetZone": [
@@ -54,6 +70,16 @@
             "owner": "admin",
             "project": "Admins",
             "url": "http://installserver.domain.com/suse/s390x/SLES12.1/DVD"
+        },
+        {
+            "initrd": "/boot/initrd.ubuntu",
+            "kernel": "/boot/kernel.ubuntu",
+            "modifier": "admin",
+            "name": "UBUNTU16.04.1",
+            "operating_system": "ubuntu16.04.1",
+            "owner": "admin",
+            "project": "Admins",
+            "url": "http://installserver.domain.com/ubuntu/UBUNTU16.04.1/CD"
         }
     ],
     "StoragePool": [
@@ -72,7 +98,7 @@
     ],
     "StorageServer": [
         {
-            "desc": "- Storage *DASD-FCP* beloging to System project",
+            "desc": "- Storage *DASD-FCP* beloging to Admins",
             "fw_level": null,
             "hostname": null,
             "model": "DS8800",
@@ -111,7 +137,7 @@
             },
             "project": "Admins",
             "server": "DSK7K16",
-            "size": 10000,
+            "size": 7385,
             "specs": {},
             "system": "CPC3LP55",
             "system_attributes": {},
@@ -127,16 +153,23 @@
                     {
                         "fs": "ext4",
                         "mo": null,
-                        "mp": "/home",
-                        "size": 4000,
+                        "mp": "/mnt/data01",
+                        "size": 3000,
+                        "type": "primary"
+                    },
+					{
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data02",
+                        "size": 1000,
                         "type": "primary"
                     }
                 ],
-                "type": "msdos"
+                "type": "dasd"
             },
             "project": "Admins",
             "server": "DSK7K16",
-            "size": 10000,
+            "size": 4000,
             "specs": {},
             "system": "CPC3LP54",
             "system_attributes": {},
@@ -153,14 +186,14 @@
                         "fs": "ext4",
                         "mo": null,
                         "mp": "/",
-                        "size": 8000,
+                        "size": 4000,
                         "type": "primary"
                     },
                     {
                         "fs": "swap",
                         "mo": null,
                         "mp": null,
-                        "size": 2000,
+                        "size": 1000,
                         "type": "primary"
                     }
                 ],
@@ -195,23 +228,30 @@
                     {
                         "fs": "ext4",
                         "mo": null,
-                        "mp": "/",
+                        "mp": "/mnt/data01",
                         "size": 4000,
                         "type": "primary"
                     },
-                    {
-                        "fs": "swap",
+					{
+                        "fs": "ext4",
                         "mo": null,
-                        "mp": null,
-                        "size": 100,
+                        "mp": "/mnt/data02",
+                        "size": 2000,
+                        "type": "primary"
+                    },
+					{
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data03",
+                        "size": 1000,
                         "type": "primary"
                     }
                 ],
-                "type": "msdos"
+                "type": "dasd"
             },
             "project": "Admins",
             "server": "DSK7K16",
-            "size": 10000,
+            "size": 7385,
             "specs": {},
             "system": "kvm054",
             "system_attributes": {},
@@ -272,7 +312,14 @@
                         "fs": "ext4",
                         "mo": null,
                         "mp": "/mnt/data1",
-                        "size": 4000,
+                        "size": 2000,
+                        "type": "primary"
+                    },
+					{
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data21",
+                        "size": 2000,
                         "type": "primary"
                     }
                 ],
@@ -344,10 +391,17 @@
                     {
                         "fs": "ext4",
                         "mo": null,
-                        "mp": "/mnt/data1",
+                        "mp": "/",
                         "size": 4000,
                         "type": "primary"
-                    }
+                    },
+					{
+						"fs": "swap",
+						"mo": null,
+						"mp": null,
+						"size": 95,
+						"type": "primary"
+					}
                 ],
                 "type": "msdos"
             },
@@ -487,7 +541,7 @@
             },
             "system": "kvm054",
             "system_attributes": {
-                "libvirt": "    <disk type='block' device='disk'>      <driver name='qemu' type='raw'/>      <source dev='/dev/disk/by-id/dm-uuid-mpath-11002076305aac1a0000000000002401'/>      <target dev='vda' bus='virtio'/>      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0001'/>    </disk>"
+                "libvirt": "    <disk type='block' device='disk'>      <driver name='qemu' type='raw'/>      <source dev='/dev/disk/by-id/dm-uuid-mpath-11002076305aac1a0000000000002401'/>      <target dev='vda' bus='virtio'/>      <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0005'/>    </disk>"
             },
             "type": "FCP",
             "volume_id": "1024400100000000"
@@ -538,8 +592,15 @@
                         "fs": "ext4",
                         "mo": null,
                         "mp": "/mnt/data2",
-                        "size": 4095,
+                        "size": 2095,
                         "type": "primary"
+                    },
+					{
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/mnt/data20",
+                        "size": 1995,
+                        "type": "logical"
                     }
                 ],
                 "type": "msdos"
@@ -626,7 +687,8 @@
                     {
                         "devno": "0.0.1800",
                         "wwpns": [
-                            "100207630503c1ae"
+                            "100207630503c1ae",
+							"100207630508c1ae"
                         ]
                     }
                 ],
@@ -644,20 +706,28 @@
             "profile": "CPC3LP55/default_CPC3LP55",
             "volume": "DSK7K16/3961"
         },
-        {
-            "profile": "CPC3LP54/lpar_cpc3lp54_install",
-            "volume": "DSK7K16/395f"
-        },
-        {
+		{
             "profile": "CPC3LP55/default_CPC3LP55",
             "volume": "DSK7K16/1024400700000000"
         },
-        {
+		{
             "profile": "CPC3LP55/default_CPC3LP55",
             "volume": "DSK7K16/1024400800000000"
         },
         {
+            "profile": "CPC3LP54/lpar_cpc3lp54_install",
+            "volume": "DSK7K16/395f"
+        },
+		{
+            "profile": "CPC3LP55/default_CPC3LP55_one_dasd",
+            "volume": "DSK7K16/3961"
+        },
+        {
             "profile": "CPC3LP55/default_CPC3LP55_SCSI",
+            "volume": "DSK7K16/1024400000000000"
+        },
+		{
+            "profile": "CPC3LP55/default_CPC3LP55_one_scsi",
             "volume": "DSK7K16/1024400000000000"
         },
         {
@@ -688,10 +758,10 @@
             "profile": "kvm054/kvm_kvm054_install",
             "volume": "DSK7K16/1024400600000000"
         },
-        {
+		{
             "profile": "kvm054/kvm_kvm054_install_dasd",
-            "volume": "DSK7K16/3962"
-        },
+			"volume": "DSK7K16/3962"
+		},
         {
             "profile": "kvm054/kvm_kvm054_install_dasd",
             "volume": "DSK7K16/1024400900000000"
@@ -703,6 +773,10 @@
         {
             "profile": "kvm054/kvm_kvm054_install_dasd",
             "volume": "DSK7K16/1024400b00000000"
+        },
+		{
+            "profile": "kvm054/kvm_kvm054_install_one_disk",
+            "volume": "DSK7K16/1024400100000000"
         }
     ],
     "Subnet": [
@@ -718,11 +792,24 @@
             "project": "Admins",
             "vlan": 1801,
             "zone": "CPC3"
+        },
+		{
+            "address": "10.100.0.0/16",
+            "desc": "Internal 10GbE-SR subnet of CPC3",
+            "dns_1": null,
+            "dns_2": null,
+            "gateway": null,
+            "modifier": "admin",
+            "name": "Int. 10GbE-SR",
+            "owner": "admin",
+            "project": "Admins",
+            "vlan": null,
+            "zone": "CPC3"
         }
     ],
     "System": [
         {
-            "desc": "CPC for project System project",
+            "desc": "CPC for project Admins",
             "hostname": "hmcserver.domain.com",
             "model": "ZEC12_H20",
             "modifier": "admin",
@@ -776,9 +863,21 @@
                 "layer2": true
             },
             "ip_address": "CPC3 shared/192.168.161.225",
-            "mac_address": "02:57:55:00:76:00",
+            "mac_address": "02:57:55:f1:71:02",
             "name": "external osa",
             "osname": "eth01",
+            "system": "CPC3LP55",
+            "type": "OSA"
+        },
+		{
+            "attributes": {
+                "ccwgroup": "0.0.1203,0.0.1204,0.0.1205",
+                "layer2": true
+            },
+            "ip_address": "Int. 10GbE-SR/10.100.55.2",
+            "mac_address": "02:57:55:f1:71:03",
+            "name": "second osa",
+            "osname": "eth02",
             "system": "CPC3LP55",
             "type": "OSA"
         },
@@ -804,12 +903,36 @@
             "osname": "enccwf500",
             "system": "CPC3LP54",
             "type": "OSA"
+        },
+		{
+            "attributes": {
+                "ccwgroup": "0.0.1200,0.0.1201,0.0.1202",
+                "layer2": true
+            },
+            "ip_address": "Int. 10GbE-SR/10.100.54.2",
+            "mac_address": "02:57:54:00:76:01",
+            "name": "second osa",
+            "osname": "eth1200",
+            "system": "CPC3LP54",
+            "type": "OSA"
         }
     ],
     "SystemIfaceProfileAssociation": [
         {
             "iface": "CPC3LP55/external osa",
             "profile": "CPC3LP55/default_CPC3LP55"
+        },
+		{
+            "iface": "CPC3LP55/second osa",
+            "profile": "CPC3LP55/default_CPC3LP55"
+        },
+		{
+            "iface": "CPC3LP55/external osa",
+            "profile": "CPC3LP55/default_CPC3LP55_one_dasd"
+        },
+        {
+            "iface": "CPC3LP55/external osa",
+            "profile": "CPC3LP55/default_CPC3LP55_one_scsi"
         },
         {
             "iface": "CPC3LP55/external osa",
@@ -819,12 +942,20 @@
             "iface": "kvm054/external macvtap",
             "profile": "kvm054/kvm_kvm054_install"
         },
+		{
+            "iface": "kvm054/external macvtap",
+            "profile": "kvm054/kvm_kvm054_install_one_disk"
+        },
         {
             "iface": "kvm054/external macvtap",
             "profile": "kvm054/kvm_kvm054_install_dasd"
         },
         {
             "iface": "CPC3LP54/external osa",
+            "profile": "CPC3LP54/lpar_cpc3lp54_install"
+        },
+        {
+            "iface": "CPC3LP54/second osa",
             "profile": "CPC3LP54/lpar_cpc3lp54_install"
         }
     ],
@@ -852,6 +983,38 @@
             "name": "default_CPC3LP55",
             "operating_system": "rhel7.2",
             "parameters": {},
+            "system": "CPC3LP55"
+        },
+		{
+            "cpu": 2,
+            "credentials": {
+                "password": "somepasswd",
+                "username": "root"
+            },
+            "default": false,
+            "hypervisor_profile": "CPC3/default CPC3",
+            "memory": 4096,
+            "name": "default_CPC3LP55_one_dasd",
+            "operating_system": "rhel7.2",
+            "parameters": {
+                "gateway_iface": "external osa"
+            },
+            "system": "CPC3LP55"
+        },
+		{
+            "cpu": 2,
+            "credentials": {
+                "password": "somepasswd",
+                "username": "root"
+            },
+            "default": false,
+            "hypervisor_profile": "CPC3/default CPC3",
+            "memory": 4096,
+            "name": "default_CPC3LP55_one_scsi",
+            "operating_system": "rhel7.2",
+            "parameters": {
+                "gateway_iface": "external osa"
+            },
             "system": "CPC3LP55"
         },
         {
@@ -894,6 +1057,22 @@
             "name": "kvm_kvm054_install",
             "operating_system": "rhel7.2",
             "parameters": {},
+            "system": "kvm054"
+        },
+		{
+            "cpu": 2,
+            "credentials": {
+                "password": "somepasswd",
+                "username": "root"
+            },
+            "default": false,
+            "hypervisor_profile": "CPC3LP55/default_CPC3LP55",
+            "memory": 1024,
+            "name": "kvm_kvm054_install_one_disk",
+            "operating_system": "rhel7.2",
+            "parameters": {
+                "gateway_iface": "external macvtap"
+            },
             "system": "kvm054"
         },
         {

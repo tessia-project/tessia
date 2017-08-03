@@ -41,7 +41,8 @@ IFACE_TYPES = [
 
 OPERATING_SYSTEMS = [
     'rhel7.2,rhel,7,2,RHEL 7.2 GA',
-    'sles12.1,sles,12,1,SLES 12.1'
+    'sles12.1,sles,12,1,SLES 12.1',
+    'ubuntu16.04.1,ubuntu,16,4,Ubuntu 16.04.1'
 ]
 
 USERS = [
@@ -55,7 +56,8 @@ PROJECTS = [
 
 TEMPLATES = [
     "RHEL7.2,Template for RHEL7.2,admin,Admins,rhel7.2",
-    "SLES12.1,Template for SLES12.1,admin,Admins,sles12.1"
+    "SLES12.1,Template for SLES12.1,admin,Admins,sles12.1",
+    "UBUNTU16.04.1,Template for Ubuntu 16.04.1,admin,Admins,ubuntu16.04.1"
 ]
 
 ROLES = [

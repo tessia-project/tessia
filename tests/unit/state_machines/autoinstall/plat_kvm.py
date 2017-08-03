@@ -246,14 +246,14 @@ class TestPlatKvm(TestCase):
                         "11002076305aac1a0000000000002409'/>"
                         "<target dev='vda' bus='virtio'/>"
                         "<address type='ccw' cssid='0xfe'"
-                        " ssid='0x0' devno='0x0001'/></disk>")
+                        " ssid='0x0' devno='0xffff'/></disk>")
         libvirt_dev2 = ("<disk type='block' device='disk'>"
                         "<driver name='qemu' type='raw'/>"
                         "<source dev='/dev/disk/by-id/dm-uuid-mpath-"
                         "11002076305aac1a000000000000240a'/>"
                         "<target dev='vda' bus='virtio'/>"
                         "<address type='ccw' cssid='0xfe'"
-                        " ssid='0x0' devno='0x0002'/></disk>")
+                        " ssid='0x0' devno='0xfffe'/></disk>")
         volumes = self._profile_entry.storage_volumes_rel
         volumes[1].system_attributes["libvirt"] = libvirt_dev1
         volumes[2].system_attributes["libvirt"] = libvirt_dev2

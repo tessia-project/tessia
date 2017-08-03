@@ -53,13 +53,15 @@ class SmAutoyast(SmBase):
         """
         # collect repos, volumes, ifaces
         super().collect_info()
+        self._logger.info(
+            'auto-generated password for VNC is %s',
+            self._info['credentials']['vncpasswd'])
 
         self._info["hostname"] = self._system.hostname
         self._info["autofile"] = self._autofile_url
         self._info["gw_iface"] = self._gw_iface
         self._info["sha512rootpwd"] = crypt.crypt(
             self._profile.credentials["passwd"])
-
     # collect_info()
 
     def _fetch_lines_until_end(self, shell, offset, logfile_path):

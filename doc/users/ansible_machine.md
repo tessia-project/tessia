@@ -32,6 +32,7 @@ Example of use cases where the use of this machine can be useful:
 Here's a step by step description of how the machine works:
 
 - User submits a job providing the necessary parameters, as the following example:
+
 ```yaml
 # the source could also be http:// or tarball files (i.e. url ending with .tgz)
 source: git://myhost.example.com/atc_do_something.git
@@ -57,6 +58,7 @@ systems:
 - Job is started by the scheduler: a new process is spawned and the machine execution starts
 - Machine downloads the ansible repository from the specified source url
 - The machine dynamically creates an inventory file in the downloaded repository folder. For the parameter file above, the inventory file would look like this:
+
 ```
 [superbench-servers]
 lpar15 ansible_host=lpar15.domain.com ansible_user=username ansible_ssh_pass=mypass
@@ -67,6 +69,7 @@ lpar15 ansible_host=lpar15.domain.com ansible_user=username ansible_ssh_pass=myp
 [superbench-workers]
 kvm50 ansible_host=kvm50.domain.com ansible_user=someuser ansible_ssh_pass=somepass
 ```
+
 - The machine activates the involved systems, if not activated yet.
 - The machine runs the ansible-playbook executable for the given playbook and inventory files.
 - The job finishes once ansible finishes its execution.

@@ -293,10 +293,8 @@ class SmBase(metaclass=abc.ABCMeta):
                                           'nopqrstuvwxyz'
                                           'ABCDEFGHIJKLM'
                                           'NOPQRSTUVWXYZ'
-                                          '0123456789') for _ in range(7))
+                                          '0123456789') for _ in range(8))
         info['credentials']['vncpasswd'] = vncpasswd
-        self._logger.info(
-            'Auto-generated password for VNC is %s', vncpasswd)
 
         self._info = info
     # collect_info()

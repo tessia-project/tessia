@@ -218,6 +218,7 @@ class TestStorageVolume(TestSecureResource):
         # specify fields with wrong types
         wrong_data = [
             ('volume_id', 5),
+            ('volume_id', 'WRONG_UPPERCASE_ID'),
             ('volume_id', True),
             ('volume_id', None),
             ('size', -1),

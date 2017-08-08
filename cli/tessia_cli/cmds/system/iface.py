@@ -262,7 +262,7 @@ def iface_edit(system, cur_name, **kwargs):
     # both parameters specified: set value for update on item
     elif subnet is not None and ip_addr is not None:
         # both parameters are empty: unassign ip address
-        if subnet and ip_addr:
+        if not(subnet) and not ip_addr:
             update_dict['ip_address'] = None
         else:
             update_dict['ip_address'] = '{}/{}'.format(subnet, ip_addr)
@@ -282,7 +282,7 @@ def iface_edit(system, cur_name, **kwargs):
             update_dict.setdefault('attributes', item.attributes)
 
             # allow unsetting parameters
-            if value and key in update_dict['attributes']:
+            if not(value) and key in update_dict['attributes']:
                 update_dict['attributes'].pop(key)
             else:
                 update_dict['attributes'][key] = value

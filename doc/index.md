@@ -35,7 +35,7 @@ This section provides documentation and howtos for those who want to learn how t
     - [Ansible machine](users/ansible_machine.md)
 - Misc
     - Explanation about the project's [versioning scheme](users/versioning.md)
-    - If you would like to install the command line client to use from your Linux system, then visit [Client Installation](users/client_install.md).
+    - If you would like to install the command line client to use from your Linux workstation, then visit [Client Installation](users/client_install.md).
     - If you are interested in using tessia with your own automation tools, you can do so by referring to the [REST-like API](users/api.md).
 
 ## **Developers**

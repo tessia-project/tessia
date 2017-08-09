@@ -18,60 +18,60 @@ limitations under the License.
 If you are not yet familiar with the different types of resources available in the tool we strongly suggest that you read about them first. You can learn about tessia's resources
 model [here](resources_model.md).
 
-## First steps
+## Initial configuration
 
-Upon first usage the client needs to create an authentication token in order to validate you with the server (for a detailed explanation about the authentication system
-read this [section](../developers/design.md#authentication-subsystem)). So when no token exists yet any attempt to execute a command will trigger the client to request
-your username and password, as you can see in the example below:
+Upon first usage the client needs to learn two things from you:
+
+- where the API server is located
+- what are your credentials (login/password) in order to create an authentication token to validate you with the server
+
+If you have those already configured, just skip the next two sections.
+
+### API server hostname
+
+If the server is running under HTTPS (most likely), you have to place a copy of the SSL certificate beforehand either in `~/.tessia-cli/ca.crt` (local user) or
+`/etc/tessia-cli/ca.crt` (global). If you don't do so, you will see an error like this:
+
+```
+[user@host ~]$ tessia conf set-server https://server.domain.com:5000
+Error: The validation of the server's SSL certificate failed. In order to assure the connection is safe, place a copy of the trusted CA's certificate file in /home/user/.tessia-cli/ca.crt and try again.
+```
+
+The CA's certificate file is usually provided by the server administrator through a trusted link or some other trusted method. You should verify with your sysadmin how to download it.
+
+Once the certificate file is available, we can enter the API server's hostname successfully:
+
+```
+[user@host ~]$ tessia conf set-server https://server.domain.com:5000
+Server successfully configured.
+```
+
+### User credentials
+
+The client must generate an authentication token for communication with the server. Here's how to do it:
 
 ```console
-[user@host ~]$ tessia conf show
-There is no authentication key configured. Please enter your login and password so that the client can generate one for you.
+[user@host ~]$ tessia conf key-gen
 Login: user@domain.com
-Password:
+Password: 
 Key successfully created and added to client configuration.
+[user@host ~]$ 
+```
 
-Authentication key in use : 53e80269e2ec4d4ebb57cab7c4082c60
+Let's confirm that the operation worked by checking the client configuration:
+```
+[user@host ~]$ tessia conf show
+
+Authentication key in use : 9e5e749c135740269b5e64cab32a6b1f
 Key owner login           : user@domain.com
 Client API version        : 20160916
-Server address            : http://127.0.0.1:5000
+Server address            : https://server.domain.com:5000
 Server API version        : 20160916
 
-[user@host ~]$
+[user@host ~]$ 
 ```
 
-We tried to list the current configuration, the client detected that no token was available and prompted us to enter our credentials to generate one. This is a one-time
-process and not necessary for future requests.
-
-We can use the output of the command to introduce the `conf` family of commands. With `tessia conf show` you can verify which authorization token you are using, your user login, API version
-and server address. For more details about the `conf` family of commands, check the help menu by typing `tessia conf --help`.
-
-Now that we are authenticated, let's see the client working by listing the types of systems available in the tool:
-
-```console
-[user@host ~]$ tessia system types
-
-Type name    : KVM
-Architecture : s390x
-Description  : System z KVM guest
-
-
-Type name    : ZVM
-Architecture : s390x
-Description  : zVM guest
-
-
-Type name    : LPAR
-Architecture : s390x
-Description  : System z LPAR
-
-
-Type name    : CPC
-Architecture : s390x
-Description  : System z CPC
-```
-
-Looks good! Time to create our first system in the next section.
+Looks good, we can start using the tool now.
 
 ## Creating your first system
 
@@ -95,7 +95,7 @@ Options:
 ```
 
 The text menu is mostly self-explanatory, so let's try to create a system based on that information. Assume we have a System z LPAR named 'lpar65' on a CPC called 'cpc50'.
-Since the lpar control is done with actions on the CPC, we should start by verifying first if the CPC is already present in the tool. This is a chance to learn about list commands, so we use the system list command and specify the system name:
+Since the lpar control is done with actions on the CPC, we should start by verifying first if the CPC is already present in the tool. This is a chance to learn about list commands, so we use the system list command and specify the system type:
 ```console
 [user@host ~]$ tessia system list --type=CPC
 
@@ -127,12 +127,10 @@ Description     : Production systems
 
 Here we filtered the list by type with the use of the parameter `--type`. Other filters are possible, you can check the available ones by typing `tessia system list --help`.
 
-So nice, our CPC is already registered. Note that it does not have a hypervisor defined (because CPCs have no hypervisors), but most times a system will have one. In our example, cpc50
+Good, our CPC is already registered. Note that it does not have a hypervisor defined (because CPCs have no hypervisors), but most times a system will have one. In our example, cpc50
 is the hypervisor for lpar65 which in turn could be the hypervisor of a KVM guest 'guest39', and so on.
 
-It's time to add our lpar to the tool. We have previously listed the possible system types so we already know that the type for lpar is `LPAR`. We can also find the possible
-models by executing `tessia system model-list`, which we leave as an exercise to the reader. In our case we don't need to specify it, by default the tool assigns the same model of the
-hypervisor. So our add command looks like:
+It's time to add our lpar to the tool. Our command looks like:
 
 ```console
 [user@host ~]$ tessia system add --name=lpar65 --hyp=cpc50 --type=LPAR --hostname=lpar65.mydomain.com --desc='System for database performance tests'
@@ -186,9 +184,7 @@ Options:
 ```
 
 We need to create an OSA card, so the parameters described as *(OSA only)* are of interest. The help also suggests to check the sub-command `iface-types` in case the user does not
-know the id for the interface type. We know in advance that it is `OSA` so it's not necessary to check it.
-
-Our command therefore is:
+know the name of the interface type. In this case we already know from the help that it is `OSA` so it's not necessary to check it. Our command therefore is:
 
 ```console
 [user@host ~]$ tessia system iface-add --system=lpar65 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=aa:bb:cc:dd:ee:ff --layer2=true --ccwgroup=f500,f501,f502 --desc='default gateway interface'
@@ -296,8 +292,8 @@ Description       : For performance measurements in system lpar65
 Associated system : 
 ```
 
-Very good, we have our own IP now. As you can see from the output above the IP is not yet associated with any system so we have to somehow assign it to our lpar65. IP addresses 
-are not associated to a system directly but to one of its network interfaces. For that operation we can use the `iface-edit` command:
+Very good, we have our own IP now. As you can see from the output above the IP is not yet associated with any system so we have to assign it to our lpar65. IP addresses
+are not associated to a system directly but to one of its network interfaces. To create such association we use the `iface-edit` command:
 
 ```console
 [user@host ~]$ tessia system iface-edit --system=lpar65 --name='default osa' --ip='192.168.0.16'
@@ -322,19 +318,18 @@ Associated system profiles :
 Description                : default gateway interface
 ```
 
-Perfect, we now have an usable network interface for our system. We are almost done, we still need at least one disk.
+Perfect, we now have a usable network interface for our system. We are almost done, we still need at least one disk.
 
 ## Creating a volume
 
-Similiar to IP addresses, volumes are usually managed by a lab administrator and most users are only told which ones to use. But again for education purposes we are going to create one before
-associating with the system.
+Similiar to IP addresses, volumes are usually managed by a lab administrator and most users are only told which ones to use. But again for education purposes we are going to create one.
 
 Assume we know that our disk is a DASD with id 3950 from the storage server DS8K16. Let's check if such storage server is available on the tool, now by using the `tessia storage` family of commands:
 
 ```console
 [user@host ~]$ tessia storage server-list
 
-Name           : DSK7K16
+Name           : DS7K16
 Hostname       : 
 Model          : DS8800
 Server type    : DASD-FCP
@@ -346,7 +341,7 @@ Modified by    : jdoe@domain.com
 Description    : Storage for CPCs 20 and 21
 
 
-Name           : DSK8K16
+Name           : DS8K16
 Hostname       : 
 Model          : DS8800
 Server type    : DASD-FCP
@@ -358,10 +353,10 @@ Modified by    : system
 Description    : Storage for CPC 50
 ```
 
-So the server is there and its name is `DSK8K16`, let's see if perhaps our disk is already registered:
+So the server is there and its name is `DS8K16`. Perhaps our disk is already registered, let's check:
 
 ```console
-[user@host ~]$ tessia storage vol-list --server=DSK8K16 --id=3950
+[user@host ~]$ tessia storage vol-list --server=DS8K16 --id=3950
 No results were found.
 [user@host ~]$
 ```
@@ -389,11 +384,11 @@ Options:
 Again we must know the name of the volume type for dasd disks and you can learn this with the `vol-types` command. We already know in advance that it is `DASD`, so our command looks like:
 
 ```console
-[user@host ~]$ tessia storage vol-add --server=DSK8K16 --type=DASD --id=3950 --size=7gb
+[user@host ~]$ tessia storage vol-add --server=DS8K16 --type=DASD --id=3950 --size=7gb
 Item added successfully.
-[user@host ~]$ tessia storage vol-list --server=DSK8K16 --id=3950
+[user@host ~]$ tessia storage vol-list --server=DS8K16 --id=3950
 Volume id                  : 3950
-Storage server             : DSK8K16
+Storage server             : DS8K16
 Volume size                : 7.0GB
 Volume specifications      : {}
 Volume type                : DASD
@@ -411,7 +406,7 @@ Description                :
 An empty disk is not very useful so we need to create partitions. Let's have a look at the `part-*` sub-commands, particularly the one to initialize a partition table:
 
 ```console
-[user@host ~]$ tessia storage part-init --server=DSK8K16 --id=3950 --label=dasd
+[user@host ~]$ tessia storage part-init --server=DS8K16 --id=3950 --label=dasd
 Partition table successfully initialized.
 ```
 
@@ -421,11 +416,11 @@ options.
 For the installation we want to perform one root partition and one swap should be enough:
 
 ```console
-[user@host ~]$ tessia storage part-add --server=DSK8K16 --id=3950 --fs=ext4 --size=6gb --mp=/
+[user@host ~]$ tessia storage part-add --server=DS8K16 --id=3950 --fs=ext4 --size=6gb --mp=/
 Partition successfully added.
-[user@host ~]$ tessia storage part-add --server=DSK8K16 --id=3950 --fs=swap --size=1gb
+[user@host ~]$ tessia storage part-add --server=DS8K16 --id=3950 --fs=swap --size=1gb
 Partition successfully added.
-[user@host ~]$ tessia storage part-list --server=DSK8K16 --id=3950
+[user@host ~]$ tessia storage part-list --server=DS8K16 --id=3950
 
 Partition table type: dasd
 
@@ -440,13 +435,13 @@ Looks good, so we already have a disk and a network interface. Time to tell the 
 ## Defining an activation profile
 
 An activation profile is a definition of which resources and parameters should be used when booting up a system. In addition to the network interfaces and disks we can also define the
-amount of memory and CPUs to use, IPL parameters (depending on the hypervisor type), and so on.
+amount of memory and CPUs to use, boot parameters (depending on the hypervisor type), and so on.
 
-In our example we are going to attach the network interface and volume that we created in order to have an usable system for installation. That leads us to the `prof-*` family of sub-commands.
+In order to have a usable system for installation we are going to create a profile and attach the previously created network interface and volume to it. That leads us to the `prof-*` family of sub-commands.
 We start by creating the profile:
 
 ```console
-[user@host ~]$ tessia system prof-add --system=lpar65 --name='profile1' --cpu=2 --memory=1024mb --login='root:mypasswd'
+[user@host ~]$ tessia system prof-add --system=lpar65 --name='profile1' --cpu=2 --memory=2048mb --login='root:mypasswd'
 Item added successfully.
 [user@host ~]$ tessia system prof-list --system=lpar65 
 
@@ -456,7 +451,7 @@ Required hypervisor profile :
 Operating system            : 
 Default                     : True
 CPU(s)                      : 2
-Memory                      : 1.0GB
+Memory                      : 2.0GB
 Parameters                  : 
 Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
 Storage volumes             : 
@@ -477,17 +472,17 @@ Required hypervisor profile :
 Operating system            : 
 Default                     : True
 CPU(s)                      : 2
-Memory                      : 1.0GB
+Memory                      : 2.0GB
 Parameters                  : 
 Credentials                 : {'passwd': 'mypasswd', 'user': 'root'}
 Storage volumes             : 
 Network interfaces          : [default osa/192.168.0.16]
 ```
 
-We can see our interface and the IP we assigned to it in the *Network interfaces*  list. We are almost done, let's not forget to attach our disk as well:
+We can see our interface and the IP we assigned to it in the *Network interfaces*  list. We are almost done, let's not forget to attach our volume as well:
 
 ```console
-[user@host ~]$ tessia system vol-attach --system=lpar65 --profile=profile1 --server=DSK8K16 --vol=3950
+[user@host ~]$ tessia system vol-attach --system=lpar65 --profile=profile1 --server=DS8K16 --vol=3950
 Volume attached successfully.
 [user@host ~]$ tessia system prof-list --system=lpar65 
 
@@ -500,7 +495,7 @@ CPU(s)                      : 2
 Memory                      : 1.0GB
 Parameters                  : 
 Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
-Storage volumes             : [DSK8K16/3950]
+Storage volumes             : [DS8K16/3950]
 Network interfaces          : [default osa/192.168.0.16]
 ```
 
@@ -508,9 +503,8 @@ We can see the newly attached disk in the *Storage volumes* field. We are ready 
 
 ## Installing an operating system with an autotemplate
 
-Tessia maintains a library of templates powered by the [jinja2](http://jinja.pocoo.org) engine for operating system installations (i.e. kickstart, autoinst, preseed). During the installation
-process these templates are fulfilled with the system information from the database and passed to the installer (Anaconda, AutoYast). So in order to install our system we need to choose one
-template to use and for that we can use the `tessia autotemplate` family of commands:
+Tessia offers a library of templates powered by the [jinja2](http://jinja.pocoo.org) engine for operating system installations (i.e. kickstart, autoinst, preseed). During the installation
+process these templates are fulfilled with the system information from the database and passed to the installer (i.e. Anaconda, AutoYast). Therefore in order to install our system we need to choose one template and for that we can use the `tessia autotemplate` family of commands:
 
 ```console
 [user@host ~]$  tessia autotemplate list
@@ -556,19 +550,14 @@ Waiting for installation output (Ctrl+C to stop waiting)
 10:29:13,359 INFO anaconda: created new libuser.conf at /tmp/libuser.8xVrzl with instPath="/mnt/sysimage"
 10:29:13,360 INFO anaconda: 2097152 kB (2048 MB) are available
 10:29:13,372 INFO anaconda: check_memory(): total:2097152, needed:1070, graphical:1160
+
 (lots of output ...)
-...
-...
+
 10:29:14,513 INFO anaconda.stdout: The VNC server is now running.
 10:29:14,513 WARN anaconda.stdout: 
 
-You chose to execute vnc with a password. 
-
-
-10:29:14,513 INFO anaconda.stdout: Please manually connect your vnc client to lpar65.mydomain.com:1 (192.168.0.16:1) to begin the install.
 (lots of output ...)
-...
-...
+
 2017-02-10 11:30:52,640|INFO|sm_base.py(349)|new state: target_reboot
 2017-02-10 11:30:52,640|INFO|plat_lpar.py(102)|Rebooting the system now!
 2017-02-10 11:30:52,991|INFO|sm_base.py(352)|new state: check_installation
@@ -578,11 +567,8 @@ You chose to execute vnc with a password.
 [user@host ~]$
 ```
 
-We ommitted certain parts of the anaconda installer output to make it short, with the exception of the section where it says it has started the VNC server. As you can see, when the installation
-reaches this point it's possible to connect to the system with a vnc client and follow the progress graphically. You might ask: what about the vnc password? Well, remember when we defined the
-*Credentials* for the system activation profile? That's the password you should use.
-
-Let's take a look at the installation. Remember, we use the credentials from the activation profile to connect to the installed system:
+We ommitted certain parts of the anaconda installer output to make it short. Let's take a look at the resulting installation. Remember, we use the credentials from
+the activation profile to connect to the installed system:
 
 ```console
 [user@host ~]$ ssh root@lpar65.mydomain.com
@@ -626,7 +612,7 @@ Before you start having fun with your installations, one more thing: you probabl
 In tessia every long running action is treated as a job and as such must be scheduled for proper allocation and blocking of the resources involved. That means when we issue the command
 to start a system installation what the client actually does is to submit a request to the server to schedule a job. Usually the system in question belongs to the user and will most
 likely be free for use which means immediate execution, but that might not be always the case. So if you try to perform a system installation and the job does not get executed immediately
-then possibly the system is currenly blocked by a running action/job (i.e. testcase execution or another installation).
+then possibly the system is currenly blocked by a running action/job (i.e. task execution or another installation).
 
 So how can one tell what is going on? That is the purpose of the `tessia job` family of commands. There you find the commands for dealing with job scheduling, such as verifying the state of
 job and requests.
@@ -647,8 +633,10 @@ An example of how to verify which jobs are currently running:
 
 Here we can see many installation jobs canceled and the last one successfully completed.
 
-The scheduler is a long running process which constantly consumes the queue of requests to update the job queue accordingly. So a request is a short lived entity that exists only during the
-interval between each scheduler processing of the request queue. It is also possible to take a look at the request queue if you suspect something was not yet processed:
+The scheduler is a daemon process which constantly consumes the queue of requests to update the job queue accordingly. A request is a short lived entity that exists only during the
+interval between each time the scheduler processes the request queue.
+
+It is possible to take a look at the request queue if you suspect something was not yet processed:
 
 ```console
 [user@host ~]$ tessia job req-list
@@ -690,4 +678,4 @@ Machine parameters   :
 The field *Target job ID* says 1, so this request was to stop job 1 which indeed showed up as canceled in the job list.
 
 By now we have covered the essential parts of the client to get you started. For details on specific commands you can always check the help menu with `--help` and the
-[users landing page](../index.md#users) for detailed information on specific topics.
+[users section](../index.md#users) for detailed information on specific topics.

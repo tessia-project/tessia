@@ -1,0 +1,947 @@
+description: Additional test for the 'system' command
+# An empty file ~/tessia-engine/cli/tests/kvm-guest.xml is used to cover stmts 142-148 in types.py
+base_user: admin
+tasks_order:
+  - base_add
+  - system_help
+  - system_command
+  - system_model
+  - system_iface
+  - system_prof
+tasks:
+  base_add:
+    # lab admin to create the lab resources
+    - - perm project-add --name='GEO_1 labadmins' --desc='GEO_1 lab admins'
+      - Item added successfully.
+    - - perm user-add --login=lab_admin@example.com --name='ADMIN_LAB' --title='Title of lab admin'
+      - User added successfully.
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 labadmins'
+      - User role added successfully.
+    # create the target project
+    - - perm project-add --name='GEO_1 developers' --desc='Developer team'
+      - Item added successfully.
+    # make sure lab admin also has permissions on this project
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 developers'
+      - User role added successfully.
+    # create target user
+    - - perm user-add --login=dev1@example.com --name='Developer 1' --title='Mr. Developer 1'
+      - User added successfully.
+    - - perm role-grant --login=dev1@example.com --name='USER' --project='GEO_1 developers'
+      - User role added successfully.
+    - - perm user-edit --login=dev1@example.com --restricted FALSE --admin TRUE
+      - User successfully updated.
+    # switch to lab admin user
+    - - - conf key-gen
+        - lab_admin@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    # create the net resources
+    - - net zone-add --name=GEO_1-NE --project='GEO_1 labadmins' --desc='GEO-NE, VLAN 1822'
+      - Item added successfully.
+    - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1822' --address=192.168.160.0/22  --gw=192.168.160.1 --dns1=192.168.200.241 --vlan=1822 --project='GEO_1 labadmins' --desc='Shared zone vlan 1822'
+      - Item added successfully.
+      # ip for lpar
+    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.222  --project='GEO_1 developers' --desc='For use by lpar 52'
+      - Item added successfully.
+      # ip for kvm
+    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.160.55  --project='GEO_1 developers' --desc='For use by guest55'
+      - Item added successfully.
+    # create the storage resources
+    - - storage server-add --name=DS8K16 --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
+      - Item added successfully.
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3952 --size=7gb --owner= --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
+      - Item added successfully.
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3956 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
+      - Item added successfully.
+    - - storage part-init --server=DS8K16 --id=3956 --label=dasd
+      - Partition table successfully initialized.
+    - - storage part-add --server=DS8K16 --id=3956 --fs=ext4 --size=7gb --mp=/
+      - Partition successfully added.
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3957 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
+      - Item added successfully.
+    - - storage part-init --server=DS8K16 --id=3957 --label=dasd
+      - Partition table successfully initialized.
+    - - storage part-add --server=DS8K16 --id=3957 --fs=swap --size=7gb
+      - Partition successfully added.
+  system_help:
+    - - system -h
+      - 'Usage: tessia system'
+    - - system add -h
+      - 'Usage: tessia system add'
+    - - system autoinstall -h
+      - 'Usage: tessia system autoinstall'
+    - - system del -h
+      - 'Usage: tessia system del'
+    - - system edit -h
+      - 'Usage: tessia system edit'
+    - - system iface-add -h
+      - 'Usage: tessia system iface-add'
+    - - system iface-attach -h
+      - 'Usage: tessia system iface-attach'
+    - - system iface-del -h
+      - 'Usage: tessia system iface-del'
+    - - system iface-detach -h
+      - 'Usage: tessia system iface-detach'
+    - - system iface-edit -h
+      - 'Usage: tessia system iface-edit'
+    - - system iface-list -h
+      - 'Usage: tessia system iface-list'
+    - - system iface-types -h
+      - 'Usage: tessia system iface-types'
+    - - system list -h
+      - 'Usage: tessia system list'
+    - - system model-add -h
+      - 'Usage: tessia system model-add'
+    - - system model-del -h
+      - 'Usage: tessia system model-del'
+    - - system model-edit -h
+      - 'Usage: tessia system model-edit'
+    - - system model-list -h
+      - 'Usage: tessia system model-list'
+    - - system prof-add -h
+      - 'Usage: tessia system prof-add'
+    - - system prof-del -h
+      - 'Usage: tessia system prof-del'
+    - - system prof-edit -h
+      - 'Usage: tessia system prof-edit'
+    - - system prof-list -h
+      - 'Usage: tessia system prof-list'
+    - - system states -h
+      - 'Usage: tessia system states'
+    - - system types -h
+      - 'Usage: tessia system types'
+    - - system vol-attach -h
+      - 'Usage: tessia system vol-attach'
+    - - system vol-detach -h
+      - 'Usage: tessia system vol-detach'
+  system_command:
+    - - system types
+      - 'Type name    : KVM'
+    - - system states
+      - 'State name  : AVAILABLE'
+    - - system list
+      - No results were found.
+    # 'system add' subcommand
+    - - system add 
+      - Missing option "--name".
+    - - system add --name=cpc1
+      - Missing option "--hostname".
+    - - system add --name=cpc1 --type=cpc
+      - Missing option "--hostname".
+    - - system add --name=cpc1 --hostname=hosthmc1.example.com
+      - Missing option "--type".
+    - - system add --type=cpc --hostname=hosthmc1.example.com
+      - Missing option "--name".
+      # Issue 52: empty '--name'
+    - - system add --name= --type=cpc --hostname=hosthmc1.example.com
+      - Item added successfully.
+    - - system add --name=cpc1 --type= --hostname=hosthmc1.example.com
+      - "request failed. Server answered: No associated item found with value '' for field 'Type'"
+      # Issue 52: empty '--hostname'
+    - - system add --name=cpc1 --type=cpc --hostname=
+      - Item added successfully.
+    - - system add --name=cpc1 --type=cpc --hostname=hosthmc1.example.com
+      - 'request failed. Server answered: An item with the provided value'
+    - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zzzz
+      - "request failed. Server answered: No associated item found with value 'ZZZZ' for field 'Model'"
+    - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=
+      - "request failed. Server answered: No associated item found with value '' for field 'Model'"
+    - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=
+      - "request failed. Server answered: No associated item found with value '' for field 'Current state'"
+    - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=available
+      - "request failed. Server answered: No associated item found with value 'available' for field 'Current state'"
+    - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
+      - Item added successfully.
+    - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=locked
+      - "request failed. Server answered: No associated item found with value 'locked' for field 'Current state'"
+    - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=LOCKED
+      - Item added successfully.
+    - - system add --name=cpc5 --type=cpc --hostname=hosthmc5.example.com --state=Debug
+      - "request failed. Server answered: No associated item found with value 'Debug' for field 'Current state'"
+    - - system add --name=cpc5 --type=cpc --hostname=hosthmc5.example.com --state=DEBUG
+      - Item added successfully.
+    - - system add --name=cpc3 --type=cpc --hostname=hmcserver.example.com --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
+      - Item added successfully.
+    - - system add --name=cpc3lp52 --hyp=cpc3 --type=LPAR --hostname=cpc3lp52.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
+      - Item added successfully.
+    - - system add --name=cpc3lp51 --hyp= --type=LPAR --hostname=cpc3lp51.example.com
+      - Item added successfully.
+    - - system add --name=cpc3lp56 --hyp=cpc3 --type=LPAR --hostname=cpc3lp56.example.com --desc= --owner=dev1@example.com --project='GEO_1 developers'
+      - Item added successfully.
+    - - system add --name=cpc3lp53 --hyp=cpc3 --type=LPAR --hostname=cpc3lp53.example.com --owner= --project='GEO_1 developers'
+      - Item added successfully.
+    - - system add --name=cpc3lp53 --hyp=cpc3 --type=LPAR --hostname=cpc3lp53.example.com --owner=xxxx --project='GEO_1 developers'
+      - "request failed. Server answered: No associated item found with value 'xxxx' for field 'Owner'"
+    - - system add --name=cpc3lp54 --hyp=cpc3 --type=LPAR --hostname=cpc3lp51.example.com --project=
+      - "request failed. Server answered: No associated item found with value '' for field 'Project'"
+    - - system add --name=cpc3lp54 --hyp=cpc3 --type=LPAR --hostname=cpc3lp51.example.com --project='GEO_1 developers'
+      - Item added successfully.
+    - - system add --name=guest55 --hyp=cpc3lp52 --type=KVM --hostname=guest55.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
+      - Item added successfully.
+    # 'system list' subcommand
+    - - system list
+      - 'Name            : guest55'
+    - - system list --name=cpc3lp
+      - No results were found.
+    - - system list --name=cpc3lp54
+      - 'Name            : cpc3lp54'
+    - - system list --hyp=
+      - No results were found.
+    - - system list --hyp=cpc3lp
+      - No results were found.
+    - - system list --hyp=cpc3lp54
+      - No results were found.
+    - - system list --hyp=cpc3lp52
+      - 'Name            : guest55'
+    - - system list --model=
+      - No results were found.
+    - - system list --model=zec12
+      - No results were found.
+    - - system list --model=zec12_h43
+      - 'Name            : guest55'
+    - - system list --type=
+      - No results were found.
+    - - system list --type=vm
+      - No results were found.
+    - - system list --type=kvm
+      - 'Name            : guest55'
+      # Issue 54
+    - - system list --state=locked
+      - No results were found.
+    - - system list --state=LOCKED
+      - 'Name            : cpc4'
+    - - system list --owner=
+      - No results were found.
+      # There is a system with na empty name, created before
+    - - system list --owner=dev1@example.com
+      - 'Name            :'
+    - - system list --owner=dev11@example.com
+      - No results were found.
+    - - system list --project='GEO_1 labadmins'
+      - 'Name            : cpc3'
+    - - system list --project='GEO_1 developers'
+      - 'Name            : guest55'
+    - - system list --project='GEO_1'
+      - No results were found.
+    # 'system edit' subcommand
+    - - system edit
+      - Missing option "--name".
+    - - system edit --name=cpc3lp52
+      - no update criteria provided.
+    - - system edit --name=cpc3lp52 --desc='Developer 1'
+      - Item successfully updated.
+    - - system edit --name=cpc3lp50 --desc='Developer 1'
+      - system not found.
+      # the system with empty name was created before
+    - - system edit --name= --desc='Developer 1'
+      - Item successfully updated.
+    - - system edit --name=cpc3lp54 --newname=cpc3lp54
+      - Item successfully updated.
+    - - system edit --name=cpc3lp54 --newname=
+      - 'The server did not accept our request. The response is: name must be type=string'
+    - - system edit --name=cpc3lp54 --newname=cpc3lp44
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --hyp=cpc10
+      - "request failed. Server answered: No associated item found with value 'cpc10' for field 'Hypervisor name'"
+    - - system edit --name=cpc3lp56 --hyp=
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --hyp=cpc3
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --hostname=
+      - 'The server did not accept our request. The response is: hostname must be type=string'
+    - - system edit --name=cpc3lp56 --hostname=cpc3lp56.example.com
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --model=
+      - "request failed. Server answered: No associated item found with value 'None' for field 'Model'"
+    - - system edit --name=cpc3lp56 --model=ZEC12
+      - "request failed. Server answered: No associated item found with value 'ZEC12' for field 'Model'"
+    - - system edit --name=cpc3lp56 --model=zgeneric
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --model=zec12_h43
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --type=
+      - 'The server did not accept our request. The response is: type must be type=string'
+    - - system edit --name=cpc3lp56 --type=vm
+      - "request failed. Server answered: No associated item found with value 'VM' for field 'Type'"
+    - - system edit --name=cpc3lp56 --type=kvm
+      - 'request failed. Server answered: Invalid guest/hypervisor combination'
+    - - system edit --name=cpc3lp56 --type=zvm
+      - 'request failed. Server answered: Invalid guest/hypervisor combination'
+    - - system edit --name=cpc3lp56 --type=cpc
+      - 'request failed. Server answered: Invalid guest/hypervisor combination'
+    - - system edit --name=cpc3lp56 --type=lpar
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --state=
+      - "request failed. Server answered: No associated item found with value 'None' for field 'Current state'"
+      # Issue 54: only UPPERCASE is acceptable for '--state'
+    - - system edit --name=cpc3lp56 --state=available
+      - "request failed. Server answered: No associated item found with value 'available' for field 'Current state'"
+    - - system edit --name=cpc3lp56 --state=AVAILABLE
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --state=LOCK
+      - "request failed. Server answered: No associated item found with value 'LOCK' for field 'Current state'"
+    - - system edit --name=cpc3lp56 --owner=
+      - "request failed. Server answered: No associated item found with value 'None' for field 'Owner'"
+    - - system edit --name=cpc3lp56 --owner=dev10@example.com
+      - "request failed. Server answered: No associated item found with value 'dev10@example.com' for field 'Owner'"
+    - - system edit --name=cpc3lp56 --ouner=dev1@example.com
+      - 'no such option: --ouner'
+    - - system edit --name=cpc3lp56 --owner=dev1@example.com
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --project=
+      - "request failed. Server answered: No associated item found with value 'None' for field 'Project'"
+    - - system edit --name=cpc3lp56 --project='GEO_1'
+      - "request failed. Server answered: No associated item found with value 'GEO_1' for field 'Project'"
+    - - system edit --name=cpc3lp56 --project='GEO_1 developers'
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --desc=
+      - Item successfully updated.
+    - - system edit --name=cpc3lp56 --desc='lpar for development'
+      - Item successfully updated.
+    # 'system del' subcommand
+    - - system del
+      - Missing option "--name".
+      # the system with empty name was created before
+    - - system del --name=
+      - Item successfully deleted.
+    - - system del --name=xxx
+      - system not found.
+    - - system del --name=cpc3lp56
+      - Item successfully deleted.
+  system_model:
+    - - system model-list
+      - 'Model name identifier    : ZGENERIC'
+    - - system model-add --name=Z196_M50 --title=Z196 --arch=s390x
+      - 'permission denied. Server answered: You need administrator privileges to perform this operation'
+    - - - conf key-gen
+        - dev1@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    - - system model-add --name=Z196_M50 --title=Z196 --arch=s390x
+      - Item added successfully.
+    - - system model-edit --name=Z196_M40
+      - model not found.
+    - - system model-edit --name=Z196_M50
+      - no update criteria provided.
+    - - system model-edit --name=Z196_M50 --newname=Z196_M51
+      - Item successfully updated.
+    - - system model-del --name=Z196_M50
+      - model not found.
+    - - system model-del --name=Z196_M51
+      - Item successfully deleted.
+  system_iface:
+    - - system iface-types
+      - 'Type name   : OSA'
+    # 'system iface-add' subcommand
+    - - system iface-add
+      - Missing option "--system".
+    - - system iface-add --system=cpc3lp52
+      - Missing option "--name".
+    - - system iface-add --name='osa iface'
+      - Missing option "--system".
+    - - system iface-add --system=cpc3lp52 --name='osa iface'
+      - Missing option "--type".
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA
+      - Missing option "--osname".
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA --osname=en0
+      - 'Error: a mac address must be specified'
+      # iface-add: '--ccwgroup' must be specified with OSA
+    - - system iface-add --system= --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00
+      - '--ccwgroup must be specified'
+    - - system iface-add --system= --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
+      - "request failed. Server answered: No associated item found with value '' for field 'System'"
+    - - system iface-add --system=xxxx --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
+      - "request failed. Server answered: No associated item found with value 'xxxx' for field 'System'"
+      # Issue 52: empty '--name'
+    - - system iface-add --system=cpc3lp52 --name= --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
+      - Item added successfully.
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type= --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
+      - invalid attribute for this iface type
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type= --osname=en0 --mac=02:57:52:00:70:00
+      - 'The server did not accept our request. The response is: attributes must be oneOf='
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=os --osname=en0 --mac=02:57:52:00:70:00
+      - 'The server did not accept our request. The response is: attributes must be oneOf='
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=MACVTAP --osname=en0 --mac=02:57:52:00:70:00
+      - 'at least one of --hostiface or --libvirt must be specified'
+      # Issue 52: empty '--osname'
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=osa --osname= --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
+      - Item added successfully.
+    - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=  --ccwgroup=f500,f501,f502
+      - 'Error: a mac address must be specified'
+    - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=0257:52:00:70:00 --ccwgroup=f500,f501,f502
+      - the server failed to answer our request. See the logs for details.
+    - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=
+      - 'Invalid value for "--ccwgroup": 0.0. is not a valid devno'
+    - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501
+      - 'The server did not accept our request. The response is: attributes must be oneOf='
+    - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=500,501,502
+      - 'Invalid value for "--ccwgroup": 0.0.500 is not a valid devno'
+    - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
+      - Item added successfully.
+    - - system iface-add --system=cpc3lp52 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
+      - Item added successfully.
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet= --ip=192.168.161.222
+      - "request failed. Server answered: No associated item found with value '/192.168.161.222' for field 'IP address'"
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=
+      - the server failed to answer our request. See the logs for details.
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
+      - Item added successfully.
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=tru --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
+      - 'Invalid value for "--layer2": tru is not a valid boolean'
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --hostiface=enccw0.0.f500
+      - invalid attribute for this iface type
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --libvirt='kvm-guest.xml'
+      - invalid attribute for this iface type
+    - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portname=OSAE1
+      - Item added successfully.
+    - - system iface-add --system=cpc3lp52 --name='default osa3' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=65
+      - Item added successfully.
+      # iface-add with ip and without subnet
+    - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --ip=192.168.160.55 --hostiface=enccw0.0.f500
+      - '--subnet and --ip must be specified together'
+      # iface-add: invalid attribute '--layer2' for this iface type
+    - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --layer2=true --hostiface=enccw0.0.f500
+      - invalid attribute for this iface type
+      # iface-add: macvtap without libvirt or hostiface
+    - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55
+      - 'at least one of --hostiface or --libvirt must be specified'
+    - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
+      - Item added successfully.
+    - - system iface-add --system=guest55 --name='default macvtap1' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=
+      - Item added successfully.
+    - - system iface-add --system=guest55 --name='default macvtap2' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt=
+      - Item added successfully.
+    - - system iface-add --system=guest55 --name='default macvtap3' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm.xml'
+      - 'The client encountered an unexpected problem, the error is:'
+    - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm-guest.xml'
+      - Item added successfully.
+    - - system iface-add --system=guest55 --name='default macvtap5' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm-guest.xml' --hostiface=enccw0.0.f500
+      - 'The server did not accept our request. The response is: attributes must be oneOf='
+   # 'system iface-list' subcommand
+    - - system iface-list
+      - at least one of --system or --name must be specified
+    - - system iface-list --system=cpc3lp53
+      - No results were found.
+    - - system iface-list --system=xxxx
+      - No results were found.
+    - - system iface-list --system=
+      - No results were found.
+    - - system iface-list --name='osa iface1'
+      - No results were found.
+    - - system iface-list --name=xxx
+      - No results were found.
+      # iface with empty name was created before
+    - - system iface-list --name=
+      - 'Interface name             :'
+    - - system iface-list --system=guest55
+      - 'Interface name             : default macvtap'
+    - - system iface-list --system=cpc3lp52
+      - 'Interface name             : default osa'
+    - - system iface-list --system=guest55 --type=macvtap
+      - 'Interface name             : default macvtap'
+    - - system iface-list --system=cpc3lp52 --type=lpar
+      - No results were found.
+    - - system iface-list --system=cpc3lp52 --type=
+      - No results were found.
+    - - system iface-list --system=cpc3lp52 --osname=en0
+      - 'Interface name             : osa iface'
+    - - system iface-list --system=cpc3lp52 --osname=en10
+      - No results were found.
+    - - system iface-list --system=cpc3lp52 --osname=
+      - 'Interface name             : osa iface'
+    - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:00
+      - 'Interface name             : osa iface'
+    - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:05
+      - No results were found.
+    - - system iface-list --system=cpc3lp52 --mac=
+      - the server failed to answer our request. See the logs for details.
+    - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:7000
+      - the server failed to answer our request. See the logs for details.
+    - - system iface-list --system=cpc3lp52 --ip=192.168.161.222
+      - 'Interface name             : default osa'
+    - - system iface-list --system=cpc3lp52 --ip=192.168.161.300
+      - the server failed to answer our request. See the logs for details.
+    - - system iface-list --system=cpc3lp52 --ip=9152.161.222
+      - the server failed to answer our request. See the logs for details.
+    - - system iface-list --system=cpc3lp52 --ip=
+      - the server failed to answer our request. See the logs for details.
+    # 'system iface-edit' subcommand
+    - - system iface-edit
+      - Missing option "--system".
+    - - system iface-edit --system=cpc3lp52
+      - Missing option "--name".
+    - - system iface-edit --name='default osa2'
+      - Missing option "--system".
+      # iface with empty value was created before
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --newname=
+      - 'request failed. Server answered: An item with the provided value'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --newname='default osa22'
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa22' --newname='default osa'
+      - 'request failed. Server answered: An item with the provided value'
+    - - system iface-edit --system= --name='default osa22' --newname='default osa2'
+      - network interface not found.
+      # iface with empty value was created before
+    - - system iface-edit --system=cpc3lp52 --name= --newname='default osa2'
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp55 --name='default osa22' --newname='default osa2'
+      - network interface not found.
+    - - system iface-edit --system=cpc3lp52 --name='default osa23' --newname='default osa2'
+      - network interface not found.
+    - - system iface-edit --system=cpc3lp52 --name='default osa22' --newname='default osa2'
+      - 'request failed. Server answered: An item with the provided value'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=
+      - "request failed. Server answered: No associated item found with value '' for field 'Interface type'"
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=OS
+      - "request failed. Server answered: No associated item found with value 'OS' for field 'Interface type'"
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=macvtap
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=OSA
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --osname=
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --osname=en0
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=
+      - "The server did not accept our request. The response is: A value entered is in wrong format."
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=0257:52:00:76:00
+      - "The server did not accept our request. The response is: A value entered is in wrong format."
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=02:57:52:00:76:00
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet=
+      - '--subnet and --ip must be specified together'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet=  --ip=192.168.161.222
+      - "request failed. Server answered: No associated item found with value '/192.168.161.222' for field 'IP address'"
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='GEO_1' --ip=192.168.161.222
+      - "request failed. Server answered: No associated item found with value 'GEO_1/192.168.161.222' for field 'IP address'"
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --ip=
+      - '--subnet and --ip must be specified together'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='GEO_1-NE-1822' --ip=
+      - 'The server did not accept our request. The response is: A value entered is in wrong format.'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='GEO_1-NE-1822' --ip=9152.161.222
+      - 'The server did not accept our request. The response is: A value entered is in wrong format.'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=
+      - 'Invalid value for "--layer2":  is not a valid boolean'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=fals
+      - 'Invalid value for "--layer2": fals is not a valid boolean'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=false
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=
+      - 'Invalid value for "--ccwgroup": 0.0. is not a valid devno'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=500,f501,f502
+      - 'Invalid value for "--ccwgroup": 0.0.500 is not a valid devno'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=f500
+      - 'The server did not accept our request. The response is: attributes must be oneOf='
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=f500,f501,f502
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --desc=
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --desc='gateway interface'
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --hostiface=
+      - invalid attribute for this iface type
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --hostiface=enccw0.0.f500
+      - invalid attribute for this iface type
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt=
+      - invalid attribute for this iface type
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='kvm.xml'
+      - 'The client encountered an unexpected problem, the error is:'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='kvm-guest.xml'
+      - invalid attribute for this iface type
+    - - system iface-edit --system=cpc3lp52 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='' --ip=''
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa' --ccwgroup=0xf500,0.0.f501,f502
+      - Item successfully updated.
+      # incorrect output: '0.0.f501 f502 f503' instead of 'f501 f502 f503'.
+    - - system iface-edit --system=cpc3lp52 --name='default osa' --ccwgroup='f501 f502 f503'
+      - 'Invalid value for "--ccwgroup": 0.0.f501 f502 f503 is not a valid devno'
+    - - system iface-edit --system=cpc3lp52 --name='default osa' --ccwgroup=''
+      - 'Invalid value for "--ccwgroup": 0.0. is not a valid devno'
+    - - system iface-edit --system=guest55 --name='macvtap'
+      - network interface not found.
+      # with ip and without subnet
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --ip=192.168.160.55 --hostiface=enccw0.0.f500
+      - '--subnet and --ip must be specified together'
+      # with subnet and without ip
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --hostiface=enccw0.0.f500
+      - '--subnet and --ip must be specified together'
+      # without ip and without subnet
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --hostiface=enccw0.0.f500
+      - Item successfully updated.
+      # with ip and with subnet
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
+      - Item successfully updated.
+      # invalid attribute for this iface type
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --layer2=true
+      - invalid attribute for this iface type
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --ccwgroup=f500,f501,f502
+      - invalid attribute for this iface type
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --portname=OSAE1
+      - invalid attribute for this iface type
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --portno=65
+      - invalid attribute for this iface type
+      # no update criteria
+    - - system iface-edit --system=guest55 --name='default macvtap'
+      - no update criteria provided.
+      # macvtap without libvirt or hostiface
+    - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=''
+      - 'at least one of --hostiface or --libvirt must be present'
+      # macvtap with libvirt; an empty file ~/tessia-engine/cli/tests/kvm-guest.xml is used
+    - - system iface-edit --system=guest55 --name='default macvtap'  --hostiface= --libvirt='kvm-guest.xml'
+      - Item successfully updated.
+    - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='kvm.xml'
+      - 'The client encountered an unexpected problem, the error is:'
+    - - system iface-edit --system=guest55 --name='default macvtap' --libvirt=''
+      - at least one of --hostiface or --libvirt must be present
+      # change type to OSA
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=OSA
+      - Item successfully updated.
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=OSA  --layer2=true
+      - '--ccwgroup must be present'
+    # 'system iface-del' subcommand
+    - - system iface-del
+      - Missing option "--system".
+    - - system iface-del --system=guest55
+      - Missing option "--name".
+    - - system iface-del --name='default macvtap'
+      - Missing option "--system".
+    - - system iface-del --system=guest55 --name='macvtap'
+      - network interface not found.
+    - - system iface-del --system=guest60 --name='default macvtap'
+      - network interface not found.
+    - - system iface-del --system=guest55 --name='default macvtap'
+      - Item successfully deleted.
+  system_prof:
+    # 'system prof-add' subcommand
+    - - system prof-add
+      - Missing option "--system".
+    - - system prof-add --system=cpc3lp52
+      - Missing option "--name".
+    - - system prof-add --name='DASD'
+      - Missing option "--system".
+    - - system prof-add --system=cpc3lp52 --name='DASD'
+      - Missing option "--login".
+    - - system prof-add --system=cpc3lp52 --name='DASD' --login=
+      - invalid format specified for login
+    - - system prof-add --system=cpc3lp52 --name='DASD'  --login='root:mypasswd'
+      - Item added successfully.
+    - - system prof-list --name='DASD'
+      - 'Profile name                : DASD'
+    - - system prof-add --system= --name='DASD1' --login='root:mypasswd'
+      - "request failed. Server answered: No associated item found with value '' for field 'System'"
+      # Issue 52: empty name
+    - - system prof-add --system=cpc3lp52 --name= --login='root:mypasswd'
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp60 --name='DASD2' --login='root:mypasswd'
+      - "request failed. Server answered: No associated item found with value 'cpc3lp60' for field 'System'"
+    - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu= --login='root:mypasswd'
+      - 'Invalid value for "--cpu":  is not a valid integer'
+    - - system prof-add --system=cpc3lp52 --name='DASD4' --cpu=4 --login='root:mypasswd'
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp52 --name='DASD5' --cpu=4 --memory= --login='root:mypasswd'
+      - invalid memory size specified.
+    - - system prof-add --system=cpc3lp52 --name='DASD6' --cpu=4 --memory=2048mb --default=yes --login='root:mypasswd'
+      - --default option does not take a value
+    - - system prof-add --system=cpc3lp52 --name='DASD7' --default --login='root:mypasswd'
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp52 --name='DASD10' --default --cpu=4 --login='root:mypasswd'
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp52 --name='DASD11' --default --memory=2048mb --login='root:mypasswd'
+      - Item added successfully.
+    - - system prof-list --system=cpc3lp52
+      - 'Profile name                : DASD'
+    - - system prof-add --system=cpc3lp52 --name='DASD8' --hyp= --login='root:mypasswd'
+      - "Error: request failed. Server answered: No associated item found with value '' for field 'Required hypervisor profile'"
+    - - system prof-add --system=cpc3lp52 --name='DASD9' --hyp='default cpc3' --login='root:mypasswd'
+      - "request failed. Server answered: No associated item found with value 'default cpc3' for field 'Required hypervisor profile'"
+    - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136g --login='DEVEL1:somepwd'
+      - invalid memory size specified.
+    - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136gb --login='DEVEL1:somepwd'
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mb --login='root:mypasswd' --hyp='cpc3/default cpc3'
+      - invalid format for hypervisor profile, specify profile name only
+    - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mb --login='root-mypasswd' --hyp='default cpc3'
+      - invalid format specified for login
+    - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mb --login='root:mypasswd' --hyp='default cpc3'
+      - Item added successfully.
+    # 'system prof-list' subcommand
+    - - system prof-list
+      - 'at least one of --system or --name must be specified'
+    - - system prof-list --system=cpc3lp66
+      - No results were found.
+    - - system prof-list --system=
+      - No results were found.
+    - - system prof-list --system=cpc3lp52
+      - 'Profile name                : DASD root1'
+      # profile with empty name was created before
+    - - system prof-list --name=
+      - 'Profile name                :'
+    - - system prof-list --name='DASD root1'
+      - 'Profile name                : DASD root1'
+    - - system prof-list --system=cpc3lp52 --name='DASD4'
+      - 'Profile name                : DASD4'
+    - - system prof-list --name='DASD root1' --cpu
+      - ' --cpu option requires an argument'
+    - - system prof-list --name='DASD root1' --cpu=4
+      - 'The server did not accept our request. The response is: wherecpu must be anyOf='
+    - - system prof-list --system=cpc3lp52 --cpu=4
+      - 'The server did not accept our request. The response is: wherecpu must be anyOf='
+    - - system prof-list --name='DASD root1' --cpu=5
+      - 'The server did not accept our request. The response is: wherecpu must be anyOf='
+    - - system prof-list --system=cpc3lp52 --memory
+      - '--memory option requires an argument'
+    - - system prof-list --system=cpc3lp52 --memory=2048mb
+      - 'The server did not accept our request. The response is: wherememory must be anyOf='
+    - - system prof-list --system=cpc3lp52 --memory=2gb
+      - 'The server did not accept our request. The response is: wherememory must be anyOf='
+    - - system prof-list --system=cpc3lp52 --memory=1024mb
+      - 'The server did not accept our request. The response is: wherememory must be anyOf='
+    - - system prof-list --system=cpc3lp52 --default
+      - 'Profile name                : DASD7'
+    - - system prof-list --system=cpc3lp52 --hyp
+      - '--hyp option requires an argument'
+    - - system prof-list --system=cpc3lp52 --hyp='default cpc3'
+      - 'Profile name                : DASD root1'
+    - - system prof-list --system=cpc3lp52 --hyp=cpc3
+      - No results were found.
+      # prof-list in prof.py: 178-182 stmts
+    - - system iface-attach --system=cpc3lp52 --profile='DASD root1' --iface='default osa'
+      - Network interface attached successfully.
+    - - system prof-list --system=cpc3lp52
+      - 'Profile name                : DASD root1'
+    - - system iface-edit --system=cpc3lp52 --name='default osa' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
+      - Item successfully updated.
+    - - system prof-list --system=cpc3lp52
+      - 'Profile name                : DASD root1'
+    - - system prof-list --system=cpc3
+      - 'Profile name                : default cpc3'
+    # 'system prof-edit' subcommand
+    - - system prof-edit
+      - Missing option "--system".
+    - - system prof-edit --system=cpc3lp52
+      - Missing option "--name".
+    - - system prof-edit --name=DASD7
+      - Missing option "--system".
+    - - system prof-edit --system=cpc3lp52 --name=DASD7
+      - no update criteria provided.
+    - - system prof-edit --system= --name=DASD7 --memory=2gb
+      - system profile not found.
+      # profile with empty name was created before
+    - - system prof-edit --system=cpc3lp52 --name= --memory=2gb
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD7 --memory
+      - '--memory option requires an argument'
+      # DASD7 is a default profile
+    - - system prof-edit --system=cpc3lp52 --name=DASD7 --memory=2gb
+      - the server failed to answer our request. See the logs for details.
+    - - system prof-edit --system=cpc3lp52 --name=DASD --memory=2gb
+      - the server failed to answer our request. See the logs for details.
+    - - system prof-edit --system=cpc3lp52 --name=DASD10 --memory=2gb
+      - the server failed to answer our request. See the logs for details.
+    - - system prof-edit --system=cpc3lp52 --name=DASD11 --memory=2gb
+      - the server failed to answer our request. See the logs for details.
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --memory=2gb
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --memory=1024mb
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp22 --name=DASD4 --memory=2gb
+      - system profile not found.
+    - - system prof-edit --system=cpc3lp52 --name=DISK4 --memory=2gb
+      - system profile not found.
+    - - system prof-edit --system=cpc3lp52 --name=DASD7 --newname=
+      - 'The server did not accept our request. The response is: name must be type=string'
+      # DASD7 is a default profile for cpc3lp52
+    - - system prof-edit --system=cpc3lp52 --name=DASD7 --newname=DASD17
+      - the server failed to answer our request. See the logs for details.
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --newname=DASD
+      - 'request failed. Server answered: An item with the provided value'
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --newname=DASD14
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu
+      - '--cpu option requires an argument'
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=0
+      - 'Invalid value for "--cpu": 0 is smaller than the minimum valid value 1.'
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=A
+      - 'Invalid value for "--cpu": A is not a valid integer'
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=4
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --default=no
+      - '--default option does not take a value'
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --default
+      - the server failed to answer our request. See the logs for details.
+    - - system prof-del --system=cpc3lp52 --name=DASD7
+      - Item successfully deleted.
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --default
+      - the server failed to answer our request. See the logs for details.
+    - - system prof-del --system=cpc3lp52 --name=DASD10
+      - Item successfully deleted.
+    - - system prof-del --system=cpc3lp52 --name=DASD11
+      - Item successfully deleted.
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --default
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --newname=DASD4
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --memory=2gb
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway
+      - --gateway option requires an argument
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default macvtap4'
+      - "request failed. Server answered: No associated item found with value 'default macvtap4' for field 'Gateway interface'"
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway=xxxx
+      - "request failed. Server answered: No associated item found with value 'xxxx' for field 'Gateway interface'"
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa3'
+      - "request failed. Server answered: No associated item found with value 'default osa3' for field 'Gateway interface'"
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp=
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp='default cpc5'
+      - "request failed. Server answered: No associated item found with value 'default cpc5' for field 'Required hypervisor profile'"
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp='default cpc3'
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --login
+      - --login option requires an argument
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --login=root
+      - invalid format specified for login
+    - - system prof-edit --system=cpc3 --name='default cpc3' --memory=1136g
+      - invalid memory size specified.
+    - - system prof-edit --system=cpc3 --name='default cpc3' --hyp='cpc3/default cpc3'
+      - invalid format for hypervisor profile, specify profile name only
+    - - system prof-edit --system=cpc3 --name='default cpc3' --login='root-mypasswd'
+      - invalid format specified for login
+    - - system prof-edit --system=cpc3 --name='default cpc3' --login='root mypasswd'
+      - invalid format specified for login
+    - - system prof-edit --system=cpc3 --name='default cpc3' --login='root:mypasswd'
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3 --name='cpc3' --memory=1136gb
+      - system profile not found.
+    - - system prof-edit --system=cpc3 --name='default cpc3' --memory=1136gb
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3 --name='default cpc3'
+      - no update criteria provided.
+    # 'system iface-attach' subcommand
+    - - system iface-attach
+      - Missing option "--system".
+    - - system iface-attach --system=cpc3lp52
+      - Missing option "--profile".
+    - - system iface-attach --name=DASD4
+      - 'no such option: --name'
+    - - system iface-attach --system= --profile=DASD4 --iface='default osa2'
+      - no profile found.
+      # profile with empty name was created before
+    - - system iface-attach --system=cpc3lp52 --profile= --iface='default osa2'
+      - Network interface attached successfully.
+    - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface=
+      - no network interface found.
+    - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface=default
+      - no network interface found.
+    - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
+      - Network interface attached successfully.
+    - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
+      - 'request failed. Server answered: An item with the provided value'
+    - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface='default osa1'
+      - Network interface attached successfully.
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa3'
+      - "request failed. Server answered: No associated item found with value 'default osa3' for field 'Gateway interface'"
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa2'
+      - Item successfully updated.
+    # 'system iface-detach' subcommand
+    - - system iface-detach
+      - Missing option "--system".
+    - - system iface-detach --system=cpc3lp52
+      - Missing option "--profile".
+    - - system iface-detach --name=DASD4
+      - 'no such option: --name'
+    - - system iface-detach --system= --profile=DASD4 --iface='default osa2'
+      - no profile found.
+      # profile with empty name was created and attached before
+    - - system iface-detach --system=cpc3lp52 --profile= --iface='default osa2'
+      - Network interface detached successfully.
+    - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface=
+      - no network interface found.
+    - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface=default
+      - no network interface found.
+    - - system iface-detach --system=cpc3lp55 --profile=DASD4 --iface='default osa2'
+      - no profile found.
+    - - system iface-detach --system=cpc3lp52 --profile=DASD44 --iface='default osa2'
+      - no profile found.
+    - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
+      - Network interface detached successfully.
+    - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
+      - "request failed. Server answered: No associated item found with value '3,1' for field 'profile_id,iface_id'"
+    - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa1'
+      - Network interface detached successfully.
+    - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa3'
+      - "request failed. Server answered: No associated item found with value '3,7' for field 'profile_id,iface_id'"
+    - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default macvtap4'
+      - no network interface found.
+    # 'system vol-attach' subcommand
+    - - system vol-attach
+      - Missing option "--system".
+    - - system vol-attach --system=cpc3lp52
+      - Missing option "--profile".
+    - - system vol-attach --profile=DASD4
+      - Missing option "--system".
+    - - system vol-attach --vol=3956
+      - Missing option "--system".
+    - - system vol-attach --profile=DASD4 --vol=3956
+      - Missing option "--system".
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --vol=3956
+      - Missing option "--server".
+    - - system vol-attach --system= --profile=DASD4 --server=DS8K16 --vol=3956
+      - no profile found.
+      # profile with empty name was created before
+    - - system vol-attach --system=cpc3lp52 --profile= --server=DS8K16 --vol=3956
+      - Volume attached successfully.
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
+      - no storage volume found.
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=
+      - no storage volume found.
+    - - system vol-attach --system=cpc3lp55 --profile=DASD4 --server=DS8K16 --vol=3956
+      - no profile found.
+    - - system vol-attach --system=cpc3lp52 --profile=DASD44 --server=DS8K16 --vol=3956
+      - no profile found.
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K66 --vol=3956
+      - no storage volume found.
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3966
+      - no storage volume found.
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3956
+      - Volume attached successfully.
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
+      - Volume attached successfully.
+    # 'system vol-detach' subcommand
+    - - system vol-detach
+      - Missing option "--system".
+    - - system vol-detach --system=cpc3lp52
+      - Missing option "--profile".
+    - - system vol-detach --profile=DASD4
+      - Missing option "--system".
+    - - system vol-detach --vol=3956
+      - Missing option "--system".
+    - - system vol-detach --profile=DASD4 --vol=3956
+      - Missing option "--system".
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --vol=3956
+      - Missing option "--server".
+    - - system vol-detach --system= --profile=DASD4 --server=DS8K16 --vol=3956
+      - no profile found.
+      # profile with empty name was created before
+    - - system vol-detach --system=cpc3lp52 --profile= --server=DS8K16 --vol=3956
+      - Volume detached successfully.
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
+      - no storage volume found.
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=
+      - no storage volume found.
+    - - system vol-detach --system=cpc3lp55 --profile=DASD4 --server=DS8K16 --vol=3956
+      - no profile found.
+    - - system vol-detach --system=cpc3lp52 --profile=DASD44 --server=DS8K16 --vol=3956
+      - no profile found.
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K66 --vol=3956
+      - no storage volume found.
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3966
+      - no storage volume found.
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3956
+      - Volume detached successfully.
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3957
+      - "request failed. Server answered: No associated item found with value '3,3' for field 'profile_id,volume_id'"
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
+      - Volume detached successfully.

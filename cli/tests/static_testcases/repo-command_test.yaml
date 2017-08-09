@@ -1,0 +1,164 @@
+description: Additional test for the 'repo' command
+base_user: admin
+tasks_order:
+  - base_add
+  - repo_command  
+tasks:
+  base_add:
+    # lab admin to create the lab resources
+    - - perm project-add --name='GEO_1 labadmins' --desc='GEO_1 lab admins'
+      - Item added successfully.
+    - - perm user-add --login=lab_admin@example.com --name='ADMIN_LAB' --title='Title of lab admin'
+      - User added successfully.
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 labadmins'
+      - User role added successfully.
+    # create the target project
+    - - perm project-add --name='GEO_1 developers' --desc='Developer team'
+      - Item added successfully.
+    # make sure lab admin also has permissions on this project
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 developers'
+      - User role added successfully.
+    # switch to lab admin user
+    - - - conf key-gen
+        - lab_admin@example.com
+        - password
+      - Key successfully created and added to client configuration.
+  repo_command:
+    # repo help
+    - - repo -h
+      - 'Usage: tessia repo'
+    - - repo add -h
+      - 'Usage: tessia repo add'
+    - - repo del -h
+      - 'Usage: tessia repo del'
+    - - repo edit -h
+      - 'Usage: tessia repo edit'
+    - - repo list -h
+      - 'Usage: tessia repo list'
+    # 'repo add', 'repo list' subcommands
+    - - repo list
+      - No results were found.
+      # incorrect value for '--project', without quotes: 'Got unexpected extra argument (labadmins)'
+    - - repo add --name='RHEL7.2-GA' --url='http://example.com/redhat/s390x/RHEL7.2/DVD' --kernel='/images/kernel.img' --initrd='/images/initrd.img' --os=rhel7.2 --owner=lab_admin@example.com --project=GEO_1 labadmins --desc='repository for RHEL7.2'
+      - Got unexpected extra argument
+    - - repo add --name='RHEL7.2-GA' --url='http://example.com/redhat/s390x/RHEL7.2/DVD' --kernel='/images/kernel.img' --initrd='/images/initrd.img' --os=rhel7.2 --owner=lab_admin@example.com --project='GEO_1 labadmins' --desc='repository for RHEL7.2'
+      - Item added successfully.
+    - - repo add --name='SLES12.1-GA' --url='http://example.com/suse/s390x/SLES12.1/DVD' --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd' --os=sles12.1
+      - Item added successfully.
+        # repo add: --os without --kernel
+    - - repo add --name='RHEL7.2-GA' --url='http://example.com/redhat/s390x/RHEL7.2/DVD' --initrd='/images/initrd.img' --os=rhel7.2
+      - --kernel is required when --os was specified
+        # repo add: --os without --initrd
+    - - repo add --name='SLES12.1-GA' --url='http://example.com/suse/s390x/SLES12.1/DVD' --kernel='/boot/s390x/linux' --os=sles12.1
+      - --initrd is required when --os was specified
+        # additional 'repo add' to check then 'repo edit' and 'repo del'
+    - - repo add
+      - Missing option "--name".
+    - - repo add --name='SLES12.2'
+      - Missing option "--url".
+    - - repo add --url='http://example.com/suse/s390x/SLES12.2/DVD'
+      - Missing option "--name".
+    - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD' --owner=dev9
+      - "request failed. Server answered: No associated item found with value 'dev9' for field 'Owner'"
+    - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD' --project=XXX
+      - "request failed. Server answered: No associated item found with value 'XXX' for field 'Project'"
+    - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD' --login=lab_admin@example.com
+      - 'no such option: --login'
+      # Empty value
+    - - repo add --name= --url='http://example.com/suse/s390x/SLES12/DVD'
+      - Item added successfully.
+    - - repo add --name='SLES12.4' --url=
+      - Item added successfully.
+    - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD'
+      - Item added successfully.
+    - - repo add --name='SLES12.2' --url='http://example.com/xxx'
+      - 'request failed. Server answered: An item with the provided value'
+    - - repo list 
+      - 'Repository name : SLES12.2'
+    - - repo list --name='SLES12.1'
+      - No results were found.
+    - - repo list --name='SLES12.1-GA'
+      - 'Repository name : SLES12.1-GA'
+    - - repo list --url='http://example.com/redhat/s390x/RHEL7.2/DVD'
+      - 'Repository name : RHEL7.2-GA'
+    - - repo list --url='http://example.com/xxx'
+      - No results were found.
+      # Issue 51: 'The server did not accept our request. The response is: where must be additionalProperties=False'
+    - - repo list --os=sles12.1
+      - 'The server did not accept our request. The response is: where must be additionalProperties=False'
+    - - repo list --os=''
+      - 'The server did not accept our request. The response is: where must be additionalProperties=False'
+    - - repo list --kernel='/images/kernel.img'
+      - 'Repository name : RHEL7.2-GA'
+    - - repo list --kernel='/xxx/kernel.img'
+      - No results were found.
+    - - repo list --initrd='/boot/s390x/initrd'
+      - 'Repository name : SLES12.1-GA'
+    - - repo list --initrd='/boot/xxx/initrd'
+      - No results were found.
+    - - repo list --owner=lab_admin@example.com
+      - 'Repository name : SLES12.2'
+    - - repo list --owner=dev9
+      - No results were found.
+    - - repo list --project='GEO_1 labadmins'
+      - 'Repository name : SLES12.2'
+    - - repo list --project='XXX'
+      - No results were found.
+    - - repo list --project=
+      - No results were found.
+    - - repo list --desc='repository for RHEL7.2'
+      - 'no such option: --desc'
+    # 'repo edit' subcommand
+        # repo edit: --os without --kernel
+    - - repo edit --name='SLES12.1-GA' --os=sles12.1
+      - --kernel is required when --os was specified
+        # repo edit: --os without --initrd
+    - - repo edit --name='SLES12.1-GA' --kernel='/boot/s390x/linux' --os=sles12.1
+      - --initrd is required when --os was specified
+    - - repo edit
+      - Missing option "--name".
+    - - repo edit --name='SLES12.2'
+      - no update criteria provided.
+    - - repo edit --name='SLES12.3' --desc='New SLES version'
+      - template not found.
+    - - repo edit --name='SLES12.2' --desc='New SLES version'
+      - Item successfully updated.
+      # Empty value
+    - - repo edit --name='SLES12.2' --newname=
+      - 'The server did not accept our request. The response is: name must be type=string'
+    - - repo edit --name='SLES12.2' --newname='SLES12.2'
+      - Item successfully updated.
+    - - repo edit --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD'
+      - Item successfully updated.
+    - - repo edit --name='SLES12.2' --url='http://example.com/xxx'
+      - Item successfully updated.
+    - - repo edit --name='SLES12.2' --url=''
+      - 'The server did not accept our request. The response is: url must be type=string'
+    - - repo edit --name='SLES12.2' --os=sles12.2
+      - --kernel is required when --os was specified
+    - - repo edit --name='SLES12.2' --os=sles12.2  --kernel='/boot/s390x/linux'
+      - --initrd is required when --os was specified
+    - - repo edit --name='SLES12.2' --os=sles12.2  --initrd='/boot/s390x/initrd'
+      - --kernel is required when --os was specified
+    - - repo edit --name='SLES12.2' --os=sles12.2  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
+      - "request failed. Server answered: No associated item found with value 'sles12.2' for field 'os'"
+    - - repo edit --name='SLES12.2' --os=sles12.1  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
+      - Item successfully updated.
+    - - repo edit --name='SLES12.2' --owner=dev9
+      - "request failed. Server answered: No associated item found with value 'dev9' for field 'Owner'"
+    - - repo edit --name='SLES12.2' --owner=lab_admin@example.com
+      - Item successfully updated.
+    - - repo edit --name='SLES12.2' --project='XXX'
+      - "request failed. Server answered: No associated item found with value 'XXX' for field 'Project'"
+    - - repo edit --name='SLES12.2' --project='GEO_1 labadmins'
+      - Item successfully updated.
+    # 'repo del' subcommand
+    - - repo del
+      - Missing option "--name".
+      # Empty name was created before
+    - - repo del --name=''
+      - Item successfully deleted.
+    - - repo del --name='SLES12'
+      - repository not found.
+    - - repo del --name='SLES12.2'
+      - Item successfully deleted.

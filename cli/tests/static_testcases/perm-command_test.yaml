@@ -1,0 +1,240 @@
+description: Additional test for the 'perm' command
+base_user: admin
+tasks_order:
+  - base_add
+  - perm_command
+tasks:
+  base_add:
+    # lab admin to create the lab resources
+    - - perm project-list
+      - 'Name        : Admins'
+    - - perm project-add --name='GEO_1 labadmins' --desc='GEO_1 lab admins'
+      - Item added successfully.
+    - - perm user-add --login=lab_admin@example.com --name='ADMIN_LAB' --title='Title of lab admin'
+      - User added successfully.
+    - - perm role-list
+      - 'Role            : USER'
+    - - perm user-list
+      - 'Login         : admin'
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 labadmins'
+      - User role added successfully.
+    - - perm user-roles --login=lab_admin@example.com
+      - 'Project name : GEO_1 labadmins'
+    # create the target project
+    - - perm project-add --name='GEO_1 developers' --desc='Developer team'
+      - Item added successfully.
+    # make sure lab admin also has permissions on this project
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 developers'
+      - User role added successfully.
+    # create target user
+    - - perm user-add --login=dev1@example.com --name='Developer 1' --title='Mr. Developer 1'
+      - User added successfully.
+    - - perm user-add --login=dev2@example.com --name='Developer 2' --title='Mr. Developer 2' --restricted
+      - User added successfully.
+    - - perm user-add --login=dev3@example.com --name='Developer 3' --title='Mr. Developer 3' --admin
+      - User added successfully.
+    - - perm role-grant --login=dev1@example.com --name='USER' --project='GEO_1 developers'
+      - User role added successfully.
+  perm_command:
+    # perm help
+    - - perm -h
+      - 'Usage: tessia perm'
+    - - perm project-add  -h
+      - 'Usage: tessia perm project-add'
+    - - perm project-del  -h
+      - 'Usage: tessia perm project-del'
+    - - perm project-edit  -h
+      - 'Usage: tessia perm project-edit'
+    - - perm project-list  -h
+      - 'Usage: tessia perm project-list'
+    - - perm role-deny  -h
+      - 'Usage: tessia perm role-deny'
+    - - perm role-grant  -h
+      - 'Usage: tessia perm role-grant'
+    - - perm role-list  -h
+      - 'Usage: tessia perm role-list'
+    - - perm user-add  -h
+      - 'Usage: tessia perm user-add'
+    - - perm user-del  -h
+      - 'Usage: tessia perm user-del'
+    - - perm user-edit  -h
+      - 'Usage: tessia perm user-edit'
+    - - perm user-list  -h
+      - 'Usage: tessia perm user-list'
+    - - perm user-roles  -h
+      - 'Usage: tessia perm user-roles'
+    # 'perm project' subcommand
+    - - perm project-add --name='GEO_1 testers' --desc='Tester team'
+      - Item added successfully.
+    - - perm project-add --name='GEO_1 testers' --desc='Tester team'
+      - 'request failed. Server answered: An item with the provided value'
+    - - perm project-add --desc='3rd Tester team'
+      - Missing option "--name".
+    - - perm project-add --name='GEO_3 testers'
+      - Missing option "--desc".
+    - - perm project-add --name='GEO_3 testers' --desc='3rd tester team'
+      - Item added successfully.
+      # Empty name
+    - - perm project-add --name= --desc='3rd tester team'
+      - Item added successfully.
+    - - perm project-add --name='GEO_4 testers' --desc=
+      - Item added successfully.
+    - - perm project-edit --name='GEO_1 testers'
+      - Missing option "--desc".
+    - - perm project-edit --name='GEO_1 testers' --desc='Tester team'
+      - Item successfully updated.
+    - - perm project-edit --name='GEO testers' --desc='Test team'
+      - project not found.
+    - - perm project-edit --name='GEO_1 testers' --desc='Test team'
+      - Item successfully updated.
+      # Empty name
+    - - perm project-edit --name='GEO_1 testers' --newname=
+      - Missing option "--desc".
+    - - perm project-edit --name='GEO_1 testers' --newname=  --desc='Test team'
+      - 'The server did not accept our request. The response is: name must be type=string'
+    - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers' --desc='Test team'
+      - Item successfully updated.
+    - - perm project-list
+      - 'Name        : Admins'
+    - - perm project-list --name='GEO_1 testers'
+      - No results were found.
+    - - perm project-list --name='GEO_2 testers'
+      - 'Name        : GEO_2 testers'
+    - - perm project-del
+      - Missing option "--name".
+    - - perm project-del --name='GEO_1 testers'
+      - project not found.
+    - - perm project-del --nam='GEO_3 testers'
+      - 'no such option: --nam  Did you mean --name?'
+    - - perm project-del --name='GEO_3 testers'
+      - Item successfully deleted.
+    # 'perm user' subcommand
+    - - perm user-add
+      - Missing option "--login".
+    - - perm user-add --login=dev4@example.com
+      - Missing option "--name".
+    - - perm user-add --name='Developer 4'
+      - Missing option "--login".
+    - - perm user-add --log=dev4@example.com --name='Developer 4'
+      - 'no such option: --log  Did you mean --login?'
+    - - perm user-add --login=dev4@example.com --name='Developer 4'
+      - User added successfully.
+      # Empty name
+    - - perm user-add --login=dev6@example.com --name=
+      - User added successfully.
+    - - perm user-add --login= --name='Developer 6'
+      - User added successfully.
+    - - perm user-add --login=dev4@example.com --name='Developer 4'
+      - 'request failed. Server answered: An item with the provided value'
+    - - perm user-edit --login=dev2@example.com --restricted=FALSE --admin=TRUE
+      - User successfully updated.
+    - - perm user-list --login=dev2@example.com
+      - 'Login         : dev2@example.com'
+    - - perm user-edit --login=dev3@example.com --name='Dev 3' --title='Mr. Dev 3'
+      - User successfully updated.
+    - - perm user-edit
+      - Missing option "--login".
+    - - perm user-edit --login=dev4@example.com
+      - no update criteria provided.
+    - - perm user-edit --name='Developer 4'
+      - Missing option "--login".
+      # Empty name
+    - - perm user-edit --login=dev4@example.com --name=
+      - 'The server did not accept our request. The response is: name must be type=string'
+    - - perm user-edit --login=dev4@example.com --name='Developer 4'
+      - User successfully updated.
+    - - perm user-edit --login=dev4@example.com --title='Mr. Dev 4'
+      - User successfully updated.
+    - - perm user-edit --login=dev4@example.com --project='GEO_1 labadmins'
+      - 'no such option: --project'
+    - - perm user-list
+      - 'Login         : admin'
+    - - perm user-list --login=dev4@example.com
+      - 'Login         : dev4@example.com'
+    - - perm user-list --login=dev5@example.com
+      - No results were found.
+    - - perm user-list --restricted
+      - '--restricted option requires an argument'
+      # Issue 50: 'The server did not accept our request.'
+    - - perm user-list --restricted=TRUE
+      - 'The server did not accept our request. The response is: whererestricted must be anyOf='
+    - - perm user-list --restricted=FALSE
+      - 'The server did not accept our request. The response is: whererestricted must be anyOf='
+    - - perm user-list --restricted=0
+      - 'The server did not accept our request. The response is: whererestricted must be anyOf='
+    - - perm user-list --restricted=yes
+      - 'The server did not accept our request. The response is: whererestricted must be anyOf='
+    - - perm user-list --admin=TRUE
+      - 'The server did not accept our request. The response is: whereadmin must be anyOf='
+    - - perm user-list --admin=FALSE
+      - 'The server did not accept our request. The response is: whereadmin must be anyOf='
+    - - perm user-list --login=dev4@example.com --admin=FALSE
+      - 'The server did not accept our request. The response is: whereadmin must be anyOf='
+    - - perm user-list --restrict=TRUE
+      - 'no such option: --restrict  Did you mean --restricted?'
+    - - perm user-list --restructed=TRUE
+      - 'no such option: --restructed'
+    - - perm user-list --admin
+      - '--admin option requires an argument'
+    - - perm user-list --name='Developer 4'
+      - 'no such option: --name'
+    - - perm user-roles
+      - Missing option "--login".
+    - - perm user-roles --login=dev3@example.com
+      - No results were found.
+    - - perm user-roles --login=XXX
+      - No results were found.
+    - - perm user-roles --login=lab_admin@example.com
+      - 'Project name : GEO_1 labadmins'
+    - - perm user-del
+      - Missing option "--login".
+    - - perm user-del --login=dev8@example.com
+      - user not found.
+    - - perm user-del --login=dev3@example.com
+      - User successfully deleted.
+    # 'perm role' subcommand
+    - - perm role-list
+      - 'Role            : USER'
+    - - perm role-list --login=lab_admin@example.com
+      - 'no such option: --login'
+    - - perm role-list --name=ADMIN_LAB
+      - 'Role            : ADMIN_LAB'
+    - - perm role-list --name=ADMIN
+      - No results were found.
+    - - perm role-grant
+      - Missing option "--name".
+    - - perm role-grant --login=lab_admin@example.com
+      - Missing option "--name".
+    - - perm role-grant --name='ADMIN_LAB'
+      - Missing option "--login".
+    - - perm role-grant --project='GEO_2 testers'
+      - Missing option "--name".
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB'
+      - Missing option "--project".
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN' --project='GEO_2 testers'
+      - "request failed. Server answered: No associated item found with value 'ADMIN' for field 'Role'"
+    - - perm role-grant --login=xxx --name='ADMIN_LAB' --project='GEO_2 testers'
+      - "request failed. Server answered: No associated item found with value 'xxx' for field 'User login'"
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
+      - "request failed. Server answered: No associated item found with value 'XXX' for field 'Project name'"
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
+      - User role added successfully.
+    - - perm role-deny
+      - Missing option "--name".
+    - - perm role-deny --login=lab_admin@example.com
+      - Missing option "--name".
+    - - perm role-deny --name='ADMIN_LAB'
+      - Missing option "--login".
+    - - perm role-deny --project='GEO_2 testers'
+      - Missing option "--name".
+    - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB'
+      - Missing option "--project".
+    - - perm role-deny --login=lab_admin@example.com --name='ADMIN' --project='GEO_2 testers'
+      - user role not found.
+    - - perm role-deny --login=xxx --name='ADMIN_LAB' --project='GEO_2 testers'
+      - user role not found.
+    - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
+      - user role not found.
+      # There is a typo: 'sucessfully' instead of 'successfully'
+    - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
+      - User role removed sucessfully.

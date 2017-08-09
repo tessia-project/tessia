@@ -122,7 +122,7 @@ class StorageVolumeResource(SecureResource):
             title=DESC['unique_id'], description=DESC['unique_id'],
             attribute='id', io='r')
         volume_id = fields.String(
-            pattern='[a-z0-9]',
+            pattern=r'^[a-z0-9_\.\-]+$',
             title=DESC['volume_id'], description=DESC['volume_id'])
         size = fields.PositiveInteger(
             title=DESC['size'], description=DESC['size'])

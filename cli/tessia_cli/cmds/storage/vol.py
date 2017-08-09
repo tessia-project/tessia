@@ -26,6 +26,7 @@ from tessia_cli.output import print_items
 from tessia_cli.output import print_ver_table
 from tessia_cli.types import FCP_PATH
 from tessia_cli.types import SCSI_WWID
+from tessia_cli.types import VOLUME_ID
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_item
 from tessia_cli.utils import size_to_str
@@ -59,7 +60,8 @@ TYPE_FIELDS = (
 # partition table related functions
 @click.command(name='part-add')
 @click.option('--server', required=True, help='target storage server')
-@click.option('volume_id', '--id', required=True, help="volume id")
+@click.option('volume_id', '--id', required=True, type=VOLUME_ID,
+              help="volume id")
 @click.option('--size', required=True, help="size (i.e. 500mb)")
 @click.option('--fs', required=True, help="filesystem type")
 @click.option('--mo', default=None, help="mount options")
@@ -99,7 +101,8 @@ def part_add(server, volume_id, **kwargs):
     short_help="Remove a partition from volume's partition table")
 @click.option('--server', required=True,
               help='storage server containing volume')
-@click.option('volume_id', '--id', required=True, help="volume id")
+@click.option('volume_id', '--id', required=True, type=VOLUME_ID,
+              help="volume id")
 @click.option('--num', required=True, type=click.IntRange(min=1),
               help="partition's number to delete")
 def part_del(server, volume_id, num):
@@ -127,7 +130,8 @@ def part_del(server, volume_id, num):
 @click.command(name='part-edit')
 @click.option('--server', required=True,
               help='storage server containing volume')
-@click.option('volume_id', '--id', required=True, help="volume id")
+@click.option('volume_id', '--id', required=True, type=VOLUME_ID,
+              help="volume id")
 @click.option('--num', type=click.IntRange(min=1), required=True,
               help="partition's number to edit")
 @click.option('--size', help="size (i.e. 500mb)")
@@ -177,7 +181,8 @@ def part_edit(server, volume_id, num, **kwargs):
 @click.command(name='part-init')
 @click.option('--server', required=True,
               help='storage server containing volume')
-@click.option('volume_id', '--id', required=True, help="volume id")
+@click.option('volume_id', '--id', required=True, type=VOLUME_ID,
+              help="volume id")
 @click.option(
     '--label', required=True, type=click.Choice(['dasd', 'gpt', 'msdos']),
     help="partition table type")
@@ -201,7 +206,8 @@ def part_init(server, volume_id, label):
 @click.command(name='part-list')
 @click.option('--server', required=True,
               help='storage server containing volume')
-@click.option('volume_id', '--id', required=True, help="volume id")
+@click.option('volume_id', '--id', required=True, type=VOLUME_ID,
+              help="volume id")
 def part_list(server, volume_id, **kwargs):
     """
     print the volume's partition table
@@ -241,7 +247,8 @@ def part_list(server, volume_id, **kwargs):
 @click.command('vol-add')
 # set the parameter name after the model's attribute name to save on typing
 @click.option('--server', required=True, help='target storage server')
-@click.option('volume_id', '--id', required=True, help='volume id')
+@click.option('volume_id', '--id', required=True, type=VOLUME_ID,
+              help='volume id')
 @click.option('--size', required=True, help="volume size (i.e. 10gb)")
 @click.option('--type', required=True, help="volume type (see vol-types)")
 @click.option('--owner', help="owner login")
@@ -270,7 +277,8 @@ def vol_add(**kwargs):
 
 @click.command(name='vol-del')
 @click.option('--server', required=True, help='server containing volume')
-@click.option('volume_id', '--id', required=True, help='volume id')
+@click.option('volume_id', '--id', required=True, type=VOLUME_ID,
+              help='volume id')
 def vol_del(**kwargs):
     """
     remove an existing storage volume
@@ -289,9 +297,11 @@ def vol_del(**kwargs):
     'vol-edit',
     short_help='change properties of an existing storage volume')
 @click.option('--server', required=True, help='server containing volume')
-@click.option('cur_id', '--id', required=True, help='volume id')
+@click.option('cur_id', '--id', required=True, type=VOLUME_ID,
+              help='volume id')
 # set the parameter name after the model's attribute name to save on typing
-@click.option('volume_id', '--newid', help="new volume's id in form volume-id")
+@click.option('volume_id', '--newid', type=VOLUME_ID,
+              help="new volume's id in form volume-id")
 @click.option('--size',
               help="volume size (i.e. 10gb)")
 @click.option('--type', help="volume type (see vol-types)")
@@ -427,7 +437,7 @@ def vol_edit(server, cur_id, **kwargs):
 @click.command(name='vol-list')
 # set the parameter name after the model's attribute name to save on typing
 @click.option('--server', help='the storage server to list')
-@click.option('volume_id', '--id', help='filter by volume id')
+@click.option('volume_id', '--id', type=VOLUME_ID, help='filter by volume id')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--pool', help="list volumes assigned to this pool")
 @click.option('--project', help="filter by specified project")

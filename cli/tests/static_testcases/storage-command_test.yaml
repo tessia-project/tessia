@@ -214,9 +214,8 @@ tasks:
       - Missing option "--type".    
     - - storage vol-add --server= --id=3951 --size=7gb --type=DASD
       - "request failed. Server answered: No associated item found with value '' for field 'Storage server'"   
-      # Issue 52: empty '--id'      
     - - storage vol-add --server=DS8K16 --id= --size=7gb --type=DASD
-      - Item added successfully.    
+      - 'Error: Invalid value for "--id": value may not be empty'
     - - storage vol-add --server=DS8K16 --id=3951 --size= --type=DASD
       - invalid size specified.    
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=
@@ -253,9 +252,8 @@ tasks:
       - 'Volume id                  : 3955'
     - - storage vol-list --id=3955
       - 'Volume id                  : 3955'
-      # volume with empty '--id' was created before
     - - storage vol-list --id=
-      - 'Volume id                  :'
+      - 'Error: Invalid value for "--id": value may not be empty'
     - - storage vol-list --id=4000
       - No results were found.
     - - storage vol-list --server=DS8K16 --owner=
@@ -296,9 +294,8 @@ tasks:
       - volume not found.
     - - storage vol-edit --server=DS8K16 --id=3955
       - no update criteria provided.
-      # Volume with empty '--id' was created before
     - - storage vol-edit --server=DS8K16 --id=3955 --newid=
-      - 'request failed. Server answered: An item with the provided value'
+      - 'Error: Invalid value for "--newid": value may not be empty'
     - - storage vol-edit --server=DS8K16 --id=3955 --newid=3955
       - Item successfully updated.
     - - storage vol-edit --server=DS8K16 --id=3955 --size=7gb
@@ -377,9 +374,8 @@ tasks:
       - Missing option "--server".
     - - storage vol-del --server= --id=9953
       - volume not found.
-      # Empty vol id was created before
     - - storage vol-del --server=DS8K16 --id=
-      - Item successfully deleted.
+      - 'Error: Invalid value for "--id": value may not be empty'
     - - storage vol-del --server=DS8K16 --id=9953
       - volume not found.
     - - storage vol-del --server=DS8K16 --id=3953
@@ -411,7 +407,7 @@ tasks:
     - - storage part-init --server=DS8K16 --id=9955 --label=dasd
       - volume not found.
     - - storage part-init --server=DS8K16 --id= --label=dasd
-      - volume not found.
+      - 'Error: Invalid value for "--id": value may not be empty'
     - - storage part-init --server=DS8K16 --id=3955 --label=
       - 'Invalid value for "--label": invalid choice: .'
     - - storage part-init --server=DS8K16 --id=3955 --label=disk
@@ -438,7 +434,7 @@ tasks:
     - - storage part-add --server= --id=3955 --fs=ext4 --size=7gb
       - volume not found.
     - - storage part-add --server=DS8K16 --id= --fs=ext4 --size=7gb
-      - volume not found.
+      - 'Error: Invalid value for "--id": value may not be empty'
     - - storage part-add --server=DS8K16 --id=9955 --fs=ext4 --size=7gb
       - volume not found.
     - - storage part-add --server=DS8K16 --id=3955 --fs=axt4 --size=7gb
@@ -494,10 +490,10 @@ tasks:
     - - storage part-edit --server= --id=3955 --num=1
       - nothing to update.
     - - storage part-list --server=DS8K16 --id=
-      -  volume not found.
+      - 'Error: Invalid value for "--id": value may not be empty'
       # should be 'volume not found.'
     - - storage part-edit --server=DS8K16 --id= --num=1
-      - nothing to update.
+      - 'Error: Invalid value for "--id": value may not be empty'
     - - storage part-edit --server=DS8K16 --id=3955 --num=0
       - 'Invalid value for "--num": 0 is smaller than the minimum valid value 1.'
     - - storage part-edit --server=DS8K16 --id=3955 --num=1
@@ -539,7 +535,7 @@ tasks:
     - - storage part-del --server= --id=3955 --num=3
       - volume not found.
     - - storage part-del --server=DS8K16 --id= --num=3
-      - volume not found.
+      - 'Error: Invalid value for "--id": value may not be empty'
     - - storage part-del --server=DS8K16 --id=3955 --num=
       - 'Invalid value for "--num":  is not a valid integer'
     - - storage part-del --server=DS8K16 --id=3955 --num=3

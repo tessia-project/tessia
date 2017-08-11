@@ -1,0 +1,657 @@
+cpc3lp52.domain.com | SUCCESS => {
+    "ansible_facts": {
+        "ansible_all_ipv4_addresses": [
+            "192.168.161.222"
+        ],
+        "ansible_all_ipv6_addresses": [
+            "fe80::57:52ff:fe00:7600"
+        ],
+        "ansible_apparmor": {
+            "status": "enabled"
+        },
+        "ansible_architecture": "s390x",
+        "ansible_bios_date": "NA",
+        "ansible_bios_version": "NA",
+        "ansible_cmdline": {
+            "crashkernel": "196M",
+            "root": "UUID=f0057090-da7c-470f-bc34-93c29aebafe1"
+        },
+        "ansible_date_time": {
+            "date": "2017-08-21",
+            "day": "21",
+            "epoch": "1503322583",
+            "hour": "15",
+            "iso8601": "2017-08-21T13:36:23Z",
+            "iso8601_basic": "20170821T153623898968",
+            "iso8601_basic_short": "20170821T153623",
+            "iso8601_micro": "2017-08-21T13:36:23.899027Z",
+            "minute": "36",
+            "month": "08",
+            "second": "23",
+            "time": "15:36:23",
+            "tz": "CEST",
+            "tz_offset": "+0200",
+            "weekday": "Monday",
+            "weekday_number": "1",
+            "weeknumber": "34",
+            "year": "2017"
+        },
+        "ansible_default_ipv4": {
+            "address": "192.168.161.222",
+            "alias": "enccw0.0.f500",
+            "broadcast": "192.168.163.255",
+            "gateway": "192.168.160.1",
+            "interface": "enccw0.0.f500",
+            "macaddress": "02:57:52:00:76:00",
+            "mtu": 1500,
+            "netmask": "255.255.252.0",
+            "network": "192.168.160.0",
+            "type": "ether"
+        },
+        "ansible_default_ipv6": {},
+        "ansible_devices": {
+            "sda": {
+                "holders": [
+                    "mpatha"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {},
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdb": {
+                "holders": [
+                    "mpatha"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {},
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdc": {
+                "holders": [
+                    "mpatha"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {},
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdd": {
+                "holders": [
+                    "mpatha"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {},
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sde": {
+                "holders": [
+                    "mpatha"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {},
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdf": {
+                "holders": [
+                    "mpatha"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {},
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdg": {
+                "holders": [
+                    "mpatha"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {},
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdh": {
+                "holders": [
+                    "mpatha"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {},
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdi": {
+                "holders": [
+                    "mpathb"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {
+                    "sdi1": {
+                        "holders": [],
+                        "sectors": "10240000",
+                        "sectorsize": 512,
+                        "size": "4.88 GB",
+                        "start": "2048",
+                        "uuid": null
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdj": {
+                "holders": [
+                    "mpathb"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {
+                    "sdj1": {
+                        "holders": [],
+                        "sectors": "10240000",
+                        "sectorsize": 512,
+                        "size": "4.88 GB",
+                        "start": "2048",
+                        "uuid": null
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdk": {
+                "holders": [
+                    "mpathb"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {
+                    "sdk1": {
+                        "holders": [],
+                        "sectors": "10240000",
+                        "sectorsize": 512,
+                        "size": "4.88 GB",
+                        "start": "2048",
+                        "uuid": null
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdl": {
+                "holders": [
+                    "mpathb"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {
+                    "sdl1": {
+                        "holders": [],
+                        "sectors": "10240000",
+                        "sectorsize": 512,
+                        "size": "4.88 GB",
+                        "start": "2048",
+                        "uuid": null
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdm": {
+                "holders": [
+                    "mpathb"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {
+                    "sdm1": {
+                        "holders": [],
+                        "sectors": "10240000",
+                        "sectorsize": 512,
+                        "size": "4.88 GB",
+                        "start": "2048",
+                        "uuid": null
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdn": {
+                "holders": [
+                    "mpathb"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {
+                    "sdn1": {
+                        "holders": [],
+                        "sectors": "10240000",
+                        "sectorsize": 512,
+                        "size": "4.88 GB",
+                        "start": "2048",
+                        "uuid": null
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdo": {
+                "holders": [
+                    "mpathb"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {
+                    "sdo1": {
+                        "holders": [],
+                        "sectors": "10240000",
+                        "sectorsize": 512,
+                        "size": "4.88 GB",
+                        "start": "2048",
+                        "uuid": null
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            },
+            "sdp": {
+                "holders": [
+                    "mpathb"
+                ],
+                "host": "",
+                "model": "2107900",
+                "partitions": {
+                    "sdp1": {
+                        "holders": [],
+                        "sectors": "10240000",
+                        "sectorsize": 512,
+                        "size": "4.88 GB",
+                        "start": "2048",
+                        "uuid": null
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "sas_address": null,
+                "sas_device_handle": null,
+                "scheduler_mode": "",
+                "sectors": "20971520",
+                "sectorsize": "512",
+                "size": "10.00 GB",
+                "support_discard": "0",
+                "vendor": "IBM"
+            }
+        },
+        "ansible_distribution": "Ubuntu",
+        "ansible_distribution_major_version": "16",
+        "ansible_distribution_release": "xenial",
+        "ansible_distribution_version": "16.04",
+        "ansible_dns": {
+            "nameservers": [
+                "192.168.200.241"
+            ],
+            "search": [
+                "domain.com"
+            ]
+        },
+        "ansible_domain": "domain.com",
+        "ansible_effective_group_id": 0,
+        "ansible_effective_user_id": 0,
+        "ansible_enccw0.0.f500": {
+            "active": true,
+            "device": "enccw0.0.f500",
+            "features": {},
+            "ipv4": {
+                "address": "192.168.161.222",
+                "broadcast": "192.168.163.255",
+                "netmask": "255.255.252.0",
+                "network": "192.168.160.0"
+            },
+            "ipv6": [
+                {
+                    "address": "fe80::57:52ff:fe00:7600",
+                    "prefix": "64",
+                    "scope": "link"
+                }
+            ],
+            "macaddress": "02:57:52:00:76:00",
+            "module": "qeth",
+            "mtu": 1500,
+            "pciid": "0.0.f500",
+            "promisc": false,
+            "speed": 1000,
+            "type": "ether"
+        },
+        "ansible_env": {
+            "HOME": "/root",
+            "LANG": "en_US",
+            "LANGUAGE": "en_US:",
+            "LOGNAME": "root",
+            "MAIL": "/var/mail/root",
+            "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+            "PWD": "/root",
+            "SHELL": "/bin/bash",
+            "SHLVL": "1",
+            "SSH_CLIENT": "192.168.151.191 53794 22",
+            "SSH_CONNECTION": "192.168.151.191 53794 192.168.161.222 22",
+            "SSH_TTY": "/dev/pts/1",
+            "TERM": "screen-256color",
+            "USER": "root",
+            "XDG_RUNTIME_DIR": "/run/user/0",
+            "XDG_SESSION_ID": "6",
+            "_": "/bin/sh"
+        },
+        "ansible_fips": false,
+        "ansible_form_factor": "NA",
+        "ansible_fqdn": "cpc3lp52.domain.com",
+        "ansible_gather_subset": [
+            "hardware",
+            "network",
+            "virtual"
+        ],
+        "ansible_hostname": "cpc3lp52",
+        "ansible_interfaces": [
+            "lo",
+            "enccw0.0.f500"
+        ],
+        "ansible_kernel": "4.4.0-92-generic",
+        "ansible_lo": {
+            "active": true,
+            "device": "lo",
+            "features": {},
+            "ipv4": {
+                "address": "127.0.0.1",
+                "broadcast": "host",
+                "netmask": "255.0.0.0",
+                "network": "127.0.0.0"
+            },
+            "ipv6": [
+                {
+                    "address": "::1",
+                    "prefix": "128",
+                    "scope": "host"
+                }
+            ],
+            "mtu": 65536,
+            "promisc": false,
+            "type": "loopback"
+        },
+        "ansible_lsb": {
+            "codename": "xenial",
+            "description": "Ubuntu 16.04.1 LTS",
+            "id": "Ubuntu",
+            "major_release": "16",
+            "release": "16.04"
+        },
+        "ansible_lvm": {
+            "lvs": {},
+            "vgs": {}
+        },
+        "ansible_machine": "s390x",
+        "ansible_machine_id": "a3ce2064c4ad4391bb27c7bd1ec332de",
+        "ansible_memfree_mb": 3515,
+        "ansible_memory_mb": {
+            "nocache": {
+                "free": 3645,
+                "used": 170
+            },
+            "real": {
+                "free": 3515,
+                "total": 3815,
+                "used": 300
+            },
+            "swap": {
+                "cached": 0,
+                "free": 1655,
+                "total": 1655,
+                "used": 0
+            }
+        },
+        "ansible_memtotal_mb": 3815,
+        "ansible_mounts": [
+            {
+                "device": "/dev/mapper/mpatha-part1",
+                "fstype": "ext4",
+                "mount": "/",
+                "options": "rw,relatime,errors=remount-ro,data=ordered",
+                "size_available": 7212470272,
+                "size_total": 9153818624,
+                "uuid": "f0057090-da7c-470f-bc34-93c29aebafe1"
+            },
+            {
+                "device": "/dev/mapper/mpathb-part1",
+                "fstype": "btrfs",
+                "mount": "/home",
+                "options": "rw,relatime,space_cache,autodefrag,recovery,subvolid=5,subvol=/",
+                "size_available": 4481810432,
+                "size_total": 5242880000,
+                "uuid": "ad0f3aad-fa72-4084-8d4c-706e293db51a"
+            }
+        ],
+        "ansible_nodename": "cpc3lp52",
+        "ansible_os_family": "Debian",
+        "ansible_pkg_mgr": "apt",
+        "ansible_processor": [
+            "IBM/S390"
+        ],
+        "ansible_processor_cores": 2,
+        "ansible_product_name": "NA",
+        "ansible_product_serial": "NA",
+        "ansible_product_uuid": "NA",
+        "ansible_product_version": "NA",
+        "ansible_python": {
+            "executable": "/usr/bin/python",
+            "has_sslcontext": true,
+            "type": "CPython",
+            "version": {
+                "major": 2,
+                "micro": 12,
+                "minor": 7,
+                "releaselevel": "final",
+                "serial": 0
+            },
+            "version_info": [
+                2,
+                7,
+                12,
+                "final",
+                0
+            ]
+        },
+        "ansible_python_version": "2.7.12",
+        "ansible_real_group_id": 0,
+        "ansible_real_user_id": 0,
+        "ansible_selinux": false,
+        "ansible_service_mgr": "systemd",
+        "ansible_ssh_host_key_dsa_public": "AAAAB3NzaC1kc3MAAACBAO6r6NN/8k5OAqYz8M+H5G1Vz7Yg7ITqhaueZKiCjtrqhN1pkWhyZbFLN9H8YYsusknfPHTjFNZmh3acIHL81hLVHNQMttIQV38VKzZTqLdwexgbcvvVg8D6AylpLWaDSqMdSMbvNNoIJV4WBK36TIAfjuByu88XMqNEF40DJ/vRAAAAFQD6vUcAnh15/fwdXgIZvL6gP4PRGwAAAIBYRjwYarhy/dm0M8oNoDlLqwlMzlld5MJcJ5E6D9MealUSX9SirnWAjZLQztgl/8IX4IuzgQuzImjKEqHr/shzEeXGNhM/0cO5Asn4ydU8Bt8F/g4zw2y8EgIRugvy/HH7JKFRRGJDcZWlNLjeAdd9GZMfwNdEGawP9sRkTB5BpgAAAIEA5+agePcXRUfZlqhMowmhkTIofdHEHGh7G2S4MeqV9aW5GplVSMW0X37yGiepZqcdq9u9RCMoo6kalcI0R/DWEQsb5y5vemUQ9ebFKpZQFC4RoZNMiilxH5G7V/1ciwcTaYMkudAvC/7/k5QQFO3Rh9jHCJlOLz++EYV4ZD2EYdI=",
+        "ansible_ssh_host_key_ecdsa_public": "AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBIOQHXQmqlp9gN4P+jE2A/yejKDMUjFkB5nc8xhPNZcw7k3xcwl27a9FlSsMQ0uo9zijTcKQWYPXmsmGISzdxgE=",
+        "ansible_ssh_host_key_ed25519_public": "AAAAC3NzaC1lZDI1NTE5AAAAIBRkJAHkbc8YkxqdEDvb/Q6niANySFGQwG7fPFLMEGnw",
+        "ansible_ssh_host_key_rsa_public": "AAAAB3NzaC1yc2EAAAADAQABAAABAQDdL7n2Iprl3FUiqKwtIjy34owNULZr0hCqbDjZxMcf9HIZpFNoL0FUz154/Giw1gxhoVsEW8f50x2xjvZUS50WMO7qzsI690YaLeun+frVlbqZZsDRcJwelWyvxKfvMLeqEa30LIOS4qLsR6Sizs1cCFu+WxxEm1a25iAUyrhs+jkunnOcvu95wEDN/t7pbb9LJj/ME1kg5yXizSV/B/VquB3GM1CyjfvgFMEz0mR6tn1YKlsTgj1QIgDTyvGeMMxjioyMFIgqbvZkTrQ/Y1ndvPaaCLmifBW3zHan0CuWB0jgvd6+6ChQ5qGlDDm3eNgULcLxupytd1UVArq95UqN",
+        "ansible_swapfree_mb": 1655,
+        "ansible_swaptotal_mb": 1655,
+        "ansible_system": "Linux",
+        "ansible_system_capabilities": [
+            "cap_chown",
+            "cap_dac_override",
+            "cap_dac_read_search",
+            "cap_fowner",
+            "cap_fsetid",
+            "cap_kill",
+            "cap_setgid",
+            "cap_setuid",
+            "cap_setpcap",
+            "cap_linux_immutable",
+            "cap_net_bind_service",
+            "cap_net_broadcast",
+            "cap_net_admin",
+            "cap_net_raw",
+            "cap_ipc_lock",
+            "cap_ipc_owner",
+            "cap_sys_module",
+            "cap_sys_rawio",
+            "cap_sys_chroot",
+            "cap_sys_ptrace",
+            "cap_sys_pacct",
+            "cap_sys_admin",
+            "cap_sys_boot",
+            "cap_sys_nice",
+            "cap_sys_resource",
+            "cap_sys_time",
+            "cap_sys_tty_config",
+            "cap_mknod",
+            "cap_lease",
+            "cap_audit_write",
+            "cap_audit_control",
+            "cap_setfcap",
+            "cap_mac_override",
+            "cap_mac_admin",
+            "cap_syslog",
+            "cap_wake_alarm",
+            "cap_block_suspend",
+            "37+ep"
+        ],
+        "ansible_system_capabilities_enforced": "True",
+        "ansible_system_vendor": "NA",
+        "ansible_uptime_seconds": 4330,
+        "ansible_user_dir": "/root",
+        "ansible_user_gecos": "root",
+        "ansible_user_gid": 0,
+        "ansible_user_id": "root",
+        "ansible_user_shell": "/bin/bash",
+        "ansible_user_uid": 0,
+        "ansible_userspace_bits": "64",
+        "ansible_virtualization_role": "LPAR",
+        "ansible_virtualization_type": "PR/SM",
+        "module_setup": true
+    },
+    "changed": false
+}

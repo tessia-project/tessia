@@ -182,3 +182,28 @@ class ScsiWwid(click.ParamType):
     # convert()
 # ScsiWwid
 SCSI_WWID = ScsiWwid()
+
+class VolumeId(click.ParamType):
+    """
+    Represents the id of a storage volume
+    """
+    name = 'volume_id'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        value = value.lower()
+        ret = re.match(r"^[a-z0-9_\.\-]+$", value)
+        if ret is None:
+            self.fail(
+                "'{}' is not a valid volume id".format(value), param, ctx)
+
+        return value
+    # convert()
+# VolumeId
+
+VOLUME_ID = VolumeId()

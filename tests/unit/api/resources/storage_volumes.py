@@ -133,6 +133,29 @@ class TestStorageVolume(TestSecureResource):
         self._test_add_all_fields_no_role(logins)
     # test_add_all_fields_no_role()
 
+    def test_add_update_allowed_chars(self):
+        """
+        Test adding and updating a volume using valid characters as volume_id
+        """
+        user_pass = '{}:a'.format('user_hw_admin@domain.com')
+
+        vol_new = next(self._get_next_entry)
+        # current allowed characters are numbers, lowercase letters, and
+        # special chars '.', '-', '_'
+        vol_new['volume_id'] = '0.0-0_3dda'
+        created_id = self._request_and_assert(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), vol_new)
+        update_fields = {
+            'id': created_id,
+            'volume_id': '1-0.a_3a33'
+        }
+        self._request_and_assert(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+
+        # cleanup
+        self._request_and_assert('delete', user_pass, created_id)
+    # test_add_same_volid_other_server()
+
     def test_add_mandatory_fields(self):
         """
         Exercise the scenario where a user with permissions creates an item
@@ -218,6 +241,8 @@ class TestStorageVolume(TestSecureResource):
         # specify fields with wrong types
         wrong_data = [
             ('volume_id', 5),
+            ('volume_id', 'WRONG_UPPERCASE_ID'),
+            ('volume_id', 'a/111'),
             ('volume_id', True),
             ('volume_id', None),
             ('size', -1),

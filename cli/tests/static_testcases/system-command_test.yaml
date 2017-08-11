@@ -896,7 +896,7 @@ tasks:
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
       - no storage volume found.
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=
-      - no storage volume found.
+      - 'Error: Invalid value for "--vol": value may not be empty'
     - - system vol-attach --system=cpc3lp55 --profile=DASD4 --server=DS8K16 --vol=3956
       - no profile found.
     - - system vol-attach --system=cpc3lp52 --profile=DASD44 --server=DS8K16 --vol=3956
@@ -930,7 +930,7 @@ tasks:
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
       - no storage volume found.
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=
-      - no storage volume found.
+      - 'Error: Invalid value for "--vol": value may not be empty'
     - - system vol-detach --system=cpc3lp55 --profile=DASD4 --server=DS8K16 --vol=3956
       - no profile found.
     - - system vol-detach --system=cpc3lp52 --profile=DASD44 --server=DS8K16 --vol=3956

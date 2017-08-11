@@ -20,6 +20,7 @@ Module for the vol (system volumes) command
 # IMPORTS
 #
 from tessia_cli.client import Client
+from tessia_cli.types import VOLUME_ID
 from tessia_cli.utils import fetch_item
 
 import click
@@ -39,7 +40,7 @@ import click
 @click.option('--profile', required=True, help='target activation profile')
 @click.option('--server', required=True,
               help='storage server containing volume')
-@click.option('--vol', required=True, help='volume id')
+@click.option('--vol', required=True, type=VOLUME_ID, help='volume id')
 def vol_attach(system, profile, server, vol):
     """
     attach a storage volume to a system activation profile
@@ -70,7 +71,7 @@ def vol_attach(system, profile, server, vol):
 @click.option('--profile', required=True, help='target activation profile')
 @click.option('--server', required=True,
               help='storage server containing volume')
-@click.option('--vol', required=True, help='volume id')
+@click.option('--vol', required=True, type=VOLUME_ID, help='volume id')
 def vol_detach(system, profile, server, vol):
     """
     detach a storage volume from a system activation profile

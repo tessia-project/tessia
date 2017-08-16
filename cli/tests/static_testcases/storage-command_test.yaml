@@ -215,7 +215,7 @@ tasks:
     - - storage vol-add --server= --id=3951 --size=7gb --type=DASD
       - "request failed. Server answered: No associated item found with value '' for field 'Storage server'"   
     - - storage vol-add --server=DS8K16 --id= --size=7gb --type=DASD
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - 'Error: Invalid value for "--id": value may not be empty'    
     - - storage vol-add --server=DS8K16 --id=3951 --size= --type=DASD
       - invalid size specified.    
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=
@@ -223,7 +223,10 @@ tasks:
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=DASD
       - Item added successfully.    
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=DASD
-      - 'Error: request failed. Server answered: An item with the provided value'    
+      - 'Error: request failed. Server answered: An item with the provided value'  
+       # Issue 74: DASD ids should be lowercased
+    - - storage vol-add --server=DS8K16 --id=ED51 --size=7gb --type=DASD
+      - Item added successfully.    
         # vol-add: wrong size
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7g --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - invalid size specified.
@@ -252,6 +255,8 @@ tasks:
       - 'Volume id                  : 3955'
     - - storage vol-list --id=3955
       - 'Volume id                  : 3955'
+    - - storage vol-list --id=ED51
+      - 'Volume id                  : ed51'
     - - storage vol-list --id=
       - 'Error: Invalid value for "--id": value may not be empty'
     - - storage vol-list --id=4000
@@ -380,6 +385,8 @@ tasks:
       - volume not found.
     - - storage vol-del --server=DS8K16 --id=3953
       - Item successfully deleted.
+    - - storage vol-del --server=DS8K16 --id=ED51
+      - Item successfully deleted.
   storage_part:
     - - storage part-list --server=DS8K16 --id=3955
       - partition table undefined; initialize it with the part-init command.
@@ -491,7 +498,6 @@ tasks:
       - nothing to update.
     - - storage part-list --server=DS8K16 --id=
       - 'Error: Invalid value for "--id": value may not be empty'
-      # should be 'volume not found.'
     - - storage part-edit --server=DS8K16 --id= --num=1
       - 'Error: Invalid value for "--id": value may not be empty'
     - - storage part-edit --server=DS8K16 --id=3955 --num=0

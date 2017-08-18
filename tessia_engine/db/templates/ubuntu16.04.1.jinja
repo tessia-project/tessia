@@ -45,7 +45,8 @@
    {% for wwpn in adapter['wwpns'] -%}
       {% set  _ = paths.append("{}:0x{}:0x{}".format(adapter['devno'], wwpn, svol['volume_id'])) -%}
    {% endfor -%}
-   {{ paths | join(',\\\n') }} {% endfor -%}
+{% endfor -%}
+{{ paths | join(',\\\n') }}
 {%- endmacro -%}
 
 {% macro enable_osa(iface) -%}
@@ -152,7 +153,7 @@ d-i time/zone string Europe/Berlin
 {% if system_type != "KVM" and root_svol['type'] == "FCP" %}
 # zfcp configuration
 d-i s390-zfcp/zfcp string \
-{{create_path(root_svol)}}{% elif system_tyme != "KVM" and root_svol['type'] == "DASD" %}
+{{create_path(root_svol)}}{% elif system_type != "KVM" and root_svol['type'] == "DASD" %}
 d-i s390-dasd/dasd string 0.0.{{root_svol['volume_id']}}
 d-i s390-dasd/auto-format boolean true
 d-i s390-dasd/force-format boolean false

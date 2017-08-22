@@ -1,5 +1,6 @@
 {%- macro partition_disk(svol) -%}
 {%- set device=svol['system_attributes']['device'] -%}
+    while [ ! -e {{device}} ]; do sleep 1; done ; \
     chroot /target parted -s {{device}} mklabel {{svol['part_table']['type']}} && kpartx -us {{device}} ; \
 {% for part in svol['part_table']['table'] -%}
     chroot /target parted -s {{device}} unit MB mkpart {{part['type']}} {{part['parted_fs']}} {{part['start']}} {{part['end']}} ; \
@@ -8,10 +9,11 @@
 {% endmacro -%}
 
 {%- macro format_partitions(svol) -%}
-  {%- set FS_TO_MKFS = {'ext2': 'mkfs.ext2 -q ', 'ext3': 'mkfs.ext3 -q ', 'ext4': 'mkfs.ext4 -q ', 'swap': 'mkswap ', 'reiserfs': 'mkfs.reiserfs -q '} -%}
+  {%- set FS_TO_MKFS = {'ext2': 'mkfs.ext2 -q ', 'ext3': 'mkfs.ext3 -q ', 'ext4': 'mkfs.ext4 -q ', 'swap': 'mkswap ', 'reiserfs': 'mkfs.reiserfs -q ', 'btrfs': 'mkfs.btrfs -qf '} -%}
   {%- for part in svol['part_table']['table'] -%}
   {%- if part['type'] != 'extended' -%}
-    chroot /target {{FS_TO_MKFS[part['fs']]}} {{part['device']}} ; \
+    while [ ! -e {{part['device']}} ]; do sleep 1; done ; \
+    {{FS_TO_MKFS[part['fs']]}} {{part['device']}} ; \
   {% endif -%}
   {%- endfor -%}
 {%- endmacro -%}
@@ -20,7 +22,7 @@
   {%- for part in svol['part_table']['table'] -%}
   {%- if part['type'] != 'extended' -%}
     mkdir -p /target/{{part['mp']}}  ; \
-    echo "{{part['device']}}   {{part['mp']}}   {{part['fs']}}   {{'defaults' if part['mo'] else part['mo']}} 0   0" >> /target/etc/fstab ; \
+    echo "{{part['device']}}   {{part['mp']}}   {{part['fs']}}   {{'defaults' if not part['mo'] else part['mo']}} 0   0" >> /target/etc/fstab ; \
   {% endif -%}
   {%- endfor -%}
 {%- endmacro -%}
@@ -207,7 +209,8 @@ apt-setup-udeb  apt-setup/enable-source-repositories    boolean true
 
 # Software selection
 d-i tasksel/first multiselect standard system utilities, OpenSSH server, Basic Ubuntu server
-
+# needed for ansible
+d-i pkgsel/include string python
 
 # tasksel tasksel/first multiselect standard
   # d-i finish-install/reboot_in_progress note
@@ -215,6 +218,7 @@ d-i tasksel/first multiselect standard system utilities, OpenSSH server, Basic U
 
 d-i preseed/late_command string \
     apt-install screen vim build-essential multipath-tools lsscsi lvm2 ; \
+    set -x ; \
     {% if system_type != "KVM" -%}
        {{change_ipl_device(system_type, root_svol)}}
     {% endif -%}
@@ -226,8 +230,7 @@ d-i preseed/late_command string \
   {%- endif-%}
  {%- endif -%}
 {%- endfor -%}
-    echo "Starting partitioning" ; \
-    /target/sbin/partprobe ;  multipath -r ; \
+    /target/sbin/partprobe ; multipath -r ; \
     mount -o bind /dev /target/dev ; \
     mount sysfs /target/sys -t sysfs -o rw,nosuid,nodev,noexec,relatime ; \
 {% for sv in config['svols'] -%}
@@ -250,4 +253,4 @@ d-i preseed/late_command string \
 {% endfor -%}
     echo 'sclp_line0' >> /target/etc/securetty ; \
     sed -i 's/PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config ; \
-     rm /bin/nohup ; ln -s /target/usr/bin/nohup /bin/nohup; sync
+    rm -f /bin/nohup ; ln -s /target/usr/bin/nohup /bin/nohup; sync

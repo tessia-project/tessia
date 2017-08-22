@@ -26,6 +26,8 @@ from tessia_cli.output import print_items
 from tessia_cli.types import CONSTANT
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
+from tessia_cli.utils import fetch_item
+from tessia_cli.utils import str_to_size
 from tessia_cli.utils import wait_scheduler
 
 import click
@@ -97,7 +99,7 @@ def del_(name):
               help='system to be installed')
 @click.option('--profile',
               help='activation profile; if not specified default is used')
-def autoinstall(ctx=None, **kwargs):
+def autoinstall(ctx, **kwargs):
     """
     install a system using an autofile template
     """
@@ -159,6 +161,100 @@ def list_(**kwargs):
         SYSTEM_FIELDS, client.Systems, None, entries)
 # list_()
 
+@click.command(name='poweroff')
+@click.pass_context
+@click.option('--name', required=True, help="system name")
+def poweroff(ctx, name):
+    """
+    poweroff (deactivate) a system
+    """
+    client = Client()
+    # make sure that system exists, it's faster than submitting a job request
+    # and waiting for it to fail
+    fetch_item(client.Systems, {'name': name},
+               'system {} not found.'.format(name))
+
+    # system exists, therefore we can submit our job request
+    req_params = json.dumps(
+        {'systems': [{'action': 'poweroff', 'name': name}]}
+    )
+    request = {
+        'action_type': 'SUBMIT',
+        'job_type': 'powerman',
+        'parameters': req_params
+    }
+
+    job_id = wait_scheduler(client, request)
+    click.echo('Waiting for job output (Ctrl+C to stop waiting)')
+    ctx.invoke(output, job_id=job_id)
+# poweroff()
+
+@click.command(name='poweron')
+@click.pass_context
+@click.option('--name', required=True, help="system name")
+@click.option('--profile',
+              help="activation profile to use, if not specified uses default")
+@click.option('--cpu', type=click.IntRange(min=1),
+              help="override profile with custom cpu quantity")
+@click.option('--memory',
+              help="override profile with custom memory size (i.e. 1gib)")
+@click.option('--force', is_flag=True,
+              help="force a poweron even if system is already up")
+@click.option('--noverify', is_flag=True,
+              help="do not any perform system state verification")
+@click.option(
+    '--exclusive', is_flag=True,
+    help="stop ALL other systems under same hypervisor, USE WITH CARE!")
+def poweron(ctx, name, **kwargs):
+    """
+    poweron (activate) a system
+    """
+    # convert a human size to integer
+    try:
+        kwargs['memory'] = str_to_size(kwargs['memory'])
+    except ValueError:
+        raise click.ClickException('invalid memory size specified.')
+
+    client = Client()
+    # make sure that system exists, it's faster than submitting a job request
+    # and waiting for it to fail
+    fetch_item(client.Systems, {'name': name},
+               'system {} not found.'.format(name))
+
+    req_params = {'systems': [
+        {'action': 'poweron', 'name': name, 'profile_override': {}}
+    ]}
+    # profile specified: like system, make sure it exists first
+    if kwargs['profile']:
+        fetch_item(
+            client.SystemProfiles, {'system': name, 'name': kwargs['profile']},
+            'profile {} not found.'.format(kwargs['profile']))
+        # add profile name to request
+        req_params['systems'][0]['profile'] = kwargs['profile']
+
+    if kwargs['noverify']:
+        req_params['verify'] = False
+    if kwargs['exclusive']:
+        req_params['systems'][0]['action'] = 'poweron-exclusive'
+    if kwargs['force']:
+        req_params['systems'][0]['force'] = True
+    if kwargs['cpu']:
+        req_params['systems'][0]['profile_override']['cpu'] = kwargs['cpu']
+    if kwargs['memory']:
+        req_params['systems'][0]['profile_override']['memory'] = (
+            kwargs['memory'])
+
+    # system exists, we can submit our job request
+    request = {
+        'action_type': 'SUBMIT',
+        'job_type': 'powerman',
+        'parameters': json.dumps(req_params)
+    }
+    job_id = wait_scheduler(client, request)
+    click.echo('Waiting for job output (Ctrl+C to stop waiting)')
+    ctx.invoke(output, job_id=job_id)
+# poweron()
+
 @click.command(name='types')
 def types():
     """
@@ -189,4 +285,4 @@ def states():
         STATE_FIELDS, client.SystemStates, None, entries)
 # states()
 
-CMDS = [add, del_, edit, autoinstall, list_, types, states]
+CMDS = [add, del_, edit, autoinstall, list_, poweroff, poweron, types, states]

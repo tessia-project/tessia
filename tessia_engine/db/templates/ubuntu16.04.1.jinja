@@ -3,7 +3,7 @@
     while [ ! -e {{device}} ]; do sleep 1; done ; \
     chroot /target parted -s {{device}} mklabel {{svol['part_table']['type']}} && kpartx -us {{device}} ; \
 {% for part in svol['part_table']['table'] -%}
-    chroot /target parted -s {{device}} unit MB mkpart {{part['type']}} {{part['parted_fs']}} {{part['start']}} {{part['end']}} ; \
+    chroot /target parted -s {{device}} unit MiB mkpart {{part['type']}} {{part['parted_fs']}} {{part['start']}} {{part['end']}} ; \
 {% endfor -%}
     chroot /target partprobe {{device}}  ; \
 {% endmacro -%}
@@ -99,13 +99,26 @@
 {%- endif -%}
 {% endmacro %}
 
+{%- macro mib_to_mb(size) -%}
+{%- set size_mb = ((size * 1024 * 1024) / 1000 / 1000) | int -%}
+{{- size_mb -}}
+{%- endmacro -%}
+
 {# Since only one disk and one network interface is supported during
 installation we create these auxiliary variables #}
 {% set root_svol = config['root_disk'] -%}
 {% set gw_iface = config['gw_iface'] -%}
 {% set system_type = config['system_type'] -%}
 d-i debian-installer/locale string en_US
-d-i preseed/early_command string sed -i s,/bin/network-console,/bin/sh,g /etc/passwd; \
+d-i preseed/early_command string set -x; \
+    {% if gw_iface['type'] == "OSA" -%}
+    {# s390-netdevice does not provide a way to set mac address in layer2 mode so
+    we do it manually here #}
+    ip link set addr {{gw_iface['mac_addr']}} dev enc{{gw_iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}} ; \
+    {# in case server is in same subnet update its arp cache to avoid losing connectivity #}
+    ping -c1 -w 90 {{config['server_hostname']}} ; \
+    {% endif -%}
+    sed -i s,/bin/network-console,/bin/sh,g /etc/passwd; \
     cat /etc/shadow | sed 's/installer/root/' >> /etc/shadow ;
 
 {% if system_type == "KVM" %}
@@ -176,15 +189,21 @@ d-i partman-auto/method string regular
 d-i partman-auto/expert_recipe string                                    \
       part-table ::                                                      \
 {% for part in root_svol['part_table']['table'] -%}
+{%- set size_mb = mib_to_mb(part['size']) -%}
 {% if part['fs'] == 'swap' -%}
-  {{part['size']}} {{part['size']}} {{part['size']}} linux-swap          \
+  {{size_mb}} {{size_mb}} {{size_mb}} linux-swap                         \
       method{ swap } format{ }                                           \
       .                                                                  \
 {% else -%}
-{{part['size']}} {{part['size']}} {{part['size']}} {{part['fs']}}        \
+{{size_mb}} {{size_mb}} {{size_mb}} {{part['fs']}}                       \
                       method{ format } format{ }                         \
                       use_filesystem{ } filesystem{ {{part['fs']}} }     \
                       mountpoint{ {{part['mp']}} }                       \
+  {% if part['mo'] -%}
+    {% for option in part['mo'].split(',') -%}
+                      options/{{option}}{ {{option}} }                   \
+    {% endfor -%}
+  {% endif -%}
               .                                                          \
 {% endif %}
 {%- endfor %}

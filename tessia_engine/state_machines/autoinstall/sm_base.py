@@ -26,6 +26,7 @@ from tessia_engine.db.connection import MANAGER
 from tessia_engine.state_machines.autoinstall.plat_lpar import PlatLpar
 from tessia_engine.state_machines.autoinstall.plat_kvm import PlatKvm
 from time import sleep
+from urllib.parse import urlsplit
 
 import abc
 import jinja2
@@ -274,6 +275,7 @@ class SmBase(metaclass=abc.ABCMeta):
             'ifaces': [],
             'repos': [],
             'svols': [],
+            'server_hostname': urlsplit(self._autofile_url).hostname,
             'system_type': self._system.type
         }
 

@@ -99,6 +99,10 @@ class TestSmAnaconda(TestCase):
         self.addCleanup(patcher.stop)
         self._mock_time.return_value = 0
 
+        patcher = patch.object(sm_base, 'PostInstallChecker', autospec=True)
+        self._mock_checker = patcher.start()
+        self.addCleanup(patcher.stop)
+
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
     # setUp()

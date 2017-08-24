@@ -94,6 +94,10 @@ class TestSmBase(TestCase):
         self._mock_os = patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = patch.object(sm_base, 'PostInstallChecker', autospec=True)
+        self._mock_checker = patcher.start()
+        self.addCleanup(patcher.stop)
+
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
 
@@ -160,6 +164,25 @@ class TestSmBase(TestCase):
             mach.start()
     # test_init()
 
+    def test_kvm_no_check(self):
+        """
+        Validate that the post install checker is not called when a kvm guest
+        is installed.
+        """
+        # mock shell command in check_installation
+        mock_client = self._mock_ssh_client.return_value
+        mock_client.open_shell.return_value.run.return_value = 0, ""
+
+        os_entry = utils.get_os("rhel7.2")
+        profile_entry = utils.get_profile("kvm054/kvm_kvm054_install")
+        template_entry = utils.get_template("RHEL7.2")
+
+        mach = self._child_cls(os_entry, profile_entry, template_entry)
+        mach.start()
+
+        self._mock_checker.assert_not_called()
+    # test_kvm_no_check()
+
     def test_machine_execution(self):
         """
         Test the correct initialization of the sm_class and the correct
@@ -211,6 +234,7 @@ class TestSmBase(TestCase):
         # called in the execution of the Install Machine.
         self._mock_get_kargs.assert_called_with()
         self._mock_wait_install.assert_called_with()
+        self._mock_checker.assert_called_with(profile_entry, os_entry)
 
         mock_hyper_class.return_value.boot.assert_called_with(mock.ANY)
         mock_hyper_class.return_value.reboot.assert_called_with(profile_entry)

@@ -23,6 +23,7 @@ from tessia_baselib.common.ssh.client import SshClient
 from socket import inet_ntoa
 from tessia_engine.config import Config
 from tessia_engine.db.connection import MANAGER
+from tessia_engine.lib.post_install import PostInstallChecker
 from tessia_engine.state_machines.autoinstall.plat_lpar import PlatLpar
 from tessia_engine.state_machines.autoinstall.plat_kvm import PlatKvm
 from time import sleep
@@ -244,6 +245,7 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Make sure that the installation was successfully completed.
         """
+        # make sure a connection is possible before we use the checker
         ssh_client, shell = self._get_ssh_conn()
 
         ret, _ = shell.run("echo 1")
@@ -252,6 +254,16 @@ class SmBase(metaclass=abc.ABCMeta):
 
         shell.close()
         ssh_client.logoff()
+
+        if self._system.type == 'KVM':
+            self._logger.info('Skipping installation check as KVM guests are '
+                              'currently unsupported')
+            return
+
+        self._logger.info(
+            "Verifying if installed system match expected parameters")
+        checker = PostInstallChecker(self._profile, self._os)
+        checker.verify()
     # check_installation()
 
     def cleanup(self):

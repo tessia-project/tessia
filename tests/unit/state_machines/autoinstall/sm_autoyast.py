@@ -94,6 +94,10 @@ class TestSmAutoyast(TestCase):
         self._mock_ssh_client = patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = patch.object(sm_base, 'PostInstallChecker', autospec=True)
+        self._mock_checker = patcher.start()
+        self.addCleanup(patcher.stop)
+
         # reset variables due to timeout tests
         sm_autoyast.INSTALLATION_TIMEOUT = 600
         sm_autoyast.CHECK_INSTALLATION_FREQ = 10

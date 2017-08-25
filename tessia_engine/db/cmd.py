@@ -27,7 +27,7 @@ from tessia_engine.db import types
 from tessia_engine.db.feeder import db_insert
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import BASE
-from tessia_engine.db.models import UserKey
+from tessia_engine.db.models import User, UserKey
 
 import argparse
 import logging
@@ -113,7 +113,8 @@ def get_token(_):
     can have initial access to the tool.
     """
     try:
-        obj = MANAGER.session.query(UserKey).filter_by(user='admin').one()
+        obj = MANAGER.session.query(UserKey).join(
+            'user_rel').filter(User.login == 'admin').one()
     except (sqlalchemy.exc.ProgrammingError,
             sqlalchemy.orm.exc.NoResultFound,
             sqlalchemy.orm.exc.MultipleResultsFound):

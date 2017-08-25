@@ -226,8 +226,6 @@ class SmDebianInstaller(SmBase):
                 part['start'] = ref_size
                 # In case the partition table is not msdos
                 part.setdefault('type', '')
-                if part['mo'] is None:
-                    part['mo'] = 'defaults'
                 # There is only primary/extended/logical partitions for msdos
                 # msdos part table.
                 if part_table['type'] != 'msdos':

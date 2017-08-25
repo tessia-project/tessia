@@ -1,0 +1,322 @@
+{
+    "IpAddress": [
+        {
+            "address": "192.168.161.222",
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
+            "subnet": "lab1-1801-cpc1"
+        }
+    ],
+    "NetZone": [
+        {
+            "desc": "Lab 1 VLAN 1801",
+            "modifier": "admin",
+            "name": "lab1-1801",
+            "owner": "admin",
+            "project": "Admins"
+        }
+    ],
+    "Subnet": [
+        {
+            "address": "192.168.160.0/22",
+            "desc": "Shared subnet of cpc1",
+            "dns_1": "192.168.200.241",
+            "dns_2": null,
+            "gateway": "192.168.160.1",
+            "modifier": "admin",
+            "name": "lab1-1801-cpc1",
+            "owner": "admin",
+            "project": "Admins",
+            "vlan": 1801,
+            "zone": "lab1-1801"
+        }
+    ],
+    "StorageServer": [
+        {
+            "desc": "Storage beloging to Admins",
+            "fw_level": null,
+            "hostname": null,
+            "model": "DS8800",
+            "modifier": "admin",
+            "name": "ds8k16",
+            "owner": "admin",
+            "password": null,
+            "project": "Admins",
+            "type": "DASD-FCP",
+            "username": null
+        }
+    ],
+    "StorageVolume": [
+        {
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+              "table": [
+                {
+                  "fs": "ext4",
+                  "mo": null,
+                  "mp": "/",
+                  "size": 7000,
+                  "type": "primary"
+                }
+              ],
+              "type": "dasd"
+            },
+            "pool": null,
+            "project": "Admins",
+            "server": "ds8k16",
+            "size": 7000,
+            "specs": {},
+            "system": "cpc3lp52",
+            "system_attributes": {},
+            "type": "DASD",
+            "volume_id": "3956"
+        },
+        {
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+              "table": [
+                {
+                  "fs": "swap",
+                  "mo": null,
+                  "mp": null,
+                  "size": 7000,
+                  "type": "primary"
+                }
+              ],
+              "type": "dasd"
+            },
+            "pool": null,
+            "project": "Admins",
+            "server": "ds8k16",
+            "size": 7000,
+            "specs": {},
+            "system": "cpc3lp52",
+            "system_attributes": {},
+            "type": "DASD",
+            "volume_id": "3957"
+        },
+        {
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+              "table": [
+                {
+                  "fs": "ext4",
+                  "mo": null,
+                  "mp": "/",
+                  "size": 9000,
+                  "type": "primary"
+                },
+                {
+                  "fs": "swap",
+                  "mo": null,
+                  "mp": null,
+                  "size": 1000,
+                  "type": "primary"
+                }
+              ],
+              "type": "msdos"
+            },
+            "pool": null,
+            "project": "Admins",
+            "server": "ds8k16",
+            "size": 10000,
+            "specs": {
+              "adapters": [
+                {
+                  "devno": "0.0.1800",
+                  "wwpns": [
+                    "100207630503c1ae",
+                    "100207630508c1ae",
+                    "100207630510c1ae",
+                    "100207630513c1ae"
+                  ]
+                },
+                {
+                  "devno": "0.0.1840",
+                  "wwpns": [
+                    "100207630503c1ae",
+                    "100207630508c1ae",
+                    "100207630510c1ae",
+                    "100207630513c1ae"
+                  ]
+                }
+              ],
+              "multipath": true,
+              "wwid": "11002076305aac1a0000000000002200"
+            },
+            "system": "cpc3lp52",
+            "system_attributes": {},
+            "type": "FCP",
+            "volume_id": "1022400000000000"
+        },
+        {
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+              "table": [
+                {
+                  "fs": "btrfs",
+                  "mo": "recovery,autodefrag",
+                  "mp": "/home",
+                  "size": 5000,
+                  "type": "primary"
+                }
+              ],
+              "type": "msdos"
+            },
+            "pool": null,
+            "project": "Admins",
+            "server": "ds8k16",
+            "size": 10000,
+            "specs": {
+              "adapters": [
+                {
+                  "devno": "0.0.1800",
+                  "wwpns": [
+                    "100207630503c1ae",
+                    "100207630508c1ae",
+                    "100207630510c1ae",
+                    "100207630513c1ae"
+                  ]
+                },
+                {
+                  "devno": "0.0.1840",
+                  "wwpns": [
+                    "100207630503c1ae",
+                    "100207630508c1ae",
+                    "100207630510c1ae",
+                    "100207630513c1ae"
+                  ]
+                }
+              ],
+              "multipath": true,
+              "wwid": "11002076305aac1a0000000000002202"
+            },
+            "system": "cpc3lp52",
+            "system_attributes": {},
+            "type": "FCP",
+            "volume_id": "1022400200000000"
+        }
+    ],
+    "StorageVolumeProfileAssociation": [
+        {
+            "profile": "cpc3lp52/fcp1",
+            "volume": "ds8k16/1022400000000000"
+        },
+        {
+            "profile": "cpc3lp52/fcp1",
+            "volume": "ds8k16/1022400200000000"
+        },
+        {
+            "profile": "cpc3lp52/dasd1",
+            "volume": "ds8k16/3956"
+        },
+        {
+            "profile": "cpc3lp52/dasd1",
+            "volume": "ds8k16/3957"
+        }
+    ],
+    "System": [
+        {
+            "desc": null,
+            "hostname": "cpc1.domain.com",
+            "hypervisor": null,
+            "model": "ZEC12_H43",
+            "modifier": "admin",
+            "name": "cpc1",
+            "owner": "admin",
+            "project": "Admins",
+            "state": "AVAILABLE",
+            "type": "CPC"
+        },
+        {
+            "desc": null,
+            "hostname": "cpc3lp52.domain.com",
+            "hypervisor": "cpc1",
+            "model": "ZEC12_H43",
+            "modifier": "admin",
+            "name": "cpc3lp52",
+            "owner": "admin",
+            "project": "Admins",
+            "state": "AVAILABLE",
+            "type": "LPAR"
+        }
+    ],
+    "SystemIface": [
+        {
+           "attributes": {
+              "ccwgroup": "0.0.f500,0.0.f501,0.0.f502",
+              "layer2": true
+            },
+            "desc": "gateway interface",
+            "ip_address": "lab1-1801-cpc1/192.168.161.222",
+            "mac_address": "02:57:52:00:76:00",
+            "name": "gb-extern",
+            "osname": "enccw0.0.f500",
+            "system": "cpc3lp52",
+            "type": "OSA"
+        }
+    ],
+    "SystemIfaceProfileAssociation": [
+        {
+            "iface": "cpc3lp52/gb-extern",
+            "profile": "cpc3lp52/fcp1"
+        },
+        {
+            "iface": "cpc3lp52/gb-extern",
+            "profile": "cpc3lp52/dasd1"
+        }
+    ],
+    "SystemProfile": [
+        {
+            "cpu": 32,
+            "credentials": {
+                "passwd": "passwd",
+                "user": "user"
+            },
+            "default": true,
+            "memory": 1136000,
+            "name": "default",
+            "system": "cpc1"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+              "passwd": "mypasswd",
+              "user": "root"
+            },
+            "default": true,
+            "gateway": null,
+            "hypervisor_profile": "cpc1/default",
+            "memory": 4096,
+            "name": "fcp1",
+            "operating_system": "ubuntu16.04.1",
+            "parameters": null,
+            "system": "cpc3lp52"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+              "passwd": "mypasswd",
+              "user": "root"
+            },
+            "default": true,
+            "gateway": null,
+            "hypervisor_profile": "cpc1/default",
+            "memory": 4096,
+            "name": "dasd1",
+            "operating_system": "rhel7.2",
+            "parameters": null,
+            "system": "cpc3lp52"
+        }
+    ]
+}

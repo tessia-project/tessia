@@ -126,11 +126,11 @@ def fetch_and_update(resource, search_fields, error_msg, update_dict):
 
 def size_to_str(size):
     """
-    Takes a size in mbytes and returns it in the biggest of the units MB,
-    GB or TB.
+    Take a size in mebibytes and return it in the biggest of the units MiB,
+    GiB or TiB.
 
     Args:
-        size (int): size to be formatted, in mbytes
+        size (int): size to be formatted, in mebibytes
 
     Returns:
         str: formatted size with its unit
@@ -138,7 +138,8 @@ def size_to_str(size):
     Raises:
         None
     """
-    units = ['MB', 'GB', 'TB']
+    units = ['MiB', 'GiB', 'TiB']
+    max_units = len(units) - 1
 
     size = float(size)
 
@@ -148,25 +149,25 @@ def size_to_str(size):
     while True:
         old = size
         size /= 1024
-        if size >= 1 and i < len(units) - 1:
+        if size >= 1 and i < max_units:
             i += 1
         else:
             break
     old = round(old, 2)
 
-    return '{}{}'.format(old, units[i])
+    return '{} {}'.format(old, units[i])
 # size_to_str()
 
 def str_to_size(size_str):
     """
     Receives a human size (i.e. 10GB) and converts to an integer size in
-    megabytes.
+    mebibytes.
 
     Args:
         size_str (str): human size to be converted to integer
 
     Returns:
-        int: formatted size in mbytes
+        int: formatted size in mebibytes
 
     Raises:
         ValueError: in case size provided in invalid
@@ -174,23 +175,41 @@ def str_to_size(size_str):
     if size_str is None:
         return None
 
-    units = {
-        'KB': 1/1000,
-        'MB': 1,
-        'GB': 1000,
-        'TB': 1000*1000,
-    }
-    size_str = size_str.upper()
-    try:
-        if len(size_str) < 3:
-            size_int = int(size_str)
-        else:
-            size_int = int(size_str[:-2])
-            size_int *= units[size_str[-2:]]
-    except (KeyError, TypeError, ValueError):
-        raise ValueError('Invalid size format')
+    # no unit: assume mebibytes as default and convert directly
+    if size_str.isnumeric():
+        return int(size_str)
 
-    return round(size_int)
+    size_str = size_str.upper()
+
+    # decimal units are converted to bytes and then to mebibytes
+    dec_units = ('KB', 'MB', 'GB', 'TB')
+    for i in range(0, len(dec_units)):
+        # unit used is different: try next
+        if not size_str.endswith(dec_units[i]):
+            continue
+        try:
+            size_int = int(size_str[:-2]) * pow(1000, i+1)
+        except ValueError:
+            raise ValueError(
+                'Invalid size format: {}'.format(size_str)) from None
+        # result is returned in mebibytes
+        return int(size_int / pow(1024, 2))
+
+    # binary units are just divided/multipled by powers of 2
+    bin_units = ('KIB', 'MIB', 'GIB', 'TIB')
+    for i in range(0, len(bin_units)):
+        # unit used is different: try next
+        if not size_str.endswith(bin_units[i]):
+            continue
+        try:
+            size_int = int(int(size_str[:-3]) * pow(1024, i-1))
+        except ValueError:
+            raise ValueError(
+                'Invalid size format: {}'.format(size_str)) from None
+        return size_int
+
+    raise ValueError(
+        'Invalid size format: {}'.format(size_str)) from None
 # str_to_size()
 
 def version_verify(logger, response, silent=False):

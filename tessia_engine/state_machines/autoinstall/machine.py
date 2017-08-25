@@ -25,7 +25,7 @@ from tessia_engine.config import CONF
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import OperatingSystem
 from tessia_engine.db.models import Template
-from tessia_engine.db.models import SystemProfile
+from tessia_engine.db.models import System, SystemProfile
 from tessia_engine.state_machines.base import BaseMachine
 from tessia_engine.state_machines.autoinstall.sm_anaconda import SmAnaconda
 from tessia_engine.state_machines.autoinstall.sm_autoyast import SmAutoyast
@@ -160,8 +160,13 @@ class AutoInstallMachine(BaseMachine):
             SystemProfile: a SystemProfile instance.
         """
         if profile_name is not None:
-            profile = SystemProfile.query.filter_by(
-                name=profile_name, system=system_name).one_or_none()
+            profile = SystemProfile.query.join(
+                'system_rel'
+            ).filter(
+                SystemProfile.name == profile_name
+            ).filter(
+                System.name == system_name
+            ).one_or_none()
             if profile is None:
                 raise ValueError('Profile {} not found'.format(profile_name))
         else:

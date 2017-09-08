@@ -31,6 +31,7 @@
                         "ext4",
                         "btrfs",
                         "reiserfs",
+                        "xfs",
                         "swap"
                     ]
                 },
@@ -93,6 +94,7 @@
                             "ext4",
                             "btrfs",
                             "reiserfs",
+                            "xfs",
                             "swap"
                         ]
                     },

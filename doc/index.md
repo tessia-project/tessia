@@ -27,6 +27,7 @@ This software aims to automate and simplify all the steps involved in the system
 This section provides documentation and howtos for those who want to learn how to use the tool.
 
 - The basics
+    - To know which features are supported by the tool, start with the section [Supported features](users/supported_features.md)
     - To best understand the resources model and terminology used within the solution, we recommend to read the [Resources model](users/resources_model.md)
     - If you are a new user and want to learn how to use the command line client, visit [Getting started](users/getting_started.md)
 - Features

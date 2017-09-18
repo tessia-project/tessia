@@ -65,7 +65,7 @@ class PlatLpar(PlatBase):
         options = deepcopy(self._gw_iface['attributes'])
         options.pop('ccwgroup')
         params = {
-            "cpc_name": self._hyp_system.name.upper(),
+            "cpc_name": self._hyp_system.name,
             "boot_params": {
                 "boot_method": "network",
                 "kernel_url": kernel_uri,

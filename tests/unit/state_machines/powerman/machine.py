@@ -105,12 +105,8 @@ class TestPowerManagerMachine(TestCase):
             self._mock_hyp_cls.call_args_list[hyp_index], call(*hyp_args))
         self.assertEqual(
             self._mock_hyp_obj.login.call_args_list[hyp_index], call())
-        if hyp_type == 'hmc':
-            params = {'cpc_name': hyp_prof_obj.system_rel.name}
-        else:
-            params = {}
         self.assertEqual(self._mock_hyp_obj.stop.call_args_list[stop_index],
-                         call(guest_obj.name, params))
+                         call(guest_obj.name, {}))
 
     # _assert_poweroff_action()
 
@@ -146,7 +142,6 @@ class TestPowerManagerMachine(TestCase):
         if hyp_type == 'hmc':
             # these attributes are from the data.json file
             if guest_prof_obj.name == 'fcp1':
-                params['cpc_name'] = hyp_prof_obj.system_rel.name
                 params['boot_params'] = {
                     'boot_method': 'scsi',
                     'zfcp_devicenr': '0.0.1800',
@@ -154,7 +149,6 @@ class TestPowerManagerMachine(TestCase):
                     'lun': '1022400000000000',
                 }
             elif guest_prof_obj.name == 'dasd1':
-                params['cpc_name'] = hyp_prof_obj.system_rel.name
                 params['boot_params'] = {
                     'boot_method': 'dasd',
                     'devicenr': '3956',

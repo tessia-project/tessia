@@ -23,6 +23,7 @@ from tessia_baselib.common.ssh.client import SshClient
 from socket import inet_ntoa
 from tessia_engine.config import Config
 from tessia_engine.db.connection import MANAGER
+from tessia_engine.db.models import System, SystemProfile
 from tessia_engine.lib.post_install import PostInstallChecker
 from tessia_engine.state_machines.autoinstall.plat_lpar import PlatLpar
 from tessia_engine.state_machines.autoinstall.plat_kvm import PlatKvm
@@ -79,12 +80,28 @@ class SmBase(metaclass=abc.ABCMeta):
                 raise RuntimeError(msg)
         self._gw_iface = self._parse_iface(gw_iface, True)
 
-        # make sure the system has a hypervisor profile defined otherwise
-        # usage of platform object will fail
-        if self._profile.hypervisor_profile_rel is None:
-            raise RuntimeError(
-                'System profile must have a required hypervisor profile '
-                'defined')
+        # sanity check, without hypervisor it's not possible to manage
+        # system
+        if not self._system.hypervisor_id:
+            raise ValueError(
+                'System {} cannot be installed because it has no '
+                'hypervisor defined'.format(self._system.name))
+
+        hyp_profile_obj = self._profile.hypervisor_profile_rel
+        # no hypervisor profile defined: use default
+        if not hyp_profile_obj:
+            hyp_profile_obj = SystemProfile.query.join(
+                'system_rel'
+            ).filter(
+                System.id == self._system.hypervisor_id
+            ).filter(
+                SystemProfile.default == bool(True)
+            ).first()
+            if not hyp_profile_obj:
+                raise ValueError(
+                    'Hypervisor {} of system {} has no default profile '
+                    'defined'.format(self._system.hypervisor_rel.name,
+                                     self._system.name))
 
         # Create the appropriate platform object according to the system being
         # installed.
@@ -95,7 +112,7 @@ class SmBase(metaclass=abc.ABCMeta):
             raise RuntimeError('Platform type {} is not supported'.format(
                 hyp_type))
         self._platform = plat_class(
-            self._profile.hypervisor_profile_rel,
+            hyp_profile_obj,
             self._profile,
             self._os,
             self._repo,

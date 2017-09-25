@@ -1,9 +1,16 @@
+{%- macro mib_to_mb(size) -%}
+{%- set size_mb = ((size * 1024 * 1024) / 1000 / 1000) | int -%}
+{{- size_mb -}}
+{%- endmacro -%}
+
 {%- macro partition_disk(svol) -%}
 {%- set device=svol['system_attributes']['device'] -%}
     while [ ! -e {{device}} ]; do sleep 1; done ; \
     chroot /target parted -s {{device}} mklabel {{svol['part_table']['type']}} && kpartx -us {{device}} ; \
 {% for part in svol['part_table']['table'] -%}
-    chroot /target parted -s {{device}} unit MiB mkpart {{part['type']}} {{part['parted_fs']}} {{part['start']}} {{part['end']}} ; \
+    {%- set start_mb = mib_to_mb(part['start']) -%}
+    {%- set end_mb = mib_to_mb(part['end']) -%}
+    chroot /target parted -s {{device}} unit MB mkpart {{part['type']}} {{part['parted_fs']}} {{start_mb}} {{end_mb}} ; \
 {% endfor -%}
     chroot /target partprobe {{device}}  ; \
 {% endmacro -%}
@@ -98,11 +105,6 @@
     sed -i 's/eth0/{{iface['osname']}}/g' /target/etc/network/interfaces ; \
 {%- endif -%}
 {% endmacro %}
-
-{%- macro mib_to_mb(size) -%}
-{%- set size_mb = ((size * 1024 * 1024) / 1000 / 1000) | int -%}
-{{- size_mb -}}
-{%- endmacro -%}
 
 {# Since only one disk and one network interface is supported during
 installation we create these auxiliary variables #}

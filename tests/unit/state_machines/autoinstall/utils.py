@@ -50,6 +50,8 @@ def setup_dbunit():
     # Create a database using custom content,
     DbUnit.create_db(empty=True)
     DbUnit.create_entry(data_dict)
+
+    return DbUnit
 # setup_dbunit()
 
 def get_os(os_name):

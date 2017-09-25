@@ -19,6 +19,7 @@ Unit tests for Install state machine.
 #
 # IMPORTS
 #
+from contextlib import contextmanager
 from copy import deepcopy
 from tessia_engine.db import models
 from tessia_engine.db.connection import MANAGER
@@ -58,7 +59,7 @@ class TestAutoInstallMachine(TestCase):
         """
         Called once for the setup of DbUnit.
         """
-        utils.setup_dbunit()
+        cls.db = utils.setup_dbunit()
         cls._env_config = EnvConfig()
         cls._env_config.start(DEFAULT_CONFIG)
     # setUpClass()
@@ -93,6 +94,30 @@ class TestAutoInstallMachine(TestCase):
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
     # setUp()
+
+    @contextmanager
+    def _mock_db_obj(self, target_obj, target_field, temp_value):
+        """
+        Act as a context manager to temporarily change a value in a db row and
+        restore it on exit.
+
+        Args:
+            target_obj (SAobject): sqlsa model object
+            target_field (str): name of field in object
+            temp_value (any): value to be temporarily assigned
+
+        Yields:
+            None: nothing is returned
+        """
+        orig_value = getattr(target_obj, target_field)
+        setattr(target_obj, target_field, temp_value)
+        self.db.session.add(target_obj)
+        self.db.session.commit()
+        yield
+        setattr(target_obj, target_field, orig_value)
+        self.db.session.add(target_obj)
+        self.db.session.commit()
+    # _mock_db_obj()
 
     def _perform_test_init(self, parameters):
         """
@@ -276,6 +301,32 @@ class TestAutoInstallMachine(TestCase):
         self.assertIn("CPC3", resources["shared"])
         self.assertNotIn("kvm054", resources["shared"])
     # test_parse_request_parameters()
+
+    def test_parse_no_hyp_profile(self):
+        """
+        Test the case where the system activation profile does not have a
+        hypervisor profile defined. In this case the hypervisor's default
+        profile should be used and the parse should succeed.
+        """
+        prof_obj = utils.get_profile("kvm054/kvm_kvm054_install")
+
+        with self._mock_db_obj(prof_obj, 'hypervisor_profile_id', None):
+            machine.AutoInstallMachine.parse(REQUEST_PARAMETERS)
+    # test_parse_no_hyp_profile()
+
+    def test_system_no_hypervisor(self):
+        """
+        Confirm that parse fails when a system without hypervisor defined is
+        provided for installation.
+        """
+        prof_obj = utils.get_profile("kvm054/kvm_kvm054_install")
+
+        error_msg = ('System {} cannot be installed because it has no '
+                     'hypervisor defined'.format(prof_obj.system_rel.name))
+        with self._mock_db_obj(prof_obj.system_rel, 'hypervisor_id', None):
+            with self.assertRaisesRegex(ValueError, error_msg):
+                machine.AutoInstallMachine.parse(REQUEST_PARAMETERS)
+    # test_system_no_hypervisor()
 
     def test_unsupported_os(self):
         """

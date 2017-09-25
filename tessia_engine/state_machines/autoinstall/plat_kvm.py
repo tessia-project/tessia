@@ -73,13 +73,9 @@ class PlatKvm(PlatBase):
         # define a mapping of volumes and their stable device paths
         self._devpath_by_vol = {}
 
-        # we make a copy to make sure any changes are not lost when objects
-        # expire after some commit
         guest_prof = SystemProfile.query.filter_by(
             id=self._guest_prof.id).one()
         self._vols = list(guest_prof.storage_volumes_rel)
-        for vol in self._vols:
-            MANAGER.session.expunge(vol)
         self._kvm_vol_init(self._vols)
     # __init__()
 
@@ -283,16 +279,22 @@ class PlatKvm(PlatBase):
 
             result = self._kvm_vol_create_libvirt(
                 vol, target_dev, devno_counter)
-            # add libvirt definition to the object, this will be used only
-            # during the run-time of the installation and not made persistent
-            # to the database.
+            # Add libvirt definition to the object, it has to be stored in
+            # database so that future poweron actions have a way to reconstruct
+            # the same setup, otherwise the operating system might not find the
+            # expected disks anymore as they might have different device paths.
             vol.system_attributes['libvirt'] = result['libvirt']
+            # to make sure sqlalchemy sees the object has changed
+            from sqlalchemy.orm.attributes import flag_modified
+            flag_modified(vol, 'system_attributes')
+            MANAGER.session.add(vol)
             # store the devpath corresponding to the libvirt definition
             self._devpath_by_vol[vol.id] = result['devpath']
 
             self._logger.debug('Libvirt xml for volume %s is:\n%s',
                                vol.human_name, result['libvirt'])
 
+        MANAGER.session.commit()
     # _kvm_vol_init()
 
     def _kvm_vol_parse_libvirt(self, libvirt_xml):
@@ -325,7 +327,7 @@ class PlatKvm(PlatBase):
             raise ValueError(msg)
 
         # determine the device based on bus and arch type, this can be extended
-        # for more bus and arch types over time
+        # for more buses and arch types over time
         if bus == 'virtio':
 
             # at the moment only s390 is supported

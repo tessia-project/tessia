@@ -23,8 +23,8 @@ Flask-SQLAlchemy>=2.2
 flask-potion>=0.12.6
 # template engine for the automatic installation files
 jinja2>=2.8
-# for ansible machine
-ansible>=2.3.0
+# lock on 2.3.0 due to bug with detecting cpu quantity on s390x
+ansible==2.3.0
 requests>=2.13.0
 # tessia_baselib and its dependencies
-https://gitlab.com/tessia-project/tessia-baselib.git@7224ecab3497fabb55#egg=tessia_baselib
+https://gitlab.com/tessia-project/tessia-baselib.git@7902cc0146088f14e96#egg=tessia_baselib

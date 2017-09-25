@@ -276,11 +276,16 @@ class AutoInstallMachine(BaseMachine):
                         gw_iface.name)
                 )
 
-        # make sure the system has a hypervisor profile defined
-        if profile.hypervisor_profile_rel is None:
+        # sanity check, without hypervisor it's not possible to manage
+        # system
+        if not system.hypervisor_id:
             raise ValueError(
-                'System profile must have a required hypervisor profile '
-                'defined')
+                'System {} cannot be installed because it has no '
+                'hypervisor defined'.format(system.name))
+
+        # in case the system profile has no hypervisor profile defined the
+        # machine's constructor will use the hypervisor's default profile,
+        # therefore there is no need to check it here.
 
         # the system being installed is considered an exclusive resource
         result['resources']['exclusive'].append(system.name)

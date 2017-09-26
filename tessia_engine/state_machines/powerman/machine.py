@@ -292,13 +292,12 @@ class PowerManagerMachine(BaseMachine):
     # _get_resources()
 
     @staticmethod
-    def _get_start_params_lpar(guest_prof, hyp_prof):
+    def _get_start_params_lpar(guest_prof):
         """
         Define the parameters in tessia_baselib format to start a LPAR system
 
         Args:
             guest_prof (SystemProfile): guest profile db object
-            hyp_prof (SystemProfile): hypervisor profile db object
 
         Raises:
             ValueError: in case no root volume is defined
@@ -312,7 +311,7 @@ class PowerManagerMachine(BaseMachine):
                 .format(guest_prof.name))
         root_vol = guest_prof.root_vol
 
-        params = {'cpc_name': hyp_prof.system_rel.name}
+        params = {}
         if root_vol.type.lower() == 'fcp':
             params['boot_params'] = {
                 'boot_method': 'scsi',
@@ -540,7 +539,6 @@ class PowerManagerMachine(BaseMachine):
         hyp_type = hyp_prof.system_rel.type.lower()
         if hyp_type == 'cpc':
             hyp_type = 'hmc'
-            params['cpc_name'] = hyp_prof.system_rel.name
         # hypervisor is an lpar: determine whether it's linux or cms
         elif hyp_type == 'lpar':
             os_obj = hyp_prof.operating_system_rel
@@ -598,7 +596,7 @@ class PowerManagerMachine(BaseMachine):
         system_type = guest_prof.system_rel.type.lower()
         if system_type == 'lpar':
             hyp_type = 'hmc'
-            params = self._get_start_params_lpar(guest_prof, hyp_prof)
+            params = self._get_start_params_lpar(guest_prof)
         elif system_type == 'kvm':
             hyp_type = 'kvm'
             params = self._get_start_params_kvm(guest_prof)

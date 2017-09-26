@@ -29,14 +29,16 @@ This section provides documentation and howtos for those who want to learn how t
 - The basics
     - To best understand the resources model and terminology used within the solution, we recommend to read the [Resources model](users/resources_model.md)
     - If you are a new user and want to learn how to use the command line client, visit [Getting started](users/getting_started.md)
-- System installation: automatically install your systems
-    - If you are trying to perform installations and need help, check the section [Installations](users/howtos.md#installations) in the Howtos page.
-- Task execution: schedule a job to perform automated tasks on your system. The supported machines are:
-    - [Ansible machine](users/ansible_machine.md)
+- Features
+    - **System installation**: automatically install your systems, see examples in [Installations](users/howtos.md#installations).
+    - **System Management**: power on systems with different activation profiles, see details in [Power Manager machine](users/powerman_machine.md)
+    - **Task execution**: schedule a job to perform automated tasks on a system, currently supported machines are:
+        - [Ansible machine](users/ansible_machine.md)
 - Misc
+    - [Howtos](users/howtos.md) main page with usage examples
     - Explanation about the project's [versioning scheme](users/versioning.md)
-    - If you would like to install the command line client to use from your Linux workstation, then visit [Client Installation](users/client_install.md).
-    - If you are interested in using tessia with your own automation tools, you can do so by referring to the [REST-like API](users/api.md).
+    - [Client Installation](users/client_install.md): if you would like to install the command line client to use from your Linux workstation
+    - [REST-like API](users/api.md): if you are interested in using tessia with your own automation tools
 
 ## **Developers**
 

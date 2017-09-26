@@ -18,6 +18,7 @@ pages:
 - Users:
     - Resources model: 'users/resources_model.md'
     - Getting started: 'users/getting_started.md'
+    - Power Manager machine: 'users/powerman_machine.md'
     - Ansible machine: 'users/ansible_machine.md'
     - Howtos: 'users/howtos.md'
     - Project versioning scheme: 'users/versioning.md'

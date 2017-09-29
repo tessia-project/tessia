@@ -99,6 +99,22 @@ class TestSmBase(TestCase):
         self._mock_checker = patcher.start()
         self.addCleanup(patcher.stop)
 
+        # fake call to time so that we don't have to actually wait for the
+        # timeout to occur
+        def time_generator():
+            """Simulate time.time()"""
+            start = 1.0
+            yield start
+            while True:
+                # step is half of timeout time to cause two loop iterations
+                start += sm_base.CONNECTION_TIMEOUT/2
+                yield start
+        patcher = patch.object(sm_base, 'time', autospec=True)
+        mock_time = patcher.start()
+        self.addCleanup(patcher.stop)
+        get_time = time_generator()
+        mock_time.side_effect = lambda: next(get_time)
+
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
 
@@ -417,7 +433,7 @@ class TestSmBase(TestCase):
         self._mock_ssh_client.return_value.login.side_effect = ConnectionError
         mach = self._create_sm(self._child_cls, "rhel7.2",
                                "kvm054/kvm_kvm054_install", "RHEL7.2")
-        with self.assertRaisesRegex(ConnectionError, "Error while"):
+        with self.assertRaisesRegex(ConnectionError, "Timeout occurred"):
             mach.start()
     # test_check_install_error()
 

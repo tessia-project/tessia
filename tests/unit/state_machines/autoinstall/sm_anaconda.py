@@ -103,6 +103,22 @@ class TestSmAnaconda(TestCase):
         self._mock_checker = patcher.start()
         self.addCleanup(patcher.stop)
 
+        # fake call to time so that we don't have to actually wait for the
+        # timeout to occur
+        def time_generator():
+            """Simulate time.time()"""
+            start = 1.0
+            yield start
+            while True:
+                # step is half of timeout time to cause two loop iterations
+                start += sm_base.CONNECTION_TIMEOUT/2
+                yield start
+        patcher = patch.object(sm_base, 'time', autospec=True)
+        mock_time = patcher.start()
+        self.addCleanup(patcher.stop)
+        get_time = time_generator()
+        mock_time.side_effect = lambda: next(get_time)
+
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.
     # setUp()
@@ -132,7 +148,7 @@ class TestSmAnaconda(TestCase):
         template_entry = utils.get_template("RHEL7.2")
 
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
-        with self.assertRaisesRegex(ConnectionError, "Error while"):
+        with self.assertRaisesRegex(ConnectionError, "Timeout occurred"):
             mach.start()
     # test_wait_install_fails_ssh_timeout(self)
 

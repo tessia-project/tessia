@@ -28,6 +28,7 @@ from tessia_engine.lib.post_install import PostInstallChecker
 from tessia_engine.state_machines.autoinstall.plat_lpar import PlatLpar
 from tessia_engine.state_machines.autoinstall.plat_kvm import PlatKvm
 from time import sleep
+from time import time
 from urllib.parse import urlsplit
 
 import abc
@@ -39,6 +40,8 @@ import random
 #
 # CONSTANTS AND DEFINITIONS
 #
+# timeout used for ssh connection attempts
+CONNECTION_TIMEOUT = 600
 PLATFORMS = {
     'lpar': PlatLpar,
     'kvm': PlatKvm,
@@ -144,13 +147,14 @@ class SmBase(metaclass=abc.ABCMeta):
         Auxiliary method to get a ssh connection and shell to the target system
         being installed.
         """
-        timeout_trials = [5, 10, 20, 40, 60]
-
         hostname = self._profile.system_rel.hostname
         user = self._profile.credentials['user']
         password = self._profile.credentials['passwd']
 
-        for timeout in timeout_trials:
+        conn_timeout = time() + CONNECTION_TIMEOUT
+        self._logger.info('Waiting for connection to be available (%s secs)',
+                          CONNECTION_TIMEOUT)
+        while time() < conn_timeout:
             try:
                 ssh_client = SshClient()
                 ssh_client.login(hostname, user=user, passwd=password)
@@ -160,12 +164,10 @@ class SmBase(metaclass=abc.ABCMeta):
             # target system, so we just catch them all and try again until
             # system is stable
             except Exception:
-                self._logger.warning("connection not available yet, "
-                                     "retrying in %d seconds.", timeout)
-                sleep(timeout)
+                sleep(5)
 
-        raise ConnectionError("Error while trying to connect"
-                              " to the target system.")
+        raise ConnectionError(
+            "Timeout occurred while trying to connect to the target system.")
     # _get_ssh_conn()
 
     @staticmethod

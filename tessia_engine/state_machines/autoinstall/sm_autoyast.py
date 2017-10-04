@@ -47,23 +47,6 @@ class SmAutoyast(SmBase):
         self._logger = logging.getLogger(__name__)
     # __init__()
 
-    def collect_info(self):
-        """
-        See SmBase for docstring.
-        """
-        # collect repos, volumes, ifaces
-        super().collect_info()
-        self._logger.info(
-            'auto-generated password for VNC is %s',
-            self._info['credentials']['vncpasswd'])
-
-        self._info["hostname"] = self._system.hostname
-        self._info["autofile"] = self._autofile_url
-        self._info["gw_iface"] = self._gw_iface
-        self._info["sha512rootpwd"] = crypt.crypt(
-            self._profile.credentials["passwd"])
-    # collect_info()
-
     def _fetch_lines_until_end(self, shell, offset, logfile_path):
         """
         Auxiliar function to read lines from a file and log them in chunks
@@ -103,6 +86,63 @@ class SmAutoyast(SmBase):
         return cmdline
     # _get_kargs()
 
+    def check_installation(self):
+        """
+        Make sure that the installation was successfully completed.
+        """
+        # autoyast performs the installation in two stages so we need to make
+        # sure the second stage has finished before we perform the actual check
+        ssh_client, shell = self._get_ssh_conn()
+
+        try:
+            ret, _ = shell.run('systemctl status YaST2-Second-Stage')
+        except Exception:
+            ret = 1
+        if ret == 0:
+            self._logger.info('Waiting for AutoYast stage 2 to finish')
+            while True:
+                sleep(0.5)
+                try:
+                    shell.run('true', timeout=5)
+                # connection lost - so system already rebooted to the final
+                # state
+                except Exception:
+                    break
+
+        self._logger.info('AutoYast stage 2 finished')
+        shell.close()
+        ssh_client.logoff()
+
+        super().check_installation()
+    # check_installation()
+
+    def collect_info(self):
+        """
+        See SmBase for docstring.
+        """
+        # collect repos, volumes, ifaces
+        super().collect_info()
+        self._logger.info(
+            'auto-generated password for VNC is %s',
+            self._info['credentials']['vncpasswd'])
+
+        self._info["hostname"] = self._system.hostname
+        self._info["autofile"] = self._autofile_url
+        self._info["gw_iface"] = self._gw_iface
+        self._info["sha512rootpwd"] = crypt.crypt(
+            self._profile.credentials["passwd"])
+    # collect_info()
+
+    def target_reboot(self):
+        """
+        With AutoYast this stage is a nop since the installer automatically
+        kexecs into the installed system.
+        """
+        # wait a while before moving to next stage to be sure no connection is
+        # made still to installer environment.
+        sleep(5)
+    # target_reboot()
+
     def wait_install(self):
         """
         Waits for the installation end. This method periodically checks if
@@ -114,11 +154,11 @@ class SmAutoyast(SmBase):
         # Under SLES, we use the cmdline parameter 'start_shell' that
         # starts a shell before and after the autoyast.
         # This is required to control when the installer will reboot.
+        kill_cmd = (
+            "kill -9 $(ps --no-header -o pid --ppid=`pgrep 'inst_setup'`)")
 
         # Kill shell so installation can start
-        ret, _ = shell.run(
-            "kill -9 $(ps --no-header -o pid --ppid=`pgrep 'inst_setup'`)"
-        )
+        ret, _ = shell.run(kill_cmd)
         if ret != 0:
             self._logger.error(
                 "Error while killing shell before installation start")
@@ -159,12 +199,20 @@ class SmAutoyast(SmBase):
 
             sleep(frequency_check)
 
-        shell.close()
-        ssh_client.logoff()
-
         if not success:
+            shell.close()
+            ssh_client.logoff()
             raise TimeoutError('Installation Timeout: The installation '
                                'process is taking too long')
 
+        self._logger.info("AutoYast stage 1 finished, kexec'ing into "
+                          "installed system")
+        # Kill shell so AutoYast can kexec to installed system
+        try:
+            ret, _ = shell.run(kill_cmd, timeout=1)
+        except TimeoutError:
+            pass
+        shell.close()
+        ssh_client.logoff()
     # wait_install()
 # SmAutoyast

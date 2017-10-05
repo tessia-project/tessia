@@ -152,10 +152,8 @@ def prof_edit(system, cur_name, **kwargs):
 # prof_edit()
 
 @click.command(name='prof-list')
-@click.option('--system', help="the system to list")
+@click.option('--system', required=True, help="the system to list")
 @click.option('--name', help="filter by profile-name")
-@click.option('--system',
-              help="filter by specified system")
 @click.option('--cpu', help="filter by specified number of cpus")
 @click.option('--memory', help="filter by specified memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="list only default profiles")

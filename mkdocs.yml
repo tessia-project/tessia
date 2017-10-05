@@ -16,6 +16,7 @@ repo_url: https://gitlab.com/tessia-project/tessia-engine
 pages:
 - Home: 'index.md'
 - Users:
+    - Supported features: 'users/supported_features.md'
     - Resources model: 'users/resources_model.md'
     - Getting started: 'users/getting_started.md'
     - Power Manager machine: 'users/powerman_machine.md'

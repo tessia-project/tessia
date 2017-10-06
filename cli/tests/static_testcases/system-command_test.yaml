@@ -696,8 +696,9 @@ tasks:
       - 'The server did not accept our request. The response is: wherememory must be anyOf='
     - - system prof-list --system=cpc3lp52 --memory=1024mb
       - 'The server did not accept our request. The response is: wherememory must be anyOf='
+      # expecting DASD11 as it was the last to be set as default
     - - system prof-list --system=cpc3lp52 --default
-      - 'Profile name                : DASD7'
+      - 'Profile name                : DASD11'
     - - system prof-list --system=cpc3lp52 --hyp
       - '--hyp option requires an argument'
     - - system prof-list --system=cpc3lp52 --hyp='default cpc3'
@@ -731,15 +732,14 @@ tasks:
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --memory
       - '--memory option requires an argument'
-      # DASD7 is a default profile
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --memory=2gb
-      - the server failed to answer our request. See the logs for details.
+      - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory=2gb
-      - the server failed to answer our request. See the logs for details.
+      - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD10 --memory=2gb
-      - the server failed to answer our request. See the logs for details.
+      - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD11 --memory=2gb
-      - the server failed to answer our request. See the logs for details.
+      - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --memory=2gb
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --memory=1024mb
@@ -750,9 +750,8 @@ tasks:
       - system profile not found.
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --newname=
       - 'The server did not accept our request. The response is: name must be type=string'
-      # DASD7 is a default profile for cpc3lp52
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --newname=DASD17
-      - the server failed to answer our request. See the logs for details.
+      - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --newname=DASD
       - 'request failed. Server answered: An item with the provided value'
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --newname=DASD14
@@ -767,18 +766,18 @@ tasks:
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --default=no
       - '--default option does not take a value'
-    - - system prof-edit --system=cpc3lp52 --name=DASD14 --default
-      - the server failed to answer our request. See the logs for details.
-    - - system prof-del --system=cpc3lp52 --name=DASD7
+    - - system prof-del --system=cpc3lp52 --name=DASD17
       - Item successfully deleted.
-    - - system prof-edit --system=cpc3lp52 --name=DASD14 --default
-      - the server failed to answer our request. See the logs for details.
     - - system prof-del --system=cpc3lp52 --name=DASD10
       - Item successfully deleted.
+        # a default profile cannot be deleted when others exist
     - - system prof-del --system=cpc3lp52 --name=DASD11
-      - Item successfully deleted.
+      - A default profile cannot be removed while other profiles for the same system exist
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --default
       - Item successfully updated.
+        # now it can be deleted
+    - - system prof-del --system=cpc3lp52 --name=DASD11
+      - Item successfully deleted.
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --newname=DASD4
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --memory=2gb

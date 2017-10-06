@@ -92,7 +92,8 @@ class TestSecureResource(TestCase):
 
         for key, value in orig_data.items():
             self.assertEqual(
-                getattr(created_entry, key), value)
+                getattr(created_entry, key), value,
+                '{} is not {}'.format(key, value))
 
         return created_id
     # _assert_created()

@@ -178,9 +178,10 @@ tasks:
       - Volume detached successfully.
     - - system vol-detach --system=cpc3lp52 --profile='FCP root1' --server=DS8K16 --vol=1022400100000000
       - Volume detached successfully.
-    - - system prof-del --system=cpc3lp52 --name='DASD root1'
-      - Item successfully deleted.
+        # first remove the non default profile to avoid error
     - - system prof-del --system=cpc3lp52 --name='FCP root1'
+      - Item successfully deleted.
+    - - system prof-del --system=cpc3lp52 --name='DASD root1'
       - Item successfully deleted.
     - - system del --name=cpc3lp52
       - Item successfully deleted.

@@ -223,8 +223,7 @@ class SystemProfileResource(SecureResource):
             int: id of created item
         """
         target_system = System.query.filter(
-            System.name == properties['system']
-        ).one_or_none()
+            System.name == properties['system']).one_or_none()
         if target_system is None:
             raise ItemNotFoundError(
                 'system', properties['system'], self)
@@ -234,21 +233,24 @@ class SystemProfileResource(SecureResource):
         self._get_project_for_create(
             System.__tablename__, target_system.project_rel.name)
 
-        # check if this is the first profile and make it the default
-        if properties.get('default', False) is False:
-            profile = SystemProfile.query.filter(
-                SystemProfile.system_id == target_system.id
-            ).first()
-            # confirmed it's the first profile: make it default
-            if profile is None:
-                properties['default'] = True
+        def_profile = SystemProfile.query.filter_by(
+            system_id=target_system.id, default=True).first()
+        # system has no default profile: make the new profile the default
+        if not def_profile:
+            properties['default'] = True
+        # new profile being set as default: unset the current one
+        elif properties.get('default'):
+            def_profile.default = False
+            # do not commit yet, let the manager do it when updating the
+            # target profile to make it an atomic operation
+            API.db.session.add(def_profile)
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
             if target_system.hypervisor_id is None:
                 raise BaseHttpError(
-                    400, msg='System has no hypervisor, '
-                             'you need to define one first')
+                    400, msg='System has no hypervisor, you need to define '
+                             'one first')
             match = SystemProfile.query.filter(
                 SystemProfile.system_id == target_system.hypervisor_id
             ).filter(
@@ -279,6 +281,8 @@ class SystemProfileResource(SecureResource):
 
         Raises:
             Forbidden: in case user has no permission to perform action
+            BaseHttpError: if a deletion of a default profile while others
+                           exist is attempted.
 
         Returns:
             bool: True
@@ -287,6 +291,18 @@ class SystemProfileResource(SecureResource):
 
         # validate user permission on object
         self._assert_permission('DELETE', entry.system_rel, 'system')
+
+        # profile is default: can only be deleted if it's the last one
+        if entry.default:
+            existing_profiles = SystemProfile.query.filter(
+                SystemProfile.system_id == entry.system_id,
+                SystemProfile.id != entry.id).all()
+            # use list() to force the query to execute
+            if list(existing_profiles):
+                msg = ('A default profile cannot be removed while other '
+                       'profiles for the same system exist. Set another as '
+                       'the default first and then retry the operation.')
+                raise BaseHttpError(422, msg=msg)
 
         self.manager.delete_by_id(id)
         return True
@@ -387,11 +403,28 @@ class SystemProfileResource(SecureResource):
         # validate permission on the object - use the associated system
         self._assert_permission('UPDATE', item.system_rel, 'system')
 
-        # a profile cannot change its system so we only allow to set it on
+        # a profile cannot change its system, it's only allowed to set it on
         # creation
         if 'system' in properties and properties['system'] != item.system:
             raise BaseHttpError(
                 422, msg='Profiles cannot change their associated system')
+
+        # profile set as default: unset the current one
+        if properties.get('default'):
+            def_profile = SystemProfile.query.filter_by(
+                system_id=item.system_id, default=True).first()
+            if def_profile and def_profile.id != item.id:
+                def_profile.default = False
+                # do not commit yet, let the manager do it when updating the
+                # target profile to make it an atomic operation
+                API.db.session.add(def_profile)
+        # a profile cannot unset its default flag otherwise we would have a
+        # state where a system has no default profile, instead it has to be
+        # replaced by another
+        elif item.default and properties.get('default') is False:
+            raise BaseHttpError(
+                422, msg='A profile cannot unset its default flag, instead '
+                         'another must be set as default in its place')
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
@@ -411,19 +444,6 @@ class SystemProfileResource(SecureResource):
                     'hypervisor_profile', hyp_prof_name, self)
             properties['hypervisor_profile'] = '{}/{}'.format(
                 item.system_rel.hypervisor_rel.name, hyp_prof_name)
-
-        # profile set as default: make sure to unset the previous default one
-        # to avoid duplication
-        if properties.get('default') is True:
-            current_default = SystemProfile.query.filter_by(
-                system_id=item.system_id,
-                default=True
-            ).one_or_none()
-            if current_default is not None and current_default.id != item.id:
-                current_default.default = False
-                # do not commit yet, let the manager to it when updating the
-                # target profile to make it an atomic operation
-                API.db.session.add(current_default)
 
         updated_item = self.manager.update(item, properties)
 

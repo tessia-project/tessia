@@ -55,13 +55,22 @@ class TestSystemProfile(TestSecureResource):
                 'system': "lpar0",
                 'memory': 1024,
                 'cpu': 2,
-                'default': True,
+                'default': False,
                 'parameters': {},
                 'credentials': {},
             }
             index += 1
             yield data
     # _entry_gen()
+
+    def _validate_resp(self, resp, msg, status_code):
+        """
+        Helper validator
+        """
+        self.assertEqual(resp.status_code, status_code)
+        body = json.loads(resp.get_data(as_text=True))
+        self.assertEqual(msg, body['message'])
+    # _validate_resp()
 
     @classmethod
     def setUpClass(cls):
@@ -70,8 +79,9 @@ class TestSystemProfile(TestSecureResource):
         """
         super(TestSystemProfile, cls).setUpClass()
 
-        # fetch which project to use from the test user
-        project_name = models.UserRole.query.join(
+        # fetch which project to use from the test user and store this info for
+        # use also by the testcases
+        cls._project_name = models.UserRole.query.join(
             'project_rel'
         ).join(
             'user_rel'
@@ -80,7 +90,7 @@ class TestSystemProfile(TestSecureResource):
         ).one().project
 
         for system_obj in models.System.query.all():
-            system_obj.project = project_name
+            system_obj.project = cls._project_name
             system_obj.owner = 'user_user@domain.com'
             cls.db.session.add(system_obj)
         cls.db.session.commit()
@@ -102,6 +112,20 @@ class TestSystemProfile(TestSecureResource):
         self._test_add_all_fields_many_roles(logins)
     # test_add_all_fields_many_roles()
 
+    def test_add_invalid_system(self):
+        """
+        Exercise creating a profile with an invalid system name
+        """
+        user_login = '{}:a'.format('user_user@domain.com')
+        # create profile
+        data = next(self._get_next_entry)
+        data['system'] = 'do_not_exist'
+        resp = self._do_request('create', user_login, data)
+        msg = ("No associated item found with value '{}' for field 'System'"
+               .format(data['system']))
+        self._validate_resp(resp, msg, 422)
+    # test_add_invalid_system()
+
     def test_add_mandatory_fields(self):
         """
         Exercise the scenario where a user with permissions creates an item
@@ -120,6 +144,97 @@ class TestSystemProfile(TestSecureResource):
         pop_fields = ['system', 'cpu', 'memory', 'default']
         self._test_add_missing_field('user_user@domain.com', pop_fields)
     # test_add_missing_field()
+
+    def test_add_set_default(self):
+        """
+        Test the case where the first profile created is set automatically as
+        default.
+        """
+        # create a new system
+        system_obj = models.System(
+            name="lpar_y",
+            state="AVAILABLE",
+            modifier="user_user@domain.com",
+            type="lpar",
+            hostname="lpar-y.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner="user_user@domain.com",
+        )
+        self.db.session.add(system_obj)
+        # id must be stored before the object expires
+        system_id = system_obj.id
+        self.db.session.commit()
+
+        # create profile
+        data = next(self._get_next_entry)
+        data['system'] = system_obj.name
+        # explicitly set as False
+        data['default'] = False
+        user_login = '{}:a'.format('user_user@domain.com')
+        resp = self._do_request('create', user_login, data)
+        created_id = int(resp.get_data(as_text=True))
+
+        # validate the created object
+        created_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=created_id).one()
+
+        for key, value in data.items():
+            if key == 'default':
+                value = True
+            self.assertEqual(
+                getattr(created_entry, key), value,
+                '{} is not {}'.format(key, value))
+
+        # clean up
+        self.db.session.delete(created_entry)
+        models.System.query.filter_by(id=system_id).delete()
+        self.db.session.commit()
+    # test_add_set_default()
+
+    def test_add_update_default(self):
+        """
+        Test add and update scenarios concerning the default flag:
+        - new profile created as default unsets the existing default profile
+        - existing profile cannot unset default flag
+        - updating a profile as default unsets previous default one
+        """
+        user_login = '{}:a'.format('user_user@domain.com')
+        # store reference to current default
+        data = next(self._get_next_entry)
+        sys_obj = models.System.query.filter_by(name=data['system']).one()
+        orig_id = self.RESOURCE_MODEL.query.filter_by(
+            system_id=sys_obj.id, default=True).one().id
+
+        # create a new one as default
+        data['default'] = True
+        created_id = self._request_and_assert(
+            'create', '{}:a'.format('user_user@domain.com'), data)
+
+        # confirm existing is not default anymore
+        orig_default = self.RESOURCE_MODEL.query.filter_by(id=orig_id).one()
+        self.assertEqual(orig_default.default, False)
+
+        # try to unset default flag
+        update_data = {'id': created_id, 'default': False}
+        resp = self._do_request('update', user_login, update_data)
+        msg = ('A profile cannot unset its default flag, instead '
+               'another must be set as default in its place')
+        self._validate_resp(resp, msg, 422)
+
+        # set original profile as default again and confirm new was unset
+        update_data = {'id': orig_id, 'default': True}
+        self._request_and_assert('update', user_login, update_data)
+        new_profile = self.RESOURCE_MODEL.query.filter_by(id=created_id).one()
+        self.assertEqual(new_profile.default, False)
+
+        # clean up
+        self.RESOURCE_MODEL.query.filter_by(id=created_id).delete()
+        orig_default = self.RESOURCE_MODEL.query.filter_by(id=orig_id).one()
+        orig_default.default = True
+        self.db.session.add(orig_default)
+        self.db.session.commit()
+    # test_add_new_default()
 
     def test_add_update_assoc_error(self):
         """
@@ -179,32 +294,16 @@ class TestSystemProfile(TestSecureResource):
         hypervisor exists and we attempt to create a profile for such system
         while specifying a hypervisor profile.
         """
-        # fetch which project to use
-        project_name = models.UserRole.query.join(
-            'project_rel'
-        ).join(
-            'user_rel'
-        ).filter(
-            models.UserRole.user == 'user_user@domain.com'
-        ).one().project
-
         system_obj = models.System(
             name="cpc_no_hypervisor",
             state="AVAILABLE",
             modifier="user_user@domain.com",
             type="cpc",
             hostname="cpc-0.domain.com",
-            project=project_name,
+            project=self._project_name,
             model="ZEC12_H20",
             owner="user_user@domain.com",
         )
-
-        def validate_resp(resp, msg, status_code):
-            """Helper validator"""
-            self.assertEqual(resp.status_code, status_code)
-            body = json.loads(resp.get_data(as_text=True))
-            self.assertEqual(msg, body['message'])
-        # validate_resp()
 
         self.db.session.add(system_obj)
         self.db.session.commit()
@@ -216,10 +315,13 @@ class TestSystemProfile(TestSecureResource):
         resp = self._do_request(
             'create', 'user_user@domain.com:a', data)
         msg = "System has no hypervisor, you need to define one first"
-        validate_resp(resp, msg, 400)
+        self._validate_resp(resp, msg, 400)
 
         # update profile while specifying a hypervisor profile
         data = next(self._get_next_entry)
+        # set as True otherwise _request_and_assert will fail since this is the
+        # first profile and will be automatically set to true
+        data['default'] = True
         data['system'] = system_obj.name
         created_id = self._request_and_assert(
             'create', '{}:a'.format('user_user@domain.com:a'), data)
@@ -228,15 +330,77 @@ class TestSystemProfile(TestSecureResource):
         resp = self._do_request(
             'update', 'user_user@domain.com:a', data)
         msg = "System has no hypervisor, you need to define one first"
-        validate_resp(resp, msg, 400)
+        self._validate_resp(resp, msg, 400)
 
         # delete profile
-        self._do_request(
+        self._request_and_assert(
             'delete', 'user_user@domain.com:a', created_id)
 
         self.db.session.delete(system_obj)
         self.db.session.commit()
     # test_add_update_profile_without_hypervisor()
+
+    def test_del_default_profile_multi_profiles(self):
+        """
+        Try to delete a default profile while others exist
+        """
+        user_login = '{}:a'.format('user_user@domain.com')
+
+        # retrieve the id of the pre-existing default profile
+        data = next(self._get_next_entry)
+        sys_obj = models.System.query.filter_by(name=data['system']).one()
+        def_profile_id = self.RESOURCE_MODEL.query.filter_by(
+            system_id=sys_obj.id, default=True).one().id
+
+        # create another profile
+        data['default'] = False
+        created_id = self._request_and_assert('create', user_login, data)
+
+        # try to delete the default profile
+        resp = self._do_request('delete', user_login, def_profile_id)
+        msg = ('A default profile cannot be removed while other '
+               'profiles for the same system exist. Set another as '
+               'the default first and then retry the operation.')
+        # confirm it's not allowed
+        self._validate_resp(resp, msg, 422)
+
+        # remove the non default one, should work
+        self._request_and_assert('delete', user_login, created_id)
+    # test_del_default_profile_multi_profiles()
+
+    def test_del_default_profile_single_profile(self):
+        """
+        Try to delete a default profile when it's the single one for
+        the system
+        """
+        # create a new system
+        system_obj = models.System(
+            name="lpar_x",
+            state="AVAILABLE",
+            modifier="user_user@domain.com",
+            type="lpar",
+            hostname="lpar-x.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner="user_user@domain.com",
+        )
+        self.db.session.add(system_obj)
+        self.db.session.commit()
+
+        # create profile
+        data = next(self._get_next_entry)
+        data['system'] = system_obj.name
+        data['default'] = True
+        user_login = '{}:a'.format('user_user@domain.com')
+        created_id = self._request_and_assert('create', user_login, data)
+
+        # now delete and confirm it worked
+        self._request_and_assert('delete', user_login, created_id)
+
+        # clean up
+        self.db.session.delete(system_obj)
+        self.db.session.commit()
+    # test_del_default_profile_single_profile()
 
     def test_del_many_roles(self):
         """
@@ -313,6 +477,26 @@ class TestSystemProfile(TestSecureResource):
         self._test_list_and_read_restricted_no_role(
             'user_user@domain.com', 'user_restricted@domain.com')
     # test_list_and_read_restricted_no_role()
+
+    def test_update_assoc_system(self):
+        """
+        Try to change the system associated to a profile.
+        """
+        user_login = '{}:a'.format('user_user@domain.com')
+        # create profile
+        data = next(self._get_next_entry)
+        created_id = self._request_and_assert('create', user_login, data)
+
+        # try to change system
+        update_data = {'id': created_id, 'system': 'cpc0'}
+        resp = self._do_request('update', user_login, update_data)
+        msg = 'Profiles cannot change their associated system'
+        self._validate_resp(resp, msg, 422)
+
+        # clean up
+        self.RESOURCE_MODEL.query.filter_by(id=created_id).delete()
+        self.db.session.commit()
+    # test_update_assoc_system()
 
     # TODO: add tests with gateway parameter (cannot be tested for creation as
     # a netiface must be attached first)

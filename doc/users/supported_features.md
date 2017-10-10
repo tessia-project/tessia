@@ -69,7 +69,7 @@ Remarks:
 | JFS                  | N    | N    | N      |
 | FAT16                | N    | N    | N      |
 | FAT32                | N    | N    | N      |
-| set mount options    | Y    | N    | N      |
+| set mount options    | Y    | Y    | Y      |
 
 ### Partitioning on KVM
 
@@ -84,5 +84,5 @@ Remarks:
 | JFS                  | N    | N    | N      |
 | FAT16                | N    | N    | N      |
 | FAT32                | N    | N    | N      |
-| set mount options    | Y    | N    | N      |
+| set mount options    | Y    | Y    | Y      |
 

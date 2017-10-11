@@ -126,44 +126,35 @@
     {% for iface in config["ifaces"] %}
       <interface>
         <bootproto>static</bootproto>
-        <interfacetype>qeth</interfacetype>
         <device>{{ iface["osname"] }}</device>
         <ipaddr>{{ iface["ip"] }}</ipaddr>
-        {% if iface["attributes"]["layer2"] %}
+        {% if iface["attributes"]["layer2"] or config["system_type"] != "LPAR" %}
         <lladdr>{{ iface["mac_addr"] }}</lladdr>
         {% endif %}
         <netmask>{{ iface["mask"] }}</netmask>
         <prefixlen>{{ iface["mask_bits"] }}</prefixlen>
         <startmode>auto</startmode>
-        <name>OSA Express Network card (0.0.f500)</name>
       </interface>
     {% endfor %}
-      <interface>
-        <bootproto>static</bootproto>
-        <broadcast>127.255.255.255</broadcast>
-        <device>lo</device>
-        <firewall>no</firewall>
-        <ipaddr>127.0.0.1</ipaddr>
-        <netmask>255.0.0.0</netmask>
-        <network>127.0.0.0</network>
-        <prefixlen>8</prefixlen>
-        <startmode>nfsroot</startmode>
-        <usercontrol>no</usercontrol>
-      </interface>
     </interfaces>
     <ipv6 config:type="boolean">true</ipv6>
     <keep_install_network config:type="boolean">false</keep_install_network>
     <managed config:type="boolean">false</managed>
-    {% if config["system_type"] == "LPAR" %}
     <net-udev config:type="list">
       {% for iface in config["ifaces"] %}
       <rule>
         <name>{{iface["osname"]}}</name>
+        {% if config["system_type"] == "LPAR" %}
         <rule>KERNELS</rule>
         <value>{{ iface["attributes"]["ccwgroup"].split(',')[0] }}</value>
+        {% else %}
+        <rule>ATTR{address}</rule>
+        <value>{{ iface["mac_addr"] }}</value>
+        {% endif %}
       </rule>
       {% endfor %}
     </net-udev>
+    {% if config["system_type"] == "LPAR" %}
     <s390-devices config:type="list">
       {% for iface in config["ifaces"] %}
       <listentry>
@@ -196,7 +187,7 @@
     </routing>
   </networking>
   <partitioning config:type="list">
-  {% for volume in config["svols"] %}
+  {% for volume in config["svols"] if volume["part_table"]["table"] %}
     <drive>
     <device>{{ volume["system_attributes"]["device"] }}</device>
       <enable_snapshots config:type="boolean">true</enable_snapshots>
@@ -219,7 +210,7 @@
           <resize config:type="boolean">false</resize>
           <size>{{ entry["size"] ~ 'M' }}</size>
         </partition>
-        {% endfor %}
+    {% endfor %}
       </partitions>
       <type config:type="symbol">CT_DISK</type>
       <use>all</use>
@@ -261,13 +252,6 @@
   <software>
     <install_recommended config:type="boolean">false</install_recommended>
     <packages config:type="list">
-      <!-- <package>perl-Bootloader-YAML</package>
-      <package>openssh</package>
-      <package>kexec-tools</package>
-      <package>kdump</package>
-      <package>iproute2</package>
-      <package>grub2</package>
-      <package>e2fsprogs</package> -->
     </packages>
     <patterns config:type="list">
       <pattern>base</pattern>

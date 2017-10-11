@@ -138,6 +138,26 @@ class SmAutoyast(SmBase):
         With AutoYast this stage is a nop since the installer automatically
         kexecs into the installed system.
         """
+        # kvm guest installation: kexec does not work, perform normal reboot
+        if self._system.type == 'KVM':
+            self._logger.info("Rebooting into installed system")
+            super().target_reboot()
+            return
+
+        # for other system types it's possible to let sles perform a kexec
+        # which is faster than reboot
+        self._logger.info("Kexec'ing into installed system")
+        ssh_client, shell = self._get_ssh_conn()
+        # Kill shell so AutoYast can kexec to installed system
+        kill_cmd = (
+            "kill -9 $(ps --no-header -o pid --ppid=`pgrep 'inst_setup'`)")
+        try:
+            shell.run(kill_cmd, timeout=1)
+        except TimeoutError:
+            pass
+        shell.close()
+        ssh_client.logoff()
+
         # wait a while before moving to next stage to be sure no connection is
         # made still to installer environment.
         sleep(5)
@@ -199,20 +219,13 @@ class SmAutoyast(SmBase):
 
             sleep(frequency_check)
 
+        shell.close()
+        ssh_client.logoff()
+
         if not success:
-            shell.close()
-            ssh_client.logoff()
             raise TimeoutError('Installation Timeout: The installation '
                                'process is taking too long')
 
-        self._logger.info("AutoYast stage 1 finished, kexec'ing into "
-                          "installed system")
-        # Kill shell so AutoYast can kexec to installed system
-        try:
-            ret, _ = shell.run(kill_cmd, timeout=1)
-        except TimeoutError:
-            pass
-        shell.close()
-        ssh_client.logoff()
+        self._logger.info("AutoYast stage 1 finished")
     # wait_install()
 # SmAutoyast

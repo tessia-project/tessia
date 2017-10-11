@@ -22,6 +22,7 @@ Module for the prof (system activation profiles) commands
 from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
+from tessia_cli.types import CustomIntRange
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 from tessia_cli.utils import str_to_size
@@ -45,7 +46,7 @@ PROFILE_FIELDS = (
 @click.command(name='prof-add')
 @click.option('--system', required=True, help='target system')
 @click.option('--name', required=True, help="profile name")
-@click.option('--cpu', default=1, type=click.IntRange(min=1),
+@click.option('--cpu', default=1, type=CustomIntRange(min=1),
               help="number of cpus")
 @click.option('--memory', default='1gb', help="memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="set as default for system")
@@ -106,7 +107,7 @@ def prof_del(**kwargs):
 @click.option('--system', required=True, help='system name')
 @click.option('cur_name', '--name', required=True, help="profile name")
 @click.option('name', '--newname', help="new name (i.e. new-profile-name)")
-@click.option('--cpu', type=click.IntRange(min=1), help="number of cpus")
+@click.option('--cpu', type=CustomIntRange(min=1), help="number of cpus")
 @click.option('--memory', help="memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('--gateway', help='name of interface to use as gateway')
@@ -154,7 +155,8 @@ def prof_edit(system, cur_name, **kwargs):
 @click.command(name='prof-list')
 @click.option('--system', required=True, help="the system to list")
 @click.option('--name', help="filter by profile-name")
-@click.option('--cpu', help="filter by specified number of cpus")
+@click.option('--cpu', type=CustomIntRange(min=1),
+              help="filter by specified number of cpus")
 @click.option('--memory', help="filter by specified memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="list only default profiles")
 @click.option('hypervisor_profile', '--hyp',
@@ -163,11 +165,11 @@ def prof_list(**kwargs):
     """
     list the activation profiles of a system
     """
-    # at least one qualifier must be specified so that we don't have to
-    # retrieve the full list
-    if kwargs['system'] is None and kwargs['name'] is None:
-        raise click.ClickException(
-            'at least one of --system or --name must be specified')
+    # convert a human size to integer
+    try:
+        kwargs['memory'] = str_to_size(kwargs['memory'])
+    except ValueError:
+        raise click.ClickException('invalid memory size specified.')
 
     # default not provided: remove from dict otherwise it will force listing
     # only non defaults

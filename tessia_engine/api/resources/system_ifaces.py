@@ -77,9 +77,11 @@ class SystemIfaceResource(SecureResource):
         # (according to json spec) but our client does not support it therefore
         # we set both
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'],
+            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
         osname = fields.String(
-            title=DESC['osname'], description=DESC['osname'], nullable=True)
+            title=DESC['osname'], description=DESC['osname'], nullable=True,
+            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
         attributes = fields.Custom(
             schema=SystemIface.get_schema('attributes'),
             title=DESC['attributes'], description=DESC['attributes'])

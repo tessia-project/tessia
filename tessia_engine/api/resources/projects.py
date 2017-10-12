@@ -60,7 +60,8 @@ class ProjectResource(SecureResource):
         Potion's schema section
         """
         name = fields.String(
-            title=DESC['name'], nullable=False, description=DESC['name'])
+            title=DESC['name'], nullable=False, description=DESC['name'],
+            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
         desc = fields.String(
             title=DESC['desc'], nullable=False, description=DESC['desc'])
 

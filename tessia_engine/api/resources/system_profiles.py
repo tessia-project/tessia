@@ -91,7 +91,8 @@ class SystemProfileResource(SecureResource):
         # (according to json spec) but our client does not support it therefore
         # we set both
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'],
+            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
         default = fields.Boolean(
             title=DESC['default'], description=DESC['default'])
         cpu = fields.Integer(

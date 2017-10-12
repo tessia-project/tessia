@@ -22,6 +22,8 @@ Module for package repositories commands
 from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
+from tessia_cli.types import NAME
+from tessia_cli.types import URL
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 
@@ -46,8 +48,8 @@ def repo():
 # repo()
 
 @repo.command('add')
-@click.option('--name', required=True, help="repository name")
-@click.option('--url', required=True, help="network url")
+@click.option('--name', required=True, type=NAME, help="repository name")
+@click.option('--url', required=True, type=URL, help="network url")
 @click.option('operating_system', '--os', help="installable operating system")
 @click.option('--kernel', help="kernel path (when --os is specified)")
 @click.option('--initrd', help="initrd path (when --os is specified)")
@@ -77,7 +79,7 @@ def add(**kwargs):
 # add()
 
 @repo.command(name='del')
-@click.option('--name', required=True, help="repository to delete")
+@click.option('--name', required=True, type=NAME, help="repository to delete")
 def del_(name):
     """
     remove an existing repository
@@ -90,10 +92,10 @@ def del_(name):
 # del_()
 
 @repo.command('edit', help='change properties of a repository')
-@click.option('cur_name', '--name', required=True,
+@click.option('cur_name', '--name', required=True, type=NAME,
               help="repository name")
-@click.option('name', '--newname', help="new repository name")
-@click.option('--url', help="network url")
+@click.option('name', '--newname', type=NAME, help="new repository name")
+@click.option('--url', type=URL, help="network url")
 @click.option('operating_system', '--os', help="installable operating system")
 @click.option('--kernel', help="kernel path (when --os is specified)")
 @click.option('--initrd', help="initrd path (when --os is specified)")
@@ -122,8 +124,8 @@ def edit(cur_name, **kwargs):
 # edit()
 
 @repo.command(name='list')
-@click.option('--name', help="filter by repository name")
-@click.option('--url', help="filter by network url")
+@click.option('--name', type=NAME, help="filter by repository name")
+@click.option('--url', type=URL, help="filter by network url")
 @click.option('--os', help="filter by operating system")
 @click.option('--kernel', help="filter by kernel path")
 @click.option('--initrd', help="filter by initrd path")

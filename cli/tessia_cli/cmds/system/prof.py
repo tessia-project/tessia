@@ -23,6 +23,8 @@ from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
 from tessia_cli.types import CustomIntRange
+from tessia_cli.types import LOGIN
+from tessia_cli.types import NAME
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 from tessia_cli.utils import str_to_size
@@ -45,14 +47,14 @@ PROFILE_FIELDS = (
 
 @click.command(name='prof-add')
 @click.option('--system', required=True, help='target system')
-@click.option('--name', required=True, help="profile name")
+@click.option('--name', required=True, type=NAME, help="profile name")
 @click.option('--cpu', default=1, type=CustomIntRange(min=1),
               help="number of cpus")
 @click.option('--memory', default='1gb', help="memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('hypervisor_profile', '--hyp',
               help="hypervisor profile required for activation")
-@click.option('--login', required=True,
+@click.option('--login', required=True, type=LOGIN,
               help="user:passwd for admin access to operating system")
 def prof_add(**kwargs):
     """
@@ -88,7 +90,7 @@ def prof_add(**kwargs):
 
 @click.command(name='prof-del')
 @click.option('--system', required=True, help='system name')
-@click.option('--name', required=True, help="profile name to delete")
+@click.option('--name', required=True, type=NAME, help="profile name to delete")
 def prof_del(**kwargs):
     """
     remove an existing system activation profile
@@ -105,15 +107,17 @@ def prof_del(**kwargs):
 
 @click.command(name='prof-edit')
 @click.option('--system', required=True, help='system name')
-@click.option('cur_name', '--name', required=True, help="profile name")
-@click.option('name', '--newname', help="new name (i.e. new-profile-name)")
+@click.option('cur_name', '--name', required=True, type=NAME,
+              help="profile name")
+@click.option('name', '--newname', type=NAME,
+              help="new name (i.e. new-profile-name)")
 @click.option('--cpu', type=CustomIntRange(min=1), help="number of cpus")
 @click.option('--memory', help="memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('--gateway', help='name of interface to use as gateway')
 @click.option('hypervisor_profile', '--hyp',
               help="hypervisor profile required for activation")
-@click.option('--login',
+@click.option('--login', type=LOGIN,
               help="user:passwd for admin access to operating system")
 def prof_edit(system, cur_name, **kwargs):
     """
@@ -154,12 +158,12 @@ def prof_edit(system, cur_name, **kwargs):
 
 @click.command(name='prof-list')
 @click.option('--system', required=True, help="the system to list")
-@click.option('--name', help="filter by profile-name")
+@click.option('--name', type=NAME, help="filter by profile-name")
 @click.option('--cpu', type=CustomIntRange(min=1),
               help="filter by specified number of cpus")
 @click.option('--memory', help="filter by specified memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="list only default profiles")
-@click.option('hypervisor_profile', '--hyp',
+@click.option('hypervisor_profile', '--hyp',  type=NAME,
               help="filter by required hypervisor profile")
 def prof_list(**kwargs):
     """

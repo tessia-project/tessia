@@ -61,9 +61,11 @@ class UserResource(SecureResource):
         Schema defining the resource fields and their properties
         """
         login = fields.String(
-            title=DESC['login'], description=DESC['login'])
+            title=DESC['login'], description=DESC['login'],
+            pattern=r'^[a-zA-Z0-9_\:\@\.\/\-]+$')
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'],
+            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
         title = fields.String(
             title=DESC['title'], description=DESC['title'], nullable=True)
         restricted = fields.Boolean(

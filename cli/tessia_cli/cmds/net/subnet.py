@@ -22,6 +22,7 @@ Module for the subnet command
 from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
+from tessia_cli.types import NAME
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 
@@ -41,7 +42,8 @@ FIELDS = (
 @click.command('subnet-add')
 # set the parameter name after the model's attribute name to save on typing
 @click.option('--zone', required=True, help='target network zone')
-@click.option('--name', required=True, help="name of subnet to create")
+@click.option('--name', required=True, type=NAME,
+              help="name of subnet to create")
 @click.option('--address', required=True,
               help="subnet address (i.e. 192.168.0.0/24)")
 @click.option('gateway', '--gw', help="gateway address (i.e. 192.168.0.1)")
@@ -67,7 +69,8 @@ def subnet_add(**kwargs):
 
 @click.command(name='subnet-del')
 @click.option('--zone', required=True, help='network zone containing subnet')
-@click.option('--name', required=True, help='name of subnet to delete')
+@click.option('--name', required=True, type=NAME,
+              help='name of subnet to delete')
 def subnet_del(**kwargs):
     """
     remove an existing subnet
@@ -83,7 +86,8 @@ def subnet_del(**kwargs):
 @click.option('--zone', required=True, help='network zone containing subnet')
 @click.option('cur_name', '--name', required=True,
               help='name of subnet to edit')
-@click.option('name', '--newname', help="new subnet name")
+@click.option('name', '--newname', type=NAME,
+              help="new subnet name")
 @click.option('--address', help="subnet address (i.e. 192.168.0.0/24)")
 @click.option('gateway', '--gw', help="gateway address (i.e. 192.168.0.1)")
 @click.option('dns_1', '--dns1', help="primary dns address (i.e. 192.168.0.5)")
@@ -108,7 +112,8 @@ def subnet_edit(zone, cur_name, **kwargs):
 
 @click.command(name='subnet-list')
 @click.option('--zone', help='the network zone to list')
-@click.option('--name', help='filter by subnet name')
+@click.option('--name', type=NAME,
+              help='filter by subnet name')
 @click.option('--address', help="filter by specified address")
 @click.option('--vlan', type=click.INT, help="filter by specified vlan")
 @click.option('--owner', help="filter by specified owner login")

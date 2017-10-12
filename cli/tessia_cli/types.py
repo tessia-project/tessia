@@ -61,6 +61,9 @@ class Constant(click.ParamType):
         """
         Converts to uppercase.
         """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
         return value.upper()
     # convert()
 # Constant
@@ -214,3 +217,99 @@ class VolumeId(click.ParamType):
 # VolumeId
 
 VOLUME_ID = VolumeId()
+
+class Name(click.ParamType):
+    """
+    Represents the name.
+    """
+    name = 'name'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        ret = re.match(r"^[a-zA-Z0-9_\s\.\-]+$", value)
+        if ret is None:
+            self.fail(
+                "'{}' is not a valid name".format(value), param, ctx)
+
+        return value
+    # convert()
+# Name
+
+NAME = Name()
+
+class Hostname(click.ParamType):
+    """
+    Represents the hostname.
+    """
+    name = 'Hostname'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        ret = re.match(r"^[a-zA-Z0-9_\:\@\.\/\-]+$", value)
+        if ret is None:
+            self.fail(
+                "'{}' is not a valid hostname".format(value), param, ctx)
+
+        return value
+    # convert()
+# Hostname
+
+HOSTNAME = Hostname()
+
+class Url(click.ParamType):
+    """
+    Represents the url of a pepository.
+    """
+    name = 'url'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        ret = re.match(r"^[a-zA-Z0-9_\:\@\.\/\-]+$", value)
+        if ret is None:
+            self.fail(
+                "'{}' is not a valid url".format(value), param, ctx)
+
+        return value
+    # convert()
+# Url
+
+URL = Url()
+
+class Login(click.ParamType):
+    """
+    Represents the login.
+    """
+    name = 'login'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        ret = re.match(r"^[a-zA-Z0-9_\:\@\.\/\-]+$", value)
+        if ret is None:
+            self.fail(
+                "'{}' is not a valid login".format(value), param, ctx)
+
+        return value
+    # convert()
+# Login
+
+LOGIN = Login()

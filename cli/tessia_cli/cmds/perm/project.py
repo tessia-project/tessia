@@ -22,6 +22,7 @@ Module for the project subcommands
 from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
+from tessia_cli.types import NAME
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 
@@ -39,7 +40,7 @@ FIELDS = (
 #
 
 @click.command(name='project-add')
-@click.option('--name', required=True, help="project's name")
+@click.option('--name', required=True, type=NAME, help="project's name")
 @click.option('--desc', required=True,
               help="free form field describing project")
 def project_add(**kwargs):
@@ -57,7 +58,8 @@ def project_add(**kwargs):
 # project_add()
 
 @click.command(name='project-del')
-@click.option('--name', required=True, help="name of project to delete")
+@click.option('--name', required=True, type=NAME,
+              help="name of project to delete")
 def project_del(name):
     """
     remove an existing project
@@ -72,7 +74,8 @@ def project_del(name):
 @click.command(name='project-edit')
 @click.option('cur_name', '--name', required=True,
               help="name of project to edit")
-@click.option('name', '--newname', help="new name of project")
+@click.option('name', '--newname', type=NAME,
+              help="new name of project")
 @click.option('--desc', required=True,
               help="free form field describing project")
 def project_edit(cur_name, **kwargs):
@@ -89,7 +92,7 @@ def project_edit(cur_name, **kwargs):
 # project_edit()
 
 @click.command(name='project-list')
-@click.option('--name', help="list specified project only")
+@click.option('--name', type=NAME, help="list specified project only")
 def project_list(**kwargs):
     """
     list registered projects

@@ -71,9 +71,11 @@ class RepositoryResource(SecureResource):
         # (according to json spec) but our client does not support it therefore
         # we set both
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'],
+            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
         url = fields.String(
-            title=DESC['url'], description=DESC['url'])
+            title=DESC['url'], description=DESC['url'],
+            pattern=r'^[a-zA-Z0-9_\:\@\.\/\-]+$')
         kernel = fields.String(
             title=DESC['kernel'], description=DESC['kernel'], nullable=True)
         initrd = fields.String(

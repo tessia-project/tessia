@@ -32,11 +32,11 @@ from tessia_cli.cmds.repo import repo
 from tessia_cli.cmds.storage import storage
 from tessia_cli.config import CONF
 from tessia_cli.session import SESSION
-from tessia_cli.utils import build_expect_header
-from tessia_cli.utils import version_verify
+from tessia_cli.utils import build_expect_header, log_exc_info, version_verify
 
 import click
 import logging
+import os
 import requests
 import sys
 
@@ -54,22 +54,38 @@ CMDS = [
     system,
 ]
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
-MSG_NO_URL = (
-    'There is no server address configured. Please enter the URL (i.e. '
-    'https://domain.com:5000) where we can find the tessia server'
-)
-MSG_URL_CANNOT_CONNECT = (
-    'Sorry, the address provided did not respond. Please try again or press '
-    'Ctrl+C to cancel.'
-)
-MSG_URL_INVALID_ANSWER = (
-    'Sorry, the address provided returned an invalid response. Please try '
-    'again or press Ctrl+C to cancel.'
-)
+# messages constants
 MSG_NO_KEY = (
     'There is no authentication key configured. Please enter your login and '
     'password so that the client can generate one for you.'
 )
+MSG_NO_SSL_CONN = (
+    "SSL connection to the server failed, verify if the trusted certificate "
+    "file is valid and the server address is correct. Press Ctrl+C to cancel "
+    "or enter another URL."
+)
+MSG_NO_SSL_CERT = (
+    "The validation of the server's SSL certificate failed. In order to "
+    "assure the connection is safe, press Ctrl+C to cancel and place a copy "
+    "of the trusted CA's certificate file in {}/ca.crt or enter another URL."
+    .format(os.path.dirname(CONF.USER_CONF_PATH))
+)
+MSG_NO_URL = (
+    'There is no server address configured. Please enter the URL (i.e. '
+    'https://domain.com:5000) where we can find the tessia server'
+)
+MSG_SERVER_NOT_VALID = (
+    'Enter the URL of a valid server or press Ctrl+C to cancel.'
+)
+MSG_URL_CANNOT_CONNECT = (
+    'The address provided did not respond. Press Ctrl+C to cancel or enter '
+    'another server URL.'
+)
+MSG_URL_INVALID_ANSWER = (
+    'The address provided returned an invalid response. Enter the URL of a '
+    'valid server or press Ctrl+C to cancel.'
+)
+
 PKG_DIST = get_distribution('tessia-cli')
 
 #
@@ -95,15 +111,35 @@ def _config_server():
                 schema_url,
                 headers={'Expect': build_expect_header()}
             )
+            # 417 is handled by version_verify below
+            if resp.status_code not in (200, 417):
+                resp.raise_for_status()
+
+        except requests.exceptions.HTTPError as exc:
+            log_exc_info(logger, 'An error occurred during a request', exc)
+            click.echo(MSG_URL_INVALID_ANSWER)
+            continue
+
+        except requests.exceptions.SSLError as exc:
+            log_exc_info(logger, 'SSL connection failed', exc)
+            # ssl cert not available for validation
+            if '[SSL: CERTIFICATE_VERIFY_FAILED]' in str(exc):
+                click.echo(MSG_NO_SSL_CERT)
+            # general error
+            else:
+                click.echo(MSG_NO_SSL_CONN)
+            continue
+
         except requests.exceptions.RequestException as exc:
-            logger.debug(
-                'Failed to connect to %s', schema_url, exc_info=exc)
+            log_exc_info(logger, 'Server connection failed', exc)
             click.echo(MSG_URL_CANNOT_CONNECT)
             continue
 
-        # verify api version compatibility
-        if not version_verify(logger, resp, silent=True):
-            click.echo(MSG_URL_INVALID_ANSWER)
+        try:
+            version_verify(logger, resp)
+        except Exception as exc:
+            click.echo(str(exc))
+            click.echo(MSG_SERVER_NOT_VALID)
             continue
 
         # server is valid and input routine is finished
@@ -113,11 +149,6 @@ def _config_server():
     conf_dict = CONF.get_config()
     conf_dict['server_url'] = server_url
     CONF.update_config(conf_dict)
-
-    # verify api version compatibility, this time to report in case an update
-    # is needed
-    version_verify(logger, resp)
-
 # _config_server()
 
 @click.group(context_settings=CONTEXT_SETTINGS)
@@ -161,7 +192,7 @@ def root(ctx=None):
             resp.raise_for_status()
 
         # perform version verification routine, in case server api is not
-        # compatible execution it will stop here
+        # compatible execution will stop here
         version_verify(logger, resp)
 
     auth_key = CONF.get_key()

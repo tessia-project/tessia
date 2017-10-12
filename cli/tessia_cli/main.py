@@ -21,6 +21,7 @@ Module containing entry point for client execution
 #
 from tessia_cli.config import CONF
 from tessia_cli.cmds import root
+from tessia_cli.utils import log_exc_info
 
 import click
 import json
@@ -36,26 +37,6 @@ import sys
 #
 # CODE
 #
-
-def _log_exc_info(msg, exc):
-
-    logger = logging.getLogger(__name__)
-    # exception caused by a failed http request: log it's information
-
-    if hasattr(exc, 'response') and exc.response is not None:
-        msg = 'An error occurred during a request, debug info:\n'
-        msg += 'URL: {}\n'.format(exc.request.url)
-        msg += 'Status code: {} {}\n'.format(
-            exc.response.status_code, exc.response.reason)
-        msg += 'Response headers: {}\n'.format(exc.response.headers)
-        msg += 'Response body: {}\n'.format(exc.response.text)
-        msg += 'Request headers: {}\n'.format(
-            exc.response.request.headers)
-        msg += 'Request body: {}\n'.format(exc.response.request.body)
-
-    logger.error(msg, exc_info=exc)
-# _log_response_info()
-
 def _parse_resp_error(response):
     """
     Parse the content of the error response for more friendly messages
@@ -65,6 +46,10 @@ def _parse_resp_error(response):
         answer = json.loads(raw_answer)
     # not a json content: just return the raw content
     except Exception:
+        # empty body: as a last resource, return the status code and
+        # description
+        if not raw_answer:
+            raw_answer = '{} {}'.format(response.status_code, response.reason)
         return raw_answer
 
     msg = ''
@@ -104,10 +89,11 @@ def main(*args, **kwargs):
         click.echo('Error: {}'.format(str(exc)), err=True)
         sys.exit(1)
 
+    logger = logging.getLogger(__name__)
     try:
         root()
     except requests.exceptions.HTTPError as exc:
-        _log_exc_info('An error occurred during a request', exc)
+        log_exc_info(logger, 'An error occurred during a request', exc)
 
         if exc.response.status_code == 400:
             msg = _parse_resp_error(exc.response)
@@ -144,7 +130,7 @@ def main(*args, **kwargs):
                 'The error is: {}'.format(str(exc)), err=True)
         sys.exit(1)
     except requests.exceptions.SSLError as exc:
-        _log_exc_info('SSL connection failed', exc)
+        log_exc_info(logger, 'SSL connection failed', exc)
         ssl_error = str(exc)
         if '[SSL: CERTIFICATE_VERIFY_FAILED]' not in ssl_error:
             click.echo('Error: {}'.format(ssl_error), err=True)
@@ -160,13 +146,14 @@ def main(*args, **kwargs):
         sys.exit(1)
 
     except requests.exceptions.RequestException as exc:
-        _log_exc_info('Server connection failed', exc)
+        log_exc_info(logger, 'Server connection failed', exc)
         click.echo(
             "Error: connection to server '{}' failed, see the logs for "
             "details.".format(exc.request.url), err=True)
         sys.exit(1)
     except Exception as exc:
-        _log_exc_info('The client encountered an unexpected problem', exc)
+        log_exc_info(
+            logger, 'The client encountered an unexpected problem', exc)
         click.echo(
             'The client encountered an unexpected problem, '
             'the error is: {}'.format(str(exc)), err=True)

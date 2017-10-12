@@ -124,6 +124,31 @@ def fetch_and_update(resource, search_fields, error_msg, update_dict):
     return item
 # fetch_and_update()
 
+def log_exc_info(logger, msg, req_exc):
+    """
+    Log exception information of a failed request.
+
+    Args:
+        logger (Logger): logging object
+        msg (str): initial message to be concatenated with the exception
+                   information
+        req_exc (requests.exceptions.RequestException): object
+    """
+    # exception caused by a failed http request: log its information
+    if hasattr(req_exc, 'response') and req_exc.response is not None:
+        msg = 'An error occurred during a request, debug info:\n'
+        msg += 'URL: {}\n'.format(req_exc.request.url)
+        msg += 'Status code: {} {}\n'.format(
+            req_exc.response.status_code, req_exc.response.reason)
+        msg += 'Response headers: {}\n'.format(req_exc.response.headers)
+        msg += 'Response body: {}\n'.format(req_exc.response.text)
+        msg += 'Request headers: {}\n'.format(
+            req_exc.response.request.headers)
+        msg += 'Request body: {}\n'.format(req_exc.response.request.body)
+
+    logger.warning(msg, exc_info=req_exc)
+# log_exc_info()
+
 def size_to_str(size):
     """
     Take a size in mebibytes and return it in the biggest of the units MiB,
@@ -212,7 +237,7 @@ def str_to_size(size_str):
         'Invalid size format: {}'.format(size_str)) from None
 # str_to_size()
 
-def version_verify(logger, response, silent=False):
+def version_verify(logger, response):
     """
     Helper function, receives a response object and verify if any report or
     error must be generated regarding version compatibility.
@@ -220,44 +245,43 @@ def version_verify(logger, response, silent=False):
     Args:
         logger (logging.Logger): logger instance
         response (requests.Response): response to be evaluated
-        silent (bool): whether to print messages or just return
 
     Returns:
-        bool: in silent mode, returns False if validation fails
+        None
 
     Raises:
-        ClickException: when not in silent mode in case validation fails
+        ClickException: in case validation fails
     """
-    if response.status_code == 417:
-        if silent:
-            return False
+    msg_invalid_resp = (
+        "The defined server's address returned a malformed response, please "
+        "verify if the address is correct before trying again.")
 
+    # make sure the answer is valid and came from our server
+    if response.status_code not in (200, 417):
+        raise click.ClickException(msg_invalid_resp)
+    try:
+        server_version = int(response.headers['X-Tessia-Api-Version'])
+    except (TypeError, KeyError, ValueError) as exc:
+        logger.error(
+            'Received invalid response from server:', exc_info=exc)
+        raise click.ClickException(msg_invalid_resp)
+
+    # response is from our server, now see possible scenarios regarding api
+    # version state
+
+    # server api version not supported by client
+    if response.status_code == 417:
         raise click.ClickException(
             'The current server API version is not supported by this client. '
             'You need to update the client to a newer version to be able to '
             'use the service.')
-    elif response.status_code == 200:
-        try:
-            server_version = int(response.headers['X-Tessia-Api-Version'])
-        except (TypeError, KeyError, ValueError) as exc:
-            logger.error(
-                'Received invalid response from server:', exc_info=exc)
+    # server api supported but newer version is available: warn user
+    elif CONF.get_api_version() < server_version:
+        click.echo(
+            'warning: a newer api version is available on the server, '
+            'you might want to update this client to have access to the '
+            'latest features.', err=True)
 
-            if silent:
-                return False
-            raise click.ClickException(
-                "The server's address returned a malformed response, please "
-                "verify if the address configured is correct and the network "
-                "is functional before trying again."
-            )
-
-        if CONF.get_api_version() < server_version:
-            click.echo(
-                'warning: a newer api version is available on the server, '
-                'you might want to update this client to have access to the '
-                'latest features.', err=True)
-
-    return True
 # version_verify()
 
 def wait_scheduler(client, arg_dict):

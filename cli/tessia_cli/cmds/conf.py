@@ -188,19 +188,25 @@ def set_server(url):
             schema_url,
             headers={'Expect': build_expect_header()}
         )
+        # 417 is handled by version_verify below
+        if resp.status_code not in (200, 417):
+            resp.raise_for_status()
     except requests.exceptions.HTTPError as exc:
         logger.debug(
             'Failed to connect to %s', schema_url, exc_info=exc)
         raise click.ClickException(
-            'error: the address provided failed to provide a valid answer.'
+            'the address provided returned an invalid response.'
         ) from None
     except requests.exceptions.SSLError as exc:
         logger.debug(
             'Failed to connect to %s', schema_url, exc_info=exc)
         ssl_error = str(exc)
         if '[SSL: CERTIFICATE_VERIFY_FAILED]' not in ssl_error:
-            raise click.ClickException(
-                'error: {}'.format(ssl_error)) from None
+            msg = (
+                "SSL connection to the server failed, verify if the trusted "
+                "certificate file is valid and the server address is correct. "
+                "You can also see the logs for details.")
+            raise click.ClickException(msg) from None
         raise click.ClickException(
             "The validation of the server's SSL certificate failed. "
             "In order to assure the connection is safe, place a copy of the "
@@ -214,12 +220,8 @@ def set_server(url):
             'operation failed. The address provided did not respond.'
         ) from None
 
-    # verify api version compatibility
-    if not version_verify(logger, resp, silent=True):
-        raise click.ClickException(
-            'operation failed. The address provided returned an invalid '
-            'response.'
-        ) from None
+    # verify api version compatibility, may raise exception
+    version_verify(logger, resp)
 
     conf_dict = CONF.get_config()
     conf_dict['server_url'] = url

@@ -75,7 +75,7 @@ tasks:
       - Item added successfully.
       # Empty name
     - - net zone-add --name=
-      - Item added successfully.
+      - 'Invalid value for "--name": value may not be empty'
     - - net zone-add --name=GEO_3 --owner=dev1@example.com
       - 'request failed. Server answered: An item with the provided value'
     - - net zone-del --name=GEO_3
@@ -121,7 +121,7 @@ tasks:
       - 'request failed. Server answered: An item with the provided value'
       # Empty name
     - - net subnet-add --zone=GEO_1-NE --name= --address=192.168.160.0/22
-      - Item added successfully.
+      - 'Invalid value for "--name": value may not be empty'
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1820' --desc='Shared zone vlan 1823'
       - Item successfully updated.
     - - net subnet-edit --zone=GEO_1 --name='GEO_1-NE-1820' --newname='GEO_1-NE-1823'
@@ -131,7 +131,7 @@ tasks:
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1820'
       - no update criteria provided.
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1820' --newname=''
-      - 'The server did not accept our request. The response is: name must be type=string'
+      - 'Invalid value for "--newname": value may not be empty'
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1820' --newname='GEO_1-NE-1823'
       - Item successfully updated.
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1823' --vlan=VLAN1

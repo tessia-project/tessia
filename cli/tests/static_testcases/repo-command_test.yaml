@@ -66,9 +66,9 @@ tasks:
       - 'no such option: --login'
       # Empty value
     - - repo add --name= --url='http://example.com/suse/s390x/SLES12/DVD'
-      - Item added successfully.
+      - 'Invalid value for "--name": value may not be empty'
     - - repo add --name='SLES12.4' --url=
-      - Item added successfully.
+      - 'Invalid value for "--url": value may not be empty'
     - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD'
       - Item added successfully.
     - - repo add --name='SLES12.2' --url='http://example.com/xxx'
@@ -125,7 +125,7 @@ tasks:
       - Item successfully updated.
       # Empty value
     - - repo edit --name='SLES12.2' --newname=
-      - 'The server did not accept our request. The response is: name must be type=string'
+      - 'Invalid value for "--newname": value may not be empty'
     - - repo edit --name='SLES12.2' --newname='SLES12.2'
       - Item successfully updated.
     - - repo edit --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD'
@@ -133,7 +133,7 @@ tasks:
     - - repo edit --name='SLES12.2' --url='http://example.com/xxx'
       - Item successfully updated.
     - - repo edit --name='SLES12.2' --url=''
-      - 'The server did not accept our request. The response is: url must be type=string'
+      - 'Invalid value for "--url": value may not be empty'
     - - repo edit --name='SLES12.2' --os=sles12.2
       - --kernel is required when --os was specified
     - - repo edit --name='SLES12.2' --os=sles12.2  --kernel='/boot/s390x/linux'
@@ -157,7 +157,7 @@ tasks:
       - Missing option "--name".
       # Empty name was created before
     - - repo del --name=''
-      - Item successfully deleted.
+      - 'Invalid value for "--name": value may not be empty'
     - - repo del --name='SLES12'
       - repository not found.
     - - repo del --name='SLES12.2'

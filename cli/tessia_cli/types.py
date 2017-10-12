@@ -67,6 +67,13 @@ class Constant(click.ParamType):
 
 CONSTANT = Constant()
 
+class CustomIntRange(click.IntRange):
+    """
+    Same as cick.IntRange but with a different description
+    """
+    name = 'integer'
+# CustomIntRange
+
 class QethGroup(click.ParamType):
     """
     Represents a qeth group for use with OSA cards

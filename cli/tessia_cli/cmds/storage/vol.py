@@ -24,9 +24,7 @@ from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
 from tessia_cli.output import print_ver_table
-from tessia_cli.types import FCP_PATH
-from tessia_cli.types import SCSI_WWID
-from tessia_cli.types import VOLUME_ID
+from tessia_cli.types import CustomIntRange, FCP_PATH, SCSI_WWID, VOLUME_ID
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_item
 from tessia_cli.utils import size_to_str
@@ -103,7 +101,7 @@ def part_add(server, volume_id, **kwargs):
               help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
-@click.option('--num', required=True, type=click.IntRange(min=1),
+@click.option('--num', required=True, type=CustomIntRange(min=1),
               help="partition's number to delete")
 def part_del(server, volume_id, num):
     """
@@ -132,7 +130,7 @@ def part_del(server, volume_id, num):
               help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
-@click.option('--num', type=click.IntRange(min=1), required=True,
+@click.option('--num', type=CustomIntRange(min=1), required=True,
               help="partition's number to edit")
 @click.option('--size', help="size (i.e. 500mb)")
 @click.option('--fs', help="filesystem")

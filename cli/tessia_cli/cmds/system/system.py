@@ -23,7 +23,7 @@ from tessia_cli.client import Client
 from tessia_cli.cmds.job.job import output
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
-from tessia_cli.types import CONSTANT
+from tessia_cli.types import CONSTANT, CustomIntRange
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 from tessia_cli.utils import fetch_item
@@ -194,7 +194,7 @@ def poweroff(ctx, name):
 @click.option('--name', required=True, help="system name")
 @click.option('--profile',
               help="activation profile to use, if not specified uses default")
-@click.option('--cpu', type=click.IntRange(min=1),
+@click.option('--cpu', type=CustomIntRange(min=1),
               help="override profile with custom cpu quantity")
 @click.option('--memory',
               help="override profile with custom memory size (i.e. 1gib)")

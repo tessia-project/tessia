@@ -685,17 +685,17 @@ tasks:
     - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu
       - ' --cpu option requires an argument'
     - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu=4
-      - 'The server did not accept our request. The response is: wherecpu must be anyOf='
+      - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3lp52 --cpu=4
-      - 'The server did not accept our request. The response is: wherecpu must be anyOf='
+      - 'Profile name                : DASD root1'
+    - - system prof-list --system=cpc3lp52 --cpu=3
+      - No results were found.
     - - system prof-list --system=cpc3lp52 --memory
       - '--memory option requires an argument'
     - - system prof-list --system=cpc3lp52 --memory=2048mb
-      - 'The server did not accept our request. The response is: wherememory must be anyOf='
-    - - system prof-list --system=cpc3lp52 --memory=2gb
-      - 'The server did not accept our request. The response is: wherememory must be anyOf='
+      - 'Profile name                : DASD11'
     - - system prof-list --system=cpc3lp52 --memory=1024mb
-      - 'The server did not accept our request. The response is: wherememory must be anyOf='
+      - No results were found.
       # expecting DASD11 as it was the last to be set as default
     - - system prof-list --system=cpc3lp52 --default
       - 'Profile name                : DASD11'

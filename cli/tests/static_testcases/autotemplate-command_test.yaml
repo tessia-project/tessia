@@ -66,7 +66,7 @@ tasks:
     - - autotemplate print
       - 'Missing option "--name".'
     - - autotemplate print --name= 
-      - template not found.
+      - 'Invalid value for "--name": value may not be empty'
     - - autotemplate print --name=RHEL7.2 
       - '# System authorization information'
     # autotemplate add, edit and del
@@ -91,7 +91,7 @@ tasks:
     - - autotemplate edit --name=RHEL7.2 --newname=RHEL7.2_GEO_1 
       - Item successfully updated.
     - - autotemplate edit --name=RHEL7.2_GEO_1 --newname=
-      - 'The server did not accept our request. The response is: name must be type=string'
+      - 'Invalid value for "--newname": value may not be empty'
     - - autotemplate edit --name=RHEL7.2_GEO_1 --os=''
       - 'The server did not accept our request. The response is: operating_system must be type=string'
     - - autotemplate edit --name=RHEL7.2_GEO_1  --os=rhel7.2

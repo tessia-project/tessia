@@ -76,7 +76,7 @@ tasks:
       - Item added successfully.
       # Empty name
     - - perm project-add --name= --desc='3rd tester team'
-      - Item added successfully.
+      - 'Invalid value for "--name": value may not be empty'
     - - perm project-add --name='GEO_4 testers' --desc=
       - Item added successfully.
     - - perm project-edit --name='GEO_1 testers'
@@ -89,9 +89,9 @@ tasks:
       - Item successfully updated.
       # Empty name
     - - perm project-edit --name='GEO_1 testers' --newname=
-      - Missing option "--desc".
+      - 'Invalid value for "--newname": value may not be empty'
     - - perm project-edit --name='GEO_1 testers' --newname=  --desc='Test team'
-      - 'The server did not accept our request. The response is: name must be type=string'
+      - 'Invalid value for "--newname": value may not be empty'
     - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers' --desc='Test team'
       - Item successfully updated.
     - - perm project-list
@@ -121,9 +121,9 @@ tasks:
       - User added successfully.
       # Empty name
     - - perm user-add --login=dev6@example.com --name=
-      - User added successfully.
+      - 'Invalid value for "--name": value may not be empty'
     - - perm user-add --login= --name='Developer 6'
-      - User added successfully.
+      - 'Invalid value for "--login": value may not be empty'
     - - perm user-add --login=dev4@example.com --name='Developer 4'
       - 'request failed. Server answered: An item with the provided value'
     - - perm user-edit --login=dev2@example.com --restricted=FALSE --admin=TRUE
@@ -140,7 +140,7 @@ tasks:
       - Missing option "--login".
       # Empty name
     - - perm user-edit --login=dev4@example.com --name=
-      - 'The server did not accept our request. The response is: name must be type=string'
+      - 'Invalid value for "--name": value may not be empty'
     - - perm user-edit --login=dev4@example.com --name='Developer 4'
       - User successfully updated.
     - - perm user-edit --login=dev4@example.com --title='Mr. Dev 4'

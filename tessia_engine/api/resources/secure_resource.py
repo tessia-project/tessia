@@ -38,6 +38,9 @@ from werkzeug.exceptions import Forbidden
 #
 # CONSTANTS AND DEFINITIONS
 #
+# regex pattern to be used for name fields, defined here to be shared by the
+# children resource classes
+NAME_PATTERN = r'^\w+[\w\s\.\-]+$'
 
 #
 # CODE

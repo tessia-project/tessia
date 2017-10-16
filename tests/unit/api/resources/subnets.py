@@ -143,6 +143,10 @@ class TestSubnet(TestSecureResource):
         error_re = "^The value '{}={}' is invalid: .*$"
         # specify fields with wrong types
         wrong_data = [
+            ('name', ''),
+            ('name', ' '),
+            ('name', ' name'),
+            ('name', 'name with * symbol'),
             ('name', 5),
             (
                 'address',

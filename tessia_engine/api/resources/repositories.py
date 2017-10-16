@@ -21,6 +21,7 @@ Resource definition
 #
 from flask_potion import fields
 from tessia_engine.api.exceptions import BaseHttpError
+from tessia_engine.api.resources.secure_resource import NAME_PATTERN
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import Repository
 
@@ -71,9 +72,10 @@ class RepositoryResource(SecureResource):
         # (according to json spec) but our client does not support it therefore
         # we set both
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
         url = fields.String(
-            title=DESC['url'], description=DESC['url'])
+            title=DESC['url'], description=DESC['url'],
+            pattern=r'^[a-zA-Z0-9_\:\@\.\/\-]+$')
         kernel = fields.String(
             title=DESC['kernel'], description=DESC['kernel'], nullable=True)
         initrd = fields.String(

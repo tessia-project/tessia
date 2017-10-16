@@ -25,6 +25,7 @@ from flask_potion.contrib.alchemy.fields import InlineModel
 from flask_potion.instances import Pagination
 from tessia_engine.api.exceptions import BaseHttpError
 from tessia_engine.api.exceptions import ItemNotFoundError
+from tessia_engine.api.resources.secure_resource import NAME_PATTERN
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import System
 from tessia_engine.db.models import SystemIface
@@ -77,9 +78,10 @@ class SystemIfaceResource(SecureResource):
         # (according to json spec) but our client does not support it therefore
         # we set both
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
         osname = fields.String(
-            title=DESC['osname'], description=DESC['osname'], nullable=True)
+            title=DESC['osname'], description=DESC['osname'], nullable=True,
+            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
         attributes = fields.Custom(
             schema=SystemIface.get_schema('attributes'),
             title=DESC['attributes'], description=DESC['attributes'])

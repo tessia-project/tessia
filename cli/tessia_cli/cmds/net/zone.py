@@ -22,6 +22,7 @@ Module for the zone (network zones) command
 from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
+from tessia_cli.types import NAME
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 
@@ -39,7 +40,8 @@ FIELDS = (
 
 @click.command(name='zone-add')
 # set the parameter name after the model's attribute name to save on typing
-@click.option('--name', required=True, help="name of network zone")
+@click.option('--name', required=True, type=NAME,
+              help="name of network zone")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning zone")
 @click.option('--desc', help="free form field describing zone")
@@ -57,7 +59,8 @@ def zone_add(**kwargs):
 # zone_add()
 
 @click.command(name='zone-del')
-@click.option('--name', required=True, help="name of network zone")
+@click.option('--name', required=True, type=NAME,
+              help="name of network zone")
 def zone_del(name):
     """
     remove an existing network zone
@@ -76,7 +79,8 @@ def zone_del(name):
 @click.option('cur_name', '--name', required=True,
               help="name of network zone")
 # set the parameter name after the model's attribute name to save on typing
-@click.option('name', '--newname', help="new name of network zone")
+@click.option('name', '--newname', type=NAME,
+              help="new name of network zone")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning zone")
 @click.option('--desc', help="free form field describing zone")
@@ -94,7 +98,7 @@ def zone_edit(cur_name, **kwargs):
 # zone_edit()
 
 @click.command(name='zone-list')
-@click.option('--name', help="filter by zone name")
+@click.option('--name', type=NAME, help="filter by zone name")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 def zone_list(**kwargs):

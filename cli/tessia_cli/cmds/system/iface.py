@@ -25,6 +25,7 @@ from tessia_cli.utils import fetch_item
 from tessia_cli.output import print_items
 from tessia_cli.types import CONSTANT
 from tessia_cli.types import LIBVIRT_XML
+from tessia_cli.types import NAME
 from tessia_cli.types import QETH_GROUP
 from tessia_cli.utils import fetch_and_delete
 
@@ -55,10 +56,10 @@ ATTR_BY_TYPE = {
 
 @click.command(name='iface-add')
 @click.option('--system', required=True, help="target system")
-@click.option('--name', required=True, help="interface name")
+@click.option('--name', required=True, type=NAME, help="interface name")
 @click.option('--type', required=True, type=CONSTANT,
               help="interface type (see iface-types)")
-@click.option('--osname', required=True,
+@click.option('--osname', required=True, type=NAME,
               help="interface name in operating system (i.e. en0)")
 @click.option('mac_address', '--mac', help="mac address")
 @click.option('--subnet', help="subnet of ip address to be assigned")
@@ -142,7 +143,7 @@ def iface_add(**kwargs):
     short_help='attach a network interface to a system activation profile')
 @click.option('--system', required=True, help='target system')
 @click.option('--profile', required=True, help='target activation profile')
-@click.option('--iface', required=True, help='interface name')
+@click.option('--iface', required=True, type=NAME, help='interface name')
 def iface_attach(system, profile, iface):
     """
     attach a network interface to a system activation profile
@@ -168,7 +169,7 @@ def iface_attach(system, profile, iface):
 
 @click.command(name='iface-del')
 @click.option('--system', required=True, help="system name")
-@click.option('--name', required=True, help="interface name")
+@click.option('--name', required=True, type=NAME, help="interface name")
 def iface_del(**kwargs):
     """
     remove an existing network interface
@@ -188,7 +189,7 @@ def iface_del(**kwargs):
     short_help='detach a network interface from a system activation profile')
 @click.option('--system', required=True, help='target system')
 @click.option('--profile', required=True, help='target activation profile')
-@click.option('--iface', required=True, help='interface name')
+@click.option('--iface', required=True, type=NAME, help='interface name')
 def iface_detach(system, profile, iface):
     """
     detach a network interface from a system activation profile
@@ -218,11 +219,13 @@ def iface_detach(system, profile, iface):
     name='iface-edit',
     short_help='change properties of an existing network interface')
 @click.option('--system', required=True, help="system containing interface")
-@click.option('cur_name', '--name', required=True, help="interface name")
-@click.option('name', '--newname', help="new interface name")
+@click.option('cur_name', '--name', required=True, type=NAME,
+              help="interface name")
+@click.option('name', '--newname', type=NAME, help="new interface name")
 @click.option('--type', type=CONSTANT,
               help="interface type (see iface-types)")
-@click.option('--osname', help="interface name in operating system (i.e. en0)")
+@click.option('--osname', type=NAME,
+              help="interface name in operating system (i.e. en0)")
 @click.option('mac_address', '--mac', help="mac address")
 @click.option('--subnet', help="subnet of ip address to be assigned")
 @click.option('--ip', help="ip address to be assigned to interface")
@@ -318,10 +321,11 @@ def iface_edit(system, cur_name, **kwargs):
 
 @click.command(name='iface-list')
 @click.option('--system', help='the system to list')
-@click.option('--name', help="filter by interface name")
+@click.option('--name', type=NAME, help="filter by interface name")
 @click.option('--type', type=CONSTANT,
               help="filter by specified interface type")
-@click.option('--osname', help="filter by specified operating system name")
+@click.option('--osname', type=NAME,
+              help="filter by specified operating system name")
 @click.option('mac_address', '--mac',
               help="filter by specified mac address")
 @click.option('ip_address', '--ip',

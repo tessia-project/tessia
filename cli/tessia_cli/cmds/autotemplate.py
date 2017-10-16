@@ -23,6 +23,7 @@ from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
 from tessia_cli.types import AUTO_TEMPLATE
+from tessia_cli.types import NAME
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 from tessia_cli.utils import fetch_item
@@ -48,7 +49,8 @@ def autotemplate():
 # autotemplate()
 
 @autotemplate.command('add')
-@click.option('--name', required=True, help="template's name identifier")
+@click.option('--name', required=True, type=NAME,
+              help="template's name identifier")
 @click.option('--content', required=True, type=AUTO_TEMPLATE,
               help="template content")
 @click.option('operating_system', '--os', required=True, help="supported OS")
@@ -69,7 +71,7 @@ def template_add(**kwargs):
 # template_add()
 
 @autotemplate.command(name='del')
-@click.option('--name', required=True, help="template to delete")
+@click.option('--name', required=True, type=NAME, help="template to delete")
 def template_del(name):
     """
     remove an existing auto template
@@ -84,9 +86,10 @@ def template_del(name):
 @autotemplate.command(
     'edit',
     short_help='change properties of an existing template')
-@click.option('cur_name', '--name', required=True,
+@click.option('cur_name', '--name', required=True, type=NAME,
               help="template's name identifier")
-@click.option('name', '--newname', help="new template's name identifier")
+@click.option('name', '--newname', type=NAME,
+              help="new template's name identifier")
 @click.option('--content', type=AUTO_TEMPLATE, help="template content")
 @click.option('--owner', help="template owner")
 @click.option('--project', help="project owning template")
@@ -106,7 +109,7 @@ def template_edit(cur_name, **kwargs):
 # template_edit()
 
 @autotemplate.command(name='list')
-@click.option('--name', help="filter by template name")
+@click.option('--name', type=NAME, help="filter by template name")
 @click.option('--owner', help="filter by owner")
 @click.option('--project', help="filter by project")
 @click.option('operating_system', '--os', help="filter by supported OS")
@@ -127,7 +130,8 @@ def template_list(**kwargs):
 # template_list()
 
 @autotemplate.command(name='print')
-@click.option('--name', required=True, help="template to print content")
+@click.option('--name', type=NAME,
+              required=True, help="template to print content")
 def template_print(**kwargs):
     """
     print the content of a template

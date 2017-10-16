@@ -78,11 +78,10 @@ tasks:
       - Missing option "--model".
     - - storage server-add --name=DS8K22 --model=DS8000
       - Missing option "--type".
-      # Issue 52: Empty values for the '--name' and '--model' are acceptable
     - - storage server-add --name= --model= --type=DASD-FCP --project='GEO_1 labadmins'
-      - Item added successfully.
+      - 'Invalid value for "--name": value may not be empty'
     - - storage server-add --name='' --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
-      - 'request failed. Server answered: An item with the provided value'
+      - 'Invalid value for "--name": value may not be empty'
     - - storage server-add --name=DS8K22 --model=DS8000 --type= --project='GEO_1 labadmins'
       - "request failed. Server answered: No associated item found with value '' for field 'Server type'"
     - - storage server-add --name=DS8K22 --model=DS8000 --type=DASD-FCP
@@ -91,23 +90,19 @@ tasks:
       - 'request failed. Server answered: An item with the provided value'
     - - storage server-add --name=DS8K23 --model=DS8000 --type=DASD-FCP --hostname=s88.example.com --fwlevel=A05 --project='GEO_1 labadmins' --desc='New server s88'
       - Item added successfully.
-    - - storage server-add --name=DS8K24 --model=DS8000 --type=DASD-FCP --hostname= --fwlevel= --project= --desc=
-      - "request failed. Server answered: No associated item found with value '' for field 'Project'"
     - - storage server-add --name=DS8K24 --model=DS8000 --type=DASD-FCP --hostname= --fwlevel= --project='GEO_1 labadmins' --desc=
-      - Item added successfully.
+      - 'Invalid value for "--hostname": value may not be empty'
     # 'storage server-list' subcommand  
     - - storage server-list
       - 'Name           : DS8K16'
-      # Issue 52: Empty values for the '--name' and '--model' are acceptable
     - - storage server-list --name=
-      - 'Name           :'
+      - 'Invalid value for "--name": value may not be empty'
     - - storage server-list --name=DS8K22
       - 'Name           : DS8K22'
     - - storage server-list --name=DS8888
       - No results were found.
-      # Issue 52: Empty values for the '--name' and '--model' are acceptable
     - - storage server-list --model=
-      - 'Name           :'
+      - 'Invalid value for "--model": value may not be empty'
     - - storage server-list --model=DS8000
       - 'Name           : DS8K16'
     - - storage server-list --model=DS8888
@@ -115,13 +110,13 @@ tasks:
     - - storage server-list --owner=
       - No results were found.
     - - storage server-list --owner lab_admin@example.com
-      - 'Name           : DS8K24'
+      - 'Name           : DS8K23'
     - - storage server-list --owner dev1@example.com
       - No results were found.
     - - storage server-list --project=
       - No results were found.
     - - storage server-list --project='GEO_1 labadmins'
-      - 'Name           : DS8K24'
+      - 'Name           : DS8K23'
     - - storage server-list --project='GEO_1 developers'
       - No results were found.
     - - storage server-list --types=
@@ -135,19 +130,18 @@ tasks:
     - - storage server-list --owner lab_admin@example.com --name=DS8K22
       - 'Name           : DS8K22'
     # 'storage server-edit' subcommand  
-      # Issue 52: Empty values for the '--name' and '--model' are acceptable
     - - storage server-edit --name=
-      - no update criteria provided.
+      - 'Invalid value for "--name": value may not be empty'
     - - storage server-edit --name= --model=DS8000
-      - Item successfully updated.
+      - 'Invalid value for "--name": value may not be empty'
     - - storage server-edit
       - Missing option "--name".
     - - storage server-edit --name=DS8K22
       - no update criteria provided.
     - - storage server-edit --name=DS8888
       - server not found.
-    - - storage server-edit --name=DS8K22 --newname=DS8K24
-      - 'request failed. Server answered: An item with the provided value'
+    - - storage server-edit --name=DS8K22 --newname=
+      - 'Invalid value for "--newname": value may not be empty'
     - - storage server-edit --name=DS8K22 --newname=DS8K32
       - Item successfully updated.
     - - storage server-edit --name=DS8K22 --desc=''
@@ -161,11 +155,11 @@ tasks:
     - - storage server-edit --name=DS8K32 --fwlevel=A06
       - Item successfully updated.
     - - storage server-edit --name=DS8K32 --hostname=
-      - Item successfully updated.
+      - 'Invalid value for "--hostname": value may not be empty'
     - - storage server-edit --name=DS8K32 --hostname=s90.example.com
       - Item successfully updated.
     - - storage server-edit --name=DS8K32 --model=
-      - 'The server did not accept our request. The response is: model must be type=string'
+      - 'Invalid value for "--model": value may not be empty'
     - - storage server-edit --name=DS8K32 --model=DS8800
       - Item successfully updated.
     - - storage server-edit --name=DS8K32 --owner=
@@ -189,9 +183,8 @@ tasks:
     # 'storage server-del' subcommand  
     - - storage server-del
       - Missing option "--name".
-      # Issue 52: Empty values for the '--name' and '--model' are acceptable
     - - storage server-del --name=
-      - Item successfully deleted.
+      - 'Invalid value for "--name": value may not be empty'
     - - storage server-del --name=DS8K22
       - server not found.
     - - storage server-del --name=DS8K32

@@ -21,6 +21,7 @@ Resource definition
 #
 from flask_potion import fields
 from tessia_engine.api.exceptions import BaseHttpError
+from tessia_engine.api.resources.secure_resource import NAME_PATTERN
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import Subnet
 
@@ -73,7 +74,7 @@ class SubnetResource(SecureResource):
         # (according to json spec) but our client does not support it therefore
         # we set both
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
         address = fields.String(
             title=DESC['address'], description=DESC['address'])
         gateway = fields.String(

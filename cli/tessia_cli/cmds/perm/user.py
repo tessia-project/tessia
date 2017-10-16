@@ -22,6 +22,8 @@ Module for the users command
 from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
+from tessia_cli.types import LOGIN
+from tessia_cli.types import NAME
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 
@@ -41,8 +43,8 @@ FIELDS_ROLE = (
 #
 
 @click.command(name='user-add')
-@click.option('--login', required=True, help="user's login")
-@click.option('--name', required=True, help="user's fullname")
+@click.option('--login', required=True, type=LOGIN, help="user's login")
+@click.option('--name', required=True, type=NAME, help="user's fullname")
 @click.option('--title', help="user's job title")
 @click.option('--restricted', is_flag=True,
               help="make user restricted (see docs for details)")
@@ -62,7 +64,8 @@ def user_add(**kwargs):
 # user_add()
 
 @click.command(name='user-del')
-@click.option('--login', required=True, help="login of user to delete")
+@click.option('--login', required=True, type=LOGIN,
+              help="login of user to delete")
 def user_del(login):
     """
     remove an existing user
@@ -75,8 +78,9 @@ def user_del(login):
 # user_del()
 
 @click.command(name='user-edit')
-@click.option('--login', required=True, help="login of target user")
-@click.option('--name', help="user's fullname")
+@click.option('--login', required=True, type=LOGIN,
+              help="login of target user")
+@click.option('--name', type=NAME, help="user's fullname")
 @click.option('--title', help="user's job title")
 @click.option('--restricted', type=click.BOOL, help="switch restricted flag")
 @click.option('--admin', type=click.BOOL, help="switch admin flag")
@@ -94,7 +98,7 @@ def user_edit(login, **kwargs):
 # user_edit()
 
 @click.command(name='user-list')
-@click.option('--login', help="filter by user's login")
+@click.option('--login', type=LOGIN, help="filter by user's login")
 @click.option('--restricted', help="list restricted users")
 @click.option('--admin', help="list admin users")
 def user_list(**kwargs):
@@ -115,7 +119,8 @@ def user_list(**kwargs):
 # user_list()
 
 @click.command(name='user-roles')
-@click.option('user', '--login', required=True, help="user's login to list")
+@click.option('user', '--login', required=True, type=LOGIN,
+              help="user's login to list")
 def user_roles(**kwargs):
     """
     list the roles associated to a user

@@ -22,6 +22,7 @@ Resource definition
 from flask_potion import fields
 from tessia_engine.api.exceptions import BaseHttpError
 from tessia_engine.api.exceptions import ItemNotFoundError
+from tessia_engine.api.resources.secure_resource import NAME_PATTERN
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import System
 
@@ -86,9 +87,10 @@ class SystemResource(SecureResource):
         # (according to json spec) but our client does not support it therefore
         # we set both
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
         hostname = fields.String(
-            title=DESC['hostname'], description=DESC['hostname'])
+            title=DESC['hostname'], description=DESC['hostname'],
+            pattern=r'^[a-zA-Z0-9_\:\@\.\/\-]+$')
         modified = fields.DateTime(
             title=DESC['modified'], description=DESC['modified'], io='r')
         desc = fields.String(

@@ -20,6 +20,7 @@ Resource definition
 # IMPORTS
 #
 from flask_potion import fields
+from tessia_engine.api.resources.secure_resource import NAME_PATTERN
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import User
 
@@ -61,9 +62,10 @@ class UserResource(SecureResource):
         Schema defining the resource fields and their properties
         """
         login = fields.String(
-            title=DESC['login'], description=DESC['login'])
+            title=DESC['login'], description=DESC['login'],
+            pattern=r'^[a-zA-Z0-9_\:\@\.\-]+$')
         name = fields.String(
-            title=DESC['name'], description=DESC['name'])
+            title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
         title = fields.String(
             title=DESC['title'], description=DESC['title'], nullable=True)
         restricted = fields.Boolean(

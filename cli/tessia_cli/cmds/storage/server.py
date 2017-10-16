@@ -22,6 +22,9 @@ Module for the server (storage servers) command
 from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
+from tessia_cli.types import CONSTANT
+from tessia_cli.types import HOSTNAME
+from tessia_cli.types import NAME
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 import click
@@ -40,11 +43,12 @@ TYPE_FIELDS = ('name', 'desc')
 #
 
 @click.command(name='server-add')
-@click.option('--name', required=True, help="server's name")
-@click.option('--model', required=True,
+@click.option('--name', required=True, type=NAME, help="server's name")
+@click.option('--model', required=True, type=CONSTANT,
               help="string describing server's model")
 @click.option('--type', required=True, help="type of volume offered by server")
-@click.option('--hostname', help="address where server is reachable")
+@click.option('--hostname', type=HOSTNAME,
+              help="address where server is reachable")
 @click.option('fw_level', '--fwlevel', help="string describing firmware level")
 @click.option('--project', help="project owning server")
 @click.option('--desc', help="free form field describing server")
@@ -63,7 +67,7 @@ def server_add(**kwargs):
 # server_add()
 
 @click.command(name='server-del')
-@click.option('--name', required=True, help="server to delete")
+@click.option('--name', required=True, type=NAME, help="server to delete")
 def server_del(name):
     """
     remove an existing storage server
@@ -78,14 +82,16 @@ def server_del(name):
 @click.command(
     name='server-edit',
     short_help='change properties of an existing storage server')
-@click.option('cur_name', '--name', required=True,
+@click.option('cur_name', '--name', required=True, type=NAME,
               help="name of server to be updated")
 # set the parameter name after the model's attribute name to save on typing
-@click.option('name', '--newname', help="new name of server")
+@click.option('name', '--newname', type=NAME, help="new name of server")
 @click.option('--desc', help="free form field describing server")
 @click.option('fw_level', '--fwlevel', help="string describing firmware level")
-@click.option('--hostname', help="address where server is reachable")
-@click.option('--model', help="string describing server's model")
+@click.option('--hostname', type=HOSTNAME,
+              help="address where server is reachable")
+@click.option('--model', type=CONSTANT,
+              help="string describing server's model")
 @click.option('--owner', help="server's owner login")
 @click.option('--project', help="project owning server")
 @click.option('--type', help="type of volume offered by server")
@@ -103,8 +109,8 @@ def server_edit(cur_name, **kwargs):
 # server_edit()
 
 @click.command(name='server-list')
-@click.option('--name', help="filter by specified name")
-@click.option('--model', help="filter by specified model")
+@click.option('--name', type=NAME, help="filter by specified name")
+@click.option('--model', type=CONSTANT, help="filter by specified model")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 @click.option('--type', help="filter by specified volume type")

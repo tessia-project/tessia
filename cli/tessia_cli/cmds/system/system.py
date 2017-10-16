@@ -23,7 +23,10 @@ from tessia_cli.client import Client
 from tessia_cli.cmds.job.job import output
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
-from tessia_cli.types import CONSTANT, CustomIntRange
+from tessia_cli.types import CONSTANT
+from tessia_cli.types import CustomIntRange
+from tessia_cli.types import HOSTNAME
+from tessia_cli.types import NAME
 from tessia_cli.utils import fetch_and_delete
 from tessia_cli.utils import fetch_and_update
 from tessia_cli.utils import fetch_item
@@ -52,9 +55,9 @@ SYSTEM_FIELDS = (
 #
 
 @click.command()
-@click.option('--name', required=True, help="system name")
-@click.option(
-    '--hostname', required=True, help="resolvable hostname or ip address")
+@click.option('--name', required=True, type=NAME, help="system name")
+@click.option('--hostname', required=True, type=HOSTNAME,
+              help="resolvable hostname or ip address")
 @click.option('hypervisor', '--hyp', help="system's hypervisor")
 @click.option('--type', required=True, type=CONSTANT,
               help="system type (see types)")
@@ -77,7 +80,7 @@ def add(**kwargs):
 # add()
 
 @click.command(name='del')
-@click.option('--name', required=True, help='system to delete')
+@click.option('--name', required=True, type=NAME, help='system to delete')
 def del_(name):
     """
     remove an existing system
@@ -113,10 +116,12 @@ def autoinstall(ctx, **kwargs):
 # autoinstall()
 
 @click.command(name='edit')
-@click.option('cur_name', '--name', required=True, help='system to edit')
-@click.option('name', '--newname', help="new system name")
+@click.option('cur_name', '--name', required=True, type=NAME,
+              help='system to edit')
+@click.option('name', '--newname', type=NAME, help="new system name")
 @click.option('hypervisor', '--hyp', help="hypervisor's name")
-@click.option('--hostname', help="resolvable hostname or ip address")
+@click.option('--hostname', type=HOSTNAME,
+              help="resolvable hostname or ip address")
 @click.option('--model', type=CONSTANT, help="system model (see model-list)")
 @click.option('--type', type=CONSTANT, help="system type (see types)")
 @click.option('--state', help="system state (see states)")
@@ -138,7 +143,7 @@ def edit(cur_name, **kwargs):
 # edit()
 
 @click.command(name='list')
-@click.option('--name', help="filter by system name")
+@click.option('--name', type=NAME, help="filter by system name")
 @click.option('hypervisor', '--hyp', help="filter by specified hypervisor")
 @click.option('--model', type=CONSTANT, help="filter by specified model")
 @click.option('--type', type=CONSTANT, help="filter by specified type")
@@ -191,7 +196,7 @@ def poweroff(ctx, name):
 
 @click.command(name='poweron')
 @click.pass_context
-@click.option('--name', required=True, help="system name")
+@click.option('--name', required=True, type=NAME, help="system name")
 @click.option('--profile',
               help="activation profile to use, if not specified uses default")
 @click.option('--cpu', type=CustomIntRange(min=1),

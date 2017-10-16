@@ -90,7 +90,8 @@ def prof_add(**kwargs):
 
 @click.command(name='prof-del')
 @click.option('--system', required=True, help='system name')
-@click.option('--name', required=True, type=NAME, help="profile name to delete")
+@click.option('--name', required=True, type=NAME,
+              help="profile name to delete")
 def prof_del(**kwargs):
     """
     remove an existing system activation profile
@@ -163,7 +164,7 @@ def prof_edit(system, cur_name, **kwargs):
               help="filter by specified number of cpus")
 @click.option('--memory', help="filter by specified memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="list only default profiles")
-@click.option('hypervisor_profile', '--hyp',  type=NAME,
+@click.option('hypervisor_profile', '--hyp', type=NAME,
               help="filter by required hypervisor profile")
 def prof_list(**kwargs):
     """

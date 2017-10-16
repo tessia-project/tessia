@@ -20,6 +20,7 @@ Resource definition
 # IMPORTS
 #
 from flask_potion import fields
+from tessia_engine.api.resources.secure_resource import NAME_PATTERN
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import Template
 
@@ -67,8 +68,7 @@ class AutoTemplateResource(SecureResource):
         # (according to json spec) but our client does not support it therefore
         # we set both
         name = fields.String(
-            title=DESC['name'], description=DESC['name'],
-            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
+            title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
         content = fields.String(
             title=DESC['content'], description=DESC['content'])
         modified = fields.DateTime(

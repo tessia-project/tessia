@@ -108,6 +108,10 @@ class TestIfaceType(TestSecureResource):
         """
         # specify fields with wrong types
         wrong_data = [
+            ('name', ''),
+            ('name', ' '),
+            ('name', ' name'),
+            ('name', 'name with * symbol'),
             ('name', 5),
             ('name', True),
             ('name', None),

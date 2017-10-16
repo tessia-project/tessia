@@ -264,6 +264,13 @@ class TestSystemProfile(TestSecureResource):
         """
         # specify fields with wrong types
         wrong_data = [
+            ('name', ''),
+            ('name', ' '),
+            ('name', ' name'),
+            ('name', 'name with * symbol'),
+            ('name', 5),
+            ('name', False),
+            ('name', None),
             ('system', 5),
             ('system', True),
             ('hypervisor_profile', 5),

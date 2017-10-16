@@ -20,6 +20,7 @@ Resource definition
 # IMPORTS
 #
 from flask_potion import fields
+from tessia_engine.api.resources.secure_resource import NAME_PATTERN
 from tessia_engine.api.resources.secure_resource import SecureResource
 from tessia_engine.db.models import Project
 
@@ -60,9 +61,7 @@ class ProjectResource(SecureResource):
         Potion's schema section
         """
         name = fields.String(
-            title=DESC['name'], nullable=False, description=DESC['name'],
-            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
-        desc = fields.String(
-            title=DESC['desc'], nullable=False, description=DESC['desc'])
+            title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
+        desc = fields.String(title=DESC['desc'], description=DESC['desc'])
 
 # ProjectResource

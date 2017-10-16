@@ -78,7 +78,8 @@ def user_del(login):
 # user_del()
 
 @click.command(name='user-edit')
-@click.option('--login', required=True, type=LOGIN, help="login of target user")
+@click.option('--login', required=True, type=LOGIN,
+              help="login of target user")
 @click.option('--name', type=NAME, help="user's fullname")
 @click.option('--title', help="user's job title")
 @click.option('--restricted', type=click.BOOL, help="switch restricted flag")

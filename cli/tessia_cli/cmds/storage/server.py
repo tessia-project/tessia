@@ -90,7 +90,8 @@ def server_del(name):
 @click.option('fw_level', '--fwlevel', help="string describing firmware level")
 @click.option('--hostname', type=HOSTNAME,
               help="address where server is reachable")
-@click.option('--model', type=CONSTANT, help="string describing server's model")
+@click.option('--model', type=CONSTANT,
+              help="string describing server's model")
 @click.option('--owner', help="server's owner login")
 @click.option('--project', help="project owning server")
 @click.option('--type', help="type of volume offered by server")

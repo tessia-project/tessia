@@ -80,6 +80,8 @@ tasks:
       - Missing option "--type".
     - - storage server-add --name= --model= --type=DASD-FCP --project='GEO_1 labadmins'
       - 'Invalid value for "--name": value may not be empty'
+    - - storage server-add --name=DS8K22 --model= --type=DASD-FCP --project='GEO_1 labadmins'
+      - 'Invalid value for "--model": value may not be empty'
     - - storage server-add --name='' --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
       - 'Invalid value for "--name": value may not be empty'
     - - storage server-add --name=DS8K22 --model=DS8000 --type= --project='GEO_1 labadmins'
@@ -92,6 +94,8 @@ tasks:
       - Item added successfully.
     - - storage server-add --name=DS8K24 --model=DS8000 --type=DASD-FCP --hostname= --fwlevel= --project='GEO_1 labadmins' --desc=
       - 'Invalid value for "--hostname": value may not be empty'
+    - - storage server-add --name=DS8K24 --model=DS8000 --type=DASD-FCP --hostname=s89.example.com --fwlevel= --project= --desc=
+      - "request failed. Server answered: No associated item found with value '' for field 'Project'"
     # 'storage server-list' subcommand  
     - - storage server-list
       - 'Name           : DS8K16'
@@ -140,6 +144,8 @@ tasks:
       - no update criteria provided.
     - - storage server-edit --name=DS8888
       - server not found.
+    - - storage server-edit --name=DS8K22 --newname=DS8K23
+      - 'request failed. Server answered: An item with the provided value'
     - - storage server-edit --name=DS8K22 --newname=
       - 'Invalid value for "--newname": value may not be empty'
     - - storage server-edit --name=DS8K22 --newname=DS8K32

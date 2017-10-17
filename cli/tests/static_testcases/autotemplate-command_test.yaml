@@ -107,7 +107,7 @@ tasks:
     - - autotemplate del --name
       - '--name option requires an argument'
     - - autotemplate del --os=rhel7.2
-      - "no such option: --os"
+      - 'no such option: --os'
     - - autotemplate list
       - 'Template name : SLES12.1'
     - - autotemplate list --name=RHEL7.2

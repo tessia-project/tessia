@@ -155,7 +155,6 @@ tasks:
     # 'repo del' subcommand
     - - repo del
       - Missing option "--name".
-      # Empty name was created before
     - - repo del --name=''
       - 'Invalid value for "--name": value may not be empty'
     - - repo del --name='SLES12'

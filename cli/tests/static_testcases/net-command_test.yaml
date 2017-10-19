@@ -196,9 +196,7 @@ tasks:
     - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.221  --project='GEO_1 developers'
       - Item successfully updated.
     - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.221  --newip=9152.161.221
-      - >-
-        The server did not accept our request. The response is: The value 'address=9152.161.221' is
-        invalid: '9152.161.221' does not appear to be an IPv4 or IPv6 address
+      - "The server did not accept our request. The response is: The value 'address=9152.161.221' is invalid: '9152.161.221' does not appear to be an IPv4 or IPv6 address"
     - - net ip-list --subnet='GEO_1-NE-1822'
       - 'IP address        : 192.168.161.221'
     - - net ip-list --subnet='GEO_1-NE-1823'

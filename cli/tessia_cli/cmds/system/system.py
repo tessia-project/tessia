@@ -168,7 +168,7 @@ def list_(**kwargs):
 
 @click.command(name='poweroff')
 @click.pass_context
-@click.option('--name', required=True, help="system name")
+@click.option('--name', required=True, type=NAME, help="system name")
 def poweroff(ctx, name):
     """
     poweroff (deactivate) a system

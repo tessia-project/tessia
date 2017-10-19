@@ -123,9 +123,9 @@ tasks:
     - - system autoinstall --template=RHEL7.2 --system=cpc3lp52 --profile='DASD1'
       - 'request failed, reason is: Parsing of parameters failed with: Profile DASD1 not found'
     - - system autoinstall --template=RHEL7.2 --system=cpc3lp52
-      - 'Name or service not known'
+      - 'Failed to establish a new connection'
     - - system autoinstall --template=RHEL7.2 --system=cpc3lp52 --profile='DASD root1'
-      - 'Name or service not known'
+      - 'Failed to establish a new connection'
     - - system autoinstall --template=RHEL7.2 --system=cpc3lp52 --vol=3957
       - 'no such option: --vol'
   job_command:

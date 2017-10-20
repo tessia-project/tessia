@@ -99,8 +99,8 @@ def user_edit(login, **kwargs):
 
 @click.command(name='user-list')
 @click.option('--login', type=LOGIN, help="filter by user's login")
-@click.option('--restricted', help="list restricted users")
-@click.option('--admin', help="list admin users")
+@click.option('--restricted', type=click.BOOL, help="list restricted users")
+@click.option('--admin', type=click.BOOL, help="list admin users")
 def user_list(**kwargs):
     """
     list registered users

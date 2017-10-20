@@ -98,6 +98,10 @@ tasks:
       - 'Usage: tessia system model-edit'
     - - system model-list -h
       - 'Usage: tessia system model-list'
+    - - system poweroff -h
+      - 'Usage: tessia system poweroff'
+    - - system poweron -h
+      - 'Usage: tessia system poweron'
     - - system prof-add -h
       - 'Usage: tessia system prof-add'
     - - system prof-del -h
@@ -340,7 +344,7 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA
       - Missing option "--osname".
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA --osname=en0
-      - 'Error: a mac address must be specified'
+      - a mac address must be specified
       # iface-add: '--ccwgroup' must be specified with OSA
     - - system iface-add --system= --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00
       - '--ccwgroup must be specified'
@@ -363,7 +367,7 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=osa --osname= --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - 'Invalid value for "--osname": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=  --ccwgroup=f500,f501,f502
-      - 'Error: a mac address must be specified'
+      - a mac address must be specified
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=0257:52:00:70:00 --ccwgroup=f500,f501,f502
       - the server failed to answer our request. See the logs for details.
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=
@@ -620,10 +624,12 @@ tasks:
       - Missing option "--login".
     - - system prof-add --system=cpc3lp52 --name='DASD' --login=
       - 'Invalid value for "--login": value may not be empty'
+    - - system prof-add --system= --name='DASD'  --login='root:mypasswd'
+      - "request failed. Server answered: No associated item found with value '' for field 'System'"
     - - system prof-add --system=cpc3lp52 --name='DASD'  --login='root:mypasswd'
       - Item added successfully.
     - - system prof-list --name='DASD'
-      - 'Error: Missing option "--system"'
+      - 'Missing option "--system"'
     - - system prof-add --system= --name='DASD1' --login='root:mypasswd'
       - "request failed. Server answered: No associated item found with value '' for field 'System'"
     - - system prof-add --system=cpc3lp52 --name= --login='root:mypasswd'
@@ -657,7 +663,7 @@ tasks:
     - - system prof-list --system=cpc3lp52
       - 'Profile name                : DASD'
     - - system prof-add --system=cpc3lp52 --name='DASD8' --hyp= --login='root:mypasswd'
-      - "Error: request failed. Server answered: No associated item found with value '' for field 'Required hypervisor profile'"
+      - "request failed. Server answered: No associated item found with value '' for field 'Required hypervisor profile'"
     - - system prof-add --system=cpc3lp52 --name='DASD9' --hyp='default cpc3' --login='root:mypasswd'
       - "request failed. Server answered: No associated item found with value 'default cpc3' for field 'Required hypervisor profile'"
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136g --login='DEVEL1:somepwd'
@@ -672,7 +678,7 @@ tasks:
       - Item added successfully.
     # 'system prof-list' subcommand
     - - system prof-list
-      - 'Error: Missing option "--system"'
+      - 'Missing option "--system"'
     - - system prof-list --system=cpc3lp66
       - No results were found.
     - - system prof-list --system=
@@ -682,7 +688,7 @@ tasks:
     - - system prof-list --name=
       - 'Invalid value for "--name": value may not be empty'
     - - system prof-list --name='DASD root1'
-      - 'Error: Missing option "--system"'
+      - 'Missing option "--system"'
     - - system prof-list --system=cpc3lp52 --name='DASD4'
       - 'Profile name                : DASD4'
     - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu
@@ -746,6 +752,8 @@ tasks:
       - 'Invalid value for "--name": value may not be empty'
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory
       - '--memory option requires an argument'
+    - - system prof-edit --system= --name=DASD --memory=2gib
+      - system profile not found.
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory=2gib
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD10 --memory=2gib
@@ -894,7 +902,7 @@ tasks:
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
       - no storage volume found.
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=
-      - 'Error: Invalid value for "--vol": value may not be empty'
+      - 'Invalid value for "--vol": value may not be empty'
     - - system vol-attach --system=cpc3lp55 --profile=DASD4 --server=DS8K16 --vol=3956
       - no profile found.
     - - system vol-attach --system=cpc3lp52 --profile=DASD44 --server=DS8K16 --vol=3956
@@ -907,6 +915,72 @@ tasks:
       - Volume attached successfully.
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
       - Volume attached successfully.
+    # 'system poweron' subcommand
+    - - system poweron
+      - Missing option "--name".
+    - - system poweron --name
+      - '--name option requires an argument'
+    - - system poweron --name=
+      - 'Invalid value for "--name": value may not be empty'
+    - - system poweron --name=cpc3lp55
+      - system cpc3lp55 not found.
+    - - system poweron --name=cpc3lp52
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile
+      - '--profile option requires an argument'
+    - - system poweron --name=cpc3lp52 --profile=
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile=DASD77
+      - profile DASD77 not found.
+    - - system poweron --name=cpc3lp52 --profile=DASD17
+      - 'Profile DASD17 has no volume containing a root partition'
+    - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu
+      - '--cpu option requires an argument'
+    - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu=
+      - 'Invalid value for "--cpu":  is not a valid integer'
+    - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu=0
+      - 'Invalid value for "--cpu": 0 is smaller than the minimum valid value 1.'
+    - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu=A
+      - 'Invalid value for "--cpu": A is not a valid integer'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --cpu=8
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --memory
+      - '--memory option requires an argument'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=
+      - 'invalid memory size specified.'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2g
+      - 'invalid memory size specified.'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2gb
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --force=true
+      - '--force option does not take a value'
+    - - system poweron --name=cpc3lp52 --forc
+      - 'no such option: --forc  Did you mean --force?'
+    - - system poweron --name=cpc3lp52 --force
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --noverify=true
+      - '--noverify option does not take a value'
+    - - system poweron --name=cpc3lp52 --noverif
+      - 'no such option: --noverif  Did you mean --noverify?'
+    - - system poweron --name=cpc3lp52 --noverify
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --exclusive=true
+      - '--exclusive option does not take a value'
+    - - system poweron --name=cpc3lp52 --exclus
+      - 'no such option: --exclus  Did you mean --exclusive?'
+    - - system poweron --name=cpc3lp52 --exclusive
+      - Default profile for system cpc3lp53 does not exist.
+    # 'system poweroff' subcommand
+    - - system poweroff
+      - Missing option "--name".
+    - - system poweroff --name
+      - '--name option requires an argument'
+    - - system poweroff --name=
+      - 'Invalid value for "--name": value may not be empty'
+    - - system poweroff --name=cpc3lp55
+      - system cpc3lp55 not found.
+    - - system poweroff --name=cpc3lp52
+      - 'Failed to establish a new connection'
     # 'system vol-detach' subcommand
     - - system vol-detach
       - Missing option "--system".
@@ -927,7 +1001,7 @@ tasks:
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
       - no storage volume found.
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=
-      - 'Error: Invalid value for "--vol": value may not be empty'
+      - 'Invalid value for "--vol": value may not be empty'
     - - system vol-detach --system=cpc3lp55 --profile=DASD4 --server=DS8K16 --vol=3956
       - no profile found.
     - - system vol-detach --system=cpc3lp52 --profile=DASD44 --server=DS8K16 --vol=3956

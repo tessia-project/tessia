@@ -56,9 +56,9 @@ tasks:
     - - - conf key-gen
         - dev2@example.com
         - password
-      - "authentication failed. You might need to create a new authentication token with 'tessia conf key-gen'."
+      - "authentication failed. Make sure your login and password are correct."
     - - conf key-gen --login=dev2@example.com --password=password2 --desc='auth token for dev2'
-      - "authentication failed. You might need to create a new authentication token with 'tessia conf key-gen'."
+      - "authentication failed. Make sure your login and password are correct."
     - - conf key-gen --login=dev1@example.com --password=password1 --desc='auth token for dev1'
       - Key successfully created and added to client configuration.
     - - - conf key-gen --login=dev1@example.com --desc='auth token for dev1'

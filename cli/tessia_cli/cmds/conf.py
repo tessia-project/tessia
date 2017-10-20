@@ -65,6 +65,10 @@ def key_gen(login, password, desc):
     """
     try:
         client = Client(basic_auth=(login, password))
+        new_key = client.UserKeys()
+        new_key.desc = desc
+        key_id, key_secret = new_key.save()
+
     except requests.exceptions.HTTPError as exc:
         # not an authentication problem: let the exception go up and be
         # handled by the upper layer
@@ -73,10 +77,6 @@ def key_gen(login, password, desc):
         raise click.ClickException(
             'authentication failed. Make sure your login and password '
             'are correct.')
-
-    new_key = client.UserKeys()
-    new_key.desc = desc
-    key_id, key_secret = new_key.save()
 
     CONF.update_key(key_id, key_secret)
     click.echo('Key successfully created and added to client configuration.')
@@ -93,6 +93,12 @@ def key_del(key, login, password):
 
     try:
         client = Client(basic_auth=(login, password))
+        fetch_and_delete(
+            client.UserKeys,
+            {'key_id': key},
+            'key id not found.'
+        )
+
     except requests.exceptions.HTTPError as exc:
         # not an authentication problem: let the exception go up and be
         # handled by the upper layer
@@ -101,11 +107,6 @@ def key_del(key, login, password):
         raise click.ClickException(
             'authentication failed. Make sure your login and password '
             'are correct.')
-    fetch_and_delete(
-        client.UserKeys,
-        {'key_id': key},
-        'key id not found.'
-    )
     click.echo('Item successfully deleted.')
 # key_del()
 

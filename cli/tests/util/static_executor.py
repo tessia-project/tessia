@@ -248,7 +248,7 @@ class StaticExecutor(object):
         main.name = 'main'
         # mock argv to make click grab the arguments from cmd_str
         orig_argv = sys.argv
-        sys.argv = ['tessia'] + parts
+        sys.argv = ['tess'] + parts
         # call click to execute the client
         result = self._runner.invoke(main, **extra)
         # restore argv

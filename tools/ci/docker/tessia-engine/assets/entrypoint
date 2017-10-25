@@ -28,14 +28,14 @@ function _db_verify() {
 
     local timeout=$(($(date +%s)+90))
     local output
-    output=$(tessia-dbmanage current 2>&1)
+    output=$(tess-dbmanage current 2>&1)
     local ret_code=$?
     echo "info: waiting for db connection to be available (timeout 90 secs)..."
     # exit code 3 from dbmanage means failed to connect to db so we wait
     # until the exit code is different or timeout is reached
     while [ $(date +%s) -lt $timeout ] && [ $ret_code -eq 3 ]; do
         sleep 5
-        output=$(tessia-dbmanage current 2>&1)
+        output=$(tess-dbmanage current 2>&1)
         ret_code=$?
     done
 
@@ -52,7 +52,7 @@ function _db_verify() {
             exit 1
         fi
         # initialize db automatically
-        local cmd='tessia-dbmanage init'
+        local cmd='tess-dbmanage init'
         echo "info: db not initialized, initializing with '$cmd'"
         $cmd
         echo "info: db initialization done"
@@ -68,7 +68,7 @@ function _db_verify() {
             exit 1
         fi
         # upgrade db schema automatically
-        local cmd='tessia-dbmanage upgrade head'
+        local cmd='tess-dbmanage upgrade head'
         echo "info: db schema outdated, upgrading with '$cmd'"
         $cmd
         echo "info: db schema upgrade done"

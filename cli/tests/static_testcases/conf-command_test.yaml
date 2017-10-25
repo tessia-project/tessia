@@ -26,17 +26,17 @@ tasks:
   conf_command:
     # conf help
     - - conf -h
-      - 'Usage: tessia conf'
+      - 'Usage: tess conf'
     - - conf key-del -h
-      - 'Usage: tessia conf key-del'
+      - 'Usage: tess conf key-del'
     - - conf key-gen -h
-      - 'Usage: tessia conf key-gen'
+      - 'Usage: tess conf key-gen'
     - - conf key-list -h
-      - 'Usage: tessia conf key-list'
+      - 'Usage: tess conf key-list'
     - - conf set-server -h
-      - 'Usage: tessia conf set-server'
+      - 'Usage: tess conf set-server'
     - - conf show -h
-      - 'Usage: tessia conf show'
+      - 'Usage: tess conf show'
     # switch to target user
     - - - conf key-gen
         - dev1@example.com

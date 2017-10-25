@@ -57,8 +57,8 @@ Checking connectivity... done.
 That's all. To start using the client, type:
 
 ```
-[user@host ~]$ tessia
-Usage: tessia [OPTIONS] COMMAND [ARGS]...
+[user@host ~]$ tess
+Usage: tess [OPTIONS] COMMAND [ARGS]...
 
   Tessia command line client
 
@@ -166,8 +166,8 @@ Start the container with a shell as the admin user:
 
 ```
 [user@domain tessia-cli]$ docker run -ti --rm --user admin --entrypoint=/bin/bash tessia-cli:latest
-admin@1c0e1d70c70e:/$ tessia
-Usage: tessia [OPTIONS] COMMAND [ARGS]...
+admin@1c0e1d70c70e:/$ tess
+Usage: tess [OPTIONS] COMMAND [ARGS]...
 
   Tessia command line client
 

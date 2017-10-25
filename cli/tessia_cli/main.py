@@ -103,7 +103,7 @@ def main(*args, **kwargs):
         elif exc.response.status_code == 401:
             click.echo(
                 "Error: authentication failed. You might need to create a new "
-                "authentication token with 'tessia conf key-gen'.",
+                "authentication token with 'tess conf key-gen'.",
                 err=True
             )
         elif exc.response.status_code == 403:

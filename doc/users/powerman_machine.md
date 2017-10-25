@@ -27,7 +27,7 @@ operations when none is specified.
 Let's see how this works in practice. Assume a given LPAR system with the following two profiles:
 
 ```
-user@tessia-cli:~$ tessia system prof-list --system=cpc3lp52
+user@tessia-cli:~$ tess system prof-list --system=cpc3lp52
 
 Profile name                : fcp1
 System                      : cpc3lp52
@@ -60,7 +60,7 @@ Gateway interface           :
 By powering on the system without specifying a profile, the default profile named 'dasd-default' is used:
 
 ```
-user@tessia-cli:~$ tessia system poweron --name=cpc3lp52
+user@tessia-cli:~$ tess system poweron --name=cpc3lp52
 
 Request #192 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%
@@ -82,7 +82,7 @@ Waiting for job output (Ctrl+C to stop waiting)
 If we wanted instead to use the profile `fcp1` we just need to add `--profile=fcp1` to the command:
 
 ```
-user@tessia-cli:~$ tessia system poweron --name=cpc3lp52 --profile=fcp1
+user@tessia-cli:~$ tess system poweron --name=cpc3lp52 --profile=fcp1
 
 Request #198 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%
@@ -123,7 +123,7 @@ Waiting for job output (Ctrl+C to stop waiting)
 Powering off a system is very simple, all you need is to specify the system name. Example:
 
 ```
-user@tessia-cli:~$ tessia system poweroff --name=cpc3lp52
+user@tessia-cli:~$ tess system poweroff --name=cpc3lp52
 
 Request #191 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%
@@ -147,7 +147,7 @@ systems to affect the system being evaluated. In this operation mode the tool in
 on. Example:
 
 ```
-user@tessia-cli:~$ tessia system poweron --name=cpc3lp52 --profile=fcp1 --exclusive
+user@tessia-cli:~$ tess system poweron --name=cpc3lp52 --profile=fcp1 --exclusive
 
 Request #199 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%

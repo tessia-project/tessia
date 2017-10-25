@@ -31,31 +31,31 @@ tasks:
   net_command:
     # net help
     - - net -h
-      - 'Usage: tessia net'
+      - 'Usage: tess net'
     - - net ip-add  -h
-      - 'Usage: tessia net ip-add'
+      - 'Usage: tess net ip-add'
     - - net ip-del  -h
-      - 'Usage: tessia net ip-del'
+      - 'Usage: tess net ip-del'
     - - net ip-edit  -h
-      - 'Usage: tessia net ip-edit'
+      - 'Usage: tess net ip-edit'
     - - net ip-list  -h
-      - 'Usage: tessia net ip-list'
+      - 'Usage: tess net ip-list'
     - - net subnet-add  -h
-      - 'Usage: tessia net subnet-add'
+      - 'Usage: tess net subnet-add'
     - - net subnet-del  -h
-      - 'Usage: tessia net subnet-del'
+      - 'Usage: tess net subnet-del'
     - - net subnet-edit  -h
-      - 'Usage: tessia net subnet-edit'
+      - 'Usage: tess net subnet-edit'
     - - net subnet-list  -h
-      - 'Usage: tessia net subnet-list'
+      - 'Usage: tess net subnet-list'
     - - net zone-add  -h
-      - 'Usage: tessia net zone-add'
+      - 'Usage: tess net zone-add'
     - - net zone-del  -h
-      - 'Usage: tessia net zone-del'
+      - 'Usage: tess net zone-del'
     - - net zone-edit  -h
-      - 'Usage: tessia net zone-edit'
+      - 'Usage: tess net zone-edit'
     - - net zone-list  -h
-      - 'Usage: tessia net zone-list'
+      - 'Usage: tess net zone-list'
     # 'net zone' subcommands
     - - net zone-list
       - No results were found.

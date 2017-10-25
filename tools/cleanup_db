@@ -18,10 +18,10 @@
 # for use in testing/development activities
 
 function clean_container {
-    supervisorctl stop tessia-api tessia-scheduler
-    tessia-dbmanage reset -y
-    tessia-dbmanage init
-    supervisorctl start tessia-api tessia-scheduler
+    supervisorctl stop tess-api tessia-scheduler
+    tess-dbmanage reset -y
+    tess-dbmanage init
+    supervisorctl start tess-api tessia-scheduler
 }
 
 function clean_virtualenv {
@@ -36,8 +36,8 @@ function clean_virtualenv {
     trap cleanup EXIT
 
     tools/control_daemons stop
-    tessia-dbmanage reset -y
-    tessia-dbmanage init
+    tess-dbmanage reset -y
+    tess-dbmanage init
     tools/control_daemons start
 }
 

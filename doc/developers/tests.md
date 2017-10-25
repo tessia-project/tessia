@@ -188,7 +188,7 @@ admin@tessia-cli:~/cli$
 to a pristine state, run the cleaner script from within the tessia-engine container:
 
 ```
-# stop the api and scheduler services, call tessia-dbmanage to re-initialize the database, start the services again
+# stop the api and scheduler services, call tess-dbmanage to re-initialize the database, start the services again
 [user@myhost ~]$ docker exec -ti tessia_engine_1 /root/tessia-engine/tools/cleanup_db
 info: detected supervisorctl, assuming docker container mode
 tessia-api: stopped

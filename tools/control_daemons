@@ -26,7 +26,7 @@ function cleanup {
 }
 
 function daemons_status {
-    sched_pid=$(pgrep tessia-scheduler)
+    sched_pid=$(pgrep tess-scheduler)
     api_pid=$(pgrep uwsgi | head -1)
     ret_code=0
 
@@ -44,13 +44,13 @@ function daemons_status {
     fi
 
     echo "uwsgi: $api_str"
-    echo "tessia-scheduler: $sched_str"
+    echo "tess-scheduler: $sched_str"
     exit $ret_code
 }
 
 function kill_daemons {
-    while pgrep tessia-scheduler &>/dev/null; do
-        killall tessia-scheduler || true
+    while pgrep tess-scheduler &>/dev/null; do
+        killall tess-scheduler || true
         sleep 0.5
     done
     while pgrep uwsgi &>/dev/null; do
@@ -62,8 +62,8 @@ function kill_daemons {
 trap cleanup EXIT
 source .tox/devenv/bin/activate
 if [ "$1" == "start" ]; then
-    if ! pgrep tessia-scheduler &>/dev/null; then
-        nohup tessia-scheduler &>/dev/null &
+    if ! pgrep tess-scheduler &>/dev/null; then
+        nohup tess-scheduler &>/dev/null &
     fi
     if ! pgrep uwsgi &>/dev/null; then
         sudo nohup bash -c 'source .tox/devenv/bin/activate && uwsgi --yaml .tox/devenv/etc/tessia/uwsgi.yaml' &>/dev/null &
@@ -72,7 +72,7 @@ if [ "$1" == "start" ]; then
     daemons_status
 elif [ "$1" == "restart" ]; then
     kill_daemons
-    nohup tessia-scheduler &>/dev/null &
+    nohup tess-scheduler &>/dev/null &
     sudo nohup bash -c 'source .tox/devenv/bin/activate && uwsgi --yaml .tox/devenv/etc/tessia/uwsgi.yaml' &>/dev/null &
     sleep 1
     daemons_status

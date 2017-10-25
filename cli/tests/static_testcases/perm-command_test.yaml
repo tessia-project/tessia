@@ -159,21 +159,20 @@ tasks:
       - No results were found.
     - - perm user-list --restricted
       - '--restricted option requires an argument'
-      # Issue 50: 'The server did not accept our request.'
     - - perm user-list --restricted=TRUE
-      - 'The server did not accept our request. The response is: whererestricted must be anyOf='
+      - 'No results were found.'
     - - perm user-list --restricted=FALSE
-      - 'The server did not accept our request. The response is: whererestricted must be anyOf='
+      - 'Login         : admin'
     - - perm user-list --restricted=0
-      - 'The server did not accept our request. The response is: whererestricted must be anyOf='
+      - 'Login         : admin'
     - - perm user-list --restricted=yes
-      - 'The server did not accept our request. The response is: whererestricted must be anyOf='
+      - 'No results were found.'
     - - perm user-list --admin=TRUE
-      - 'The server did not accept our request. The response is: whereadmin must be anyOf='
+      - 'Login         : admin'
     - - perm user-list --admin=FALSE
-      - 'The server did not accept our request. The response is: whereadmin must be anyOf='
+      - 'Login         : lab_admin@example.com'
     - - perm user-list --login=dev4@example.com --admin=FALSE
-      - 'The server did not accept our request. The response is: whereadmin must be anyOf='
+      - 'Login         : dev4@example.com'
     - - perm user-list --restrict=TRUE
       - 'no such option: --restrict  Did you mean --restricted?'
     - - perm user-list --restructed=TRUE

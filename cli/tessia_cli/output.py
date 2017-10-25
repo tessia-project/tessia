@@ -225,6 +225,10 @@ def print_ver_table(headers, entries, fields_map):
     Raises:
         None
     """
+    if len(entries) == 0:
+        click.echo('No results were found.')
+        return
+
     # start a pager in a subprocess to control output
     pager = call_pager()
 

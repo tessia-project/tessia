@@ -123,9 +123,9 @@ tasks:
     - - system autoinstall --template=RHEL7.2 --system=cpc3lp52 --profile='DASD1'
       - 'request failed, reason is: Parsing of parameters failed with: Profile DASD1 not found'
     - - system autoinstall --template=RHEL7.2 --system=cpc3lp52
-      - 'Name or service not known'
+      - 'Failed to establish a new connection'
     - - system autoinstall --template=RHEL7.2 --system=cpc3lp52 --profile='DASD root1'
-      - 'Name or service not known'
+      - 'Failed to establish a new connection'
     - - system autoinstall --template=RHEL7.2 --system=cpc3lp52 --vol=3957
       - 'no such option: --vol'
   job_command:
@@ -196,11 +196,11 @@ tasks:
     - - job list --machine
       - '--machine option requires an argument'
     - - job list --machine=lpar
-      - ''
+      - 'No results were found.'
     - - job list --machine=autoinstall
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     - - job list --machine=AUTOINSTALL
-      - ''
+      - 'No results were found.'
     - - job list --machine=echo
       - 'job_id | job_type |     submit_date     |      start_date     |       end_date'
     - - job list --owner
@@ -208,17 +208,17 @@ tasks:
     - - job list --owner=dev1@example.com
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     - - job list --owner=test@example.com
-      - ''
+      - 'No results were found.'
     - - job list --state
       - '--state option requires an argument'
     - - job list --state=FAILED
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     - - job list --state=failed
-      - ''
+      - 'No results were found.'
     - - job list --state=success
-      - ''
+      - 'No results were found.'
     - - job list --state=COMPLETED
-      - ''
+      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     # job output
     - - job output
       - Missing option "--id".
@@ -262,15 +262,15 @@ tasks:
     - - job req-list --owner=dev1@example.com
       - 'request_id | action_type |   job_type  |     submit_date'
     - - job req-list --owner=test@example.com
-      - ''
+      - 'No results were found.'
     - - job req-list --state
       - '--state option requires an argument'
     - - job req-list --state=xxxx
-      - ''
+      - 'No results were found.'
     - - job req-list --state=COMPLETED
       - 'request_id | action_type |   job_type  |     submit_date'
     - - job req-list --state=completed
-      - ''
+      - 'No results were found.'
     - - job req-list --state=FAILED
       - 'request_id | action_type |   job_type  |     submit_date'
     # job cancel

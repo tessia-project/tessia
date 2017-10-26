@@ -29,7 +29,8 @@ from tessia_engine.db.models import System, SystemProfile
 from tessia_engine.state_machines.base import BaseMachine
 from tessia_engine.state_machines.autoinstall.sm_anaconda import SmAnaconda
 from tessia_engine.state_machines.autoinstall.sm_autoyast import SmAutoyast
-from tessia_engine.state_machines.autoinstall.sm_debian import SmDebianInstaller
+from tessia_engine.state_machines.autoinstall.sm_debian import \
+    SmDebianInstaller
 
 import json
 import logging

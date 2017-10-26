@@ -19,7 +19,8 @@ Unit test for storage_volumes resource module
 #
 # IMPORTS
 #
-from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_SIZE_MISMATCH
+from tessia_engine.api.resources.storage_volumes import \
+    MSG_PTABLE_SIZE_MISMATCH
 from tessia_engine.api.resources.storage_volumes import MSG_INVALID_TYPE
 from tessia_engine.api.resources.storage_volumes import StorageVolumeResource
 from tessia_engine.api.resources.storage_volumes import MSG_PTABLE_BAD_PLACE

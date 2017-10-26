@@ -7,9 +7,9 @@ tasks_order:
 tasks:
   tessia_help:
     - - -h
-      - 'Usage: tessia'
+      - 'Usage: tess'
     - - --help
-      - 'Usage: tessia'
+      - 'Usage: tess'
   base_add:
     # lab admin to create the lab resources
     - - perm project-add --name='GEO_1 labadmins' --desc='GEO_1 lab admins'
@@ -39,17 +39,17 @@ tasks:
   autotemplate_subcommands:
     # autotemplate help
     - - autotemplate -h
-      - 'Usage: tessia autotemplate'
+      - 'Usage: tess autotemplate'
     - - autotemplate add -h
-      - 'Usage: tessia autotemplate add'
+      - 'Usage: tess autotemplate add'
     - - autotemplate del -h
-      - 'Usage: tessia autotemplate del'
+      - 'Usage: tess autotemplate del'
     - - autotemplate edit -h
-      - 'Usage: tessia autotemplate edit'
+      - 'Usage: tess autotemplate edit'
     - - autotemplate list -h
-      - 'Usage: tessia autotemplate list'
+      - 'Usage: tess autotemplate list'
     - - autotemplate print -h
-      - 'Usage: tessia autotemplate print'
+      - 'Usage: tess autotemplate print'
     # autotemplate list, autotemplate print
     - - autotemplate list
       - 'Template name : SLES12.1'

@@ -270,10 +270,10 @@ The database installation commands should be executed as the root user.
 (devenv) [user@host tessia-engine]$ sed -i 's,^  url:.*$,  url: postgresql://engine:pass4engine@/engine,g' .tox/devenv/etc/tessia/engine.yaml
 
 # make sure your database is clean
-(devenv) [user@host tessia-engine]$ tessia-dbmanage reset
+(devenv) [user@host tessia-engine]$ tess-dbmanage reset
 
 # initialize the database (this will also create the basic types needed by the application)
-(devenv) [user@host tessia-engine]$ tessia-dbmanage init
+(devenv) [user@host tessia-engine]$ tess-dbmanage init
 
 # the next step is optional (not needed and takes a lot of time): if you want to populate your
 # database with some random data you can follow the two commands below
@@ -281,7 +281,7 @@ The database installation commands should be executed as the root user.
 # 1- generate some random entries with the helper script:
 (devenv) [user@host tessia-engine]$ tools/db/gen_random_data.py > /tmp/data.json
 # 2- then feed the database with the generated file:
-(devenv) [user@host tessia-engine]$ tessia-dbmanage feed /tmp/data.json
+(devenv) [user@host tessia-engine]$ tess-dbmanage feed /tmp/data.json
 
 # replace the default ldap based authentication by the 'free' authenticator which allows any
 # password, convenient for development purposes
@@ -291,7 +291,7 @@ sed -i 's,^  login_method:.*$,  login_method: free,g' .tox/devenv/etc/tessia/eng
 # can be retrieved and stored in your local client file. With that you have the initial access
 # to start creating users, resources, etc.:
 (devenv) [user@host tessia-engine]$ test -d ~/.tessia-cli || mkdir ~/.tessia-cli
-(devenv) [user@host tessia-engine]$ tessia-dbmanage get-token > ~/.tessia-cli/auth.key
+(devenv) [user@host tessia-engine]$ tess-dbmanage get-token > ~/.tessia-cli/auth.key
 
 # to manage the two daemon services (api and scheduler) use the helper tools/control_daemons
 # to see the status of the daemons:

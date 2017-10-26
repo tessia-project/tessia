@@ -33,7 +33,7 @@ If the server is running under HTTPS (most likely), you have to place a copy of 
 `/etc/tessia-cli/ca.crt` (global). If you don't do so, you will see an error like this:
 
 ```
-[user@host ~]$ tessia conf set-server https://server.domain.com:5000
+[user@host ~]$ tess conf set-server https://server.domain.com:5000
 Error: The validation of the server's SSL certificate failed. In order to assure the connection is safe, place a copy of the trusted CA's certificate file in /home/user/.tessia-cli/ca.crt and try again.
 ```
 
@@ -42,7 +42,7 @@ The CA's certificate file is usually provided by the server administrator throug
 Once the certificate file is available, we can enter the API server's hostname successfully:
 
 ```
-[user@host ~]$ tessia conf set-server https://server.domain.com:5000
+[user@host ~]$ tess conf set-server https://server.domain.com:5000
 Server successfully configured.
 ```
 
@@ -51,7 +51,7 @@ Server successfully configured.
 The client must generate an authentication token for communication with the server. Here's how to do it:
 
 ```console
-[user@host ~]$ tessia conf key-gen
+[user@host ~]$ tess conf key-gen
 Login: user@domain.com
 Password: 
 Key successfully created and added to client configuration.
@@ -60,7 +60,7 @@ Key successfully created and added to client configuration.
 
 Let's confirm that the operation worked by checking the client configuration:
 ```
-[user@host ~]$ tessia conf show
+[user@host ~]$ tess conf show
 
 Authentication key in use : 9e5e749c135740269b5e64cab32a6b1f
 Key owner login           : user@domain.com
@@ -77,8 +77,8 @@ Looks good, we can start using the tool now.
 
 A system can have many different attributes and some of them are required when creating a system. To have an idea of the attributes available, check the help menu for the add action:
 ```console
-[user@host ~]$ tessia system add --help
-Usage: tessia system add [OPTIONS]
+[user@host ~]$ tess system add --help
+Usage: tess system add [OPTIONS]
 
   create a new system
 
@@ -97,7 +97,7 @@ Options:
 The text menu is mostly self-explanatory, so let's try to create a system based on that information. Assume we have a System z LPAR named 'lpar65' on a CPC called 'cpc50'.
 Since the lpar control is done with actions on the CPC, we should start by verifying first if the CPC is already present in the tool. This is a chance to learn about list commands, so we use the system list command and specify the system type:
 ```console
-[user@host ~]$ tessia system list --type=CPC
+[user@host ~]$ tess system list --type=CPC
 
 Name            : cpc50
 Hostname        : hmc2.domain.com
@@ -125,7 +125,7 @@ Modified by     : sysadmin@domain.com
 Description     : Production systems
 ```
 
-Here we filtered the list by type with the use of the parameter `--type`. Other filters are possible, you can check the available ones by typing `tessia system list --help`.
+Here we filtered the list by type with the use of the parameter `--type`. Other filters are possible, you can check the available ones by typing `tess system list --help`.
 
 Good, our CPC is already registered. Note that it does not have a hypervisor defined (because CPCs have no hypervisors), but most times a system will have one. In our example, cpc50
 is the hypervisor for lpar65 which in turn could be the hypervisor of a KVM guest 'guest39', and so on.
@@ -133,10 +133,10 @@ is the hypervisor for lpar65 which in turn could be the hypervisor of a KVM gues
 It's time to add our lpar to the tool. Our command looks like:
 
 ```console
-[user@host ~]$ tessia system add --name=lpar65 --hyp=cpc50 --type=LPAR --hostname=lpar65.mydomain.com --desc='System for database performance tests'
+[user@host ~]$ tess system add --name=lpar65 --hyp=cpc50 --type=LPAR --hostname=lpar65.mydomain.com --desc='System for database performance tests'
 Item added successfully.
 
-[user@host ~]$ tessia system list --name=lpar65
+[user@host ~]$ tess system list --name=lpar65
 
 Name            : lpar65
 Hostname        : lpar65.mydomain.com
@@ -155,13 +155,13 @@ That's it, our first system registered in the tool. Now we need to add the appro
 
 ## Creating a network interface
 
-Under the `tessia system` family of commands you will notice the subset of `iface-*` commands. We are going to use them to create a network interface for our system.
+Under the `tess system` family of commands you will notice the subset of `iface-*` commands. We are going to use them to create a network interface for our system.
 
 Let's start by learning what attributes are necessary, again with the aid of the help menu:
 
 ```console
-[user@host ~]$ tessia system iface-add --help
-Usage: tessia system iface-add [OPTIONS]
+[user@host ~]$ tess system iface-add --help
+Usage: tess system iface-add [OPTIONS]
 
   create a new network interface
 
@@ -187,9 +187,9 @@ We need to create an OSA card, so the parameters described as *(OSA only)* are o
 know the name of the interface type. In this case we already know from the help that it is `OSA` so it's not necessary to check it. Our command therefore is:
 
 ```console
-[user@host ~]$ tessia system iface-add --system=lpar65 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=aa:bb:cc:dd:ee:ff --layer2=true --ccwgroup=f500,f501,f502 --desc='default gateway interface'
+[user@host ~]$ tess system iface-add --system=lpar65 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=aa:bb:cc:dd:ee:ff --layer2=true --ccwgroup=f500,f501,f502 --desc='default gateway interface'
 Item added successfully.
-[user@host ~]$ tessia system iface-list --system=lpar65
+[user@host ~]$ tess system iface-list --system=lpar65
 
 Interface name             : default osa
 Operating system name      : enccw0.0.f500
@@ -209,13 +209,13 @@ For the interface to be usable we also need an IP address. Let's learn how to do
 
 ## Associating an IP address
 
-Here we get introduced to the `tessia net` family of commands. From the [resources model](resources_model.md) explanation we know that a subnet is required in order to create an IP address.
+Here we get introduced to the `tess net` family of commands. From the [resources model](resources_model.md) explanation we know that a subnet is required in order to create an IP address.
 Usually the management of the network infrastructure is done by a lab administrator and most users will just pick up an IP assigned to them but for learning purposes we are going to create one.
 
 We start by checking which subnets are available with the list command of the subset `subnet-*`:
 
 ```console
-[user@host ~]$ tessia net subnet-list
+[user@host ~]$ tess net subnet-list
 Error: at least one of --zone or --name must be specified (hint: use zone-list to find available zones)
 ```
 
@@ -223,7 +223,7 @@ Oops, something went wrong. As there can be many different subnets in a given in
 what is the name of the subnet we want and we don't know which network zones are available either but we can find it out with the `zone-list` sub-command:
 
 ```console
-[user@host ~]$ tessia net zone-list
+[user@host ~]$ tess net zone-list
 
 Zone name     : Production zone
 Owner         : sysadmin@domain.com
@@ -244,7 +244,7 @@ Description   : Lab1 network infrastructure
 Let's assume we already know that our lpar65 is located in the Lab1, so the zone `Lab1` is what we want. Back to the subnet listing:
 
 ```console
-[user@host ~]$ tessia net subnet-list --zone='Lab1'
+[user@host ~]$ tess net subnet-list --zone='Lab1'
 
 Subnet name     : CPC50 shared
 Network zone    : Lab1
@@ -263,7 +263,7 @@ Description     : CPC50 LPARs network
 Great, we found a subnet available for systems running on cpc50 which is the hypervisor of our lpar65. Now let's see what IP addresses are registered under this subnet:
 
 ```console
-[user@host ~]$ tessia net ip-list --subnet='CPC50 shared'
+[user@host ~]$ tess net ip-list --subnet='CPC50 shared'
 
 IP address        : 192.168.0.15
 Part of subnet    : CPC50 shared
@@ -278,9 +278,9 @@ Associated system : zVM25
 Ok, there is one IP registered and already assigned to a system named `zVM25`, so we can't use it. Let's then create a new address for us:
 
 ```console
-[user@host ~]$ tessia net ip-add --subnet='CPC50 shared' --ip=192.168.0.16 --project='Performance test' --desc='For performance measurements in system lpar65'
+[user@host ~]$ tess net ip-add --subnet='CPC50 shared' --ip=192.168.0.16 --project='Performance test' --desc='For performance measurements in system lpar65'
 Item added successfully.
-[user@host ~]$ tessia net ip-list --subnet='CPC50 shared' --ip=192.168.0.16
+[user@host ~]$ tess net ip-list --subnet='CPC50 shared' --ip=192.168.0.16
 
 IP address        : 192.168.0.16
 Part of subnet    : CPC50 shared
@@ -296,16 +296,16 @@ Very good, we have our own IP now. As you can see from the output above the IP i
 are not associated to a system directly but to one of its network interfaces. To create such association we use the `iface-edit` command:
 
 ```console
-[user@host ~]$ tessia system iface-edit --system=lpar65 --name='default osa' --ip='192.168.0.16'
+[user@host ~]$ tess system iface-edit --system=lpar65 --name='default osa' --ip='192.168.0.16'
 Error: --subnet and --ip must be specified together
 ```
 
 Oops, another mistake. Of course a private IP like this can belong to many different network zones so we need to be specific and tell the tool which subnet we are referring to. One more try:
 
 ```console
-[user@host ~]$ tessia system iface-edit --system=lpar65 --name='default osa' --subnet='CPC50 shared' --ip='192.168.0.16'
+[user@host ~]$ tess system iface-edit --system=lpar65 --name='default osa' --subnet='CPC50 shared' --ip='192.168.0.16'
 Item successfully updated.
-[user@host ~]$ tessia system iface-list --system=lpar65
+[user@host ~]$ tess system iface-list --system=lpar65
 
 Interface name             : default osa
 Operating system name      : enccw0.0.f500
@@ -324,10 +324,10 @@ Perfect, we now have a usable network interface for our system. We are almost do
 
 Similiar to IP addresses, volumes are usually managed by a lab administrator and most users are only told which ones to use. But again for education purposes we are going to create one.
 
-Assume we know that our disk is a DASD with id 3950 from the storage server DS8K16. Let's check if such storage server is available on the tool, now by using the `tessia storage` family of commands:
+Assume we know that our disk is a DASD with id 3950 from the storage server DS8K16. Let's check if such storage server is available on the tool, now by using the `tess storage` family of commands:
 
 ```console
-[user@host ~]$ tessia storage server-list
+[user@host ~]$ tess storage server-list
 
 Name           : DS7K16
 Hostname       : 
@@ -356,7 +356,7 @@ Description    : Storage for CPC 50
 So the server is there and its name is `DS8K16`. Perhaps our disk is already registered, let's check:
 
 ```console
-[user@host ~]$ tessia storage vol-list --server=DS8K16 --id=3950
+[user@host ~]$ tess storage vol-list --server=DS8K16 --id=3950
 No results were found.
 [user@host ~]$
 ```
@@ -364,8 +364,8 @@ No results were found.
 Not yet, so by using the help menu again we can learn which parameters are necessary to register a volume:
 
 ```console
-[user@host ~]$ tessia storage vol-add --help
-Usage: tessia storage vol-add [OPTIONS]
+[user@host ~]$ tess storage vol-add --help
+Usage: tess storage vol-add [OPTIONS]
 
   create a new storage volume
 
@@ -384,9 +384,9 @@ Options:
 Again we must know the name of the volume type for dasd disks and you can learn this with the `vol-types` command. We already know in advance that it is `DASD`, so our command looks like:
 
 ```console
-[user@host ~]$ tessia storage vol-add --server=DS8K16 --type=DASD --id=3950 --size=7gb
+[user@host ~]$ tess storage vol-add --server=DS8K16 --type=DASD --id=3950 --size=7gb
 Item added successfully.
-[user@host ~]$ tessia storage vol-list --server=DS8K16 --id=3950
+[user@host ~]$ tess storage vol-list --server=DS8K16 --id=3950
 Volume id                  : 3950
 Storage server             : DS8K16
 Volume size                : 7.0GB
@@ -406,7 +406,7 @@ Description                :
 An empty disk is not very useful so we need to create partitions. Let's have a look at the `part-*` sub-commands, particularly the one to initialize a partition table:
 
 ```console
-[user@host ~]$ tessia storage part-init --server=DS8K16 --id=3950 --label=dasd
+[user@host ~]$ tess storage part-init --server=DS8K16 --id=3950 --label=dasd
 Partition table successfully initialized.
 ```
 
@@ -416,11 +416,11 @@ options.
 For the installation we want to perform one root partition and one swap should be enough:
 
 ```console
-[user@host ~]$ tessia storage part-add --server=DS8K16 --id=3950 --fs=ext4 --size=6gb --mp=/
+[user@host ~]$ tess storage part-add --server=DS8K16 --id=3950 --fs=ext4 --size=6gb --mp=/
 Partition successfully added.
-[user@host ~]$ tessia storage part-add --server=DS8K16 --id=3950 --fs=swap --size=1gb
+[user@host ~]$ tess storage part-add --server=DS8K16 --id=3950 --fs=swap --size=1gb
 Partition successfully added.
-[user@host ~]$ tessia storage part-list --server=DS8K16 --id=3950
+[user@host ~]$ tess storage part-list --server=DS8K16 --id=3950
 
 Partition table type: dasd
 
@@ -441,9 +441,9 @@ In order to have a usable system for installation we are going to create a profi
 We start by creating the profile:
 
 ```console
-[user@host ~]$ tessia system prof-add --system=lpar65 --name='profile1' --cpu=2 --memory=2048mb --login='root:mypasswd'
+[user@host ~]$ tess system prof-add --system=lpar65 --name='profile1' --cpu=2 --memory=2048mb --login='root:mypasswd'
 Item added successfully.
-[user@host ~]$ tessia system prof-list --system=lpar65 
+[user@host ~]$ tess system prof-list --system=lpar65 
 
 Profile name                : profile1
 System                      : lpar65
@@ -462,9 +462,9 @@ Most parameters are self-explanatory and the *Credentials* field is used when a 
 the installation we still need to attach our network interface:
 
 ```console
-[user@host ~]$ tessia system iface-attach --system=lpar65 --profile='profile1' --iface='default osa'
+[user@host ~]$ tess system iface-attach --system=lpar65 --profile='profile1' --iface='default osa'
 Network interface attached successfully.
-[user@host ~]$ tessia system prof-list --system=lpar65
+[user@host ~]$ tess system prof-list --system=lpar65
 
 Profile name                : profile1
 System                      : lpar65
@@ -482,9 +482,9 @@ Network interfaces          : [default osa/192.168.0.16]
 We can see our interface and the IP we assigned to it in the *Network interfaces*  list. We are almost done, let's not forget to attach our volume as well:
 
 ```console
-[user@host ~]$ tessia system vol-attach --system=lpar65 --profile=profile1 --server=DS8K16 --vol=3950
+[user@host ~]$ tess system vol-attach --system=lpar65 --profile=profile1 --server=DS8K16 --vol=3950
 Volume attached successfully.
-[user@host ~]$ tessia system prof-list --system=lpar65 
+[user@host ~]$ tess system prof-list --system=lpar65 
 
 Profile name                : profile1
 System                      : lpar65
@@ -504,10 +504,10 @@ We can see the newly attached disk in the *Storage volumes* field. We are ready 
 ## Installing an operating system with an autotemplate
 
 Tessia offers a library of templates powered by the [jinja2](http://jinja.pocoo.org) engine for operating system installations (i.e. kickstart, autoinst, preseed). During the installation
-process these templates are fulfilled with the system information from the database and passed to the installer (i.e. Anaconda, AutoYast). Therefore in order to install our system we need to choose one template and for that we can use the `tessia autotemplate` family of commands:
+process these templates are fulfilled with the system information from the database and passed to the installer (i.e. Anaconda, AutoYast). Therefore in order to install our system we need to choose one template and for that we can use the `tess autotemplate` family of commands:
 
 ```console
-[user@host ~]$  tessia autotemplate list
+[user@host ~]$  tess autotemplate list
 
 Template name : SLES12.1
 Supported OS  : sles12.1
@@ -527,13 +527,13 @@ Modified by   : system
 Description   : Template for RHEL7.2
 ```
 
-We have to choose from one of the operating systems versions shown above. If you are curious about the content of a template you can print it with `tessia autotemplate print` and
-if you are even more interested you can use it as a reference to create your own template and add it to the library with `tessia autotemplate add`.
+We have to choose from one of the operating systems versions shown above. If you are curious about the content of a template you can print it with `tess autotemplate print` and
+if you are even more interested you can use it as a reference to create your own template and add it to the library with `tess autotemplate add`.
 
 Now that we know the available versions, let's perform a RHEL installation:
 
 ```console
-[user@host ~]$ tessia system autoinstall --template=RHEL7.2 --system=lpar65 --profile=profile1
+[user@host ~]$ tess system autoinstall --template=RHEL7.2 --system=lpar65 --profile=profile1
 
 Request #7 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%
@@ -614,13 +614,13 @@ to start a system installation what the client actually does is to submit a requ
 likely be free for use which means immediate execution, but that might not be always the case. So if you try to perform a system installation and the job does not get executed immediately
 then possibly the system is currenly blocked by a running action/job (i.e. task execution or another installation).
 
-So how can one tell what is going on? That is the purpose of the `tessia job` family of commands. There you find the commands for dealing with job scheduling, such as verifying the state of
+So how can one tell what is going on? That is the purpose of the `tess job` family of commands. There you find the commands for dealing with job scheduling, such as verifying the state of
 job and requests.
 
 An example of how to verify which jobs are currently running:
 
 ```console
-[user@host ~]$ tessia job list
+[user@host ~]$ tess job list
 
  job_id |   job_type  |     submit_date     |      start_date     |       end_date      |    requester    |   state   |        description           
 --------+-------------+---------------------+---------------------+---------------------+---------------------+-----------+------------------------------
@@ -639,7 +639,7 @@ interval between each time the scheduler processes the request queue.
 It is possible to take a look at the request queue if you suspect something was not yet processed:
 
 ```console
-[user@host ~]$ tessia job req-list
+[user@host ~]$ tess job req-list
 
  request_id | action_type |   job_type  |     submit_date     |    requester    |   state   
 ------------+-------------+-------------+---------------------+---------------------+--------
@@ -658,7 +658,7 @@ The queue shows that all existing requests were already processed (state COMPLET
 (action_type CANCEL) occurred. Let's see which job the request 2 wanted to cancel:
 
 ```console
-[user@host ~]$ tessia job req-list --id=2
+[user@host ~]$ tess job req-list --id=2
 
 Request ID           : 2
 Action type          : CANCEL

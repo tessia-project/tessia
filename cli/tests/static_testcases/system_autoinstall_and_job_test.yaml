@@ -131,17 +131,17 @@ tasks:
   job_command:
     # job help
     - - job -h
-      - 'Usage: tessia job'
+      - 'Usage: tess job'
     - - job cancel -h
-      - 'Usage: tessia job cancel'
+      - 'Usage: tess job cancel'
     - - job list -h
-      - 'Usage: tessia job list'
+      - 'Usage: tess job list'
     - - job output -h
-      - 'Usage: tessia job output'
+      - 'Usage: tess job output'
     - - job req-list -h
-      - 'Usage: tessia job req-list'
+      - 'Usage: tess job req-list'
     - - job submit -h
-      - 'Usage: tessia job submit'
+      - 'Usage: tess job submit'
    # job submit
       # an empty file ~/tessia-engine/cli/tests/test_parmfile is used
     - - job submit --type=autoinstall --parmfile='test_parmfile' --timeout=1 --prio=2 --startdate=today

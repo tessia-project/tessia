@@ -33,37 +33,37 @@ tasks:
       - Key successfully created and added to client configuration.
   storage_help:
     - - storage -h
-      - 'Usage: tessia storage'
+      - 'Usage: tess storage'
     - - storage part-add -h
-      - 'Usage: tessia storage part-add'
+      - 'Usage: tess storage part-add'
     - - storage part-del -h
-      - 'Usage: tessia storage part-del'
+      - 'Usage: tess storage part-del'
     - - storage part-edit -h
-      - 'Usage: tessia storage part-edit'
+      - 'Usage: tess storage part-edit'
     - - storage part-init -h
-      - 'Usage: tessia storage part-init'
+      - 'Usage: tess storage part-init'
     - - storage part-list -h
-      - 'Usage: tessia storage part-list'
+      - 'Usage: tess storage part-list'
     - - storage server-add -h
-      - 'Usage: tessia storage server-add'
+      - 'Usage: tess storage server-add'
     - - storage server-del -h
-      - 'Usage: tessia storage server-del'
+      - 'Usage: tess storage server-del'
     - - storage server-edit -h
-      - 'Usage: tessia storage server-edit'
+      - 'Usage: tess storage server-edit'
     - - storage server-list -h
-      - 'Usage: tessia storage server-list'
+      - 'Usage: tess storage server-list'
     - - storage server-types -h
-      - 'Usage: tessia storage server-types'
+      - 'Usage: tess storage server-types'
     - - storage vol-add -h
-      - 'Usage: tessia storage vol-add'
+      - 'Usage: tess storage vol-add'
     - - storage vol-del -h
-      - 'Usage: tessia storage vol-del'
+      - 'Usage: tess storage vol-del'
     - - storage vol-edit -h
-      - 'Usage: tessia storage vol-edit'
+      - 'Usage: tess storage vol-edit'
     - - storage vol-list -h
-      - 'Usage: tessia storage vol-list'
+      - 'Usage: tess storage vol-list'
     - - storage vol-types -h
-      - 'Usage: tessia storage vol-types'
+      - 'Usage: tess storage vol-types'
   storage_server:
     - - storage server-types
       - 'Type name   : DASD-FCP'

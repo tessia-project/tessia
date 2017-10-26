@@ -9,7 +9,7 @@ ARG baselib_repo=file:///assets/tessia_baselib.git
 ARG DEBIAN_FRONTEND=noninteractive
 
 # this flag determines whether the entrypoint should try to automatically initialize
-# an empty database or perform schema upgrades via tessia-dbmanage. Use with care
+# an empty database or perform schema upgrades via tess-dbmanage. Use with care
 # as you might lose db data.
 ENV TESSIA_DB_AUTOMANAGE false
 

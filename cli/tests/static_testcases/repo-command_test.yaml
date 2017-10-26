@@ -26,15 +26,15 @@ tasks:
   repo_command:
     # repo help
     - - repo -h
-      - 'Usage: tessia repo'
+      - 'Usage: tess repo'
     - - repo add -h
-      - 'Usage: tessia repo add'
+      - 'Usage: tess repo add'
     - - repo del -h
-      - 'Usage: tessia repo del'
+      - 'Usage: tess repo del'
     - - repo edit -h
-      - 'Usage: tessia repo edit'
+      - 'Usage: tess repo edit'
     - - repo list -h
-      - 'Usage: tessia repo list'
+      - 'Usage: tess repo list'
     # 'repo add', 'repo list' subcommands
     - - repo list
       - No results were found.

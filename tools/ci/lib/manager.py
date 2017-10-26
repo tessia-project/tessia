@@ -409,7 +409,7 @@ class Manager(object):
         # make it ready for usage
         if dev_mode:
             ret_code, output = self._session.run(
-                'docker exec tessia_engine_1 tessia-dbmanage get-token')
+                'docker exec tessia_engine_1 tess-dbmanage get-token')
             if ret_code != 0:
                 raise RuntimeError(
                     "failed to fetch admin's authorization token: {}'"

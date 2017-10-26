@@ -65,59 +65,59 @@ tasks:
       - Partition successfully added.
   system_help:
     - - system -h
-      - 'Usage: tessia system'
+      - 'Usage: tess system'
     - - system add -h
-      - 'Usage: tessia system add'
+      - 'Usage: tess system add'
     - - system autoinstall -h
-      - 'Usage: tessia system autoinstall'
+      - 'Usage: tess system autoinstall'
     - - system del -h
-      - 'Usage: tessia system del'
+      - 'Usage: tess system del'
     - - system edit -h
-      - 'Usage: tessia system edit'
+      - 'Usage: tess system edit'
     - - system iface-add -h
-      - 'Usage: tessia system iface-add'
+      - 'Usage: tess system iface-add'
     - - system iface-attach -h
-      - 'Usage: tessia system iface-attach'
+      - 'Usage: tess system iface-attach'
     - - system iface-del -h
-      - 'Usage: tessia system iface-del'
+      - 'Usage: tess system iface-del'
     - - system iface-detach -h
-      - 'Usage: tessia system iface-detach'
+      - 'Usage: tess system iface-detach'
     - - system iface-edit -h
-      - 'Usage: tessia system iface-edit'
+      - 'Usage: tess system iface-edit'
     - - system iface-list -h
-      - 'Usage: tessia system iface-list'
+      - 'Usage: tess system iface-list'
     - - system iface-types -h
-      - 'Usage: tessia system iface-types'
+      - 'Usage: tess system iface-types'
     - - system list -h
-      - 'Usage: tessia system list'
+      - 'Usage: tess system list'
     - - system model-add -h
-      - 'Usage: tessia system model-add'
+      - 'Usage: tess system model-add'
     - - system model-del -h
-      - 'Usage: tessia system model-del'
+      - 'Usage: tess system model-del'
     - - system model-edit -h
-      - 'Usage: tessia system model-edit'
+      - 'Usage: tess system model-edit'
     - - system model-list -h
-      - 'Usage: tessia system model-list'
+      - 'Usage: tess system model-list'
     - - system poweroff -h
-      - 'Usage: tessia system poweroff'
+      - 'Usage: tess system poweroff'
     - - system poweron -h
-      - 'Usage: tessia system poweron'
+      - 'Usage: tess system poweron'
     - - system prof-add -h
-      - 'Usage: tessia system prof-add'
+      - 'Usage: tess system prof-add'
     - - system prof-del -h
-      - 'Usage: tessia system prof-del'
+      - 'Usage: tess system prof-del'
     - - system prof-edit -h
-      - 'Usage: tessia system prof-edit'
+      - 'Usage: tess system prof-edit'
     - - system prof-list -h
-      - 'Usage: tessia system prof-list'
+      - 'Usage: tess system prof-list'
     - - system states -h
-      - 'Usage: tessia system states'
+      - 'Usage: tess system states'
     - - system types -h
-      - 'Usage: tessia system types'
+      - 'Usage: tess system types'
     - - system vol-attach -h
-      - 'Usage: tessia system vol-attach'
+      - 'Usage: tess system vol-attach'
     - - system vol-detach -h
-      - 'Usage: tessia system vol-detach'
+      - 'Usage: tess system vol-detach'
   system_command:
     - - system types
       - 'Type name    : KVM'

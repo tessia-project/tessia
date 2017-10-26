@@ -38,31 +38,31 @@ tasks:
   perm_command:
     # perm help
     - - perm -h
-      - 'Usage: tessia perm'
+      - 'Usage: tess perm'
     - - perm project-add  -h
-      - 'Usage: tessia perm project-add'
+      - 'Usage: tess perm project-add'
     - - perm project-del  -h
-      - 'Usage: tessia perm project-del'
+      - 'Usage: tess perm project-del'
     - - perm project-edit  -h
-      - 'Usage: tessia perm project-edit'
+      - 'Usage: tess perm project-edit'
     - - perm project-list  -h
-      - 'Usage: tessia perm project-list'
+      - 'Usage: tess perm project-list'
     - - perm role-deny  -h
-      - 'Usage: tessia perm role-deny'
+      - 'Usage: tess perm role-deny'
     - - perm role-grant  -h
-      - 'Usage: tessia perm role-grant'
+      - 'Usage: tess perm role-grant'
     - - perm role-list  -h
-      - 'Usage: tessia perm role-list'
+      - 'Usage: tess perm role-list'
     - - perm user-add  -h
-      - 'Usage: tessia perm user-add'
+      - 'Usage: tess perm user-add'
     - - perm user-del  -h
-      - 'Usage: tessia perm user-del'
+      - 'Usage: tess perm user-del'
     - - perm user-edit  -h
-      - 'Usage: tessia perm user-edit'
+      - 'Usage: tess perm user-edit'
     - - perm user-list  -h
-      - 'Usage: tessia perm user-list'
+      - 'Usage: tess perm user-list'
     - - perm user-roles  -h
-      - 'Usage: tessia perm user-roles'
+      - 'Usage: tess perm user-roles'
     # 'perm project' subcommand
     - - perm project-add --name='GEO_1 testers' --desc='Tester team'
       - Item added successfully.

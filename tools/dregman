@@ -400,7 +400,7 @@ def list_(cacert, repo, registry_url):
                 "Unexpected registry's response: {}".format(str(exc)))
 
         if tag_list is None:
-            break
+            continue
         repo_tags = []
         # collect the necessary information of each tag's image
         for image_tag in tag_list:

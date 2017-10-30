@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # simple script to handle start/stop/restart of tessia daemons
 # for use in development environment
 

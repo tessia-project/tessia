@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 fqdn=${TESSIA_ENGINE_FQDN:-engine}
 
 function _db_verify() {

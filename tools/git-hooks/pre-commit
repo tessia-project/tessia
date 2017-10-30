@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # skip verification if set on git config file
 skip=$(git config --bool hooks.pylintskip)
 if [ "$skip" == "true" ]; then

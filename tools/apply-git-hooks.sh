@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 # determine the dir containing the git hooks to be installed
 mydir=$(dirname `readlink -f $0`)
 hookdir=".git/hooks"

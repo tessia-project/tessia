@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 engine_url=${TESSIA_ENGINE_URL:-https://engine:5000}
 
 function _set_url() {

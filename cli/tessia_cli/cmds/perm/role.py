@@ -49,7 +49,7 @@ def role_deny(**kwargs):
 
     fetch_and_delete(
         client.UserRoles, kwargs, 'user role not found.')
-    click.echo('User role removed sucessfully.')
+    click.echo('User role removed successfully.')
 # role_deny()
 
 @click.command(name='role-grant')

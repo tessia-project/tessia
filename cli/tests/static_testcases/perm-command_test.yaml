@@ -238,6 +238,5 @@ tasks:
       - user role not found.
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
       - user role not found.
-      # There is a typo: 'sucessfully' instead of 'successfully'
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
-      - User role removed sucessfully.
+      - User role removed successfully.

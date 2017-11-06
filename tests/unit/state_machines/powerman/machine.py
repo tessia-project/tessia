@@ -636,7 +636,7 @@ class TestPowerManagerMachine(TestCase):
             ]
         })
 
-        timeout_error = 'Could not stablish a connection to system {}'.format(
+        timeout_error = 'Could not establish a connection to system {}'.format(
             test_system)
         machine_obj = machine.PowerManagerMachine(request)
         with self.assertRaisesRegex(TimeoutError, timeout_error):

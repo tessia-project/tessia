@@ -741,7 +741,7 @@ class PowerManagerMachine(BaseMachine):
                 time.sleep(5)
             if time.time() >= timeout_secs:
                 raise TimeoutError(
-                    'Could not stablish a connection to system {} after {} '
+                    'Could not establish a connection to system {} after {} '
                     'seconds'.format(system_name, LOAD_TIMEOUT))
             if not self._state_match(profile_obj):
                 raise RuntimeError(

@@ -152,6 +152,10 @@ tasks:
       - Item added successfully.
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
       - 'request failed. Server answered: An item with the provided value'
+    - - system add --name=cpc2 --type=cpc --hostname=hosthmc#1.example.com --model=zec12_h43 --state=AVAILABLE
+      - 'Invalid value for "--hostname":'
+    - - system add --name=cpc+2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
+      - 'Invalid value for "--name":'
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc4.example.com
       - 'request failed. Server answered: An item with the provided value'
     - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=locked
@@ -393,6 +397,10 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portname=OSAE1
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa3' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=65
+      - Item added successfully.
+    - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --osname=enccw0.0.f500 --layer2=false --ccwgroup=f500 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=65
+      - 'The server did not accept our request. The response is: attributes must be oneOf='
+    - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --osname=enccw0.0.f500 --layer2=false --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=65
       - Item added successfully.
       # iface-add with ip and without subnet
     - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --ip=192.168.160.55 --hostiface=enccw0.0.f500
@@ -660,6 +668,14 @@ tasks:
       - Item added successfully.
     - - system prof-list --system=cpc3lp52
       - 'Profile name                : DASD'
+    - - system prof-list --system=cpc3lp52 --memory=12
+      - No results were found.
+    - - system prof-list --system=cpc3lp52 --memory=AAAmb
+      - invalid memory size specified.
+    - - system prof-list --system=cpc3lp52 --memory=AAAmib
+      - invalid memory size specified.
+    - - system prof-list --system=cpc3lp52 --memory=12mm
+      - invalid memory size specified.
     - - system prof-add --system=cpc3lp52 --name='DASD8' --hyp= --login='root:mypasswd'
       - "request failed. Server answered: No associated item found with value '' for field 'Required hypervisor profile'"
     - - system prof-add --system=cpc3lp52 --name='DASD9' --hyp='default cpc3' --login='root:mypasswd'

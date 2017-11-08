@@ -1,4 +1,5 @@
 description: Additional test for the 'autotemplate' command
+# An empty file ~/tessia-engine/cli/tests/ubuntu16.04_template is used
 base_user: admin
 tasks_order:
   - tessia_help
@@ -81,9 +82,15 @@ tasks:
     - - autotemplate add --name=RHEL7.3 --os=rhel7.3
       - Missing option "--content".
       # cover stmts 139-143 in main.py, check output manually: 
-      # The client encountered an unexpected problem, the error is: [Errno 2] No such file or directory: '/tessia-engine/tessia_engine/db/templates/rhel7.3.jinja'
-    - - autotemplate add --name=RHEL7.3 --content='/tessia-engine/tessia_engine/db/templates/rhel7.3.jinja' --os=rhel7.3
+      # The client encountered an unexpected problem, the error is: [Errno 2] No such file or directory: 'rhel7.3_template'
+    - - autotemplate add --name=RHEL7.3 --content='rhel7.3_template' --os=rhel7.3
       - 'The client encountered an unexpected problem, the error is:'
+    - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --os=ubuntu16.04 --desc='Template for Ubuntu 16.04'
+      - 'permission denied. Server answered: No create permission found for the user in any project'
+    - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --os=ubuntu16.04 --desc='Template for Ubuntu 16.04' --project='GEO_1 developers'
+      - "request failed. Server answered: No associated item found with value 'ubuntu16.04' for field 'os'"
+    - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --os=ubuntu16.04.1 --desc='Template for Ubuntu 16.04' --project='GEO_1 developers'
+      - Item added successfully.
     - - autotemplate edit
       - Missing option "--name".
     - - autotemplate edit --name=RHEL7.2
@@ -104,6 +111,8 @@ tasks:
       - Item successfully updated.
     - - autotemplate del --name=RHEL7.2_GEO
       - template not found.
+    - - autotemplate del --name=UBUNTU16.04
+      - Item successfully deleted.
     - - autotemplate del --name
       - '--name option requires an argument'
     - - autotemplate del --os=rhel7.2

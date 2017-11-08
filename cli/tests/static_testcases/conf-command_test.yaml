@@ -42,17 +42,18 @@ tasks:
         - dev1@example.com
         - password
       - Key successfully created and added to client configuration.
-    - - conf show
-      - 'Authentication key in use :'
-    - - conf key-list
-      - 'Key Owner    : dev1@example.com'
-    - - - conf key-del --key=2070ecb95f1e47dcb9b242468a38309e
-        - dev1@example.com
-        - password
-      - key id not found.
-    - - conf set-server ''
-      - operation failed. The address provided did not respond.
-      # improper output for incorrect login, see Issue 48
+    - - conf key-gen --login=dev1@example.com --password=password
+      - Key successfully created and added to client configuration.
+    - - conf key-gen --login=dev1@example.com --password=password --desc=
+      - Key successfully created and added to client configuration.
+    - - conf key-gen --login=dev1@example.com --password=password --desc='key for dev1'
+      - Key successfully created and added to client configuration.
+    - - conf key-gen --login= --password=password
+      - authentication failed. Make sure your login and password are correct.
+    - - conf key-gen --login=dev1@example.com --password=
+      - Key successfully created and added to client configuration.
+    - - conf key-gen --login=dev1 --password=password
+      - authentication failed. Make sure your login and password are correct.
     - - - conf key-gen
         - dev2@example.com
         - password
@@ -64,3 +65,38 @@ tasks:
     - - - conf key-gen --login=dev1@example.com --desc='auth token for dev1'
         - password    
       - Key successfully created and added to client configuration.
+    - - conf show
+      - 'Authentication key in use :'
+    - - conf key-list
+      - 'Key Owner    : dev1@example.com'
+    - - - conf key-del
+        - dev1@example.com
+        - password
+      - Missing option "--key".
+    - - conf key-del --login=dev1@example.com --password=password
+      - Missing option "--key".
+    - - - conf key-del --key=2070ecb95f1e47dcb9b242468a38309e
+        - dev1@example.com
+        - password
+      - key id not found.
+    - - - conf key-del --key=2070ecb95f1e47dcb9b242468a38309e
+        - dev2@example.com
+        - password
+      - authentication failed. Make sure your login and password are correct.
+    - - - conf key-del --key=2070ecb95f1e47dcb9b242468a38309e
+        - dev1@example.com
+        - ppppp
+      - key id not found.
+    - - conf set-server
+      - Missing argument "url".
+    - - conf set-server ''
+      - operation failed. The address provided did not respond.
+    - - conf set-server 'https://myhost.domain.com:5000'
+      - operation failed. The address provided did not respond.
+    - - conf set-server 'https://www.ibm.com/uk-en/'
+      - The validation of the server's SSL certificate failed.
+    - - conf set-server 'http://www.ibm.com/uk-en/'
+      - The defined server's address returned a malformed response, please verify if the address is correct before trying again.
+    - - conf set-server 'www.ibm.com/uk-en/'
+      - operation failed. The address provided did not respond.
+

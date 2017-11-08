@@ -69,6 +69,8 @@ tasks:
       - 'Invalid value for "--name": value may not be empty'
     - - repo add --name='SLES12.4' --url=
       - 'Invalid value for "--url": value may not be empty'
+    - - repo add --name='SLES12.2' --url='http://example#.com/suse/s390x/SLES12.2/DVD'
+      - 'Invalid value for "--url":'
     - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD'
       - Item added successfully.
     - - repo add --name='SLES12.2' --url='http://example.com/xxx'

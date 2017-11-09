@@ -93,9 +93,9 @@ ubuntu              latest                  d355ed3537e9        3 weeks ago     
 
 You can now start the containers by using the `devmode` command. Before you do so, we need to discuss about two parameters:
 
-- `--baselibfile`: tessia_baselib is a component of the tessia solution and it's used for communication with the hypervisors and guests.
-When it comes to LPAR network boot support tessia_baselib performs the operation by IPLing a pre-deployed Linux image from an
-auxiliar disk. In order to know which disk to use tessia_baselib depends on a configuration file that maps each CEC to its
+- `--baselibfile`: tessia-baselib is the underlying library used for communication with the hypervisors and guests.
+When it comes to LPAR network boot support the baselib performs the operation by IPLing a pre-deployed Linux image from an
+auxiliar disk. In order to know which disk to use the baselib depends on a configuration file that maps each CEC to its
 auxiliar disk. The parameter `baselibfile` specifies the path to such configuration file to be injected in the tessia-engine
 container so that LPARs can be IPLed for installation.
 - `--install-server-hostname`: it's very likely that your workstation does not have a resolvable hostname reachable by the
@@ -106,7 +106,7 @@ Failure to use an adequate hostname will cause systems installations to fail.
 Now that we have the parameters clarified, here's how you start your development environment:
 
 ```
-[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia_baselib.yaml
+[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia-baselib.yaml
 ```
 
 You should see a message informing it's ready:

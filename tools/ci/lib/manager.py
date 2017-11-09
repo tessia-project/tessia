@@ -49,8 +49,8 @@ class Manager(object):
     STAGES = ['build', 'unittest', 'clitest', 'push', 'cleanup']
 
     def __init__(self, stage, docker_tag, images=None, registry_url=None,
-                 field_tests=None, baselib_file=None, install_server_hostname=None,
-                 verbose=True, **stage_args):
+                 field_tests=None, baselib_file=None,
+                 install_server_hostname=None, verbose=True, **stage_args):
         """
         Create the image objects and set necessary configuration parameters
 
@@ -65,8 +65,8 @@ class Manager(object):
             field_tests (str): a path on the builder containing additional
                                tests for the client, as recognized by the
                                cli test runner
-            baselib_file (str): path to tessia_baselib conf file on builder, this is
-                           required if field_tests is specified
+            baselib_file (str): path to baselib conf file on builder, this is
+                                required if field_tests is specified
             install_server_hostname (str): used by clitest stage, custom
                 hostname to use as install server for cases where the detected
                 fqdn is not reachable by systems being installed during tests
@@ -77,7 +77,7 @@ class Manager(object):
             RuntimeError: in case fqdn of builder cannot be determined
             ValueError: 1- if a wrong stage is specified, 2- if 'images' var is
                         specified but stage is not build or push, 3- if
-                        tessia_baselib file is missing/invalid when clitests is
+                        baselib file is missing/invalid when clitests is
                         specified
         """
         self._logger = logging.getLogger(__name__)
@@ -123,18 +123,19 @@ class Manager(object):
             self._builder['hostname'], self._builder['user'],
             self._builder['passwd'], verbose)
 
-        # field tests demand a tessia_baselib file otherwise tests with
+        # field tests demand a baselib file otherwise tests with
         # LPAR installations will fail as there won't be an auxiliar disk
         # configured to boot them
         if self._field_tests:
             if not self._baselib_file:
                 raise ValueError(
-                    'Field tests specified but no tessia_baselib file provided')
+                    'Field tests specified but no baselib file provided')
             # validate that baselib file exists
-            ret_code, _ = self._session.run('test -f {}'.format(self._baselib_file))
+            ret_code, _ = self._session.run('test -f {}'.format(
+                self._baselib_file))
             if ret_code != 0:
                 raise ValueError(
-                    'tessia-baselib file {} not found on {}'
+                    'Baselib file {} not found on {}'
                     .format(self._baselib_file, self._builder['hostname']))
 
         # determine builder's fqdn
@@ -397,13 +398,13 @@ class Manager(object):
                 'failed to set authenticator config: {}'.format(output))
 
         if self._baselib_file:
-            # copy the tessia_baselib file to enable lpar installations
+            # copy the baselib file to enable lpar installations
             ret_code, output = self._session.run(
-                "docker cp {} tessia_engine_1:/etc/tessia/tessia_baselib.yaml"
+                "docker cp {} tessia_engine_1:/etc/tessia/tessia-baselib.yaml"
                 .format(self._baselib_file))
             if ret_code != 0:
                 raise RuntimeError(
-                    'failed to copy tessia_baselib file: {}'.format(output))
+                    'failed to copy tessia-baselib file: {}'.format(output))
 
         # dev mode enabled: add auth token to admin user in cli container to
         # make it ready for usage

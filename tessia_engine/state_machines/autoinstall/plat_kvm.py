@@ -102,7 +102,7 @@ class PlatKvm(PlatBase):
     @staticmethod
     def _kvm_jsonify_iface(iface_entry):
         """
-        Format an iface object to a json format expected by tessia_baselib.
+        Format an iface object to a json format expected by baselib.
         """
         result = {
             "attributes": iface_entry.attributes,
@@ -115,7 +115,7 @@ class PlatKvm(PlatBase):
     @staticmethod
     def _kvm_jsonify_vol(vol_entry):
         """
-        Format a volume object to a json format expected by tessia_baselib.
+        Format a volume object to a json format expected by baselib.
         """
         result = {
             "type": vol_entry.type_rel.name,
@@ -371,7 +371,7 @@ class PlatKvm(PlatBase):
         memory = self._guest_prof.memory
         guest_name = self._guest_prof.system_rel.name
 
-        # prepare entries in the format expected by tessia_baselib
+        # prepare entries in the format expected by baselib
         svols = []
         for svol in self._vols:
             svols.append(self._kvm_jsonify_vol(svol))
@@ -384,7 +384,7 @@ class PlatKvm(PlatBase):
         kernel_uri = urljoin(repo.url + '/', repo.kernel.strip('/'))
         initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
 
-        # parameters argument, see tessia_baselib schema for details
+        # parameters argument, see baselib schema for details
         params = {
             'ifaces': ifaces,
             'storage_volumes': svols,

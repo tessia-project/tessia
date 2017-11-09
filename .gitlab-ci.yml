@@ -34,7 +34,7 @@ unittests_engine:
 clitests:
   stage: clitests
   script:
-    - tools/ci/orc clitest --fieldtests=/home/tessia-builder/field_tests --baselibfile=/home/tessia-builder/cfg/tessia_baselib.yaml
+    - tools/ci/orc clitest --fieldtests=/home/tessia-builder/field_tests --baselibfile=/home/tessia-builder/cfg/tessia-baselib.yaml
 
 push:
   stage: push

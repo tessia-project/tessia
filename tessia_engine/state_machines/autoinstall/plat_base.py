@@ -19,7 +19,7 @@ Interface for epresentation of each platform type
 #
 # IMPORTS
 #
-from tessia_baselib.hypervisors import Hypervisor
+from tessia.baselib.hypervisors import Hypervisor
 
 import abc
 import logging
@@ -78,7 +78,7 @@ class PlatBase(metaclass=abc.ABCMeta):
 
     def _create_hyp(self):
         """
-        Create an instance of tessia_baselib's hypervisor. Here we have no
+        Create an instance of baselib's hypervisor. Here we have no
         knowledge about parameters so _create_hyp can be re-implemented
         by children classes
         """

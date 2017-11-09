@@ -155,7 +155,7 @@ tasks:
     - - job submit --type=autoinstall --parmfile='test_parmfile'
       - 'request failed, reason is: Parsing of parameters failed with: Invalid request parameters'
     - - job submit --type= --parmfile='test_parmfile'
-      - 'The server did not accept our request. The response is: job_type must be enum='
+      - 'Invalid value for "--type": value may not be empty'
     - - job submit --type=autoinstall --parmfile=
       - 'Invalid value for "--parmfile": Could not open file: : No such file or directory'
     - - job submit --type=autoinst --parmfile='test_parmfile'
@@ -193,15 +193,15 @@ tasks:
       - '--id option requires an argument'
     - - job list --id=22
       - job not found.
-    - - job list --machine
-      - '--machine option requires an argument'
-    - - job list --machine=lpar
+    - - job list --type
+      - '--type option requires an argument'
+    - - job list --type=lpar
       - 'No results were found.'
-    - - job list --machine=autoinstall
+    - - job list --type=autoinstall
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
-    - - job list --machine=AUTOINSTALL
-      - 'No results were found.'
-    - - job list --machine=echo
+    - - job list --type=AUTOINSTALL
+      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+    - - job list --type=echo
       - 'job_id | job_type |     submit_date     |      start_date     |       end_date'
     - - job list --owner
       - '--owner option requires an argument'
@@ -214,7 +214,7 @@ tasks:
     - - job list --state=FAILED
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     - - job list --state=failed
-      - 'No results were found.'
+      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     - - job list --state=success
       - 'No results were found.'
     - - job list --state=COMPLETED
@@ -239,23 +239,23 @@ tasks:
       - 'Request ID           : 7'
     - - job req-list --id=22
       - request not found.
+    - - job req-list --action
+      - --action option requires an argument
+    - - job req-list --action=SUBMIT
+      - 'request_id | action_type |   job_type  |     submit_date'
+    - - job req-list --action=submit
+      - 'request_id | action_type |   job_type  |     submit_date'
+    - - job req-list --action=xxxx
+      - 'The server did not accept our request. The response is: whereaction_type must be anyOf='
     - - job req-list --type
-      - --type option requires an argument
-    - - job req-list --type=SUBMIT
-      - 'request_id | action_type |   job_type  |     submit_date'
-    - - job req-list --type=submit
-      - 'The server did not accept our request. The response is: whereaction_type must be anyOf='
-    - - job req-list --type=xxxx
-      - 'The server did not accept our request. The response is: whereaction_type must be anyOf='
-    - - job req-list --machine
-      - '--machine option requires an argument'
-    - - job req-list --machine=lpar
+      - '--type option requires an argument'
+    - - job req-list --type=lpar
       - 'The server did not accept our request. The response is: wherejob_type must be anyOf='
-    - - job req-list --machine=autoinstall
+    - - job req-list --type=autoinstall
       - 'request_id | action_type |   job_type  |     submit_date'
-    - - job req-list --machine=AUTOINSTALL
-      - 'The server did not accept our request. The response is: wherejob_type must be anyOf='
-    - - job req-list --machine=echo
+    - - job req-list --type=AUTOINSTALL
+      - 'request_id | action_type |   job_type  |     submit_date'
+    - - job req-list --type=echo
       - 'request_id | action_type |   job_type  |     submit_date'
     - - job req-list --owner
       - '--owner option requires an argument'
@@ -270,7 +270,7 @@ tasks:
     - - job req-list --state=COMPLETED
       - 'request_id | action_type |   job_type  |     submit_date'
     - - job req-list --state=completed
-      - 'No results were found.'
+      - 'request_id | action_type |   job_type  |     submit_date'
     - - job req-list --state=FAILED
       - 'request_id | action_type |   job_type  |     submit_date'
     # job cancel

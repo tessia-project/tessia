@@ -137,6 +137,25 @@ class Hostname(click.ParamType):
 
 HOSTNAME = Hostname()
 
+class JobType(click.ParamType):
+    """
+    Represents job types.
+    """
+    name = 'job_type'
+
+    def convert(self, value, param, ctx):
+        """
+        Converts to lowercase.
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        return value.lower()
+    # convert()
+# JobType
+
+JOBTYPE = JobType()
+
 class Libvirtxml(click.ParamType):
     """
     Represents a libvirt xml content extracted from a local file

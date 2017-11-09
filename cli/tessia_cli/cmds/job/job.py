@@ -23,6 +23,8 @@ from tessia_cli.client import Client
 from tessia_cli.filters import dict_to_filter
 from tessia_cli.output import print_items
 from tessia_cli.output import print_ver_table
+from tessia_cli.types import CONSTANT
+from tessia_cli.types import JOBTYPE
 from tessia_cli.utils import fetch_item
 from tessia_cli.utils import wait_scheduler
 from time import sleep
@@ -58,10 +60,11 @@ JOB_FIELDS_DETAILED = (
     short_help='show the queue of requests or details of a request')
 @click.option('request_id', '--id', type=int,
               help="filter by the specified request id")
-@click.option('action_type', '--type', help='filter by action type')
-@click.option('job_type', '--machine', help='filter by machine type')
+@click.option('action_type', '--action', type=CONSTANT,
+              help='filter by action type')
+@click.option('job_type', '--type', type=JOBTYPE, help='filter by machine type')
 @click.option('requester', '--owner', help='filter by owner login')
-@click.option('--state', help='filter by request state')
+@click.option('--state', type=CONSTANT, help='filter by request state')
 def req_list(request_id, **kwargs):
     """
     show the queue of requests or details of a request
@@ -146,7 +149,7 @@ def output(job_id):
 
 @click.command(
     short_help='send a request to the scheduler to submit a new job')
-@click.option('job_type', '--type', required=True,
+@click.option('job_type', '--type', type=JOBTYPE, required=True,
               help="type of execution machine to use")
 @click.option('--parmfile', type=click.File('r'), required=True,
               help="parameter file for the execution machine")
@@ -178,9 +181,10 @@ def submit(job_type, parmfile, **kwargs):
     short_help='show the queue of jobs or details of a job')
 @click.option('job_id', '--id', type=int, help="show details of a job id")
 @click.option('--params', is_flag=True, help="show the job parameters")
-@click.option('job_type', '--machine', help='filter by machine type')
+@click.option('job_type', '--type', type=JOBTYPE,
+              help='filter by machine type')
 @click.option('requester', '--owner', help='filter by owner login')
-@click.option('--state', help='filter by request state')
+@click.option('--state', type=CONSTANT, help='filter by request state')
 def list_(job_id, params, **kwargs):
     """
     show the queue of jobs or details of a job

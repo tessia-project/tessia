@@ -49,7 +49,7 @@ Pre-requisite: to go forward with this section, you must have the docker images 
 Executing all client tests is pretty straightforward, all you have to do is to use the `orc` tool in development mode while specifiying the `clitests` parameter:
 
 ```
-[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740 --baselibfile=/home/user/files/tessia_baselib.yaml --clitests
+[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740 --baselibfile=/home/user/files/tessia-baselib.yaml --clitests
 ```
 
 And the output:
@@ -100,7 +100,7 @@ Pre-requisite: to go forward with this section, you must have the docker images 
 Start the containers in development mode:
 
 ```console
-[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia_baselib.yaml
+[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia-baselib.yaml
 ```
 
 Wait for the ready message:

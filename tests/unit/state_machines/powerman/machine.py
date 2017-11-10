@@ -63,7 +63,7 @@ class TestPowerManagerMachine(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-        # mocks for tessia_baselib objects
+        # mocks for baselib objects
         patcher = patch.object(machine, 'Guest')
         self._mock_guest_cls = patcher.start()
         self._mock_guest_obj = self._mock_guest_cls.return_value

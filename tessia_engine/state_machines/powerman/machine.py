@@ -20,8 +20,8 @@ Machine to perform power management of systems
 # IMPORTS
 #
 from jsonschema import validate
-from tessia_baselib.guests import Guest
-from tessia_baselib.hypervisors import Hypervisor
+from tessia.baselib.guests import Guest
+from tessia.baselib.hypervisors import Hypervisor
 from tessia_engine.config import CONF
 from tessia_engine.db.connection import MANAGER
 from tessia_engine.db.models import System, SystemProfile
@@ -294,7 +294,7 @@ class PowerManagerMachine(BaseMachine):
     @staticmethod
     def _get_start_params_lpar(guest_prof):
         """
-        Define the parameters in tessia_baselib format to start a LPAR system
+        Define the parameters in baselib format to start a LPAR system
 
         Args:
             guest_prof (SystemProfile): guest profile db object
@@ -331,7 +331,7 @@ class PowerManagerMachine(BaseMachine):
     @staticmethod
     def _get_start_params_kvm(guest_prof):
         """
-        Define the parameters in tessia_baselib format to start a KVM guest system
+        Define the parameters in baselib format to start a KVM guest system
 
         Args:
             guest_prof (SystemProfile): guest profile db object
@@ -342,7 +342,7 @@ class PowerManagerMachine(BaseMachine):
         Returns:
             dict: parameters
         """
-        # prepare entries in the format expected by tessia_baselib
+        # prepare entries in the format expected by baselib
         svols = []
         for vol_obj in guest_prof.storage_volumes_rel:
             try:
@@ -547,7 +547,7 @@ class PowerManagerMachine(BaseMachine):
             else:
                 hyp_type = 'kvm'
 
-        # call tessia_baselib to perform operation
+        # call baselib to perform operation
         baselib_hyp = Hypervisor(
             hyp_type, hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
@@ -610,7 +610,7 @@ class PowerManagerMachine(BaseMachine):
             hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
         baselib_hyp.login()
         baselib_hyp.start(guest_prof.system_rel.name, guest_prof.cpu,
-                     guest_prof.memory, params)
+                          guest_prof.memory, params)
         baselib_hyp.logoff()
 
         self._powered_on[guest_prof.system_rel.name] = guest_prof

@@ -19,7 +19,7 @@ Base state machine for auto installation of operating systems
 #
 # IMPORTS
 #
-from tessia_baselib.common.ssh.client import SshClient
+from tessia.baselib.common.ssh.client import SshClient
 from socket import inet_ntoa
 from tessia_engine.config import Config
 from tessia_engine.db.connection import MANAGER

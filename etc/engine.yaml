@@ -104,9 +104,9 @@ log:
       handlers: [console]
       level: DEBUG
       propagate: false
-    # tessia_baselib is used by the state machines in jobs so we don't
+    # baselib is used by the state machines in jobs so we don't
     # define a file based handler either.
-    tessia_baselib:
+    tessia.baselib:
       handlers: [console]
       level: DEBUG
 

@@ -4,7 +4,7 @@ FROM ubuntu:latest
 # but it is also possible to use this dockerfile directly and override the variables
 # to point to another location
 ARG git_repo=file:///assets/tessia-engine.git
-ARG baselib_repo=file:///assets/tessia_baselib.git
+ARG baselib_repo=file:///assets/tessia-baselib.git
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -19,13 +19,13 @@ RUN apt-get -q update > /dev/null && \
     apt-get -yq install --no-install-recommends \
     # to manage the system locale
     locales \
-    # used by tessia_baselib to check if hosts are up
+    # used by baselib to check if hosts are up
     iputils-ping \
     # used to install python libraries
     python3-pip \
     # used by pbr (in setuptools) to detect module version numbers
     git \
-    # these are needed to build cryptography (dep chain is tessia_baselib -> paramiko ->
+    # these are needed to build cryptography (dep chain is baselib -> paramiko ->
     # cryptography) and uwsgi
     build-essential libssl-dev libffi-dev python3-dev \
     # build python postgres connector (psycopg2)
@@ -61,12 +61,12 @@ COPY assets /assets/
 RUN cd /assets && \
     git clone $git_repo tessia-engine && \
     cd tessia-engine && \
-    # use the custom url as the tessia_baselib's repository might not be accessible
+    # use the custom url as the baselib's repository might not be accessible
     # from the builder
-    sed -i "/egg=tessia_baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
+    sed -i "/egg=tessia-baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
     pip3 install -U -r requirements.txt && \
     # installation - tell pbr not to create requirements.txt in egg-info folder as it
-    # is incorrectly creating tessia_baselib's 'git+file://' entry with a missing 
+    # is incorrectly creating baselib's 'git+file://' entry with a missing
     # 'egg=' suffix
     PBR_REQUIREMENTS_FILES=/dev/null ./setup.py -q install && \
     # tessia-engine files settings

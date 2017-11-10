@@ -52,23 +52,23 @@ class DockerImageEngine(DockerImage):
         # let the base class do it's work
         context_dir = super()._prepare_context(git_name, work_dir)
 
-        # add the specific bits: we need to download the tessia_baselib repository
+        # add the specific bits: we need to download the tessia-baselib repository
         self._logger.info(
-            '[build] downloading tessia_baselib to context dir')
+            '[build] downloading tessia-baselib to context dir')
 
         ret_code, output = self._session.run(
-            "grep 'egg=tessia_baselib' {}/requirements.txt".format(ROOT_DIR))
+            "grep 'egg=tessia-baselib' {}/requirements.txt".format(ROOT_DIR))
         if ret_code != 0:
             raise RuntimeError(
-                'Failed to determine tessia_baselib source url: {}'.format(output))
+                'Failed to determine tessia-baselib source url: {}'.format(output))
         baselib_url = output.strip().rsplit('@', 1)[0]
 
         ret_code, output = self._session.run(
-            'git clone {} {}/assets/tessia_baselib.git'.format(
+            'git clone --mirror {} {}/assets/tessia-baselib.git'.format(
                 baselib_url, context_dir))
         if ret_code != 0:
             raise RuntimeError(
-                'Failed to download tessia_baselib source: {}'.format(output))
+                'Failed to download tessia-baselib source: {}'.format(output))
 
         return context_dir
     # _prepare_context()

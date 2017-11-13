@@ -77,6 +77,7 @@ tasks:
       # Empty name
     - - perm project-add --name= --desc='3rd tester team'
       - 'Invalid value for "--name": value may not be empty'
+      # Issue #84
     - - perm project-add --name='GEO_4 testers' --desc=
       - Item added successfully.
     - - perm project-edit --name='GEO_4 testers' --desc=
@@ -85,8 +86,14 @@ tasks:
       - Missing option "--desc".
     - - perm project-edit --name='GEO_1 testers' --desc='Tester team'
       - Item successfully updated.
+    - - perm project-edit --desc='Tester team'
+      - Missing option "--name".
+    - - perm project-edit --name= --desc='Tester team'
+      - 'The server did not accept our request. The response is: wherename must be anyOf='
     - - perm project-edit --name='GEO testers' --desc='Test team'
       - project not found.
+    - - perm project-edit --name='GEO_1 testers' --desc='Tester team'
+      - Item successfully updated.
     - - perm project-edit --name='GEO_1 testers' --desc='Test team'
       - Item successfully updated.
       # Empty name
@@ -98,14 +105,20 @@ tasks:
       - 'The server did not accept our request. The response is: desc must be type=string'
     - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers' --desc='Test team'
       - Item successfully updated.
+    - - perm project-edit --name='GEO_3 testers' --newname='GEO_2 testers' --desc='3rd tester team'
+      - 'request failed. Server answered: An item with the provided value'
     - - perm project-list
       - 'Name        : Admins'
+    - - perm project-list --name=
+      - 'Invalid value for "--name": value may not be empty'
     - - perm project-list --name='GEO_1 testers'
       - No results were found.
     - - perm project-list --name='GEO_2 testers'
       - 'Name        : GEO_2 testers'
     - - perm project-del
       - Missing option "--name".
+    - - perm project-del --name=''
+      - 'Invalid value for "--name": value may not be empty'
     - - perm project-del --name='GEO_1 testers'
       - project not found.
     - - perm project-del --nam='GEO_3 testers'
@@ -130,10 +143,20 @@ tasks:
       - 'Invalid value for "--login": value may not be empty'
     - - perm user-add --login=dev4@example.com --name='Developer 4'
       - 'request failed. Server answered: An item with the provided value'
+    - - perm user-add --login=dev6@example.com --name='Developer 6' --title='developer'
+      - User added successfully.
+    - - perm user-add --login=dev7@example.com --name='Developer 7' --title=
+      - User added successfully.
+    - - perm user-add --login=dev8@example.com --name='Developer 8' --restricted=true
+      - '--restricted option does not take a value'
+    - - perm user-add --login=dev8@example.com --name='Developer 8' --restricted
+      - User added successfully.
+    - - perm user-add --login=lab_admin5@example.com --name='ADMIN5_LAB' --admin=false
+      - '--admin option does not take a value'
+    - - perm user-add --login=lab_admin5@example.com --name='ADMIN5_LAB' --admin
+      - User added successfully.
     - - perm user-edit --login=dev2@example.com --restricted=FALSE --admin=TRUE
       - User successfully updated.
-    - - perm user-list --login=dev2@example.com
-      - 'Login         : dev2@example.com'
     - - perm user-edit --login=dev3@example.com --name='Dev 3' --title='Mr. Dev 3'
       - User successfully updated.
     - - perm user-edit
@@ -145,12 +168,46 @@ tasks:
       # Empty name
     - - perm user-edit --login=dev4@example.com --name=
       - 'Invalid value for "--name": value may not be empty'
+    - - perm user-edit --login= --name='Developer 4'
+      - 'Invalid value for "--login": value may not be empty'
     - - perm user-edit --login=dev4@example.com --name='Developer 4'
       - User successfully updated.
     - - perm user-edit --login=dev4@example.com --title='Mr. Dev 4'
       - User successfully updated.
     - - perm user-edit --login=dev4@example.com --project='GEO_1 labadmins'
       - 'no such option: --project'
+    - - perm user-edit --login=dev7@example.com --name='Developer 7' --title=
+      - User successfully updated.
+    - - perm user-edit --login=dev7@example.com --restricted
+      - '--restricted option requires an argument'
+    - - perm user-edit --login=dev7@example.com --restricted=yes
+      - User successfully updated.
+    - - perm user-edit --login=dev7@example.com --restricted=xxx
+      - 'Invalid value for "--restricted": xxx is not a valid boolean'
+    - - perm user-edit --login=dev7@example.com --restricted=1
+      - User successfully updated.
+    - - perm user-edit --login=dev7@example.com --restricted=-5
+      - 'Invalid value for "--restricted": -5 is not a valid boolean'
+    - - perm user-edit --login=dev7@example.com --restricted=true
+      - User successfully updated.
+    - - perm user-edit --login=dev7@example.com --restricted=0
+      - User successfully updated.
+    - - perm user-edit --login=dev8@example.com --restricted=true
+      - User successfully updated.
+    - - perm user-edit --login=dev8@example.com --restricted=false
+      - User successfully updated.
+    - - perm user-edit --login=dev7@example.com --admin
+      - '--admin option requires an argument'
+    - - perm user-edit --login=dev7@example.com --admin=yes
+      - User successfully updated.
+    - - perm user-edit --login=dev7@example.com --admin=1
+      - User successfully updated.
+    - - perm user-edit --login=dev7@example.com --admin=true
+      - User successfully updated.
+    - - perm user-edit --login=dev7@example.com --admin=true
+      - User successfully updated.
+    - - perm user-edit --login=lab_admin5@example.com --admin=false
+      - User successfully updated.
     - - perm user-list
       - 'Login         : admin'
     - - perm user-list --login=dev4@example.com
@@ -167,8 +224,12 @@ tasks:
       - 'Login         : admin'
     - - perm user-list --restricted=yes
       - 'No results were found.'
-    - - perm user-list --admin=TRUE
-      - 'Login         : admin'
+    - - perm user-list --admin
+      - '--admin option requires an argument'
+    - - perm user-list --admin
+      - '--admin option requires an argument'
+    - - perm user-list --admin=xxx
+      - 'Invalid value for "--admin": xxx is not a valid boolean'
     - - perm user-list --admin=FALSE
       - 'Login         : lab_admin@example.com'
     - - perm user-list --login=dev4@example.com --admin=FALSE
@@ -177,8 +238,6 @@ tasks:
       - 'no such option: --restrict  Did you mean --restricted?'
     - - perm user-list --restructed=TRUE
       - 'no such option: --restructed'
-    - - perm user-list --admin
-      - '--admin option requires an argument'
     - - perm user-list --name='Developer 4'
       - 'no such option: --name'
     - - perm user-roles
@@ -191,7 +250,7 @@ tasks:
       - 'Project name : GEO_1 labadmins'
     - - perm user-del
       - Missing option "--login".
-    - - perm user-del --login=dev8@example.com
+    - - perm user-del --login=dev9@example.com
       - user not found.
     - - perm user-del --login=dev3@example.com
       - User successfully deleted.
@@ -220,6 +279,8 @@ tasks:
       - "request failed. Server answered: No associated item found with value 'xxx' for field 'User login'"
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
       - "request failed. Server answered: No associated item found with value 'XXX' for field 'Project name'"
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project=
+      - "request failed. Server answered: No associated item found with value '' for field 'Project name'"
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
       - User role added successfully.
     - - perm role-deny
@@ -237,6 +298,8 @@ tasks:
     - - perm role-deny --login=xxx --name='ADMIN_LAB' --project='GEO_2 testers'
       - user role not found.
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
+      - user role not found.
+    - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project=
       - user role not found.
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
       - User role removed successfully.

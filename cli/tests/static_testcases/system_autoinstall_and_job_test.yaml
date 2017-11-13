@@ -162,6 +162,8 @@ tasks:
       - 'The server did not accept our request. The response is: job_type must be enum='
     - - job submit --type=echo --parmfile='test_parmfile'
       - 'Request accepted; job id is #3'
+    - - job output --id=3
+      - ''
     - - job submit --type=autoinstall --parmfile='test'
       - 'Invalid value for "--parmfile": Could not open file: test: No such file or directory'
     - - job submit --type=autoinstall --parmfile='test_parmfile' --timeout

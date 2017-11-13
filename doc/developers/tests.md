@@ -290,19 +290,19 @@ Ran 369 tests in 46.109s
 OK
 Name                                                     Stmts   Miss  Cover   Missing
 --------------------------------------------------------------------------------------
-tessia_engine/__init__.py                                     0      0   100%
-tessia_engine/api/__init__.py                                 0      0   100%
-tessia_engine/api/app.py                                     88      8    91%   64, 129, 151-157, 173
-tessia_engine/api/cmd.py                                     16     16     0%   3-56
-tessia_engine/api/exceptions.py                             163     93    43%   47, 92-100, 116-187, 238-240, 246, 253-255, 267-335, 422-427
-tessia_engine/api/manager.py                                 74     31    58%   44-67, 74-76, 100, 143-147, 158, 182-184, 206-208, 210-212
-tessia_engine/api/resources/__init__.py                      25      0   100%
+tessia/server/__init__.py                                     0      0   100%
+tessia/server/api/__init__.py                                 0      0   100%
+tessia/server/api/app.py                                     88      8    91%   64, 129, 151-157, 173
+tessia/server/api/cmd.py                                     16     16     0%   3-56
+tessia/server/api/exceptions.py                             163     93    43%   47, 92-100, 116-187, 238-240, 246, 253-255, 267-335, 422-427
+tessia/server/api/manager.py                                 74     31    58%   44-67, 74-76, 100, 143-147, 158, 182-184, 206-208, 210-212
+tessia/server/api/resources/__init__.py                      25      0   100%
 (output suppressed...)
-tessia_engine/state_machines/echo/__init__.py                 3      0   100%
-tessia_engine/state_machines/echo/machine.py                 75      0   100%
+tessia/server/state_machines/echo/__init__.py                 3      0   100%
+tessia/server/state_machines/echo/machine.py                 75      0   100%
 --------------------------------------------------------------------------------------
 TOTAL                                                     4697    720    85%
-python3 -m coverage erase && python3 -m coverage run -a --source=tessia_engine -m unittest discover tests/unit -p '*.py' && python3 -m coverage report -m
+python3 -m coverage erase && python3 -m coverage run -a --source=tessia.server -m unittest discover tests/unit -p '*.py' && python3 -m coverage report -m
 [user@myhost tessia-engine]$
 ```
 
@@ -319,8 +319,8 @@ Ran 23 tests in 4.721s
 OK
 Name                                            Stmts   Miss  Cover   Missing
 -----------------------------------------------------------------------------
-tessia_engine/api/resources/storage_volumes.py     105      0   100%
-python3 -m coverage erase && python3 -m coverage run -a --include=tessia_engine/api/resources/storage_volumes.py -m unittest tests/unit/api/resources/storage_volumes.py && python3 -m coverage report -m
+tessia/server/api/resources/storage_volumes.py     105      0   100%
+python3 -m coverage erase && python3 -m coverage run -a --include=tessia/server/api/resources/storage_volumes.py -m unittest tests/unit/api/resources/storage_volumes.py && python3 -m coverage report -m
 [user@myhost tessia-engine]$
 ```
 
@@ -359,9 +359,9 @@ from `TestSecureResource` use this generator to create instances automatically s
 Example:
 ```python
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.storage_server_types import \
+from tessia.server.api.resources.storage_server_types import \
         StorageServerTypeResource
-from tessia_engine.db import models
+from tessia.server.db import models
 
 class TestStorageServerType(TestSecureResource):
     """

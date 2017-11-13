@@ -18,8 +18,8 @@ Unit test for the post_install verification module.
 
 from contextlib import contextmanager
 from copy import deepcopy
-from tessia_engine.db.models import System, SystemProfile, OperatingSystem
-from tessia_engine.lib import post_install
+from tessia.server.db.models import System, SystemProfile, OperatingSystem
+from tessia.server.lib import post_install
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
 from unittest.mock import patch

@@ -20,8 +20,8 @@ Unit test for volume_types resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.volume_types import VolumeTypeResource
-from tessia_engine.db import models
+from tessia.server.api.resources.volume_types import VolumeTypeResource
+from tessia.server.db import models
 
 #
 # CONSTANTS AND DEFINITIONS

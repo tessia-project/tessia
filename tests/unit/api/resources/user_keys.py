@@ -20,8 +20,8 @@ Unit test for user_keys resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.user_keys import UserKeyResource
-from tessia_engine.db import models
+from tessia.server.api.resources.user_keys import UserKeyResource
+from tessia.server.db import models
 
 import json
 import time

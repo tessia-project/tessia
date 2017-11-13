@@ -19,7 +19,7 @@ Unit test for the db.connection module
 #
 # IMPORTS
 #
-from tessia_engine.db import connection
+from tessia.server.db import connection
 from unittest import TestCase
 from unittest.mock import patch
 from unittest.mock import sentinel

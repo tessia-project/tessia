@@ -21,9 +21,9 @@ Unit tests for Install state machine.
 #
 from contextlib import contextmanager
 from copy import deepcopy
-from tessia_engine.db import models
-from tessia_engine.db.connection import MANAGER
-from tessia_engine.state_machines.autoinstall import machine
+from tessia.server.db import models
+from tessia.server.db.connection import MANAGER
+from tessia.server.state_machines.autoinstall import machine
 from tests.unit.config import EnvConfig
 from tests.unit.state_machines.autoinstall import utils
 from unittest.mock import patch

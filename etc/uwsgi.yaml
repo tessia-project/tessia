@@ -4,7 +4,7 @@ uwsgi:
   # allow the GIL to be enabled so that api code can run threads
   enable-threads: true
   manage-script-name: true
-  mount: /=tessia_engine.api.cmd:APP
+  mount: /=tessia.server.api.cmd:APP
   https: 0.0.0.0:5000,/etc/tessia/ssl.crt,/etc/tessia/ssl.key
   # docker stops containers by issuing SIGTERM, but by default uwsgi uses
   # sigterm to reload the workers, we change this default here.

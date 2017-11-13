@@ -20,8 +20,8 @@ Unit test for iface_types resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.iface_types import IfaceTypeResource
-from tessia_engine.db import models
+from tessia.server.api.resources.iface_types import IfaceTypeResource
+from tessia.server.db import models
 
 #
 # CONSTANTS AND DEFINITIONS

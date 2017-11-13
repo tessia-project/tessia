@@ -19,7 +19,7 @@ Unit test for echo machine module
 #
 # IMPORTS
 #
-from tessia_engine.state_machines.echo import machine
+from tessia.server.state_machines.echo import machine
 from unittest import TestCase
 from unittest.mock import call
 from unittest.mock import patch

@@ -17,8 +17,8 @@ Unit test for the powerman machine.
 """
 
 from contextlib import contextmanager
-from tessia_engine.state_machines.powerman import machine
-from tessia_engine.db.models import System, SystemProfile
+from tessia.server.state_machines.powerman import machine
+from tessia.server.db.models import System, SystemProfile
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
 from unittest.mock import call, patch

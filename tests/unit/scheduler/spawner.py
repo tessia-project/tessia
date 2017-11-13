@@ -15,8 +15,8 @@
 """
 spawner.py unit test
 """
-from tessia_engine.scheduler import spawner
-from tessia_engine.scheduler import wrapper
+from tessia.server.scheduler import spawner
+from tessia.server.scheduler import wrapper
 from unittest import TestCase
 from unittest.mock import patch
 

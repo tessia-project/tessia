@@ -59,7 +59,7 @@ def main():
     home_dir = os.environ.get('HOME', None)
     if not home_dir:
         home_dir = '/tmp'
-    os.environ['COVERAGE_FILE'] = '{}/.tessia_engine.coverage'.format(home_dir)
+    os.environ['COVERAGE_FILE'] = '{}/.tessia.server.coverage'.format(home_dir)
     # switch to root dir to make sure paths are found
     os.chdir(lib_dir)
 
@@ -71,7 +71,7 @@ def main():
         subcmd_unittest = SUBCMD_UNITTEST_DISCOVER.format('tests/unit')
         cmds.append(CMD_COVERAGE.format(
             import_method='source',
-            source_path='tessia_engine',
+            source_path='tessia.server',
             subcmd=subcmd_unittest
         ))
 
@@ -80,7 +80,7 @@ def main():
         subcmd_unittest = SUBCMD_UNITTEST_MODULE.format(sys.argv[1])
         cmds.append(CMD_COVERAGE.format(
             import_method='include',
-            source_path=sys.argv[1].replace("tests/unit", "tessia_engine"),
+            source_path=sys.argv[1].replace("tests/unit", "tessia/server"),
             subcmd=subcmd_unittest
         ))
 
@@ -89,7 +89,7 @@ def main():
         subcmd_unittest = SUBCMD_UNITTEST_DISCOVER.format(sys.argv[1])
         cmds.append(CMD_COVERAGE.format(
             import_method='source',
-            source_path=sys.argv[1].replace("tests/unit", "tessia_engine"),
+            source_path=sys.argv[1].replace("tests/unit", "tessia/server"),
             subcmd=subcmd_unittest
         ))
 

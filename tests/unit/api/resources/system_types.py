@@ -20,8 +20,8 @@ Unit test for system_types resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.system_types import SystemTypeResource
-from tessia_engine.db import models
+from tessia.server.api.resources.system_types import SystemTypeResource
+from tessia.server.db import models
 
 #
 # CONSTANTS AND DEFINITIONS

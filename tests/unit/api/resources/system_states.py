@@ -20,8 +20,8 @@ Unit test for system_states resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.system_states import SystemStateResource
-from tessia_engine.db import models
+from tessia.server.api.resources.system_states import SystemStateResource
+from tessia.server.db import models
 
 #
 # CONSTANTS AND DEFINITIONS

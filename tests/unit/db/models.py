@@ -26,11 +26,11 @@ from sqlalchemy.dialects.sqlite.base import SQLiteDialect
 from sqlalchemy.engine import Engine
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import aliased
-from tessia_engine.db.exceptions import AssociationError
-from tessia_engine.db import connection
-from tessia_engine.db import models
-from tessia_engine.db import types
-from tessia_engine.db.feeder import db_insert
+from tessia.server.db.exceptions import AssociationError
+from tessia.server.db import connection
+from tessia.server.db import models
+from tessia.server.db import types
+from tessia.server.db.feeder import db_insert
 
 from unittest import TestCase
 from unittest.mock import patch

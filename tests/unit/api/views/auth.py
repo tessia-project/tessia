@@ -20,10 +20,10 @@ Unit test for api.views.auth module
 # IMPORTS
 #
 from base64 import b64encode
-from tessia_engine.api.app import API
-from tessia_engine.api.resources import RESOURCES
-from tessia_engine.api.views import auth
-from tessia_engine.db import models
+from tessia.server.api.app import API
+from tessia.server.api.resources import RESOURCES
+from tessia.server.api.views import auth
+from tessia.server.db import models
 from tests.unit.config import EnvConfig
 from tests.unit.db.models import DbUnit
 from unittest import TestCase

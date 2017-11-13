@@ -20,8 +20,8 @@ Unit test for subnets resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.subnets import SubnetResource
-from tessia_engine.db import models
+from tessia.server.api.resources.subnets import SubnetResource
+from tessia.server.db import models
 
 import json
 

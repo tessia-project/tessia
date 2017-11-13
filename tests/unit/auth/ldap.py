@@ -19,7 +19,7 @@ Unit test for ldap auth module
 #
 # IMPORTS
 #
-from tessia_engine.auth import ldap
+from tessia.server.auth import ldap
 from unittest import TestCase
 from unittest.mock import MagicMock
 from unittest.mock import Mock

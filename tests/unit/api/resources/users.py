@@ -20,8 +20,8 @@ Unit test for users resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.users import UserResource
-from tessia_engine.db import models
+from tessia.server.api.resources.users import UserResource
+from tessia.server.db import models
 
 #
 # CONSTANTS AND DEFINITIONS

@@ -19,7 +19,7 @@ Unit test for config module
 #
 # IMPORTS
 #
-from tessia_engine import config
+from tessia.server import config
 from tempfile import NamedTemporaryFile
 from unittest import TestCase
 from unittest import mock
@@ -140,7 +140,7 @@ log:
       level: INFO
       stream: ext://sys.stderr
   loggers:
-    tessia_engine:
+    tessia.server:
       handlers: [console]
 """
         elif option == 'log_bad':

@@ -19,9 +19,9 @@ Unit test for systems resource module
 #
 # IMPORTS
 #
-from tessia_engine.api.resources.systems import SystemResource
-from tessia_engine.api.resources.systems import MSG_BAD_COMBO
-from tessia_engine.db import models
+from tessia.server.api.resources.systems import SystemResource
+from tessia.server.api.resources.systems import MSG_BAD_COMBO
+from tessia.server.db import models
 from tests.unit.api.resources.secure_resource import TestSecureResource
 
 import json

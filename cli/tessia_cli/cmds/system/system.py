@@ -62,7 +62,7 @@ SYSTEM_FIELDS = (
 @click.option('--type', required=True, type=CONSTANT,
               help="system type (see types)")
 @click.option('--model', type=CONSTANT, help="system model (see model-list)")
-@click.option('--state', help="system state (see states)")
+@click.option('--state', type=CONSTANT, help="system state (see states)")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning system")
 @click.option('--desc', help="free form field describing system")
@@ -124,7 +124,7 @@ def autoinstall(ctx, **kwargs):
               help="resolvable hostname or ip address")
 @click.option('--model', type=CONSTANT, help="system model (see model-list)")
 @click.option('--type', type=CONSTANT, help="system type (see types)")
-@click.option('--state', help="system state (see states)")
+@click.option('--state', type=CONSTANT, help="system state (see states)")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning system ")
 @click.option('--desc', help="free form field describing system")
@@ -147,7 +147,7 @@ def edit(cur_name, **kwargs):
 @click.option('hypervisor', '--hyp', help="filter by specified hypervisor")
 @click.option('--model', type=CONSTANT, help="filter by specified model")
 @click.option('--type', type=CONSTANT, help="filter by specified type")
-@click.option('--state', help="filter by specified state")
+@click.option('--state', type=CONSTANT, help="filter by specified state")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 def list_(**kwargs):

@@ -147,21 +147,21 @@ tasks:
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=
       - 'Invalid value for "--model": value may not be empty'
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=
-      - "request failed. Server answered: No associated item found with value '' for field 'Current state'"
+      - 'Invalid value for "--state": value may not be empty'
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=available
-      - "request failed. Server answered: No associated item found with value 'available' for field 'Current state'"
-    - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
       - Item added successfully.
+    - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
+      - 'request failed. Server answered: An item with the provided value'
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc4.example.com
       - 'request failed. Server answered: An item with the provided value'
     - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=locked
-      - "request failed. Server answered: No associated item found with value 'locked' for field 'Current state'"
+      - Item added successfully.
     - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=LOCKED
-      - Item added successfully.
+      - 'request failed. Server answered: An item with the provided value'
     - - system add --name=cpc5 --type=cpc --hostname=hosthmc5.example.com --state=Debug
-      - "request failed. Server answered: No associated item found with value 'Debug' for field 'Current state'"
-    - - system add --name=cpc5 --type=cpc --hostname=hosthmc5.example.com --state=DEBUG
       - Item added successfully.
+    - - system add --name=cpc5 --type=cpc --hostname=hosthmc5.example.com --state=DEBUG
+      - 'request failed. Server answered: An item with the provided value'
     - - system add --name=cpc3 --type=cpc --hostname=hmcserver.example.com --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
       - Item added successfully.
     - - system add --name=cpc3lp52 --hyp=cpc3 --type=LPAR --hostname=cpc3lp52.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
@@ -207,9 +207,8 @@ tasks:
       - No results were found.
     - - system list --type=kvm
       - 'Name            : guest55'
-      # Issue 54
     - - system list --state=locked
-      - No results were found.
+      - 'Name            : cpc4'
     - - system list --state=LOCKED
       - 'Name            : cpc4'
     - - system list --owner=
@@ -273,10 +272,9 @@ tasks:
     - - system edit --name=cpc3lp56 --type=lpar
       - Item successfully updated.
     - - system edit --name=cpc3lp56 --state=
-      - "request failed. Server answered: No associated item found with value 'None' for field 'Current state'"
-      # Issue 54: only UPPERCASE is acceptable for '--state'
+      - 'Invalid value for "--state": value may not be empty'
     - - system edit --name=cpc3lp56 --state=available
-      - "request failed. Server answered: No associated item found with value 'available' for field 'Current state'"
+      - Item successfully updated.
     - - system edit --name=cpc3lp56 --state=AVAILABLE
       - Item successfully updated.
     - - system edit --name=cpc3lp56 --state=LOCK

@@ -39,15 +39,15 @@ The client is currently known to work on Fedora 25 and Ubuntu 16.04 systems.
 Once you have confirmed the pre-requisites fulfilled, follow these steps:
 
 ```
-[user@host ~]$ git clone git@gitlab.com:tessia/tessia-engine.git
-Cloning into 'tessia-engine'...
+[user@host ~]$ git clone https://gitlab.com/tessia-project/tessia.git
+Cloning into 'tessia'...
 remote: Counting objects: 1685, done.
 remote: Compressing objects: 100% (874/874), done.
 remote: Total 1685 (delta 1029), reused 1272 (delta 773)
 Receiving objects: 100% (1685/1685), 2.17 MiB | 1.63 MiB/s, done.
 Resolving deltas: 100% (1029/1029), done.
 Checking connectivity... done.
-[user@host ~]$ cd tessia-engine/cli
+[user@host ~]$ cd tessia/cli
 [user@host cli]$ sudo pip3 install -r requirements.txt
 (lots of output ...)
 [user@host cli]$ sudo ./setup.py install
@@ -104,8 +104,8 @@ Create a new directory and clone the repository inside it:
 
 ```
 [user@host ~]$ mkdir tessia-cli && cd tessia-cli
-[user@host tessia-cli]$ git clone git@gitlab.com:tessia/tessia-engine.git
-Klone nach 'tessia-engine' ...
+[user@host tessia-cli]$ git clone https://gitlab.com/tessia-project/tessia.git
+Klone nach 'tessia' ...
 remote: Counting objects: 3236, done.
 remote: Compressing objects: 100% (1417/1417), done.
 remote: Total 3236 (delta 2035), reused 2782 (delta 1764)
@@ -117,8 +117,8 @@ Prüfe Konnektivität ... Fertig.
 Then, copy the docker files to the current folder and move the whole repository to the `assets` folder:
 
 ```
-[user@domain tessia-cli]$ cp -r tessia-engine/tools/ci/docker/tessia-cli/* .
-[user@domain tessia-cli]$ mv tessia-engine assets/tessia-engine.git
+[user@domain tessia-cli]$ cp -r tessia/server/tools/ci/docker/tessia-cli/* .
+[user@domain tessia-cli]$ mv tessia assets/tessia.git
 ```
 
 Now you just have to execute the build command:
@@ -128,7 +128,7 @@ Now you just have to execute the build command:
 Sending build context to Docker daemon  6.671MB
 Step 1/8 : FROM ubuntu:latest
  ---> 14f60031763d
-Step 2/8 : ARG git_repo=/assets/tessia-engine.git
+Step 2/8 : ARG git_repo=/assets/tessia.git
  ---> Using cache
  ---> cdea02586385
 Step 3/8 : ARG DEBIAN_FRONTEND=noninteractive
@@ -143,9 +143,9 @@ Step 5/8 : ENV LC_ALL en_US.UTF-8 LANG en_US.UTF-8
 Step 6/8 : COPY assets /assets/
  ---> a8cb1f45932b
 Removing intermediate container a0bc7755fc5d
-Step 7/8 : RUN cd /assets &&     git clone $git_repo tessia-engine &&     cd tessia-engine/cli &&     pip3 -q install -U -r requirements.txt &&     ./setup.py -q install &&     apt-get -yq purge --auto-remove     build-essential     python3-dev > /dev/null &&     mv /assets/entrypoint /entrypoint &&     rm -rf /assets
+Step 7/8 : RUN cd /assets &&     git clone $git_repo tessia &&     cd tessia/cli &&     pip3 -q install -U -r requirements.txt -r dev-requirements.txt &&     ./setup.py -q install &&     ./setup.py -q install_data &&     apt-get -yq purge --auto-remove     build-essential     python3-dev > /dev/null &&     mv /assets/entrypoint /entrypoint &&     rm -rf /assets
  ---> Running in a42b48592002
-Cloning into 'tessia-engine'...
+Cloning into 'tessia'...
 done.
 warning: no files found matching 'AUTHORS'
 warning: no files found matching 'ChangeLog'

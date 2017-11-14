@@ -24,27 +24,27 @@ $ tools/ci/orc list
 
 List of available images (Name - Description)
 
-tessia-engine -> Rest like API and scheduling
+tessia-server -> Rest like API and job scheduling
 tessia-cli -> Command line client
 
-$ tools/ci/orc build --image=tessia-engine
+$ tools/ci/orc build --image=tessia-server
 INFO: [init] going to perform a test build
 INFO: [init] no config url set: local build mode
 INFO: [init] using builder localhost
 INFO: [init] deploying to zone localhost using controller local
-INFO: [init] detected git repo name is tessia-engine
+INFO: [init] detected git repo name is tessia
 INFO: [init] detected tag for images is ppinatti_ci_env-d462699
 INFO: new state: image-build
 INFO: [image-build] creating bundle of git repo
 INFO: [image-build] sending git bundle to builder
-INFO: [image-build] preparing context dir at /tmp/tmp.Z590UIFSOp/tessia-engine
-INFO: [image-build] downloading tessia_baselib to context dir
-INFO: [image-build] build start at /tmp/tmp.Z590UIFSOp/tessia-engine
+INFO: [image-build] preparing context dir at /tmp/tmp.Z590UIFSOp/tessia
+INFO: [image-build] downloading tessia-baselib to context dir
+INFO: [image-build] build start at /tmp/tmp.Z590UIFSOp/tessia
 INFO: [image-build] cleaning up work directory
 INFO: new state: lint-check
-INFO: [lint-check] executing tools/run_pylint.py on tessia-engine
+INFO: [lint-check] executing tools/run_pylint.py on tessia-server
 INFO: new state: unittest-run
-INFO: [unittest-run] executing tools/run_tests.py on tessia-engine
+INFO: [unittest-run] executing tools/run_tests.py on tessia-server
 ...
 ```
 

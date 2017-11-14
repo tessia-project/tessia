@@ -49,7 +49,7 @@ Pre-requisite: to go forward with this section, you must have the docker images 
 Executing all client tests is pretty straightforward, all you have to do is to use the `orc` tool in development mode while specifiying the `clitests` parameter:
 
 ```
-[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740 --baselibfile=/home/user/files/tessia-baselib.yaml --clitests
+[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740 --baselibfile=/home/user/files/tessia-baselib.yaml --clitests
 ```
 
 And the output:
@@ -78,19 +78,19 @@ $ docker exec --user admin tessia_cli_1 /home/admin/cli/tests/runner exec --cov-
 
 Stopping tessia_db_1 ... done
 
-Stopping tessia_engine_1 ... done
+Stopping tessia_server_1 ... done
 
 Removing tessia_db_1 ... done
 
 Removing tessia_cli_1 ... doneone
-Going to remove tessia_db_1, tessia_cli_1, tessia_engine_1
+Going to remove tessia_db_1, tessia_cli_1, tessia_server_1
 tessia_db-data
-tessia_engine-etc
-tessia_engine-jobs
+tessia_server-etc
+tessia_server-jobs
 tessia_cli_net
 tessia_db_net
 INFO: done
-[user@myhost tessia-engine]$
+[user@myhost tessia]$
 ```
 
 ## How to run client tests individually
@@ -100,7 +100,7 @@ Pre-requisite: to go forward with this section, you must have the docker images 
 Start the containers in development mode:
 
 ```console
-[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia-baselib.yaml
+[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia-baselib.yaml
 ```
 
 Wait for the ready message:
@@ -185,11 +185,11 @@ admin@tessia-cli:~/cli$
 ```
 
 **Note**: after a test is executed, the database will be in a 'dirty' state which might cause a second run or a run of another test to fail. To restore the database
-to a pristine state, run the cleaner script from within the tessia-engine container:
+to a pristine state, run the cleaner script from within the tessia-server container:
 
 ```
 # stop the api and scheduler services, call tess-dbmanage to re-initialize the database, start the services again
-[user@myhost ~]$ docker exec -ti tessia_engine_1 /root/tessia-engine/tools/cleanup_db
+[user@myhost ~]$ docker exec -ti tessia_server_1 /root/tessia/tools/cleanup_db
 info: detected supervisorctl, assuming docker container mode
 tessia-api: stopped
 tessia-scheduler: stopped
@@ -259,7 +259,7 @@ tasks:
 
 Every module must have a corresponding unit test to validate it works. The tests are located under the folder `tests/unit` and follow the pattern `tests/unit/%{module_location}/%{module_name}.py`.
 
-For example, for a module located at `tessia_engine/common/logger.py` the corresponding unit test is `tests/unit/common/logger.py`. That helps keeping things organized and makes it easier to determine which test(s) validate a given module/package/functionality.
+For example, for a module located at `tessia/server/common/logger.py` the corresponding unit test is `tests/unit/common/logger.py`. That helps keeping things organized and makes it easier to determine which test(s) validate a given module/package/functionality.
 
 ## How to run unit tests
 
@@ -270,7 +270,7 @@ An alternative method is to use a virtualenv created via [tox](https://tox.readt
 First step is to start the containers in devmode using the orc tool:
 
 ```
-[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740
+[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740
 
 (output suppressed...)
 
@@ -281,7 +281,7 @@ Then in a different shell (or by sending the current process to background), exe
 
 ```
 # to run all unit tests at once, use the following:
-[user@myhost tessia-engine]$ docker exec tessia_engine_1 /root/tessia-engine/tools/run_tests.py
+[user@myhost tessia]$ docker exec tessia_server_1 /root/tessia/tools/run_tests.py
 ...............................................................................................................................................................................................
 ..................................................................................................................................................................................
 ----------------------------------------------------------------------
@@ -303,13 +303,13 @@ tessia/server/state_machines/echo/machine.py                 75      0   100%
 --------------------------------------------------------------------------------------
 TOTAL                                                     4697    720    85%
 python3 -m coverage erase && python3 -m coverage run -a --source=tessia.server -m unittest discover tests/unit -p '*.py' && python3 -m coverage report -m
-[user@myhost tessia-engine]$
+[user@myhost tessia]$
 ```
 
 If you don't want to run the full set of tests but only a specific module (the one you are developing for example), just specify its path in the script call:
 
 ```
-[user@myhost tessia-engine]$ docker exec tessia_engine_1 /root/tessia-engine/tools/run_tests.py tests/unit/api/resources/storage_volumes.py
+[user@myhost tessia]$ docker exec tessia_server_1 /root/tessia/tools/run_tests.py tests/unit/api/resources/storage_volumes.py
 /usr/local/lib/python3.5/dist-packages/werkzeug/local.py:347: DeprecationWarning: json is deprecated.  Use get_json() instead.
   return getattr(self._get_current_object(), name)
 .......................
@@ -321,7 +321,7 @@ Name                                            Stmts   Miss  Cover   Missing
 -----------------------------------------------------------------------------
 tessia/server/api/resources/storage_volumes.py     105      0   100%
 python3 -m coverage erase && python3 -m coverage run -a --include=tessia/server/api/resources/storage_volumes.py -m unittest tests/unit/api/resources/storage_volumes.py && python3 -m coverage report -m
-[user@myhost tessia-engine]$
+[user@myhost tessia]$
 ```
 
 The script will execute the unit test and provide a code coverage report so that you can verify whether the unit test is covering all the possible flows.
@@ -477,7 +477,7 @@ Similar to how the unit tests are executed, there is a helper script to execute 
 The first step is to start the containers in devmode using the orc tool:
 
 ```
-[user@myhost tessia-engine]$ tools/ci/orc devmode --tag=17.713.740
+[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740
 
 (output suppressed...)
 
@@ -487,12 +487,12 @@ INFO: [devmode] you can now work, press Ctrl+C when done
 Then in a different shell (or by sending the current process to background), execute the helper script `run_pylint.py`:
 
 ```
-[user@myhost tessia-engine]$ docker exec tessia_engine_1 /root/tessia-engine/tools/run_pylint.py
+[user@myhost tessia]$ docker exec tessia_server_1 /root/tessia/tools/run_pylint.py
 
 ------------------------------------
 Your code has been rated at 10.00/10
 
-[user@myhost tessia-engine]$
+[user@myhost tessia]$
 ```
 
 **Note**: In the CI process the lint verification is done as part of the unit tests step.

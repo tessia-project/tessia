@@ -1,5 +1,5 @@
 description: Additional test for the 'autotemplate' command
-# An empty file ~/tessia-engine/cli/tests/ubuntu16.04_template is used
+# An empty file ~/tessia/cli/tests/ubuntu16.04_template is used
 base_user: admin
 tasks_order:
   - tessia_help

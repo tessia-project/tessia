@@ -91,15 +91,17 @@ class DockerImage(object):
                 version=self._image_tag
             )
         elif action == 'run':
+            cmd_args = cmd.split()
             docker_run = (
                 'docker run -t --name {container_name} {args} '
-                '{image_name} {cmd}'
+                '--entrypoint {cmd} {image_name} {cmd_args}'
             )
             docker_cmd = docker_run.format(
                 container_name=container_name,
                 image_name=image_name,
                 args=args,
-                cmd=cmd
+                cmd=cmd_args[0],
+                cmd_args=' '.join(cmd_args[1:])
             )
         elif action == 'exec':
             docker_cmd = (
@@ -115,17 +117,20 @@ class DockerImage(object):
         return docker_cmd
     # _gen_docker_cmd()
 
-    def _exec_build(self, context_dir):
+    def _exec_build(self, git_name, context_dir):
         """
         Execute the actual docker build action.
 
         Args:
+            git_name (str): repository name where source code is located
             context_dir (str): context directory to use for build
 
         Raises:
             RuntimeError: in case build process fails
         """
-        cmd = self._gen_docker_cmd('build', context_dir=context_dir)
+        build_args = '--build-arg git_repo=file:///assets/{}'.format(git_name)
+        cmd = self._gen_docker_cmd(
+            'build', args=build_args, context_dir=context_dir)
         self._logger.info('[build] build start at %s', context_dir)
         ret_code, output = self._session.run(cmd)
         if ret_code != 0:
@@ -175,7 +180,7 @@ class DockerImage(object):
             work_dir (str): path to work dir in builder
         """
         context_dir = self._prepare_context(git_name, work_dir)
-        self._exec_build(context_dir)
+        self._exec_build(git_name, context_dir)
     # build()
 
     def cleanup(self):

@@ -3,7 +3,7 @@ FROM ubuntu:latest
 # by default we expect the git repos to be placed by the ci process under /assets
 # but it is also possible to use this dockerfile directly and override the variables
 # to point to another location
-ARG git_repo=file:///assets/tessia-engine.git
+ARG git_repo=file:///assets/tessia.git
 ARG baselib_repo=file:///assets/tessia-baselib.git
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -57,10 +57,10 @@ ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 COPY assets /assets/
 
-# tessia-engine installation
+# server installation
 RUN cd /assets && \
-    git clone $git_repo tessia-engine && \
-    cd tessia-engine && \
+    git clone $git_repo tessia && \
+    cd tessia && \
     # use the custom url as the baselib's repository might not be accessible
     # from the builder
     sed -i "/egg=tessia-baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
@@ -69,7 +69,7 @@ RUN cd /assets && \
     # is incorrectly creating baselib's 'git+file://' entry with a missing
     # 'egg=' suffix
     PBR_REQUIREMENTS_FILES=/dev/null ./setup.py -q install && \
-    # tessia-engine files settings
+    # files settings
     useradd -m tessia && \
     install -m 700 -g tessia -o tessia -d /etc/tessia && \
     install -m 600 -g tessia -o tessia /usr/local/etc/tessia/* /etc/tessia && \
@@ -80,10 +80,10 @@ RUN cd /assets && \
     # tool used to handle yaml files from cmdline
     cp /assets/yamlman /usr/local/bin/ && \
     # by default log files are relative paths for use in virtualenvs, we change it here
-    sed -i 's,^\( \+filename:\) log/\(.*\)$,\1 /var/log/\2,g' /etc/tessia/engine.yaml && \
+    sed -i 's,^\( \+filename:\) log/\(.*\)$,\1 /var/log/\2,g' /etc/tessia/server.yaml && \
     # same for www/jobs dirs
-    yamlman update /etc/tessia/engine.yaml auto_install.dir /var/tessia/www && \
-    yamlman update /etc/tessia/engine.yaml scheduler.jobs_dir /var/tessia/jobs && \
+    yamlman update /etc/tessia/server.yaml auto_install.dir /var/tessia/www && \
+    yamlman update /etc/tessia/server.yaml scheduler.jobs_dir /var/tessia/jobs && \
     # cleanup section - remove unneeded resources
     cd / && \
     mv /assets/entrypoint /entrypoint && \

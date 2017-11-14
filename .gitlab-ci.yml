@@ -21,15 +21,15 @@ build_cli:
   script:
     - tools/ci/orc build --image=tessia-cli
 
-build_engine:
+build_server:
   stage: build
   script:
-    - tools/ci/orc build --image=tessia-engine
+    - tools/ci/orc build --image=tessia-server
 
-unittests_engine:
+unittests_server:
   stage: unittests
   script:
-    - tools/ci/orc unittest --image=tessia-engine
+    - tools/ci/orc unittest --image=tessia-server
 
 clitests:
   stage: clitests
@@ -42,7 +42,7 @@ push:
     - tools/ci/orc push --registry=${REGISTRY}
     # keep registry size under control
     - tools/dregman clean ${REGISTRY} tessia-cli
-    - tools/dregman clean ${REGISTRY} tessia-engine
+    - tools/dregman clean ${REGISTRY} tessia-server
   only:
     - master
 

@@ -1,15 +1,15 @@
 version: '2.1'
 
 services:
-  engine:
-    image: tessia-engine:${TESSIA_DOCKER_TAG:-latest}
+  server:
+    image: tessia-server:${TESSIA_DOCKER_TAG:-latest}
     environment:
       # for production use one should create an override compose file
       # and set these variables
       TESSIA_DB_AUTOMANAGE: "true"
-      TESSIA_DB_URI: "postgresql://engine:pass4engine@db/engine"
-      TESSIA_ENGINE_FQDN: ${TESSIA_ENGINE_FQDN:-engine}
-    hostname: ${TESSIA_ENGINE_FQDN:-engine}
+      TESSIA_DB_URI: "postgresql://tessia:pass4tessia@db/tessia"
+      TESSIA_SERVER_FQDN: ${TESSIA_SERVER_FQDN:-server}
+    hostname: ${TESSIA_SERVER_FQDN:-server}
     ports:
       - 80:80
       - 5000:5000
@@ -17,16 +17,16 @@ services:
       - cli_net
       - db_net
     volumes:
-      - engine-etc:/etc/tessia
-      - engine-jobs:/var/tessia/jobs
+      - server-etc:/etc/tessia
+      - server-jobs:/var/tessia/jobs
   db:
     image: postgres:9.6-alpine
     environment:
       POSTGRES_INITDB_ARGS: "-E UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8"
       # for production use one should create an override compose file
       # and set these variables
-      POSTGRES_PASSWORD: pass4engine
-      POSTGRES_USER: engine
+      POSTGRES_PASSWORD: pass4tessia
+      POSTGRES_USER: tessia
     networks:
       - db_net
     volumes:
@@ -34,13 +34,13 @@ services:
   cli:
     image: tessia-cli:${TESSIA_DOCKER_TAG:-latest}
     environment:
-      TESSIA_ENGINE_URL: https://${TESSIA_ENGINE_FQDN:-engine}:5000
+      TESSIA_SERVER_URL: https://${TESSIA_SERVER_FQDN:-server}:5000
     hostname: tessia-cli
     networks:
       - cli_net
-    # allow the client to reach the engine via its fqdn
+    # allow the client to reach the server via its fqdn
     links:
-      - engine:${TESSIA_ENGINE_FQDN:-engine}
+      - server:${TESSIA_SERVER_FQDN:-server}
     tty: true
     stdin_open: true
 
@@ -50,5 +50,5 @@ networks:
 
 volumes:
   db-data:
-  engine-etc:
-  engine-jobs:
+  server-etc:
+  server-jobs:

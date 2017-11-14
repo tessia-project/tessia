@@ -20,8 +20,8 @@ Unit test for the scheduler's looper module
 # IMPORTS
 #
 
-from tessia_engine.scheduler import wrapper
-from tessia_engine.state_machines import base
+from tessia.server.scheduler import wrapper
+from tessia.server.state_machines import base
 from unittest import TestCase
 from unittest import mock
 from unittest.mock import patch

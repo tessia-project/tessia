@@ -20,7 +20,7 @@ install machine.
 #
 # IMPORTS
 #
-from tessia_engine.db.models import OperatingSystem, SystemProfile, Template
+from tessia.server.db.models import OperatingSystem, SystemProfile, Template
 from tests.unit.db.models import DbUnit
 
 import json

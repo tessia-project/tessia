@@ -19,7 +19,7 @@ This module contains all unit tests for the Autoyast state machine.
 #
 # IMPORTS
 #
-from tessia_engine.state_machines.autoinstall import sm_autoyast, sm_base
+from tessia.server.state_machines.autoinstall import sm_autoyast, sm_base
 from tests.unit.state_machines.autoinstall import utils
 from unittest.mock import MagicMock, Mock, patch
 from unittest import TestCase

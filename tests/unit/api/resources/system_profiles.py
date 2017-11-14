@@ -19,8 +19,8 @@ Unit test for system_profiles resource module
 #
 # IMPORTS
 #
-from tessia_engine.api.resources.system_profiles import SystemProfileResource
-from tessia_engine.db import models
+from tessia.server.api.resources.system_profiles import SystemProfileResource
+from tessia.server.db import models
 from tests.unit.api.resources.secure_resource import TestSecureResource
 
 import json

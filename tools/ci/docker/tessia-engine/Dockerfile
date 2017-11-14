@@ -64,7 +64,7 @@ RUN cd /assets && \
     # use the custom url as the baselib's repository might not be accessible
     # from the builder
     sed -i "/egg=tessia-baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
-    pip3 install -U -r requirements.txt && \
+    pip3 install -U -r requirements.txt -r dev-requirements.txt && \
     # installation - tell pbr not to create requirements.txt in egg-info folder as it
     # is incorrectly creating baselib's 'git+file://' entry with a missing
     # 'egg=' suffix

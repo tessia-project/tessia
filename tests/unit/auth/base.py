@@ -19,8 +19,8 @@ Unit test for auth base module and package initializer (__init__.py)
 #
 # IMPORTS
 #
-from tessia_engine import auth
-from tessia_engine.auth.base import BaseLoginManager
+from tessia.server import auth
+from tessia.server.auth.base import BaseLoginManager
 from tempfile import TemporaryDirectory
 from unittest import TestCase
 from unittest.mock import patch

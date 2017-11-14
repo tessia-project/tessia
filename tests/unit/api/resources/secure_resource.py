@@ -20,10 +20,10 @@ Unit test for secure_resources module
 # IMPORTS
 #
 from base64 import b64encode
-from tessia_engine import config
-from tessia_engine.api.app import API
-from tessia_engine.api.resources import RESOURCES
-from tessia_engine.db import models
+from tessia.server import config
+from tessia.server.api.app import API
+from tessia.server.api.resources import RESOURCES
+from tessia.server.db import models
 from tests.unit.config import EnvConfig
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
@@ -43,7 +43,7 @@ DEFAULT_CONFIG = {
     'log': {
         'version': 1,
         'loggers': {
-            'tessia_engine': {
+            'tessia.server': {
                 'level': 'ERROR'
             }
         },

@@ -20,7 +20,7 @@ Test executor of yaml based testcase files
 # IMPORTS
 #
 from click.testing import CliRunner
-from tessia_cli import main
+from tessia.cli import main
 
 import jsonschema
 import os

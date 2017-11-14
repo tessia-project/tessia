@@ -21,8 +21,8 @@ Unit test for the scheduler's looper module
 #
 from datetime import datetime
 from datetime import timedelta
-from tessia_engine.db.models import SchedulerJob
-from tessia_engine.scheduler import resources_manager
+from tessia.server.db.models import SchedulerJob
+from tessia.server.scheduler import resources_manager
 from unittest import TestCase
 from unittest.mock import patch
 

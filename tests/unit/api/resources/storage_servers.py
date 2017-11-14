@@ -20,8 +20,8 @@ Unit test for storage_servers resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.storage_servers import StorageServerResource
-from tessia_engine.db import models
+from tessia.server.api.resources.storage_servers import StorageServerResource
+from tessia.server.db import models
 
 #
 # CONSTANTS AND DEFINITIONS

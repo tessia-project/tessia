@@ -54,7 +54,7 @@ def main():
 
     # no arguments provided: check all the files
     if len(sys.argv) < 2:
-        cmd += ' {0}/tessia_engine {0}/tests/unit'.format(lib_dir)
+        cmd += ' {0}/tessia/server {0}/tests/unit'.format(lib_dir)
     # process arguments and add them to the command
     else:
         # flag to control whether a module path was provided
@@ -66,7 +66,7 @@ def main():
                 path_set = True
         # no module path provided: check all files
         if not path_set:
-            cmd += ' {0}/tessia_engine {0}/tests/unit'.format(lib_dir)
+            cmd += ' {0}/tessia/server {0}/tests/unit'.format(lib_dir)
 
     # execute command and return exit code
     return subprocess.call(cmd, shell=True)

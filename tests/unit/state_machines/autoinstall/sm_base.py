@@ -22,9 +22,9 @@ ome more detailed info about the module here.
 # IMPORTS
 #
 from contextlib import contextmanager
-from tessia_engine.db.connection import MANAGER
-from tessia_engine.db.models import OperatingSystem
-from tessia_engine.state_machines.autoinstall import sm_base
+from tessia.server.db.connection import MANAGER
+from tessia.server.db.models import OperatingSystem
+from tessia.server.state_machines.autoinstall import sm_base
 from tests.unit.state_machines.autoinstall import utils
 from unittest import mock, TestCase
 from unittest.mock import call, Mock, MagicMock, patch

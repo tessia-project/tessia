@@ -1,4 +1,4 @@
-# tessia engine configuration file
+# tessia server configuration file
 
 # database configuration
 db:
@@ -15,7 +15,7 @@ auth:
   realm: authentication realm
   # only ldap or free are supported at the moment
   login_method: ldap
-  # whether to allow users to be automatically added to engine's database
+  # whether to allow users to be automatically added to server's database
   # when the login subsystem authenticates them
   allow_user_auto_create: false
   # ldap configuration
@@ -48,7 +48,7 @@ auth:
     group_membership_attr: uniquemember
 
 # logging configuration - usually it is not necessary to touch this section,
-# but if you feel the need to do so logging is highly customizable as the engine
+# but if you feel the need to do so logging is highly customizable as the server
 # uses a hierarchy of loggers according to python recommended usage.
 log:
   version: 1
@@ -66,14 +66,14 @@ log:
       level: INFO
       stream: ext://sys.stderr
     file_api:
-      class: tessia_engine.log.CreateDirRotatingFileHandler
+      class: tessia.server.log.CreateDirRotatingFileHandler
       formatter: default
       level: INFO
       filename: log/tessia/api.log
       maxBytes: 70000000
       backupCount: 3
     file_common:
-      class: tessia_engine.log.CreateDirRotatingFileHandler
+      class: tessia.server.log.CreateDirRotatingFileHandler
       formatter: default
       level: INFO
       filename: log/tessia/common.log
@@ -84,23 +84,23 @@ log:
     #sqlalchemy:
     #  handlers: [console]
     #  level: DEBUG
-    tessia_engine:
+    tessia.server:
       handlers: [console, file_common]
       level: DEBUG
-    tessia_engine.api:
+    tessia.server.api:
       handlers: [console, file_api]
       level: DEBUG
       propagate: false
     # the scheduler runs as a standalone process therefore we don't
     # define a file based handler for it here.
-    tessia_engine.scheduler:
+    tessia.server.scheduler:
       handlers: [console]
       level: DEBUG
       propagate: false
     # state machines are executed as jobs and have their own log file,
     # therefore we don't define a file based handler for them in this
     # configuration.
-    tessia_engine.state_machines:
+    tessia.server.state_machines:
       handlers: [console]
       level: DEBUG
       propagate: false

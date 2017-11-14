@@ -20,13 +20,13 @@ Unit test for the scheduler's looper module
 # IMPORTS
 #
 from datetime import datetime
-from tessia_engine.db import connection
-from tessia_engine.db.models import SchedulerRequest
-from tessia_engine.db.models import SchedulerJob
-from tessia_engine.db.models import User
-from tessia_engine.scheduler import looper
-from tessia_engine.scheduler import resources_manager
-from tessia_engine.scheduler import wrapper
+from tessia.server.db import connection
+from tessia.server.db.models import SchedulerRequest
+from tessia.server.db.models import SchedulerJob
+from tessia.server.db.models import User
+from tessia.server.scheduler import looper
+from tessia.server.scheduler import resources_manager
+from tessia.server.scheduler import wrapper
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
 from unittest.mock import MagicMock

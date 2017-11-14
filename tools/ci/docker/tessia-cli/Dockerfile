@@ -45,7 +45,7 @@ COPY assets /assets/
 RUN cd /assets && \
     git clone $git_repo tessia-engine && \
     cd tessia-engine/cli && \
-    pip3 -q install -U -r requirements.txt && \
+    pip3 -q install -U -r requirements.txt -r dev-requirements.txt && \
     ./setup.py -q install && \
     # remove unneeded dependencies used only for building
     apt-get -yq purge --auto-remove \

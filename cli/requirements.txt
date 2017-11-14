@@ -1,8 +1,4 @@
 # order is the order pip will install, so if package A depends on B make sure B comes first
-setuptools>=17.1.1
-# tests
-pylint>=1.7.0
-coverage>=4.3.4
 # for api communication
 Potion-client>=2.4.1
 # cmdline client library

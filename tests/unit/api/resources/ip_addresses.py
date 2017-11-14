@@ -20,8 +20,8 @@ Unit test for ip_addresses resource module
 # IMPORTS
 #
 from tests.unit.api.resources.secure_resource import TestSecureResource
-from tessia_engine.api.resources.ip_addresses import IpAddressResource
-from tessia_engine.db import models
+from tessia.server.api.resources.ip_addresses import IpAddressResource
+from tessia.server.db import models
 
 import ipaddress
 import json

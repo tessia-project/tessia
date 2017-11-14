@@ -20,7 +20,7 @@ Entry point to execute the testcases
 #
 # IMPORTS
 #
-from tessia_cli.config import CONF
+from tessia.cli.config import CONF
 from util.static_executor import STATIC_DIR, StaticExecutor
 
 import click
@@ -33,7 +33,7 @@ import time
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMD_COVERAGE = 'python3 -m coverage run -a --source=tessia_cli {}'
+CMD_COVERAGE = 'python3 -m coverage run -a --source=tessia.cli {}'
 CMD_COVERAGE_ERASE = "python3 -m coverage erase"
 CMD_COVERAGE_REPORT = "python3 -m coverage report -m"
 CMD_WRAPPER = '-m wrapper {test_path} {api_url}'
@@ -83,7 +83,7 @@ def _prepare_env():
     home_dir = os.environ.get('HOME', None)
     if not home_dir:
         home_dir = '/tmp'
-    os.environ['COVERAGE_FILE'] = '{}/.tessia_cli.coverage'.format(home_dir)
+    os.environ['COVERAGE_FILE'] = '{}/.tessia.cli.coverage'.format(home_dir)
     os.chdir(MY_DIR)
 # _prepare_env()
 

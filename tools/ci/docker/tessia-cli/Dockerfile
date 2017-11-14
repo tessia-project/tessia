@@ -29,11 +29,8 @@ RUN apt-get -q update > /dev/null && \
     # setuptools for installing applications (including tessia) - it must be installed
     # separately first otherwise other packages fail to install
     pip3 -q install -U setuptools && \
-    pip3 -q install -U \
     # this is to update the pip version if necessary
-    pip \
-    # pbr is used in setuptools
-    pbr && \
+    pip3 -q install -U pip && \
     # add the admin user for administrative work
     useradd -ms /bin/bash admin
 

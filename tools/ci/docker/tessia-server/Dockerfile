@@ -47,8 +47,6 @@ RUN apt-get -q update > /dev/null && \
     pip3 -q install -U \
     # this is to update the pip version if necessary
     pip \
-    # pbr is used by tessia for installation
-    pbr \
     # web server for api service
     uwsgi
 
@@ -65,10 +63,9 @@ RUN cd /assets && \
     # from the builder
     sed -i "/egg=tessia-baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
     pip3 install -U -r requirements.txt -r dev-requirements.txt && \
-    # installation - tell pbr not to create requirements.txt in egg-info folder as it
-    # is incorrectly creating baselib's 'git+file://' entry with a missing
-    # 'egg=' suffix
-    PBR_REQUIREMENTS_FILES=/dev/null ./setup.py -q install && \
+    # server installation
+    ./setup.py -q install && \
+    ./setup.py -q install_data && \
     # files settings
     useradd -m tessia && \
     install -m 700 -g tessia -o tessia -d /etc/tessia && \

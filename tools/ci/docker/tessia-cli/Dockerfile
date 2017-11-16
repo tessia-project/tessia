@@ -40,8 +40,8 @@ ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 COPY assets /assets/
 
 RUN cd /assets && \
-    git clone $git_repo tessia && \
-    cd tessia/cli && \
+    git clone $git_repo repo-tessia && \
+    cd repo-tessia/cli && \
     pip3 -q install -U -r requirements.txt -r dev-requirements.txt && \
     ./setup.py -q install && \
     # remove unneeded dependencies used only for building

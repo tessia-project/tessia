@@ -57,8 +57,8 @@ COPY assets /assets/
 
 # server installation
 RUN cd /assets && \
-    git clone $git_repo tessia && \
-    cd tessia && \
+    git clone $git_repo repo-tessia && \
+    cd repo-tessia && \
     # use the custom url as the baselib's repository might not be accessible
     # from the builder
     sed -i "/egg=tessia-baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \

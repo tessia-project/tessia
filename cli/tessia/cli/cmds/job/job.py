@@ -23,6 +23,7 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
+from tessia.cli.types import ACTIONTYPE
 from tessia.cli.types import CONSTANT
 from tessia.cli.types import JOBTYPE
 from tessia.cli.utils import fetch_item
@@ -60,7 +61,7 @@ JOB_FIELDS_DETAILED = (
     short_help='show the queue of requests or details of a request')
 @click.option('request_id', '--id', type=int,
               help="filter by the specified request id")
-@click.option('action_type', '--action', type=CONSTANT,
+@click.option('action_type', '--action', type=ACTIONTYPE,
               help='filter by action type')
 @click.option('job_type', '--type', type=JOBTYPE, help='filter by machine type')
 @click.option('requester', '--owner', help='filter by owner login')

@@ -89,7 +89,7 @@ tasks:
     - - perm project-edit --desc='Tester team'
       - Missing option "--name".
     - - perm project-edit --name= --desc='Tester team'
-      - 'The server did not accept our request. The response is: wherename must be anyOf='
+      - 'Invalid value for "--name": value may not be empty'
     - - perm project-edit --name='GEO testers' --desc='Test team'
       - project not found.
     - - perm project-edit --name='GEO_1 testers' --desc='Tester team'
@@ -259,6 +259,8 @@ tasks:
       - 'Role            : USER'
     - - perm role-list --login=lab_admin@example.com
       - 'no such option: --login'
+    - - perm role-list --name=
+      - 'Invalid value for "--name": value may not be empty'
     - - perm role-list --name=ADMIN_LAB
       - 'Role            : ADMIN_LAB'
     - - perm role-list --name=ADMIN
@@ -267,6 +269,8 @@ tasks:
       - Missing option "--name".
     - - perm role-grant --login=lab_admin@example.com
       - Missing option "--name".
+    - - perm role-grant --name=
+      - 'Invalid value for "--name": value may not be empty'
     - - perm role-grant --name='ADMIN_LAB'
       - Missing option "--login".
     - - perm role-grant --project='GEO_2 testers'
@@ -280,11 +284,13 @@ tasks:
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
       - "request failed. Server answered: No associated item found with value 'XXX' for field 'Project name'"
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project=
-      - "request failed. Server answered: No associated item found with value '' for field 'Project name'"
+      - 'Invalid value for "--project": value may not be empty'
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
       - User role added successfully.
     - - perm role-deny
       - Missing option "--name".
+    - - perm role-deny --name=
+      - 'Invalid value for "--name": value may not be empty'
     - - perm role-deny --login=lab_admin@example.com
       - Missing option "--name".
     - - perm role-deny --name='ADMIN_LAB'
@@ -300,6 +306,6 @@ tasks:
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
       - user role not found.
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project=
-      - user role not found.
+      - 'Invalid value for "--project": value may not be empty'
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
       - User role removed successfully.

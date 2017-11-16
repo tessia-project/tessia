@@ -58,7 +58,7 @@ SYSTEM_FIELDS = (
 @click.option('--name', required=True, type=NAME, help="system name")
 @click.option('--hostname', required=True, type=HOSTNAME,
               help="resolvable hostname or ip address")
-@click.option('hypervisor', '--hyp', help="system's hypervisor")
+@click.option('hypervisor', '--hyp', type=NAME, help="system's hypervisor")
 @click.option('--type', required=True, type=CONSTANT,
               help="system type (see types)")
 @click.option('--model', type=CONSTANT, help="system model (see model-list)")
@@ -98,9 +98,9 @@ def del_(name):
 @click.command(name='autoinstall')
 @click.pass_context
 @click.option('--template', required=True, help='autofile template')
-@click.option('--system', required=True,
+@click.option('--system', required=True, type=NAME,
               help='system to be installed')
-@click.option('--profile',
+@click.option('--profile', type=NAME,
               help='activation profile; if not specified default is used')
 def autoinstall(ctx, **kwargs):
     """
@@ -119,7 +119,7 @@ def autoinstall(ctx, **kwargs):
 @click.option('cur_name', '--name', required=True, type=NAME,
               help='system to edit')
 @click.option('name', '--newname', type=NAME, help="new system name")
-@click.option('hypervisor', '--hyp', help="hypervisor's name")
+@click.option('hypervisor', '--hyp', type=NAME, help="hypervisor's name")
 @click.option('--hostname', type=HOSTNAME,
               help="resolvable hostname or ip address")
 @click.option('--model', type=CONSTANT, help="system model (see model-list)")
@@ -144,7 +144,8 @@ def edit(cur_name, **kwargs):
 
 @click.command(name='list')
 @click.option('--name', type=NAME, help="filter by system name")
-@click.option('hypervisor', '--hyp', help="filter by specified hypervisor")
+@click.option('hypervisor', '--hyp', type=NAME,
+              help="filter by specified hypervisor")
 @click.option('--model', type=CONSTANT, help="filter by specified model")
 @click.option('--type', type=CONSTANT, help="filter by specified type")
 @click.option('--state', type=CONSTANT, help="filter by specified state")
@@ -197,7 +198,7 @@ def poweroff(ctx, name):
 @click.command(name='poweron')
 @click.pass_context
 @click.option('--name', required=True, type=NAME, help="system name")
-@click.option('--profile',
+@click.option('--profile', type=NAME,
               help="activation profile to use, if not specified uses default")
 @click.option('--cpu', type=CustomIntRange(min=1),
               help="override profile with custom cpu quantity")

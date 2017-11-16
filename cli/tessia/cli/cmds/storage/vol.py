@@ -24,7 +24,8 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
-from tessia.cli.types import CustomIntRange, FCP_PATH, SCSI_WWID, VOLUME_ID
+from tessia.cli.types import CustomIntRange, FCP_PATH, NAME, \
+    SCSI_WWID, VOLUME_ID
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_item
 from tessia.cli.utils import size_to_str
@@ -439,7 +440,8 @@ def vol_edit(server, cur_id, **kwargs):
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--pool', help="list volumes assigned to this pool")
 @click.option('--project', help="filter by specified project")
-@click.option('--system', help="list volumes assigned to this system")
+@click.option('--system', type=NAME,
+              help="list volumes assigned to this system")
 @click.option('--type', help="filter by specified volume type")
 def vol_list(**kwargs):
     """

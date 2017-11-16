@@ -25,10 +25,35 @@ import re
 #
 # CONSTANTS AND DEFINITIONS
 #
+ACTION_TYPE = ('CANCEL', 'SUBMIT')
+MACHINE_TYPE = ('powerman', 'echo', 'ansible', 'autoinstall')
 
 #
 # CODE
 #
+class ActionType(click.ParamType):
+    """
+    Represents action types.
+    """
+    name = 'action_type'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure value is correct.
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        value = value.upper()
+        if value not in ACTION_TYPE:
+            self.fail('invalid action type', param, ctx)
+
+        return value
+    # convert()
+# ActionType
+
+ACTIONTYPE = ActionType()
+
 class AutoTemplate(click.ParamType):
     """
     Represents an autofile template (i.e. kickstart) content extracted from a
@@ -145,12 +170,16 @@ class JobType(click.ParamType):
 
     def convert(self, value, param, ctx):
         """
-        Converts to lowercase.
+        Make sure value is correct.
         """
         if not value:
             self.fail('value may not be empty', param, ctx)
 
-        return value.lower()
+        value = value.lower()
+        if value not in MACHINE_TYPE:
+            self.fail('invalid job type', param, ctx)
+
+        return value
     # convert()
 # JobType
 
@@ -245,6 +274,8 @@ class QethGroup(click.ParamType):
         """
         try:
             devnos = value.lower().split(',')
+            if len(devnos) != 3:
+                raise ValueError
         except ValueError:
             self.fail(
                 '{} is not a valid qeth ccwgroup'.format(value), param, ctx)

@@ -55,7 +55,7 @@ ATTR_BY_TYPE = {
 #
 
 @click.command(name='iface-add')
-@click.option('--system', required=True, help="target system")
+@click.option('--system', required=True, type=NAME, help="target system")
 @click.option('--name', required=True, type=NAME, help="interface name")
 @click.option('--type', required=True, type=CONSTANT,
               help="interface type (see iface-types)")
@@ -133,6 +133,8 @@ def iface_add(**kwargs):
                 raise click.ClickException(
                     'at least one of --hostiface or --libvirt must be '
                     'specified')
+    else:
+        raise click.ClickException('invalid interface type (see iface-types)')
 
     item.save()
     click.echo('Item added successfully.')
@@ -141,8 +143,9 @@ def iface_add(**kwargs):
 @click.command(
     name='iface-attach',
     short_help='attach a network interface to a system activation profile')
-@click.option('--system', required=True, help='target system')
-@click.option('--profile', required=True, help='target activation profile')
+@click.option('--system', required=True, type=NAME, help='target system')
+@click.option('--profile', required=True, type=NAME,
+              help='target activation profile')
 @click.option('--iface', required=True, type=NAME, help='interface name')
 def iface_attach(system, profile, iface):
     """
@@ -168,7 +171,7 @@ def iface_attach(system, profile, iface):
 # iface_attach()
 
 @click.command(name='iface-del')
-@click.option('--system', required=True, help="system name")
+@click.option('--system', required=True, type=NAME, help="system name")
 @click.option('--name', required=True, type=NAME, help="interface name")
 def iface_del(**kwargs):
     """
@@ -187,8 +190,9 @@ def iface_del(**kwargs):
 @click.command(
     name='iface-detach',
     short_help='detach a network interface from a system activation profile')
-@click.option('--system', required=True, help='target system')
-@click.option('--profile', required=True, help='target activation profile')
+@click.option('--system', required=True, type=NAME, help='target system')
+@click.option('--profile', required=True, type=NAME,
+              help='target activation profile')
 @click.option('--iface', required=True, type=NAME, help='interface name')
 def iface_detach(system, profile, iface):
     """
@@ -218,7 +222,8 @@ def iface_detach(system, profile, iface):
 @click.command(
     name='iface-edit',
     short_help='change properties of an existing network interface')
-@click.option('--system', required=True, help="system containing interface")
+@click.option('--system', required=True, type=NAME,
+              help="system containing interface")
 @click.option('cur_name', '--name', required=True, type=NAME,
               help="interface name")
 @click.option('name', '--newname', type=NAME, help="new interface name")
@@ -314,13 +319,16 @@ def iface_edit(system, cur_name, **kwargs):
                     raise click.ClickException(
                         'at least one of --hostiface or --libvirt must be '
                         'present')
+        else:
+            raise click.ClickException(
+                'invalid interface type (see iface-types)')
 
     item.update(**update_dict)
     click.echo('Item successfully updated.')
 # iface_edit()
 
 @click.command(name='iface-list')
-@click.option('--system', help='the system to list')
+@click.option('--system', type=NAME, help='the system to list')
 @click.option('--name', type=NAME, help="filter by interface name")
 @click.option('--type', type=CONSTANT,
               help="filter by specified interface type")

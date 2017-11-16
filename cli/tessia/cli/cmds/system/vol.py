@@ -37,7 +37,7 @@ import click
 @click.command(
     name='vol-attach',
     short_help='attach a storage volume to a system activation profile')
-@click.option('--system', required=True, help='target system')
+@click.option('--system', required=True, type=NAME, help='target system')
 @click.option('--profile', required=True, type=NAME,
               help='target activation profile')
 @click.option('--server', required=True,
@@ -69,7 +69,7 @@ def vol_attach(system, profile, server, vol):
 @click.command(
     name='vol-detach',
     short_help='detach a storage volume from a system activation profile')
-@click.option('--system', required=True, help='target system')
+@click.option('--system', required=True, type=NAME, help='target system')
 @click.option('--profile', required=True, type=NAME,
               help='target activation profile')
 @click.option('--server', required=True,

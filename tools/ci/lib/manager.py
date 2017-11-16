@@ -20,7 +20,7 @@ Auxiliary class used for managing the CI process
 # IMPORTS
 #
 from lib.image import DockerImage
-from lib.image_engine import DockerImageEngine
+from lib.image_server import DockerImageServer
 from lib.session import Session
 from lib.util import Shell, build_image_map
 
@@ -289,13 +289,13 @@ class Manager(object):
             override_yaml_lines = [
                 'version: "2.1"',
                 'services:',
-                '  engine:',
+                '  server:',
                 '    volumes:',
-                '      - {0}/tessia_engine:{1}/tessia_engine:ro',
-                '      - {0}:/root/tessia-engine:ro',
+                '      - {0}/tessia/server:{1}/tessia/server:ro',
+                '      - {0}:/root/tessia:ro',
                 '  cli:',
                 '    volumes:',
-                '      - {0}/cli/tessia_cli:{1}/tessia_cli:ro',
+                '      - {0}/cli/tessia/cli:{1}/tessia/cli:ro',
                 '      - {0}/cli:/home/admin/cli:ro'
             ]
             override_yaml_str = '\n'.join(override_yaml_lines).format(
@@ -327,7 +327,7 @@ class Manager(object):
             r".docker-compose.override.yaml\n"
             r"COMPOSE_PROJECT_NAME={}\n"
             r"TESSIA_DOCKER_TAG={}\n"
-            r"TESSIA_ENGINE_FQDN={}\n'"
+            r"TESSIA_SERVER_FQDN={}\n'"
             r" > .env".format(COMPOSE_PROJECT_NAME, self._tag,
                               self._builder['fqdn'])
         )
@@ -345,8 +345,8 @@ class Manager(object):
         # fqdn (for cases where fqdn is not reachable)
         if self._install_server_hostname:
             ret_code, output = self._session.run(
-                'docker exec tessia_engine_1 yamlman update '
-                '/etc/tessia/engine.yaml auto_install.url http://{}/static'
+                'docker exec tessia_server_1 yamlman update '
+                '/etc/tessia/server.yaml auto_install.url http://{}/static'
                 .format(self._install_server_hostname)
             )
             if ret_code != 0:
@@ -390,9 +390,9 @@ class Manager(object):
 
         # set the free authenticator in api
         ret_code, output = self._session.run(
-            'docker exec tessia_engine_1 yamlman update '
-            '/etc/tessia/engine.yaml auth.login_method free && '
-            'docker exec tessia_engine_1 supervisorctl restart tessia-api')
+            'docker exec tessia_server_1 yamlman update '
+            '/etc/tessia/server.yaml auth.login_method free && '
+            'docker exec tessia_server_1 supervisorctl restart tessia-api')
         if ret_code != 0:
             raise RuntimeError(
                 'failed to set authenticator config: {}'.format(output))
@@ -400,7 +400,7 @@ class Manager(object):
         if self._baselib_file:
             # copy the baselib file to enable lpar installations
             ret_code, output = self._session.run(
-                "docker cp {} tessia_engine_1:/etc/tessia/tessia-baselib.yaml"
+                "docker cp {} tessia_server_1:/etc/tessia/tessia-baselib.yaml"
                 .format(self._baselib_file))
             if ret_code != 0:
                 raise RuntimeError(
@@ -410,7 +410,7 @@ class Manager(object):
         # make it ready for usage
         if dev_mode:
             ret_code, output = self._session.run(
-                'docker exec tessia_engine_1 tess-dbmanage get-token')
+                'docker exec tessia_server_1 tess-dbmanage get-token')
             if ret_code != 0:
                 raise RuntimeError(
                     "failed to fetch admin's authorization token: {}'"
@@ -437,7 +437,7 @@ class Manager(object):
             'docker-compose rm -vf && '
             'rm -f .env .docker-compose.override.yaml && '
             'docker volume rm {proj_name}_db-data '
-            '{proj_name}_engine-etc {proj_name}_engine-jobs && '
+            '{proj_name}_server-etc {proj_name}_server-jobs && '
             'docker network rm {proj_name}_cli_net '
             '{proj_name}_db_net'.format(proj_name=COMPOSE_PROJECT_NAME)
         )
@@ -538,8 +538,8 @@ class Manager(object):
         """
         Simple factory function to create DockerImage objects.
         """
-        if name == 'tessia-engine':
-            image_cls = DockerImageEngine
+        if name == 'tessia-server':
+            image_cls = DockerImageServer
         else:
             image_cls = DockerImage
         return image_cls(name, image_tag, session)

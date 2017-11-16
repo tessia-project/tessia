@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Module specialized in handling the tessia-engine image.
+Module specialized in handling the tessia-server image.
 """
 
 #
@@ -31,9 +31,9 @@ ROOT_DIR = os.path.abspath('{}/../../..'.format(MY_DIR))
 #
 # CODE
 #
-class DockerImageEngine(DockerImage):
+class DockerImageServer(DockerImage):
     """
-    Specialized class for dealing with the tessia-engine image
+    Specialized class for dealing with the tessia-server image
     """
     def _prepare_context(self, git_name, work_dir):
         """
@@ -120,4 +120,4 @@ class DockerImageEngine(DockerImage):
 
     # unit_test()
 
-# DockerImageEngine
+# DockerImageServer

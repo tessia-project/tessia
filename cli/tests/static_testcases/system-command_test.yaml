@@ -1,5 +1,5 @@
 description: Additional test for the 'system' command
-# An empty file ~/tessia-engine/cli/tests/kvm-guest.xml is used to cover stmts 142-148 in types.py
+# An empty file ~/tessia/cli/tests/kvm-guest.xml is used to cover stmts 142-148 in types.py
 base_user: admin
 tasks_order:
   - base_add
@@ -593,7 +593,7 @@ tasks:
       # macvtap without libvirt or hostiface
     - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=''
       - 'at least one of --hostiface or --libvirt must be present'
-      # macvtap with libvirt; an empty file ~/tessia-engine/cli/tests/kvm-guest.xml is used
+      # macvtap with libvirt; an empty file ~/tessia/cli/tests/kvm-guest.xml is used
     - - system iface-edit --system=guest55 --name='default macvtap'  --hostiface= --libvirt='kvm-guest.xml'
       - Item successfully updated.
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='kvm.xml'

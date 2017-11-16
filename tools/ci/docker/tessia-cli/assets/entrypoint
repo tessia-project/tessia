@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-engine_url=${TESSIA_ENGINE_URL:-https://engine:5000}
+server_url=${TESSIA_SERVER_URL:-https://server:5000}
 
 function _set_url() {
     # set the api url in the global conf file
     mkdir /etc/tessia-cli >/dev/null || true
-    echo "server_url: $engine_url" > /etc/tessia-cli/config.yaml
+    echo "server_url: $server_url" > /etc/tessia-cli/config.yaml
 }
 
 # instance specific settings to config file

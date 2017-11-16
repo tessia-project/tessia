@@ -3,7 +3,7 @@ FROM ubuntu:latest
 # by default we expect the git repo to be placed by the ci process under /assets
 # but it is also possible to use this dockerfile directly and override the variable
 # to point to another location
-ARG git_repo=/assets/tessia-engine.git
+ARG git_repo=/assets/tessia.git
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -29,11 +29,8 @@ RUN apt-get -q update > /dev/null && \
     # setuptools for installing applications (including tessia) - it must be installed
     # separately first otherwise other packages fail to install
     pip3 -q install -U setuptools && \
-    pip3 -q install -U \
     # this is to update the pip version if necessary
-    pip \
-    # pbr is used in setuptools
-    pbr && \
+    pip3 -q install -U pip && \
     # add the admin user for administrative work
     useradd -ms /bin/bash admin
 
@@ -43,8 +40,8 @@ ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 COPY assets /assets/
 
 RUN cd /assets && \
-    git clone $git_repo tessia-engine && \
-    cd tessia-engine/cli && \
+    git clone $git_repo tessia && \
+    cd tessia/cli && \
     pip3 -q install -U -r requirements.txt -r dev-requirements.txt && \
     ./setup.py -q install && \
     # remove unneeded dependencies used only for building

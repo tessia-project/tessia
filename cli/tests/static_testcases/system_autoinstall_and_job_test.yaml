@@ -1,5 +1,5 @@
 description: Additional test for the commands 'system autoinstall' and 'job'
-# An empty file ~/tessia-engine/cli/tests/test_parmfile is used to check 'job submit' command
+# An empty file ~/tessia/cli/tests/test_parmfile is used to check 'job submit' command
 base_user: admin
 tasks_order:
   - base_add
@@ -143,7 +143,7 @@ tasks:
     - - job submit -h
       - 'Usage: tess job submit'
    # job submit
-      # an empty file ~/tessia-engine/cli/tests/test_parmfile is used
+      # an empty file ~/tessia/cli/tests/test_parmfile is used
     - - job submit --type=autoinstall --parmfile='test_parmfile' --timeout=1 --prio=2 --startdate=today
       - 'request failed, reason is: Parsing of parameters failed with: Invalid request parameters'
     - - job submit

@@ -59,7 +59,7 @@ class TestConnection(TestCase):
         # create a valid configuration file and assign it to the mock
         config = {
             'db': {
-                'url': 'postgresql://user:passwd@localhost/engine',
+                'url': 'postgresql://user:passwd@localhost/dbname',
             }
         }
         mock_conf.get_config.return_value = config

@@ -21,14 +21,38 @@ Entry point to setuptools, used for installing and packaging
 # IMPORTS
 #
 from datetime import datetime
-from setuptools import setup
+from setuptools import find_packages, setup
 
 import os
+import re
 import subprocess
+import sys
 
 #
 # CONSTANTS AND DEFINITIONS
 #
+AUTHOR = 'IBM'
+CLASSIFIERS = [
+    'Development Status :: 4 - Beta',
+    'Environment :: Console',
+    'Intended Audience :: Developers',
+    'Intended Audience :: System Administrators',
+    'License :: OSI Approved :: Apache Software License',
+    'Operating System :: POSIX :: Linux',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.5',
+    'Topic :: System :: Hardware :: Mainframes',
+    'Topic :: System :: Installation/Setup',
+    'Topic :: System :: Systems Administration',
+]
+DESCRIPTION = 'tessia command line client'
+LICENSE = 'Apache 2.0'
+with open('../README.md', 'r') as desc_fd:
+    LONG_DESCRIPTION = desc_fd.read()
+LONG_DESC_TYPE = 'text/markdown'
+KEYWORDS = 'client tessia'
+NAME = 'tessia-cli'
+URL = 'https://gitlab.com/tessia-project'
 
 #
 # CODE
@@ -55,6 +79,67 @@ def _run(cmd):
 
     return result.stdout.strip()
 # _run()
+
+def _find_data_files(dir_name, pkg_data=True):
+    """
+    List all (pkg or non pkg) data files
+
+    Args:
+        dir_name (str): directory to perform search
+        pkg_data (bool): whether the files are in the package
+
+    Returns:
+        list: data files
+    """
+    data_files = []
+    for entry in os.walk(dir_name):
+        # cache dir or normal python package: skip it
+        if entry[0].split('/')[-1] == '__pycache__' or (
+                pkg_data and '__init__.py' in entry[2]):
+            continue
+
+        for filename in entry[2]:
+            # (non pkg) data file: use complete path
+            if not pkg_data:
+                data_files.append(os.path.join(entry[0], filename))
+                continue
+
+            data_files.append(
+                os.path.join(entry[0].split('/', 1)[1], filename))
+
+    return data_files
+
+# _find_data_files()
+
+def _find_requirements():
+    """
+    List all installation requirements
+
+    Returns:
+        list: installation requirements
+    """
+    with open('requirements.txt', 'r') as req_fd:
+        lines = req_fd.readlines()
+    req_list = []
+    for line in lines:
+        # comment or empty line: skip it
+        if not line.strip() or re.match('^ *#', line):
+            continue
+
+        # url format: need to extract requirement name
+        if '://' in line:
+            egg_index = line.find('#egg=')
+            # no egg specifier present: requirement cannot be converted to
+            # setuptools format
+            if egg_index == -1:
+                print('warning: excluding requirement {}'.format(line),
+                      file=sys.stderr)
+                continue
+            line = line[egg_index+5:]
+        req_list.append(line)
+
+    return req_list
+# _find_requirements()
 
 def _gen_version():
     """
@@ -104,17 +189,28 @@ def _gen_version():
     return version
 # _gen_version()
 
-# do not generate AUTHORS file
-os.environ['SKIP_GENERATE_AUTHORS'] = '1'
-# do not generate ChangeLog file
-os.environ['SKIP_WRITE_GIT_CHANGELOG'] = '1'
-# do not include everything in tarball
-#os.environ['SKIP_GIT_SDIST'] = '1'
-# use date based versioning scheme
-os.environ['PBR_VERSION'] = _gen_version()
-
 # entry point to setup actions
 setup(
-    setup_requires=['pbr>=1.8.0', 'setuptools>=17.1.1'],
-    pbr=True,
+    # metadata information
+    author=AUTHOR,
+    classifiers=CLASSIFIERS,
+    description=DESCRIPTION,
+    keywords=KEYWORDS,
+    license=LICENSE,
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type=LONG_DESC_TYPE,
+    name=NAME,
+    # installation information
+    entry_points={
+        'console_scripts': [
+            'tess = tessia.cli.main:main'
+        ]
+    },
+    install_requires=_find_requirements(),
+    package_data={'': _find_data_files('tessia')},
+    packages=find_packages(exclude=['tests', 'tests.*']),
+    setup_requires=['setuptools>=30.3.0'],
+    url=URL,
+    version=_gen_version(),
+    zip_safe=False,
 )

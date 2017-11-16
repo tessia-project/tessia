@@ -37,7 +37,7 @@ class Config(object):
     """Handles parsing of the configuration file"""
 
     # default cfg file path
-    DEFAULT_CFG = '/etc/tessia/engine.yaml'
+    DEFAULT_CFG = '/etc/tessia/server.yaml'
 
     # config parameters dictionary
     _config_dict = None

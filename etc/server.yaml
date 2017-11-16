@@ -3,7 +3,7 @@
 # database configuration
 db:
   # location of the database (in sqlalchemy format)
-  url: postgresql://engine:engine@localhost/engine
+  url: postgresql://tessia:password@localhost/tessia
 
 auto_install:
   # the url must be accessible from the systems being installed

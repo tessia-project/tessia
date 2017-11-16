@@ -11,7 +11,7 @@ markdown_extensions:
 # css/html theme
 theme: cerulean
 site_name: tessia
-repo_url: https://gitlab.com/tessia-project/tessia-engine
+repo_url: https://gitlab.com/tessia-project/tessia
 copyright: IBM Corp.
 pages:
 - Home: 'index.md'

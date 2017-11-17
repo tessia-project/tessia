@@ -281,25 +281,42 @@ class Manager(object):
         Bring up and configure the services by using docker-compose.
 
         Args:
-            devmode (bool): if True, local git repository will be bind mounted
-                            inside the container.
+            dev_mode (bool): if True, local git repository will be bind mounted
+                             inside the container.
+
+        Raises:
+            RuntimeError: if python package path determination fails
         """
         # dev mode: mount bind git repo files from host in the container
         if dev_mode:
+            # determine the path of the python packages
+            pkg_paths = {}
+            docker_cmd = (
+                'docker run --rm -t --entrypoint python3 tessia-{}:{} '
+                '-c "import tessia; print(tessia.__path__[0])"')
+            for image in ['server', 'cli']:
+                ret_code, output = self._session.run(
+                    docker_cmd.format(image, self._tag))
+                if ret_code != 0:
+                    raise RuntimeError(
+                        "failed to determine tessia's python package path in "
+                        "image {}: {}".format(image, output))
+                pkg_paths[image + '_path'] = output.strip()
+
             override_yaml_lines = [
                 'version: "2.1"',
                 'services:',
                 '  server:',
                 '    volumes:',
-                '      - {0}/tessia/server:{1}/tessia/server:ro',
-                '      - {0}:/root/tessia:ro',
+                '      - {repo_dir}/tessia/server:{server_path}/server:ro',
+                '      - {repo_dir}:/root/tessia:ro',
                 '  cli:',
                 '    volumes:',
-                '      - {0}/cli/tessia/cli:{1}/tessia/cli:ro',
-                '      - {0}/cli:/home/admin/cli:ro'
+                '      - {repo_dir}/cli/tessia/cli:{cli_path}/cli:ro',
+                '      - {repo_dir}/cli:/home/admin/cli:ro'
             ]
             override_yaml_str = '\n'.join(override_yaml_lines).format(
-                REPO_DIR, '/usr/local/lib/python3.5/dist-packages/')
+                repo_dir=REPO_DIR, **pkg_paths)
         # non dev mode: only mount bind cli files (for client tests)
         else:
             override_yaml_lines = [

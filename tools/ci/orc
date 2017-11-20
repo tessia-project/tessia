@@ -150,29 +150,29 @@ def clitest(tag, field_tests, baselib_file, install_server_hostname):
     manager.run()
 # clitest()
 
-@click.command(
-    'devmode',
-    short_help='start and keep services running until manually stopped')
+@click.command('run', help='start services via docker-compose')
 @click.option('tag', '--tag', help='docker tag to locate images')
+@click.option('devmode', '--devmode', is_flag=True, default=False,
+              help='bind mount source files inside containers')
 @click.option(
     'baselib_file', '--baselibfile',
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
-    help='path to baselib conf file to be injected in container')
+    help='path to baselib conf file to be injected in server container')
 @click.option(
     'install_server_hostname', '--install-server-hostname',
     help='custom hostname/ip to use as install server (when detected fqdn is '
-         'not reachable by installed systems)')
+         'not reachable by installable systems)')
 @click.option('clitests', '--clitests', is_flag=True, default=False,
               help='execute all client tests')
-def devmode(tag, baselib_file, install_server_hostname, clitests):
+def run(tag, devmode, baselib_file, install_server_hostname, clitests):
     """
     start and keep services running until manually stopped
     """
     manager = Manager(
-        'devmode', tag, baselib_file=baselib_file,
+        'run', tag, devmode=devmode, baselib_file=baselib_file,
         install_server_hostname=install_server_hostname, clitests=clitests)
     manager.run()
-# devmode()
+# run()
 
 @click.command('list-images')
 def list_images():
@@ -240,7 +240,7 @@ def main():
     root.add_command(build)
     root.add_command(cleanup)
     root.add_command(clitest)
-    root.add_command(devmode)
+    root.add_command(run)
     root.add_command(push)
     root.add_command(unittest)
     root.add_command(list_images)

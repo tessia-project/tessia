@@ -52,7 +52,7 @@ class DockerImageServer(DockerImage):
         # let the base class do it's work
         context_dir = super()._prepare_context(git_name, work_dir)
 
-        # add the specific bits: we need to download the tessia-baselib repository
+        # add the specific bits: we need to download the tessia-baselib repo
         self._logger.info(
             '[build] downloading tessia-baselib to context dir')
 
@@ -60,7 +60,8 @@ class DockerImageServer(DockerImage):
             "grep 'egg=tessia-baselib' {}/requirements.txt".format(ROOT_DIR))
         if ret_code != 0:
             raise RuntimeError(
-                'Failed to determine tessia-baselib source url: {}'.format(output))
+                'Failed to determine tessia-baselib source url: {}'
+                .format(output))
         baselib_url = output.strip().rsplit('@', 1)[0]
 
         ret_code, output = self._session.run(
@@ -88,7 +89,7 @@ class DockerImageServer(DockerImage):
         try:
             # pipe the tar file from the repo to a tar cmd reading from stdin
             # in the container
-            repo_dir = '/root/{}'.format(self._image_name)
+            repo_dir = '/root/{}'.format(self._name)
             cmd = (
                 "bash -c '{ mkdir " + repo_dir + " && "
                 "tar -C " + repo_dir + " -xf -; }'"

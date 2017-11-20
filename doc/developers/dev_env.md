@@ -91,7 +91,7 @@ ubuntu              latest                  d355ed3537e9        3 weeks ago     
 [user@myhost tessia]$
 ```
 
-You can now start the containers by using the `devmode` command. Before you do so, we need to discuss about two parameters:
+You can now start the containers by using the `run` command. Before you do so, we need to discuss about two parameters:
 
 - `--baselibfile`: tessia-baselib is the underlying library used for communication with the hypervisors and guests.
 When it comes to LPAR network boot support the baselib performs the operation by IPLing a pre-deployed Linux image from an
@@ -106,7 +106,7 @@ Failure to use an adequate hostname will cause systems installations to fail.
 Now that we have the parameters clarified, here's how you start your development environment:
 
 ```
-[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia-baselib.yaml
+[user@myhost tessia]$ tools/ci/orc run --devmode --baselibfile=/home/user/files/tessia-baselib.yaml
 ```
 
 You should see a message informing it's ready:
@@ -116,26 +116,22 @@ INFO: [init] using builder localhost
 $ hostname --fqdn
 myhost
 INFO: [init] tag for images is 17.713.740-devd40c703
-INFO: [devmode] starting services
+INFO: [run] starting services
 
 (output suppressed...)
 
-INFO: [devmode] you can now work, press Ctrl+C when done
+$ docker-compose ps
+     Name                    Command              State                     Ports
+----------------------------------------------------------------------------------------------------
+tessia_cli_1      /entrypoint                     Up
+tessia_db_1       docker-entrypoint.sh postgres   Up      5432/tcp
+tessia_server_1   /entrypoint                     Up      0.0.0.0:5000->5000/tcp, 0.0.0.0:80->80/tcp
+INFO: done
+[user@myhost tessia]$
 ```
 
-At this point the containers and the tessia services are running. You can keep this terminal opened or press Ctrl+Z to send
-the process to the background (don't forget to type `bg` otherwise the process gets halted).
-It's possible to see the containers running:
-
-```
-[user@myhost tessia]$ docker ps
-CONTAINER ID        IMAGE                                COMMAND                  CREATED             STATUS              PORTS                                        NAMES
-40a7ff59bf22        tessia-cli:17.713.740-devd40c703     "/entrypoint"            5 minutes ago       Up 5 minutes                                                     tessia_cli_1
-947639351d11        postgres:9.6-alpine                  "docker-entrypoint..."   5 minutes ago       Up 5 minutes        5432/tcp                                     tessia_db_1
-dd3cfb801868        tessia-server:17.713.740-devd40c703  "/entrypoint"            5 minutes ago       Up 5 minutes        0.0.0.0:80->80/tcp, 0.0.0.0:5000->5000/tcp   tessia_server_1
-```
-
-Your local git repository is bind mounted inside the containers, so any changes you do locally will be reflected in the running container. For example:
+At this point the containers and the tessia services are running.
+Thanks to `--devmode`, your local git repository is bind mounted inside the containers, so any changes you do locally will be reflected in the running container. For example:
 
 ```
 # add new code to the api authentication module:
@@ -151,7 +147,7 @@ tessia-api: started
 tessia-api                        RUNNING   pid 74, uptime 0:00:05
 tessia-scheduler                  RUNNING   pid 27, uptime 0:11:10
 
-# of course, you can also simply open a shell in the container and type your commands there:
+# you can also open a shell to the container and type your commands there
 # WARNING: if you have multiple shells opened be extra careful not to mistake the container
 # shell by a host shell and type destructive commands on your own system ;)
 [user@myhost tessia]$ docker exec -ti tessia_server_1 /bin/bash
@@ -163,12 +159,12 @@ exit
 [user@myhost tessia]$
 ```
 
-You can also open a shell for the `admin` user in the cli container and use the command line client from there:
+You can also open a shell to the `admin` user in the cli container and use the command line client from there:
 
 ```
 # the cli container has a pre-configured user called 'admin' ready for usage:
 [user@myhost tessia]$ docker exec -u admin -ti tessia_cli_1 /bin/bash
-admin@tessia-cli:/$ tessia conf show
+admin@tessia-cli:/$ tess conf show
 
 Authentication key in use : bf4efb5a469e491ca47be21efa940875
 Key owner login           : admin
@@ -179,8 +175,8 @@ Server API version        : 20160916
 admin@tessia-cli:/$ 
 ```
 
-When you are done, type Ctrl+C on the hanging shell or if you had sent the process to the background, type `fg` and then Ctrl+C.
-This will stop all containers and remove everything (containers, volumes, networks).
+When you are done you can use docker's own command `docker-compose stop` to stop all containers. If you want to cleanup everything (images, containers, volumes, networks) after
+the services were stopped, type `tools/ci/orc cleanup`.
 
 ## Server-side dev environment via virtualenv (deprecated)
 

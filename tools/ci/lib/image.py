@@ -47,9 +47,11 @@ class DockerImage(object):
         """
         self._logger = logging.getLogger(__name__)
         # docker image name
-        self._image_name = image_name
+        self._name = image_name
         # docker image tag
-        self._image_tag = image_tag
+        self._tag = image_tag
+        # full image name
+        self._fullname = '{}:{}'.format(self._name, self._tag)
         # open session to the build machine
         self._session = session
     # __init__()
@@ -72,8 +74,7 @@ class DockerImage(object):
         """
         docker_cmd = ''
         container_name = '{name}-{tag}'.format(
-            name=self._image_name, tag=self._image_tag)
-        image_name = '{}:{}'.format(self._image_name, self._image_tag)
+            name=self._name, tag=self._tag)
         if action == 'build':
             if context_dir is None:
                 raise RuntimeError(
@@ -84,11 +85,11 @@ class DockerImage(object):
                 '-t {image_name} {args} {context_dir}'
             )
             docker_cmd = docker_build.format(
-                image_name=image_name,
-                image_tag=self._image_tag,
+                image_name=self._fullname,
+                image_tag=self._tag,
                 context_dir=context_dir,
                 args=args,
-                version=self._image_tag
+                version=self._tag
             )
         elif action == 'run':
             cmd_args = cmd.split()
@@ -98,7 +99,7 @@ class DockerImage(object):
             )
             docker_cmd = docker_run.format(
                 container_name=container_name,
-                image_name=image_name,
+                image_name=self._fullname,
                 args=args,
                 cmd=cmd_args[0],
                 cmd_args=' '.join(cmd_args[1:])
@@ -135,7 +136,7 @@ class DockerImage(object):
         ret_code, output = self._session.run(cmd)
         if ret_code != 0:
             raise RuntimeError('build of {} failed: {}'.format(
-                self._image_name, output))
+                self._name, output))
     # _exec_build()
 
     def _prepare_context(self, git_name, work_dir):
@@ -153,9 +154,9 @@ class DockerImage(object):
             RuntimeError: in case the git repo copy fails
         """
         # source dir containing DockerFile
-        docker_dir = '{}/{}'.format(DOCKER_DIR, self._image_name)
+        docker_dir = '{}/{}'.format(DOCKER_DIR, self._name)
         # target location for context dir
-        context_dir = '{}/{}'.format(work_dir, self._image_name)
+        context_dir = '{}/{}'.format(work_dir, self._name)
         self._logger.info(
             '[build] preparing context dir at %s', context_dir)
         # send the content from source docker dir to target context dir
@@ -188,15 +189,13 @@ class DockerImage(object):
         Remove image and containers associated with this image
         """
         # list all containers which have our image as ancestor
-        image_fullname = '{}:{}'.format(self._image_name, self._image_tag)
         ret_code, output = self._session.run(
-            "docker ps -a -q -f 'ancestor={}'".format(image_fullname),
+            "docker ps -a -q -f 'ancestor={}'".format(self._fullname),
         )
         if ret_code != 0:
             self._logger.warning(
                 '[cleanup] failed to list containers for %s: %s',
-                image_fullname,
-                output)
+                self._fullname, output)
         else:
             containers = output.replace('\n', ' ').strip()
             # containers found: delete them
@@ -207,19 +206,39 @@ class DockerImage(object):
                 if ret_code != 0:
                     self._logger.warning(
                         '[cleanup] failed to remove containers for %s: %s',
-                        image_fullname,
+                        self._fullname,
                         output)
 
         # delete the image (use --no-prune to keep parent layers so that they
         # can be used as cache for other builds)
         ret_code, output = self._session.run(
-            'docker rmi --no-prune {}'.format(image_fullname))
+            'docker rmi --no-prune {}'.format(self._fullname))
         if ret_code != 0:
             self._logger.warning(
                 '[cleanup] failed to remove image %s: %s',
-                image_fullname,
+                self._fullname,
                 output)
     # cleanup()
+
+    def get_fullname(self):
+        """
+        Return the docker image name (repository:tag)
+        """
+        return self._fullname
+    # get_fullname()
+
+    def is_avail(self):
+        """
+        Return whether the image is available in docker
+
+        Returns:
+            bool: True if image is available, False otherwise
+        """
+        ret_code, output = self._session.run(
+            'docker images {} -q'.format(self._fullname))
+        exists = (ret_code != 0 or output.strip())
+        return exists
+    # is_avail()
 
     def push(self, registry_url, dregman_path):
         """
@@ -233,17 +252,15 @@ class DockerImage(object):
         Raises:
             RuntimeError: in case push command fails
         """
-        # full image name
-        local_name = '{}:{}'.format(self._image_name, self._image_tag)
         # prefix the image name with the registry url
-        remote_name = '{}/{}'.format(registry_url, local_name)
+        remote_name = '{}/{}'.format(registry_url, self._fullname)
         self._logger.info(
-            '[push] pushing image %s to %s', local_name, remote_name)
+            '[push] pushing image %s to %s', self._fullname, remote_name)
 
         ret_code, output = self._session.run(
             'docker tag {local_image} {remote_image} && '
             'docker push {remote_image}'.format(
-                local_image=local_name, remote_image=remote_name)
+                local_image=self._fullname, remote_image=remote_name)
         )
         # regardless of success or failure, remove the remote tag created
         rm_code, rm_output = self._session.run(
@@ -259,7 +276,7 @@ class DockerImage(object):
         # existing images on registry
         ret_code, output = self._session.run(
             '{dregman} list --repo={repo} {url}'.format(
-                dregman=dregman_path, repo=self._image_name, url=registry_url)
+                dregman=dregman_path, repo=self._name, url=registry_url)
         )
         if ret_code != 0:
             raise RuntimeError(
@@ -268,7 +285,7 @@ class DockerImage(object):
         # keep only the tag lines and parse them
         registry_tags = []
         for line in output.splitlines():
-            if not re.match('^ *{} '.format(self._image_name), line):
+            if not re.match('^ *{} '.format(self._name), line):
                 continue
             line_fields = line.split('|')
             registry_tags.append({
@@ -290,17 +307,17 @@ class DockerImage(object):
                 raise RuntimeError(
                     'Failed to find newest versioned image in registry')
         # our image is not the newest: skip tagging, nothing more to do
-        if newest_version != self._image_tag:
+        if newest_version != self._tag:
             self._logger.info(
                 '[push] image is not newest version, not tagging as latest')
         else:
             self._logger.info(
                 '[push] image is the newest version, tagging as latest')
-            latest_name = '{}/{}:latest'.format(registry_url, self._image_name)
+            latest_name = '{}/{}:latest'.format(registry_url, self._name)
             ret_code, output = self._session.run(
                 'docker tag {local_image} {latest_name} && '
                 'docker push {latest_name}'.format(
-                    local_image=local_name, latest_name=latest_name)
+                    local_image=self._fullname, latest_name=latest_name)
             )
             # regardless of success or failure, remove the remote tag created
             rm_code, rm_output = self._session.run(

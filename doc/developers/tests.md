@@ -46,31 +46,40 @@ The integration tests cover all the components of the solution (API, scheduler, 
 
 Pre-requisite: to go forward with this section, you must have the docker images already built. Learn how in [How to setup a development environment](dev_env.md).
 
-Executing all client tests is pretty straightforward, all you have to do is to use the `orc` tool in development mode while specifiying the `clitests` parameter:
+Executing all client tests is pretty straightforward, execute `orc run` and specify the `--clitests` parameter:
 
 ```
-[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740 --baselibfile=/home/user/files/tessia-baselib.yaml --clitests
-```
-
-And the output:
-
-```
+[user@myhost tessia]$ tools/ci/orc run --tag=17.1117.1204 --clitests
 INFO: [init] using builder localhost
 $ hostname --fqdn
-normandy
-INFO: [init] tag for images is 17.713.740
-INFO: [devmode] starting services
+myhost
+$ cd /home/user/tessia && python3 -c 'from setup import gen_version; print(gen_version())'
+17.1117.1204
+INFO: [init] tag for images is 17.1117.1204
+$ docker images tessia-cli:17.1117.1204 -q
+sha256:b57473fd00f1e83c0b6c4a5ff70c9aade82fa554de41933909c72a7bc8ff0e35
+$ docker images tessia-server:17.1117.1204 -q
+sha256:9beab50887294b2deccd146cfbdda08fb4b3d090e7e00509afc6f8a632b4a455
+INFO: [run] starting services
 
 (output suppressed...)
 
-INFO: [devmode] clitests requested
+INFO: [run] clitests requested
 $ docker exec --user admin tessia_cli_1 bash -c '/home/admin/cli/tests/runner erase && /home/admin/cli/tests/runner list --terse'
+perm-command_test
 systems_actions
-INFO: [clitest] starting test systems_actions
-$ docker exec --user admin tessia_cli_1 /home/admin/cli/tests/runner exec --cov-erase=no --cov-report=no --api-url=https://myhost:5000 --name=systems_actions
-[init] testcases to execute: systems_actions
+storage-command_test
+net-command_test
+system-command_test
+conf-command_test
+autotemplate-command_test
+system_autoinstall_and_job_test
+repo-command_test
+INFO: [clitest] starting test perm-command_test
+$ docker exec --user admin tessia_cli_1 /home/admin/cli/tests/runner exec --cov-erase=no --cov-report=no --api-url=https://myhost:5000 --name=perm-command_test
+[init] testcases to execute: perm-command_test
 [init] waiting for API server to come up (30 secs)
-[exec] python3 -m coverage run -a --source=tessia_cli -m wrapper /home/admin/cli/tests/static_testcases/systems_actions.yaml https://myhost:5000
+[exec] python3 -m coverage run -a --source=tessia.cli -m wrapper /home/admin/cli/tests/static_testcases/perm-command_test.yaml https://myhost:5000
 [cmd] conf set-server https://myhost:5000
 [output] Server successfully configured.
 
@@ -82,7 +91,7 @@ Stopping tessia_server_1 ... done
 
 Removing tessia_db_1 ... done
 
-Removing tessia_cli_1 ... doneone
+Removing tessia_server_1 ... done
 Going to remove tessia_db_1, tessia_cli_1, tessia_server_1
 tessia_db-data
 tessia_server-etc
@@ -99,28 +108,35 @@ Pre-requisite: to go forward with this section, you must have the docker images 
 
 Start the containers in development mode:
 
-```console
-[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740-devd40c703 --baselibfile=/home/user/files/tessia-baselib.yaml
 ```
-
-Wait for the ready message:
-
-```
+[user@myhost tessia]$ tools/ci/orc run --devmode --tag=17.1117.1204
 INFO: [init] using builder localhost
 $ hostname --fqdn
 myhost
-INFO: [init] tag for images is 17.713.740-devd40c703
-INFO: [devmode] starting services
+$ cd /home/user/tessia && python3 -c 'from setup import gen_version; print(gen_version())'
+17.1117.1204
+INFO: [init] tag for images is 17.1117.1204
+$ docker images tessia-server:17.1117.1204 -q
+sha256:9beab50887294b2deccd146cfbdda08fb4b3d090e7e00509afc6f8a632b4a455
+$ docker images tessia-cli:17.1117.1204 -q
+sha256:b57473fd00f1e83c0b6c4a5ff70c9aade82fa554de41933909c72a7bc8ff0e35
+INFO: [run] starting services
 
 (output suppressed...)
 
-INFO: [devmode] you can now work, press Ctrl+C when done
+$ docker-compose ps
+     Name                    Command              State                     Ports
+----------------------------------------------------------------------------------------------------
+tessia_cli_1      /entrypoint                     Up
+tessia_db_1       docker-entrypoint.sh postgres   Up      5432/tcp
+tessia_server_1   /entrypoint                     Up      0.0.0.0:5000->5000/tcp, 0.0.0.0:80->80/tcp
+INFO: done
+[user@myhost tessia]$
 ```
 
 Open a shell to the tessia-cli container and enter the bind mounted cli directory:
 
 ```
-# in a different shell ...
 [user@myhost ~]$ docker exec -u admin -ti tessia_cli_1 /bin/bash
 admin@tessia-cli:/$ cd /home/admin/cli
 admin@tessia-cli:~/cli$
@@ -177,7 +193,7 @@ Name                                                                        Stmt
 /usr/local/lib/python3.5/dist-packages/tessia_cli/cmds/job/__init__.py           8      1    88%   27
 /usr/local/lib/python3.5/dist-packages/tessia_cli/cmds/job/job.py               82     46    44%   57-74, 85-87, 96-131, 149-161, 176-200
 
-(many lines ...)
+(output suppressed...)
 
 --------------------------------------------------------------------------------------------------------------
 TOTAL                                                                        1965    806    59%
@@ -199,6 +215,8 @@ tessia-scheduler: started
 ```
 
 After that, your database is 'clean' and you can run more tests manually as previously described.
+
+Once you have finished your work, use `docker-compose stop` to stop the services and `tools/ci/orc cleanup` if you want to clean everything (containers, images, volumes, networks).
 
 ## How to create client tests
 
@@ -270,14 +288,21 @@ An alternative method is to use a virtualenv created via [tox](https://tox.readt
 First step is to start the containers in devmode using the orc tool:
 
 ```
-[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740
+[user@myhost tessia]$ tools/ci/orc run --devmode --tag=17.713.740
 
 (output suppressed...)
 
-INFO: [devmode] you can now work, press Ctrl+C when done
+$ docker-compose ps
+     Name                    Command              State                     Ports
+----------------------------------------------------------------------------------------------------
+tessia_cli_1      /entrypoint                     Up
+tessia_db_1       docker-entrypoint.sh postgres   Up      5432/tcp
+tessia_server_1   /entrypoint                     Up      0.0.0.0:5000->5000/tcp, 0.0.0.0:80->80/tcp
+INFO: done
+[user@myhost tessia]$
 ```
 
-Then in a different shell (or by sending the current process to background), execute the helper script according to which tests you want do execute:
+Then execute the helper script according to which tests you want to execute:
 
 ```
 # to run all unit tests at once, use the following:
@@ -325,6 +350,8 @@ python3 -m coverage erase && python3 -m coverage run -a --include=tessia/server/
 ```
 
 The script will execute the unit test and provide a code coverage report so that you can verify whether the unit test is covering all the possible flows.
+
+Once you have finished your work, use `docker-compose stop` to stop the services and `tools/ci/orc cleanup` if you want to clean everything (containers, images, volumes, networks).
 
 ## How to create unit tests
 

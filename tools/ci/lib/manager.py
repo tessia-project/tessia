@@ -29,6 +29,7 @@ import os
 import signal
 import tempfile
 import time
+import yaml
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -289,9 +290,10 @@ class Manager(object):
         Raises:
             RuntimeError: if python package path determination fails
         """
-        compose_files = 'tools/ci/docker/docker-compose.yaml'
+        with open('tools/ci/docker/docker-compose.yaml', 'r') as file_fd:
+            compose_cfg = yaml.safe_load(file_fd.read())
 
-        # dev mode: mount bind git repo files from host in the container
+        # dev/test mode: mount bind git repo files from host in the container
         if dev_mode or cli_test:
             # determine the path of the python packages
             pkg_paths = {}
@@ -305,57 +307,47 @@ class Manager(object):
                     raise RuntimeError(
                         "failed to determine tessia's python package path in "
                         "image {}: {}".format(image, output))
-                pkg_paths[image + '_path'] = output.strip()
+                pkg_paths[image] = output.strip()
 
-            override_yaml_lines = [
-                'version: "2.1"',
-                'services:',
-            ]
             # devmode: bind mount all folders
             if dev_mode:
-                override_yaml_lines += [
-                    '  server:',
-                    '    volumes:',
-                    '      - {repo_dir}/tessia/server:{server_path}/server:ro',
-                    '      - {repo_dir}:/root/tessia:ro',
-                    '  cli:',
-                    '    volumes:',
-                    '      - {repo_dir}/cli/tessia/cli:{cli_path}/cli:ro',
-                    '      - {repo_dir}/cli:/home/admin/cli:ro'
+                compose_cfg['services']['server']['volumes'] += [
+                    '{}/tessia/server:{}/server:ro'.format(
+                        REPO_DIR, pkg_paths['server']),
+                    '{}:/root/tessia:ro'.format(REPO_DIR)
+                ]
+                compose_cfg['services']['cli']['volumes'] = [
+                    '{}/cli/tessia/cli:{}/cli:ro'.format(
+                        REPO_DIR, pkg_paths['cli']),
+                    '{}/cli:/home/admin/cli:ro'.format(REPO_DIR)
                 ]
             # clitests requested: bind mount the cli folder
             else:
-                override_yaml_lines += [
-                    '  cli:',
-                    '    volumes:',
-                    '      - {repo_dir}/cli:/home/admin/cli:ro'
-                ]
-            override_yaml_str = '\n'.join(override_yaml_lines).format(
-                repo_dir=REPO_DIR, **pkg_paths)
+                compose_cfg['services']['cli']['volumes'] = [
+                    '{}/cli:/home/admin/cli:ro'.format(REPO_DIR)]
 
-            # create compose's override file with the bind mounts
-            override_cmd = ("echo -e '{}' > .docker-compose.override.yaml"
-                            .format(override_yaml_str))
-            ret_code, output = self._session.run(override_cmd)
-            if ret_code != 0:
-                raise RuntimeError(
-                    'failed to create .docker-compose.override.yaml file: {}'
-                    .format(output))
-            compose_files += ':.docker-compose.override.yaml'
-
+        # create compose file
+        ret, output = self._session.run('pwd')
+        if ret != 0:
+            raise RuntimeError('Failed to determine current directory: {}'
+                               .format(output))
+        cur_dir = output.strip()
+        with tempfile.NamedTemporaryFile('w') as temp_fd:
+            temp_fd.write(yaml.dump(compose_cfg, default_flow_style=False))
+            temp_fd.flush()
+            self._session.send(temp_fd.name,
+                               '{}/.docker-compose.yaml'.format(cur_dir))
         # create compose's .env file
-        cmd = (
-            r"echo -e 'COMPOSE_FILE={}\n"
-            r"COMPOSE_PROJECT_NAME={}\n"
-            r"TESSIA_DOCKER_TAG={}\n"
-            r"TESSIA_SERVER_FQDN={}\n'"
-            r" > .env".format(compose_files, COMPOSE_PROJECT_NAME, self._tag,
-                              self._builder['fqdn'])
-        )
-        ret_code, output = self._session.run(cmd)
-        if ret_code != 0:
-            raise RuntimeError(
-                'failed to create .env file: {}'.format(output))
+        with tempfile.NamedTemporaryFile('w') as temp_fd:
+            temp_fd.write(
+                "COMPOSE_FILE=.docker-compose.yaml\n"
+                "COMPOSE_PROJECT_NAME={}\n"
+                "TESSIA_DOCKER_TAG={}\n"
+                "TESSIA_SERVER_FQDN={}\n"
+                .format(COMPOSE_PROJECT_NAME, self._tag, self._builder['fqdn'])
+            )
+            temp_fd.flush()
+            self._session.send(temp_fd.name, '{}/.env'.format(cur_dir))
 
         ret_code, output = self._session.run('docker-compose up -d')
         if ret_code != 0:
@@ -409,14 +401,15 @@ class Manager(object):
             raise RuntimeError(
                 'failed to retrieve ssl cert: {}'.format(output))
 
-        # set the free authenticator in api
-        ret_code, output = self._session.run(
-            'docker exec tessia_server_1 yamlman update '
-            '/etc/tessia/server.yaml auth.login_method free && '
-            'docker exec tessia_server_1 supervisorctl restart tessia-api')
-        if ret_code != 0:
-            raise RuntimeError(
-                'failed to set authenticator config: {}'.format(output))
+        # dev/test mode: set the free authenticator in api
+        if dev_mode or cli_test:
+            ret_code, output = self._session.run(
+                'docker exec tessia_server_1 yamlman update '
+                '/etc/tessia/server.yaml auth.login_method free && '
+                'docker exec tessia_server_1 supervisorctl restart tessia-api')
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to set authenticator config: {}'.format(output))
 
         if self._baselib_file:
             # copy the baselib file to enable lpar installations
@@ -436,7 +429,7 @@ class Manager(object):
                 "failed to fetch admin's authorization token: {}'"
                 .format(output))
         ret_code, output = self._session.run(
-            "docker exec tessia_cli_1 bash -c 'mkdir {0}; "
+            "docker exec tessia_cli_1 bash -c 'mkdir {0} &>/dev/null; "
             "echo {1} > {0}/auth.key && chown -R admin. {0}'".format(
                 '/home/admin/.tessia-cli', output.strip())
         )
@@ -454,7 +447,7 @@ class Manager(object):
         ret_code, output = self._session.run(
             'test -e .env && docker-compose stop && '
             'docker-compose rm -vf && '
-            'rm -f .env .docker-compose.override.yaml && '
+            'rm -f .env .docker-compose.yaml && '
             'docker volume rm {proj_name}_db-data '
             '{proj_name}_server-etc {proj_name}_server-jobs && '
             'docker network rm {proj_name}_cli_net '

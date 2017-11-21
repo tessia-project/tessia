@@ -23,6 +23,7 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.types import NAME
+from tessia.cli.types import TEXT
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 
@@ -41,7 +42,7 @@ FIELDS = (
 
 @click.command(name='project-add')
 @click.option('--name', required=True, type=NAME, help="project's name")
-@click.option('--desc', required=True,
+@click.option('--desc', required=True, type=TEXT,
               help="free form field describing project")
 def project_add(**kwargs):
     """
@@ -76,7 +77,7 @@ def project_del(name):
               help="name of project to edit")
 @click.option('name', '--newname', type=NAME,
               help="new name of project")
-@click.option('--desc', required=True,
+@click.option('--desc', required=True, type=TEXT,
               help="free form field describing project")
 def project_edit(cur_name, **kwargs):
     """

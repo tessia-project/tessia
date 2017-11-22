@@ -25,16 +25,15 @@ import re
 #
 # CONSTANTS AND DEFINITIONS
 #
-ACTION_TYPE = ('CANCEL', 'SUBMIT')
-MACHINE_TYPE = ('powerman', 'echo', 'ansible', 'autoinstall')
 
 #
 # CODE
 #
 class ActionType(click.ParamType):
     """
-    Represents action types.
+    Represents action types for job requests.
     """
+    ALLOWED_TYPES = ('CANCEL', 'SUBMIT')
     name = 'action_type'
 
     def convert(self, value, param, ctx):
@@ -45,14 +44,15 @@ class ActionType(click.ParamType):
             self.fail('value may not be empty', param, ctx)
 
         value = value.upper()
-        if value not in ACTION_TYPE:
-            self.fail('invalid action type', param, ctx)
+        if value not in self.ALLOWED_TYPES:
+            self.fail('action type must be one of: {}'.format(
+                ', '.join(self.ALLOWED_TYPES)), param, ctx)
 
         return value
     # convert()
 # ActionType
 
-ACTIONTYPE = ActionType()
+ACTION_TYPE = ActionType()
 
 class AutoTemplate(click.ParamType):
     """
@@ -167,6 +167,7 @@ class JobType(click.ParamType):
     Represents job types.
     """
     name = 'job_type'
+    ALLOWED_TYPES = ('ansible', 'autoinstall', 'echo', 'powerman')
 
     def convert(self, value, param, ctx):
         """
@@ -176,14 +177,15 @@ class JobType(click.ParamType):
             self.fail('value may not be empty', param, ctx)
 
         value = value.lower()
-        if value not in MACHINE_TYPE:
-            self.fail('invalid job type', param, ctx)
+        if value not in self.ALLOWED_TYPES:
+            self.fail("job type must be one of: {}".format(
+                ', '.join(self.ALLOWED_TYPES)), param, ctx)
 
         return value
     # convert()
 # JobType
 
-JOBTYPE = JobType()
+JOB_TYPE = JobType()
 
 class Libvirtxml(click.ParamType):
     """

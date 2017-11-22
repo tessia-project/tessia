@@ -159,7 +159,7 @@ tasks:
     - - job submit --type=autoinstall --parmfile=
       - 'Invalid value for "--parmfile": Could not open file: : No such file or directory'
     - - job submit --type=autoinst --parmfile='test_parmfile'
-      - 'Invalid value for "--type": invalid job type'
+      - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
     - - job submit --type=echo --parmfile='test_parmfile'
       - 'Request accepted; job id is #3'
     - - job output --id=3
@@ -200,7 +200,7 @@ tasks:
     - - job req-list --type=
       - 'Invalid value for "--type": value may not be empty'
     - - job list --type=lpar
-      - 'Invalid value for "--type": invalid job type'
+      - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
     - - job list --type=autoinstall
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     - - job list --type=AUTOINSTALL
@@ -252,11 +252,11 @@ tasks:
     - - job req-list --action=
       - 'Invalid value for "--action": value may not be empty'
     - - job req-list --action=xxxx
-      - 'Invalid value for "--action": invalid action type'
+      - 'Invalid value for "--action": action type must be one of: CANCEL, SUBMIT'
     - - job req-list --type
       - '--type option requires an argument'
     - - job req-list --type=lpar
-      - 'Invalid value for "--type": invalid job type'
+      - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
     - - job req-list --type=autoinstall
       - 'request_id | action_type |   job_type  |     submit_date'
     - - job req-list --type=AUTOINSTALL

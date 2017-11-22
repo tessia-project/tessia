@@ -21,7 +21,6 @@ Auxiliary class used for managing the CI process
 #
 from lib.image import DockerImage
 from lib.image_server import DockerImageServer
-from lib.session import Session
 from lib.util import Shell, build_image_map
 
 import logging
@@ -108,21 +107,7 @@ class Manager(object):
         self._stage_args = stage_args
 
         # used to execute commands on a local shell
-        self._shell = Shell(verbose)
-
-        # TODO: add support to cmdline parameters to allow connection
-        # to remote builders via ssh
-        self._builder = {
-            'hostname': 'localhost',
-            'user': None,
-            'passwd': None,
-        }
-        self._logger.info(
-            '[init] using builder %s', self._builder['hostname'])
-        # open the connection to the builder
-        self._session = Session(
-            self._builder['hostname'], self._builder['user'],
-            self._builder['passwd'], verbose)
+        self._session = Shell(verbose)
 
         # field tests demand a baselib file otherwise tests with
         # LPAR installations will fail as there won't be an auxiliar disk
@@ -136,16 +121,14 @@ class Manager(object):
                 self._baselib_file))
             if ret_code != 0:
                 raise ValueError(
-                    'Baselib file {} not found on {}'
-                    .format(self._baselib_file, self._builder['hostname']))
+                    'Baselib file {} not found'.format(self._baselib_file))
 
         # determine builder's fqdn
         ret_code, output = self._session.run('hostname --fqdn')
         if ret_code != 0:
             raise RuntimeError(
-                "failed to determine fqdn of {}: {}"
-                .format(self._builder['hostname'], output))
-        self._builder['fqdn'] = output.strip()
+                "failed to determine system's FQDN: {}".format(output))
+        self._fqdn = output.strip()
 
         # docker tag specified: use it
         if docker_tag:
@@ -161,15 +144,10 @@ class Manager(object):
         if not images:
             images = build_image_map().keys()
         for name in images:
-            # each image object gets it's own session to the builder so
-            # that parallel builds can happen if threading is used
-            session = Session(
-                self._builder['hostname'], self._builder['user'],
-                self._builder['passwd'], verbose)
+            # each image object gets it's own session so that parallel builds
+            # can happen if threading is used
+            session = Shell(verbose)
             self._images.append(self._new_image(name, self._tag, session))
-
-        # work dir is created when build process starts
-        self._work_dir = None
 
         # set signal handlers to assure cleanup before quitting
         for catch_signal in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
@@ -255,7 +233,7 @@ class Manager(object):
                 'docker exec --user admin tessia_cli_1 '
                 '/home/admin/cli/tests/runner exec --cov-erase=no '
                 '--cov-report=no --api-url=https://{}:5000 {}'
-                .format(self._builder['fqdn'], test_param)
+                .format(self._fqdn, test_param)
             )
             # test failed: stop testing
             if ret_code != 0:
@@ -327,28 +305,17 @@ class Manager(object):
                     '{}/cli:/home/admin/cli:ro'.format(REPO_DIR)]
 
         # create compose file
-        ret, output = self._session.run('pwd')
-        if ret != 0:
-            raise RuntimeError('Failed to determine current directory: {}'
-                               .format(output))
-        cur_dir = output.strip()
-        with tempfile.NamedTemporaryFile('w') as temp_fd:
-            temp_fd.write(yaml.dump(compose_cfg, default_flow_style=False))
-            temp_fd.flush()
-            self._session.send(temp_fd.name,
-                               '{}/.docker-compose.yaml'.format(cur_dir))
+        with open('.docker-compose.yaml', 'w') as file_fd:
+            file_fd.write(yaml.dump(compose_cfg, default_flow_style=False))
         # create compose's .env file
-        with tempfile.NamedTemporaryFile('w') as temp_fd:
-            temp_fd.write(
+        with open('.env', 'w') as file_fd:
+            file_fd.write(
                 "COMPOSE_FILE=.docker-compose.yaml\n"
                 "COMPOSE_PROJECT_NAME={}\n"
                 "TESSIA_DOCKER_TAG={}\n"
                 "TESSIA_SERVER_FQDN={}\n"
-                .format(COMPOSE_PROJECT_NAME, self._tag, self._builder['fqdn'])
+                .format(COMPOSE_PROJECT_NAME, self._tag, self._fqdn)
             )
-            temp_fd.flush()
-            self._session.send(temp_fd.name, '{}/.env'.format(cur_dir))
-
         ret_code, output = self._session.run('docker-compose up -d')
         if ret_code != 0:
             raise RuntimeError(
@@ -382,7 +349,7 @@ class Manager(object):
             ret_code, _ = self._session.run(
                 "docker exec tessia_cli_1 bash -c '"
                 "openssl s_client -connect {}:5000 "
-                "< /dev/null &>/dev/null'".format(self._builder['fqdn'])
+                "< /dev/null &>/dev/null'".format(self._fqdn)
             )
             time.sleep(5)
         if ret_code != 0:
@@ -394,7 +361,7 @@ class Manager(object):
             'openssl s_client -showcerts -connect {}:5000 '
             '< /dev/null 2>/dev/null | '
             'sed -ne "/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p" '
-            '> /etc/tessia-cli/ca.crt\''.format(self._builder['fqdn'])
+            '> /etc/tessia-cli/ca.crt\''.format(self._fqdn)
         )
         ret_code, output = self._session.run(cmd)
         if ret_code != 0:
@@ -472,47 +439,13 @@ class Manager(object):
         cmd = (
             "cd {} && python3 -c 'from setup import gen_version; "
             "print(gen_version())'".format(REPO_DIR))
-        _, stdout = self._shell.run(
+        _, stdout = self._session.run(
             cmd,
             error_msg="Failed to determine project's version for tag creation")
 
         # replace plus sign as it is not allowed by docker
         return stdout.replace('+', '-').strip()
     # _create_tag()
-
-    def _create_work_dir(self):
-        """
-        Create a temp directory on the builder to use as a staging area for
-        building activities.
-        """
-        # create work dir on builder
-        ret_code, output = self._session.run('mktemp -p /tmp -d')
-        if ret_code != 0:
-            raise RuntimeError(
-                'Failed to create work directory on {}: {}'
-                .format(self._builder['fqdn'], output))
-        self._work_dir = output.strip()
-    # _create_work_dir()
-
-    def _del_work_dir(self):
-        """
-        Remove the work directory from the builder
-        """
-        # work dir does not exist: nothing to do
-        if self._work_dir is None:
-            return
-        self._logger.info('[build] cleaning up work directory')
-        # be extra cautious before deleting
-        if not self._work_dir.startswith('/tmp/'):
-            self._logger.warning(
-                '[build] unexpected work directory name, skipped '
-                'dir removal')
-            return
-        self._session.run('rm -rf {}'.format(self._work_dir))
-        # mark work dir as non existent (prevents repeating the operation if
-        # the signal handler is called past this point)
-        self._work_dir = None
-    # _del_work_dir()
 
     def _run(self):
         """
@@ -569,61 +502,16 @@ class Manager(object):
         return image_cls(name, image_tag, session)
     # _new_image()
 
-    def _send_repo(self, repo_name):
-        """
-        Prepare the work directory so that the build process can happen.
-        Basically that means copying the git repository to it.
-
-        Args:
-            repo_name (str): name of git repo to be used when creating mirror
-        """
-        # create a mirror of the git repository and send it to the work
-        # directory on the builder
-        with tempfile.TemporaryDirectory(prefix='tessia-build-') as tmp_dir:
-            clone_path = '{}/{}.git'.format(tmp_dir, repo_name)
-            cmd = "cd {} && git clone --mirror {} {}.git".format(
-                tmp_dir, REPO_DIR, repo_name)
-            self._logger.info('[build] creating mirror of git repo')
-            self._shell.run(cmd, error_msg='Failed to create git mirror')
-            # send the mirror to the work dir
-            self._logger.info(
-                '[build] sending git mirror to %s', self._builder['fqdn'])
-            self._session.send(clone_path, self._work_dir)
-    # _send_repo()
-
     def _stage_build(self):
         """
         Tell each image object to perform the build.
         """
         self._logger.info('new stage: build')
 
-        try:
-            # create work dir on builder
-            self._create_work_dir()
-
-            # determine the name of the git repository - it's how
-            # the image objects can find it in work directory
-            cmd = 'cd {} && git remote get-url origin'.format(REPO_DIR)
-            _, stdout = self._shell.run(
-                cmd, error_msg='Failed to determine git repo name')
-            repo_name = stdout.strip().split('/')[-1][:-4]
-            self._logger.info(
-                '[build] detected git repo name is %s', repo_name)
-
-            # copy git repository to builder
-            self._send_repo(repo_name)
-
+        with tempfile.TemporaryDirectory() as work_dir:
             # tell each image object to perform build
             for image_obj in self._images:
-                image_obj.build(repo_name, self._work_dir)
-        finally:
-            # clean up before dying/finishing
-            try:
-                self._del_work_dir()
-            except Exception as clean_exc:
-                self._logger.warning(
-                    '[build] failed to delete work dir: %s',
-                    str(clean_exc))
+                image_obj.build(work_dir)
     # _stage_build()
 
     def _stage_cleanup(self):
@@ -688,36 +576,8 @@ class Manager(object):
                 '[push] registry url not specified; skipping')
             return
 
-        # create work dir on builder to upload dregman tool
-        ret_code, output = self._session.run('mktemp -p /tmp -d')
-        if ret_code != 0:
-            raise RuntimeError(
-                'Failed to create work directory on {}: {}'
-                .format(self._builder['fqdn'], output))
-        work_dir = output.strip()
-
-        try:
-            self._session.send(
-                os.path.abspath('{}/tools/dregman'.format(REPO_DIR)), work_dir)
-            dregman_path = '{}/dregman'.format(work_dir)
-            for image in self._images:
-                image.push(self._registry_url, dregman_path)
-
-        finally:
-            # clean up before dying/finishing
-            self._logger.info('[push] cleaning work dir')
-            try:
-                # be extra cautious before deleting
-                if not work_dir.startswith('/tmp/'):
-                    self._logger.warning(
-                        '[push] unexpected work directory name, skipped '
-                        'dir removal')
-                else:
-                    self._session.run('rm -rf {}'.format(work_dir))
-            except Exception as clean_exc:
-                self._logger.warning(
-                    '[push] failed to clean work dir: %s', str(clean_exc))
-
+        for image in self._images:
+            image.push(self._registry_url)
     # _stage_push()
 
     def _stage_unittest(self):

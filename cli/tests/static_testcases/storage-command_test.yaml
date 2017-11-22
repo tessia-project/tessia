@@ -279,7 +279,7 @@ tasks:
     - - storage vol-list --server=DS8K16 --project='GEO_1'
       - No results were found.
     - - storage vol-list --server=DS8K16 --system=
-      - No results were found.
+      - 'Invalid value for "--system": value may not be empty'
     - - storage vol-list --server=DS8K16 --type=
       - No results were found.
     - - storage vol-list --server=DS8K16 --type=DASD

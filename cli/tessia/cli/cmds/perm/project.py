@@ -72,7 +72,7 @@ def project_del(name):
 # project_del()
 
 @click.command(name='project-edit')
-@click.option('cur_name', '--name', required=True,
+@click.option('cur_name', '--name', required=True, type=NAME,
               help="name of project to edit")
 @click.option('name', '--newname', type=NAME,
               help="new name of project")

@@ -29,6 +29,31 @@ import re
 #
 # CODE
 #
+class ActionType(click.ParamType):
+    """
+    Represents action types for job requests.
+    """
+    ALLOWED_TYPES = ('CANCEL', 'SUBMIT')
+    name = 'action_type'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure value is correct.
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        value = value.upper()
+        if value not in self.ALLOWED_TYPES:
+            self.fail('action type must be one of: {}'.format(
+                ', '.join(self.ALLOWED_TYPES)), param, ctx)
+
+        return value
+    # convert()
+# ActionType
+
+ACTION_TYPE = ActionType()
+
 class AutoTemplate(click.ParamType):
     """
     Represents an autofile template (i.e. kickstart) content extracted from a
@@ -142,19 +167,25 @@ class JobType(click.ParamType):
     Represents job types.
     """
     name = 'job_type'
+    ALLOWED_TYPES = ('ansible', 'autoinstall', 'echo', 'powerman')
 
     def convert(self, value, param, ctx):
         """
-        Converts to lowercase.
+        Make sure value is correct.
         """
         if not value:
             self.fail('value may not be empty', param, ctx)
 
-        return value.lower()
+        value = value.lower()
+        if value not in self.ALLOWED_TYPES:
+            self.fail("job type must be one of: {}".format(
+                ', '.join(self.ALLOWED_TYPES)), param, ctx)
+
+        return value
     # convert()
 # JobType
 
-JOBTYPE = JobType()
+JOB_TYPE = JobType()
 
 class Libvirtxml(click.ParamType):
     """
@@ -245,6 +276,8 @@ class QethGroup(click.ParamType):
         """
         try:
             devnos = value.lower().split(',')
+            if len(devnos) != 3:
+                raise ValueError
         except ValueError:
             self.fail(
                 '{} is not a valid qeth ccwgroup'.format(value), param, ctx)

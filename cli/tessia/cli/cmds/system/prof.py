@@ -46,13 +46,13 @@ PROFILE_FIELDS = (
 #
 
 @click.command(name='prof-add')
-@click.option('--system', required=True, help='target system')
+@click.option('--system', required=True, type=NAME, help='target system')
 @click.option('--name', required=True, type=NAME, help="profile name")
 @click.option('--cpu', default=1, type=CustomIntRange(min=1),
               help="number of cpus")
 @click.option('--memory', default='1gb', help="memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="set as default for system")
-@click.option('hypervisor_profile', '--hyp',
+@click.option('hypervisor_profile', '--hyp', type=NAME,
               help="hypervisor profile required for activation")
 @click.option('--login', required=True, type=LOGIN,
               help="user:passwd for admin access to operating system")
@@ -89,7 +89,7 @@ def prof_add(**kwargs):
 # prof_add()
 
 @click.command(name='prof-del')
-@click.option('--system', required=True, help='system name')
+@click.option('--system', required=True, type=NAME, help='system name')
 @click.option('--name', required=True, type=NAME,
               help="profile name to delete")
 def prof_del(**kwargs):
@@ -107,7 +107,7 @@ def prof_del(**kwargs):
 # prof_del()
 
 @click.command(name='prof-edit')
-@click.option('--system', required=True, help='system name')
+@click.option('--system', required=True, type=NAME, help='system name')
 @click.option('cur_name', '--name', required=True, type=NAME,
               help="profile name")
 @click.option('name', '--newname', type=NAME,
@@ -116,7 +116,7 @@ def prof_del(**kwargs):
 @click.option('--memory', help="memory size (i.e. 1gb)")
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('--gateway', help='name of interface to use as gateway')
-@click.option('hypervisor_profile', '--hyp',
+@click.option('hypervisor_profile', '--hyp', type=NAME,
               help="hypervisor profile required for activation")
 @click.option('--login', type=LOGIN,
               help="user:passwd for admin access to operating system")
@@ -158,7 +158,7 @@ def prof_edit(system, cur_name, **kwargs):
 # prof_edit()
 
 @click.command(name='prof-list')
-@click.option('--system', required=True, help="the system to list")
+@click.option('--system', required=True, type=NAME, help="the system to list")
 @click.option('--name', type=NAME, help="filter by profile-name")
 @click.option('--cpu', type=CustomIntRange(min=1),
               help="filter by specified number of cpus")

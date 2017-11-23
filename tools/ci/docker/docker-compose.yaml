@@ -19,8 +19,11 @@ services:
     volumes:
       - server-etc:/etc/tessia
       - server-jobs:/var/tessia/jobs
+    restart: "always"
+    depends_on:
+      - db
   db:
-    image: postgres:9.6-alpine
+    image: postgres:alpine
     environment:
       POSTGRES_INITDB_ARGS: "-E UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8"
       # for production use one should create an override compose file
@@ -31,6 +34,7 @@ services:
       - db_net
     volumes:
       - db-data:/var/lib/postgresql/data
+    restart: "always"
   cli:
     image: tessia-cli:${TESSIA_DOCKER_TAG:-latest}
     environment:
@@ -43,6 +47,10 @@ services:
       - server:${TESSIA_SERVER_FQDN:-server}
     tty: true
     stdin_open: true
+    restart: "always"
+    depends_on:
+      - db
+      - server
 
 networks:
   cli_net:

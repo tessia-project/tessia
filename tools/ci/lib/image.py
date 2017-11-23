@@ -28,6 +28,7 @@ import re
 #
 MY_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCKER_DIR = os.path.abspath('{}/../docker'.format(MY_DIR))
+REPO_DIR = os.path.abspath('{}/../../..'.format(MY_DIR))
 
 #
 # CODE
@@ -159,27 +160,39 @@ class DockerImage(object):
         context_dir = '{}/{}'.format(work_dir, self._name)
         self._logger.info(
             '[build] preparing context dir at %s', context_dir)
-        # send the content from source docker dir to target context dir
-        self._session.send(docker_dir, work_dir)
+        # copy docker content to build dir
         ret_code, output = self._session.run(
-            'cp -r {}/{}.git {}/assets/{}.git'.format(
-                work_dir, git_name, context_dir, git_name))
+            'cp -r {} {}/'.format(docker_dir, work_dir))
         if ret_code != 0:
             raise RuntimeError(
-                'Failed to copy git mirror to context dir: {}'.format(output))
+                'Failed to copy docker dir to work dir: {}'.format(output))
+
+        # copy git repository to assets dir
+        self._logger.info('[build] creating mirror of git repo')
+        clone_path = '{}/assets/{}.git'.format(context_dir, git_name)
+        cmd = "git clone --mirror {} {}".format(REPO_DIR, clone_path)
+        self._session.run(
+            cmd, error_msg='Failed to create git mirror in assets dir')
 
         return context_dir
     # _prepare_context()
 
-    def build(self, git_name, work_dir):
+    def build(self, work_dir):
         """
         Use the passed work directory as staging area to store the context and
         start the image build.
 
         Args:
-            git_name (str): repository name where source code is located
             work_dir (str): path to work dir in builder
         """
+        # determine the name of the git repository
+        cmd = 'cd {} && git remote get-url origin'.format(REPO_DIR)
+        _, stdout = self._session.run(
+            cmd, error_msg='Failed to determine git repo name')
+        git_name = stdout.strip().split('/')[-1][:-4]
+        self._logger.info(
+            '[build] detected git repo name is %s', git_name)
+
         context_dir = self._prepare_context(git_name, work_dir)
         self._exec_build(git_name, context_dir)
     # build()
@@ -206,8 +219,7 @@ class DockerImage(object):
                 if ret_code != 0:
                     self._logger.warning(
                         '[cleanup] failed to remove containers for %s: %s',
-                        self._fullname,
-                        output)
+                        self._fullname, output)
 
         # delete the image (use --no-prune to keep parent layers so that they
         # can be used as cache for other builds)
@@ -216,8 +228,7 @@ class DockerImage(object):
         if ret_code != 0:
             self._logger.warning(
                 '[cleanup] failed to remove image %s: %s',
-                self._fullname,
-                output)
+                self._fullname, output)
     # cleanup()
 
     def get_fullname(self):
@@ -240,18 +251,19 @@ class DockerImage(object):
         return exists
     # is_avail()
 
-    def push(self, registry_url, dregman_path):
+    def push(self, registry_url):
         """
         Push the image to the docker registry.
 
         Args:
             registry_url (str): location of docker registry
-            dregman_path (str): path to dregman tool (registry handling) on
-                                builder
 
         Raises:
             RuntimeError: in case push command fails
         """
+        # path to dregman tool (registry handling)
+        dregman_path = '{}/tools/dregman'.format(REPO_DIR)
+
         # prefix the image name with the registry url
         remote_name = '{}/{}'.format(registry_url, self._fullname)
         self._logger.info(

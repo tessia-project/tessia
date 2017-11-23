@@ -1,2 +1,2 @@
 click>=6.6
-paramiko>=1.16
+PyYAML>=3.11

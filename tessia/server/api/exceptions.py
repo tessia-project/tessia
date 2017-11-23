@@ -385,22 +385,17 @@ class ItemNotFoundError(BaseHttpError):
 
 class UnauthorizedError(BaseHttpError):
     """
-    Implement the message and headers for the 401 Unauthorized response
+    Implement the message and headers for the 401 Unauthorized response.
+    Wwe allow two authentication schemes:
+    1- the well known basic authentication, which is safe while used under
+    SSL. This is to allow usage in the browser (perhaps more useful for
+    debugging) and makes implementation of UIs easier too (the UI just needs
+    to keep the header on all requests, instead of having to generate a key
+    which would need to be deleted at user logout).
+    2- our own scheme based on an API key. The user generates an API key and
+    uses it instead of the username/password. This is a common approach to
+    Rest APIs implementation.
     """
-    # we allow two authentication schemes:
-    # 1- the well known basic authentication, which is safe while used under
-    # SSL. This is to allow usage in the browser (perhaps more useful for
-    # debugging) and makes implementation of UIs easier too (the UI just needs
-    # to keep the header on all requests, instead of having to generate a key
-    # which would need to be deleted at user logout).
-    # 2- our own scheme based on an API key. The user generates an API key and
-    # uses it instead of the username/password. This is a common approach to
-    # Rest APIs implementation.
-    HEADERS = {
-        'WWW-Authenticate':
-            'Basic realm="{0}", X-Key realm="{0}"'
-    }
-
     def __init__(self, auth_provided=True, msg=None):
         """
         Constructor
@@ -437,8 +432,11 @@ class UnauthorizedError(BaseHttpError):
                 'authorization realm name (auth/realm) missing from config '
                 'file, using default value instead')
             auth_realm = 'auth-realm'
-        self.HEADERS['WWW-Authenticate'].format(auth_realm)
-        super().__init__(code=code, body=body, headers=self.HEADERS)
+        headers = {
+            'WWW-Authenticate': 'Basic realm="{0}", X-Key realm="{0}"'.format(
+                auth_realm)
+        }
+        super().__init__(code=code, body=body, headers=headers)
     # __init__()
 
 # UnauthorizedError

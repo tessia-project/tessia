@@ -13,23 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-# Supported features
+# Supported installation combinations
 
-This page contains a detailed view of the current supported features and usage restrictions.
+This page contains a detailed view of the current supported combinations and usage restrictions regarding system installation.
 
-- [System installation](#system-installation)
-    - [Network and volumes on LPAR](#network-and-volumes-on-lpar)
-    - [Network and volumes on KVM](#network-and-volumes-on-kvm)
-    - [Partitioning on LPAR](#partitioning-on-lpar)
-    - [Partitioning on KVM](#partitioning-on-kvm)
+**Note that currently z/VM guests are *not* supported for system installations.**
 
-## System installation
+- [Network and volumes on LPAR](#network-and-volumes-on-lpar)
+- [Network and volumes on KVM](#network-and-volumes-on-kvm)
+- [Partitioning on LPAR](#partitioning-on-lpar)
+- [Partitioning on KVM](#partitioning-on-kvm)
 
-You may install systems with different system parameters, the tables below provide you with the information about combinations of system parameters that are supported by the tool.
-
-**Please note that currently zVM guests are *not* supported for system installations.**
-
-### Network and volumes on LPAR
+# Network and volumes on LPAR
 
 | Distro                   | RHEL | SLES | Ubuntu |
 | ------                   | ---- | ---- | -----  |
@@ -41,7 +36,7 @@ You may install systems with different system parameters, the tables below provi
 | layer2 on (OSA only)     | Y    | Y    | Y      |
 | layer2 off (OSA only)    | Y    | Y    | Y      |
 
-### Network and volumes on KVM
+# Network and volumes on KVM
 
 | Distro                            | RHEL | SLES | Ubuntu |
 | ------                            | ---- | ---- | ------ |
@@ -51,7 +46,7 @@ You may install systems with different system parameters, the tables below provi
 | multipath off (FCP only)          | N    | N    | N      |
 | network interface MACVTAP         | Y    | Y    | Y      |
 
-### Partitioning on LPAR
+# Partitioning on LPAR
 
 Remarks:
 
@@ -71,7 +66,7 @@ Remarks:
 | FAT32                | N    | N    | N      |
 | set mount options    | Y    | Y    | Y      |
 
-### Partitioning on KVM
+# Partitioning on KVM
 
 | Distro               | RHEL | SLES | Ubuntu |
 | -----                | ---  | ---  | ---    |
@@ -85,4 +80,3 @@ Remarks:
 | FAT16                | N    | N    | N      |
 | FAT32                | N    | N    | N      |
 | set mount options    | Y    | Y    | Y      |
-

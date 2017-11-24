@@ -39,7 +39,7 @@ If you are interested in going deeper with the rebase vs merge topic, take a loo
     - run the script to install the hook: `./tools/apply-git-hooks.sh`
     - install tox (a tool to create virtualenvs): `pip3 install tox`
 - Do your work, create/change your files and commit them. At this point the branch is still **yours** and you can mess around as much as you like (i.e. rebasing or creating small commits as you do more work)
-- Make sure to create/update corresponding unit tests to validate the changes you made (patches without tests won't be accepted). And don't forget to run them. See the page [Unit tests](unit_tests.md) for details.
+- Make sure to create/update corresponding unit tests to validate the changes you made (patches without tests won't be accepted). And don't forget to run them. See the section [Unit tests](tests.md#unit-tests) for details.
 - Update documentation to reflect the changes. More details on the page [Working with documentation](documentation.md)
 - Remember to push your branch often in order to have a backup (and allow others to follow your work too). Since the branch is not "published" yet by a merge request it is fine to do force pushes (as a result of your rebases).
 - When you consider your branch ready, do the final rebases to make the commit messages meaningful and the commits concise.

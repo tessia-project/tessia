@@ -20,44 +20,28 @@ There are two possible methods to install and use the command line client:
 - [Local installation with pip/setuptools](#local-installation-with-pipsetuptools)
 - [Build and run a docker container](#build-and-run-a-docker-container)
 
-# Local installation with pip/setuptools
+# Local installation with pip
 
-This method is recommended if you are familiar with python installations.
-
-## Pre-requisites
-
-Before client installation, make sure you have the following pre-requisites installed:
-
-* git
-* python >= 3.5.2
-* python3-pip
-
-The client is currently known to work on Fedora 25 and Ubuntu 16.04 systems.
-
-## Installation steps
-
-Once you have confirmed the pre-requisites fulfilled, follow these steps:
+The client requires python >= 3.5, once you have it installed follow these steps:
 
 ```
-[user@host ~]$ git clone https://gitlab.com/tessia-project/tessia.git
-Cloning into 'tessia'...
-remote: Counting objects: 1685, done.
-remote: Compressing objects: 100% (874/874), done.
-remote: Total 1685 (delta 1029), reused 1272 (delta 773)
-Receiving objects: 100% (1685/1685), 2.17 MiB | 1.63 MiB/s, done.
-Resolving deltas: 100% (1029/1029), done.
-Checking connectivity... done.
-[user@host ~]$ cd tessia/cli
-[user@host cli]$ sudo pip3 install -r requirements.txt
-(lots of output ...)
-[user@host cli]$ sudo ./setup.py install
-(lots of output ...)
+# install the python packaging tools
+$ apt-get install python3-pip
+$ pip3 install -U pip setuptools
+
+# clone the repo and switch to the `cli` subfolder
+$ git clone https://gitlab.com/tessia-project/tessia.git
+$ cd tessia/cli
+
+# pip-install is a wrapper to 'pip install' to allow pip to work with
+# packages in subdirectories that use git for project versioning
+$ ./pip-install --user .
 ```
 
 That's all. To start using the client, type:
 
 ```
-[user@host ~]$ tess
+$ tess
 Usage: tess [OPTIONS] COMMAND [ARGS]...
 
   Tessia command line client
@@ -73,7 +57,6 @@ Commands:
   storage  manage volumes and storage related resources
   system   manage systems and related resources
 
-[user@host ~]$
 ```
 
 If you see a help text like the one above, your client was installed successfully.
@@ -81,92 +64,30 @@ If you see a help text like the one above, your client was installed successfull
 **Note:** Some users might see an error regarding ASCII encoding when trying to execute the client for the first time.
 In case you see such error, you can solve the problem by setting your environment to use UTF-8 with:
 ```
-export LANG=C.UTF-8
+$ export LANG=C.UTF-8
 ```
 
 You might want to make it permanent by adding it to your ```.bashrc``` file.
 
 At this point the installation process is complete. In order to start using the client you need to enter the hostname of the API server and generate an authentication token for
-secure communication. The server's hostname and credentials are dependent on the environment you are using so if you were following another tutorial you can go back to check
-for related information.
+secure communication. See the section [Configuration](#configuration) for an example of how to do it.
 
 # Build and run a docker container
 
-This method is recommended for those who do not want to deal with distro/python dependencies, as everything is included in the docker image.
-
-## Pre-requisites
-
-- docker daemon installed and running
-
-## Installation steps
-
-Create a new directory and clone the repository inside it:
+Use this method if you don't want to deal with distro/python dependencies as everything is included in the docker image.
 
 ```
-[user@host ~]$ mkdir tessia-cli && cd tessia-cli
-[user@host tessia-cli]$ git clone https://gitlab.com/tessia-project/tessia.git
-Klone nach 'tessia' ...
-remote: Counting objects: 3236, done.
-remote: Compressing objects: 100% (1417/1417), done.
-remote: Total 3236 (delta 2035), reused 2782 (delta 1764)
-Empfange Objekte: 100% (3236/3236), 3.17 MiB | 3.32 MiB/s, Fertig.
-Löse Unterschiede auf: 100% (2035/2035), Fertig.
-Prüfe Konnektivität ... Fertig.
+$ apt-get install docker.io python3-pip
+$ git clone https://gitlab.com/tessia-project/tessia.git
+$ cd tessia && pip3 install -r tools/ci/requirements.txt
+$ tools/ci/orc build --image=tessia-cli
 ```
 
-Then, copy the docker files to the current folder and move the whole repository to the `assets` folder:
+Start the container with a shell to the admin user:
 
 ```
-[user@domain tessia-cli]$ cp -r tessia/server/tools/ci/docker/tessia-cli/* .
-[user@domain tessia-cli]$ mv tessia assets/tessia.git
-```
-
-Now you just have to execute the build command:
-
-```
-[user@domain tessia-cli]$ docker build -t tessia-cli:latest .
-Sending build context to Docker daemon  6.671MB
-Step 1/8 : FROM ubuntu:latest
- ---> 14f60031763d
-Step 2/8 : ARG git_repo=/assets/tessia.git
- ---> Using cache
- ---> cdea02586385
-Step 3/8 : ARG DEBIAN_FRONTEND=noninteractive
- ---> Using cache
- ---> 6de0f22150bb
-Step 4/8 : RUN apt-get -q update > /dev/null &&     apt-get -yq install --no-install-recommends     locales     python3-pip     git     build-essential     python3-dev > /dev/null &&     apt-get -q clean &&     locale-gen en_US.UTF-8 &&     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 &&     pip3 -q install -U setuptools &&     pip3 -q install -U     pip     pbr &&     useradd -ms /bin/bash admin
- ---> Using cache
- ---> ad085e82d1f0
-Step 5/8 : ENV LC_ALL en_US.UTF-8 LANG en_US.UTF-8
- ---> Using cache
- ---> cdcc16959df5
-Step 6/8 : COPY assets /assets/
- ---> a8cb1f45932b
-Removing intermediate container a0bc7755fc5d
-Step 7/8 : RUN cd /assets &&     git clone $git_repo tessia &&     cd tessia/cli &&     pip3 -q install -U -r requirements.txt -r dev-requirements.txt &&     ./setup.py -q install &&     ./setup.py -q install_data &&     apt-get -yq purge --auto-remove     build-essential     python3-dev > /dev/null &&     mv /assets/entrypoint /entrypoint &&     rm -rf /assets
- ---> Running in a42b48592002
-Cloning into 'tessia'...
-done.
-warning: no files found matching 'AUTHORS'
-warning: no files found matching 'ChangeLog'
-warning: no previously-included files found matching '.gitignore'
-warning: no previously-included files found matching '.gitreview'
-warning: no previously-included files matching '*.pyc' found anywhere in distribution
- ---> d3de3b0f6681
-Removing intermediate container a42b48592002
-Step 8/8 : ENTRYPOINT /entrypoint
- ---> Running in a26ddd1fed01
- ---> 976c9ef383ec
-Removing intermediate container a26ddd1fed01
-Successfully built 976c9ef383ec
-Successfully tagged tessia-cli:latest
-```
-
-Start the container with a shell as the admin user:
-
-```
-[user@domain tessia-cli]$ docker run -ti --rm --user admin --entrypoint=/bin/bash tessia-cli:latest
-admin@1c0e1d70c70e:/$ tess
+$ docker run -ti --rm --user admin --entrypoint=/bin/bash tessia-cli:_tag_from_built_image
+(container)$ tess
 Usage: tess [OPTIONS] COMMAND [ARGS]...
 
   Tessia command line client
@@ -185,12 +106,28 @@ Commands:
   storage       manage volumes and storage related resources
   system        manage systems and related resources
 
-admin@1c0e1d70c70e:/$
 ```
 
 If you see a help text like the one above, your client is installed successfully.
 
 At this point the installation process is complete. In order to start using the client you need to enter the hostname of the API server and generate an authentication token for
-secure communication. The server's hostname and credentials are dependent on the environment you are using so if you were following another tutorial you can go back to check
-for related information.
+secure communication. See the section [Configuration] for an example of how to do it.
 
+# Configuration
+
+If the server is running SSL with a self-signed certificate you need to provide the client with a trusted certificate so that it knows the connection is safe.
+If you are in a trusted environment you can use the command below to connect to the server URL and add the offered certificate to the client configuration:
+```
+$ openssl s_client -showcerts -connect _your_server_hostname_without_https:5000 < /dev/null 2>/dev/null | sed -ne "/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p" > $HOME/.tessia-cli/ca.crt
+```
+
+Now set the server URL and test it:
+
+```
+# set the server url in client config
+$ tess conf set-server https://_your_server_hostname:5000
+
+# test the connection, on the first time the client will request your user
+# and password in order to generate an authentication token
+$ tess conf show
+```

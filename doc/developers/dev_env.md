@@ -180,71 +180,9 @@ the services were stopped, type `tools/ci/orc cleanup`.
 
 ## Server-side dev environment via virtualenv (deprecated)
 
-### Database installation
+You are going to need a postgres database, see the [Database Installation](../users/server_install.md#database-installation) section for instructions.
 
-The database installation commands should be executed as the root user.
-
-#### Fedora
-```
-# install postgres server
-[root@host ~]# dnf install postgresql-server
-
-# initialize db and start service
-[root@host ~]# postgresql-setup --initdb
-
-# allow user to connect
-[root@host ~]# sed -i '1 s,\(^.*$\),local\tall\ttessia\tmd5\n\1,' /var/lib/pgsql/data/pg_hba.conf
-
-# start/restart the service
-[root@host ~]# systemctl restart postgresql
-
-# create a user, a database and appropriate permissions
-[root@host ~]# runuser -u postgres -- createuser tessia
-[root@host ~]# runuser -u postgres -- createdb -E UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8 tessia
-[root@host ~]# runuser -u postgres -- psql tessia -c 'ALTER DATABASE tessia OWNER TO tessia'
-[root@host ~]# runuser -u postgres -- psql tessia -c "ALTER ROLE tessia WITH PASSWORD 'pass4tessia';"
-
-```
-#### RHEL 7
-```
-# install postgres server
-[root@host ~]# yum install postgresql-server
-
-# initialize db and start service
-[root@host ~]# postgresql-setup initd
-
-# allow user to connect
-[root@host ~]# sed -i '1 s,\(^.*$\),local\tall\ttessia\tmd5\n\1,' /var/lib/pgsql/data/pg_hba.conf
-
-# start/restart the service
-[root@host ~]# systemctl restart postgresql
-
-# create a user, a database and appropriate permissions
-[root@host ~]# runuser -u postgres -- createuser tessia
-[root@host ~]# runuser -u postgres -- createdb tessia
-[root@host ~]# runuser -u postgres -- psql tessia -c 'ALTER DATABASE tessia OWNER TO tessia'
-[root@host ~]# runuser -u postgres -- psql tessia -c "ALTER ROLE tessia WITH PASSWORD 'pass4tessia';"
-```
-
-#### Ubuntu 16
-```
-# install postgres server
-[root@host ~]# apt-get install postgresql
-
-# allow user to connect
-[root@host ~]# sed -i '1 s,\(^.*$\),local\tall\ttessia\tmd5\n\1,' /etc/postgresql/9.5/main/pg_hba.conf
-
-# start/restart the service
-[root@host ~]# systemctl restart postgresql
-
-# create a user, a database and appropriate permissions
-[root@host ~]# runuser -u postgres -- createuser tessia
-[root@host ~]# runuser -u postgres -- createdb tessia
-[root@host ~]# runuser -u postgres -- psql tessia -c 'ALTER DATABASE tessia OWNER TO tessia'
-[root@host ~]# runuser -u postgres -- psql tessia -c "ALTER ROLE tessia WITH PASSWORD 'pass4tessia';"
-```
-
-### Virtualenv installation
+Steps for the virtualenv installation and tool setup:
 
 ```
 # install tox (virtualenv manager)

@@ -16,14 +16,17 @@ copyright: IBM Corp.
 pages:
 - Home: 'index.md'
 - Users:
-    - Supported features: 'users/supported_features.md'
+    - Client installation: 'users/client_install.md'
+    - Server installation: 'users/server_install.md'
+    - Server configuration: 'users/server_conf.md'
     - Resources model: 'users/resources_model.md'
     - Getting started: 'users/getting_started.md'
     - Power Manager machine: 'users/powerman_machine.md'
     - Ansible machine: 'users/ansible_machine.md'
+    - Permissions model: 'users/permissions_model.md'
+    - Supported installation combinations: 'users/supported_install_combinations.md'
     - Howtos: 'users/howtos.md'
     - Project versioning scheme: 'users/versioning.md'
-    - Client installation: 'users/client_install.md'
     - REST-like API: 'users/api.md'
     - Installing a kvm guest with fcp disk and macvtap interface: 'users/kvm_fcp_macvtap_install.md'
 - Developers:

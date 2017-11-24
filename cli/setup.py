@@ -31,6 +31,11 @@ import sys
 #
 # CONSTANTS AND DEFINITIONS
 #
+MY_DIR = os.path.dirname(os.path.abspath(__file__))
+# shared with pip-install to allow 'pip install' to work
+VERSION_FILE = '{}/VERSION'.format(MY_DIR)
+
+# metadata information
 AUTHOR = 'IBM'
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
@@ -47,7 +52,7 @@ CLASSIFIERS = [
 ]
 DESCRIPTION = 'tessia command line client'
 LICENSE = 'Apache 2.0'
-with open('../README.md', 'r') as desc_fd:
+with open('README.md', 'r') as desc_fd:
     LONG_DESCRIPTION = desc_fd.read()
 LONG_DESC_TYPE = 'text/markdown'
 KEYWORDS = 'client tessia'
@@ -141,7 +146,7 @@ def _find_requirements():
     return req_list
 # _find_requirements()
 
-def _gen_version():
+def gen_version():
     """
     Release version is created from the commiter date of the HEAD of the master
     branch in the following format:
@@ -156,6 +161,13 @@ def _gen_version():
     Raises:
         RuntimeError: if one of the git commands fail
     """
+    if not os.path.exists('{}/../.git'.format(MY_DIR)):
+        if os.path.exists(VERSION_FILE):
+            with open(VERSION_FILE, 'r') as file_fd:
+                version = file_fd.read()
+            return version
+        return '0.0.0+unknown'
+
     # determine if it's a dev build by checking if the current HEAD is the
     # same as the master branch
     head_sha = _run('git show -s --oneline --no-abbrev-commit').split()[0]
@@ -187,30 +199,31 @@ def _gen_version():
         version += '+dev{}'.format(head_sha[:7])
 
     return version
-# _gen_version()
+# gen_version()
 
-# entry point to setup actions
-setup(
-    # metadata information
-    author=AUTHOR,
-    classifiers=CLASSIFIERS,
-    description=DESCRIPTION,
-    keywords=KEYWORDS,
-    license=LICENSE,
-    long_description=LONG_DESCRIPTION,
-    long_description_content_type=LONG_DESC_TYPE,
-    name=NAME,
-    # installation information
-    entry_points={
-        'console_scripts': [
-            'tess = tessia.cli.main:main'
-        ]
-    },
-    install_requires=_find_requirements(),
-    package_data={'': _find_data_files('tessia')},
-    packages=find_packages(exclude=['tests', 'tests.*']),
-    setup_requires=['setuptools>=30.3.0'],
-    url=URL,
-    version=_gen_version(),
-    zip_safe=False,
-)
+if __name__ == '__main__':
+    # entry point to setup actions
+    setup(
+        # metadata information
+        author=AUTHOR,
+        classifiers=CLASSIFIERS,
+        description=DESCRIPTION,
+        keywords=KEYWORDS,
+        license=LICENSE,
+        long_description=LONG_DESCRIPTION,
+        long_description_content_type=LONG_DESC_TYPE,
+        name=NAME,
+        # installation information
+        entry_points={
+            'console_scripts': [
+                'tess = tessia.cli.main:main'
+            ]
+        },
+        install_requires=_find_requirements(),
+        package_data={'': _find_data_files('tessia')},
+        packages=find_packages(exclude=['tests', 'tests.*']),
+        setup_requires=['setuptools>=30.3.0'],
+        url=URL,
+        version=gen_version(),
+        zip_safe=False,
+    )

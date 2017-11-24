@@ -23,7 +23,7 @@ RUN apt-get -q update > /dev/null && \
     iputils-ping \
     # used to install python libraries
     python3-pip \
-    # used by pbr (in setuptools) to detect module version numbers
+    # used by setuptools to detect module version numbers
     git \
     # these are needed to build cryptography (dep chain is baselib -> paramiko ->
     # cryptography) and uwsgi
@@ -39,16 +39,10 @@ RUN apt-get -q update > /dev/null && \
     # generate the locale/encoding and set it as default
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
-    # Install the python dependencies.
-    # setuptools for installing applications (including tessia) - it must be installed
-    # separately first otherwise other packages fail to install
-    pip3 -q install -U setuptools && \
-    # ATTENTION: make sure to keep a comment for each explaining why is it needed.
-    pip3 -q install -U \
-    # this is to update the pip version if necessary
-    pip \
+    # set up python packaging tools
+    pip3 -q install -U setuptools pip && \
     # web server for api service
-    uwsgi
+    pip3 -q install -U uwsgi
 
 # set the locale/encoding for the session
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
@@ -62,9 +56,8 @@ RUN cd /assets && \
     # use the custom url as the baselib's repository might not be accessible
     # from the builder
     sed -i "/egg=tessia-baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
-    pip3 install -U -r requirements.txt -r dev-requirements.txt && \
     # server installation
-    ./setup.py -q install && \
+    pip3 install -U -r requirements.txt -r dev-requirements.txt . && \
     ./setup.py -q install_data && \
     # files settings
     useradd -m tessia && \

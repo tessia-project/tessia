@@ -15,7 +15,7 @@ RUN apt-get -q update > /dev/null && \
     locales \
     # used to install python libraries
     python3-pip \
-    # used by pbr (in setuptools) to detect module version numbers
+    # used by setuptools to detect module version numbers
     git \
     # for wrapt (from pylint)
     build-essential \
@@ -25,12 +25,8 @@ RUN apt-get -q update > /dev/null && \
     # generate the locale/encoding and set it as default
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
-    # Install the python dependencies.
-    # setuptools for installing applications (including tessia) - it must be installed
-    # separately first otherwise other packages fail to install
-    pip3 -q install -U setuptools && \
-    # this is to update the pip version if necessary
-    pip3 -q install -U pip && \
+    # set up python packaging tools
+    pip3 -q install -U setuptools pip && \
     # add the admin user for administrative work
     useradd -ms /bin/bash admin
 
@@ -42,8 +38,8 @@ COPY assets /assets/
 RUN cd /assets && \
     git clone $git_repo repo-tessia && \
     cd repo-tessia/cli && \
-    pip3 -q install -U -r requirements.txt -r dev-requirements.txt && \
-    ./setup.py -q install && \
+    # call pip through the wrapper so that versioning works
+    ./pip-install -U -r dev-requirements.txt . && \
     # remove unneeded dependencies used only for building
     apt-get -yq purge --auto-remove \
     build-essential \

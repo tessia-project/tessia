@@ -38,7 +38,7 @@ auth:
       # which attribute contains the user's login, defaults to 'mail'
       login: mail
       # optional - which attribute contains the user's job title,
-      # uncomment or set to null if your ldap does not provide such info
+      # comment out or set to null if your ldap does not provide such info
       title: title
     # use group_filter to enable group based access, one or more groups can be specified following ldap filter syntax
     group_filter: (&(cn=tessia-users)(objectclass=groupOfUniqueNames))

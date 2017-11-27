@@ -77,11 +77,10 @@ tasks:
       # Empty name
     - - perm project-add --name= --desc='3rd tester team'
       - 'Invalid value for "--name": value may not be empty'
-      # Issue #84
     - - perm project-add --name='GEO_4 testers' --desc=
-      - Item added successfully.
+      - 'Invalid value for "--desc": value may not be empty'
     - - perm project-edit --name='GEO_4 testers' --desc=
-      - 'The server did not accept our request. The response is: desc must be type=string'
+      - 'Invalid value for "--desc": value may not be empty'
     - - perm project-edit --name='GEO_1 testers'
       - Missing option "--desc".
     - - perm project-edit --name='GEO_1 testers' --desc='Tester team'
@@ -102,7 +101,7 @@ tasks:
     - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers'
       - Missing option "--desc".
     - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers' --desc=
-      - 'The server did not accept our request. The response is: desc must be type=string'
+      - 'Invalid value for "--desc": value may not be empty'
     - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers' --desc='Test team'
       - Item successfully updated.
     - - perm project-edit --name='GEO_3 testers' --newname='GEO_2 testers' --desc='3rd tester team'

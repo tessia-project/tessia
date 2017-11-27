@@ -320,6 +320,24 @@ class ScsiWwid(click.ParamType):
 # ScsiWwid
 SCSI_WWID = ScsiWwid()
 
+class Text(click.ParamType):
+    """
+    Represents any non-empty text.
+    """
+    name = 'text'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure the value accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        return value
+# Text
+
+TEXT = Text()
+
 class Url(click.ParamType):
     """
     Represents any url.

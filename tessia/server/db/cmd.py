@@ -324,7 +324,8 @@ def reset_db(args):
 
     # alembic table might be pointing to a revision that does not exist, clean
     # it to avoid errors in the stamp step.
-    sa_engine.execute('delete from alembic_version')
+    if sa_engine.has_table('alembic_version'):
+        sa_engine.execute('delete from alembic_version')
 
     # stamp versioning table with base (empty) revision
     command.stamp(get_alembic_cfg(), 'base')

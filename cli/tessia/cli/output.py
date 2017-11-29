@@ -204,6 +204,7 @@ def print_hor_table(headers, rows):
                 spaces = ' ' * (trunc_width+3)
                 output += '\n{}{}'.format(spaces, lines[i].strip())
         output += '\n'
+    output += '\n'
 
     click.echo(output)
 # print_hor_table()
@@ -310,6 +311,7 @@ def print_ver_table(headers, entries, fields_map):
             output += '\n{}'.format('|'.join(output_row))
         # send the rows to the pager's stdin
         pager.write(output)
+    pager.write('\n')
 
     # kill pager's process
     pager.close()

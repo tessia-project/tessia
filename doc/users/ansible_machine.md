@@ -95,7 +95,7 @@ groups accordingly.
 With our parameter file ready, we submit the job:
 
 ```
-user@tessia-cli:~/$ tessia job submit --type=ansible --parmfile=lamp.yaml
+$ tess job submit --type=ansible --parmfile=lamp.yaml
 
 Request #2 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%
@@ -104,7 +104,7 @@ Request accepted; job id is #2
 
 Let's see the output of it:
 ```
-user@tessia-cli:~/$ tessia job output --id=2
+$ tess job output --id=2
 2017-07-28 12:44:06,338|INFO|machine.py(569)|new stage: download-source
 2017-07-28 12:44:06,339|INFO|machine.py(229)|cloning git repo from https://github.com/ansible/ansible-examples.git
 2017-07-28 12:44:18,790|INFO|machine.py(471)|validating repository content
@@ -172,10 +172,10 @@ lpar15                   : ok=27   changed=23   unreachable=0    failed=0
 2017-07-28 12:50:16,040|INFO|machine.py(584)|machine finished successfully
 ```
 
-Looks good, let's have a look if it really worked:
+Looks good, let's have a look whether it really worked:
 
 ```
-user@tessia-cli:~$ wget -q http://lpar15/index.php -O -
+$ wget -q http://lpar15/index.php -O -
 <html>
  <head>
   <title>Ansible Application</title>

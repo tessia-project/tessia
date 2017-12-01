@@ -88,14 +88,8 @@ To learn how to use the command line client, see [Getting started](doc/users/get
 
 # Contributing
 
-If you are interested in contributing to the project, please read the following pages:
-
-- [How to setup a development environment](doc/developers/dev_env.md)
-- [Coding guidelines](doc/developers/coding_guidelines.md)
-- [Development process](doc/developers/dev_process.md)
-- [Working with documentation](doc/developers/documentation.md)
-
-More topics are available at the [Developers section](doc/index.md#developers).
+If you are interested in contributing to the project, read [How to contribute (development process)](doc/developers/contributing.md).
+Additional topics for developers are available at the [Developers section](doc/index.md#developers).
 
 # License
 

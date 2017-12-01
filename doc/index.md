@@ -43,9 +43,9 @@ Documentation explaining how to install and use the tool.
 
 Information for people interested in collaborating with tessia's development.
 
+- [How to contribute (development process)](developers/contributing.md)
 - [How to setup a development environment](developers/dev_env.md)
 - [Coding guidelines](developers/coding_guidelines.md)
-- [Development process](developers/dev_process.md)
 - [Integration and unit tests](developers/tests.md)
 - [Working with documentation](developers/documentation.md)
 - [Continuous Integration](developers/continuous_integration.md)

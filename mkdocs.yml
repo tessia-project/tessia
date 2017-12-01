@@ -30,8 +30,8 @@ pages:
     - REST-like API: 'users/api.md'
     - Installing a kvm guest with fcp disk and macvtap interface: 'users/kvm_fcp_macvtap_install.md'
 - Developers:
+    - How to contribute (development process): 'developers/contributing.md'
     - Coding guidelines: 'developers/coding_guidelines.md'
-    - Development process: 'developers/dev_process.md'
     - How to setup a development environment: 'developers/dev_env.md'
     - Integration and unit tests: 'developers/tests.md'
     - Working with documentation: 'developers/documentation.md'

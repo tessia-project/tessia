@@ -25,9 +25,12 @@ There are two possible methods to install and use the command line client:
 The client requires python >= 3.5, once you have it installed follow these steps:
 
 ```
-# install the python packaging tools
+# as the root user install the python packaging tools
 $ apt-get install python3-pip
 $ pip3 install -U pip setuptools
+
+# switch to target user (skip this step for a global installation)
+$ su - _target_user
 
 # clone the repo and switch to the `cli` subfolder
 $ git clone https://gitlab.com/tessia-project/tessia.git
@@ -35,7 +38,7 @@ $ cd tessia/cli
 
 # pip-install is a wrapper to 'pip install' to allow pip to work with
 # packages in subdirectories that use git for project versioning
-$ ./pip-install --user .
+$ ./pip-install --user . # skip --user for a global installation
 ```
 
 That's all. To start using the client, type:

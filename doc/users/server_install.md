@@ -165,7 +165,7 @@ $ useradd -m tessia && su - tessia
 
 # clone the repo and install
 $ git clone https://gitlab.com/tessia-project/tessia.git
-$ cd tessia && pip3 install --user -U .
+$ cd tessia && pip3 install --user -U -r requirements.txt .
 
 # we are going to use uwsgi as our web server
 $ pip3 install --user -U uwsgi

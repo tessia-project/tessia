@@ -31,8 +31,8 @@ Do your work, create/change the necessary files and commit them. Some guidelines
 
 - Remember to follow our project's [Coding guidelines](coding_guidelines.md).
 - If you are changing code or tests you must learn [How to setup a development environment](dev_env.md).
-- Changes should be accompanied by tests. For changing/writing tests, see some tips at [Integration and unit tests](developers/tests.md).
-- If you are changing documentation, have a look at [Working with documentation](developers/documentation.md).
+- Changes should be accompanied by tests. For changing/writing tests, see some tips at [Integration and unit tests](tests.md).
+- If you are changing documentation, have a look at [Working with documentation](documentation.md).
 - Avoid submitting patches with whitespace errors. Use a text editor which visually shows trailing whitespaces or use git before committing your code by
 running `git diff --check`, which identifies possible whitespace errors and lists them for you.
 - Make each commit a self contained logical changeset - this means a commit should not depend on a next commit to work or to make sense. Also avoid to

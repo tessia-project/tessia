@@ -112,7 +112,52 @@ class TestSystemProfile(TestSecureResource):
         self._test_add_all_fields_many_roles(logins)
     # test_add_all_fields_many_roles()
 
-    def test_add_invalid_system(self):
+    def test_add_cpc_multiple_profiles(self):
+        """
+        Test creation of multiple profiles for a CPC system
+        """
+        # create a new CPC system
+        system_obj = models.System(
+            name="cpc_y",
+            state="AVAILABLE",
+            modifier="user_user@domain.com",
+            type="cpc",
+            hostname="hmc_y.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner="user_user@domain.com",
+        )
+        self.db.session.add(system_obj)
+        self.db.session.commit()
+        # attributes must be stored before the object expires
+        system_id = system_obj.id
+        system_name = system_obj.name
+
+        # create profile
+        data = next(self._get_next_entry)
+        data['system'] = system_name
+        user_login = '{}:a'.format('user_user@domain.com')
+        resp = self._do_request('create', user_login, data)
+        created_id = int(resp.get_data(as_text=True))
+
+        # validate the created object
+        created_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=created_id).one()
+
+        # try to add another
+        data = next(self._get_next_entry)
+        data['system'] = system_name
+        resp = self._do_request('create', user_login, data)
+        msg = 'A CPC system can only have one system profile'
+        self._validate_resp(resp, msg, 422)
+
+        # clean up
+        self.db.session.delete(created_entry)
+        models.System.query.filter_by(id=system_id).delete()
+        self.db.session.commit()
+    # test_add_cpc_multiple_profiles()
+
+    def test_add_invalid_system_name(self):
         """
         Exercise creating a profile with an invalid system name
         """
@@ -124,7 +169,7 @@ class TestSystemProfile(TestSecureResource):
         msg = ("No associated item found with value '{}' for field 'System'"
                .format(data['system']))
         self._validate_resp(resp, msg, 422)
-    # test_add_invalid_system()
+    # test_add_invalid_system_name()
 
     def test_add_mandatory_fields(self):
         """
@@ -162,9 +207,9 @@ class TestSystemProfile(TestSecureResource):
             owner="user_user@domain.com",
         )
         self.db.session.add(system_obj)
+        self.db.session.commit()
         # id must be stored before the object expires
         system_id = system_obj.id
-        self.db.session.commit()
 
         # create profile
         data = next(self._get_next_entry)
@@ -302,11 +347,11 @@ class TestSystemProfile(TestSecureResource):
         while specifying a hypervisor profile.
         """
         system_obj = models.System(
-            name="cpc_no_hypervisor",
+            name="lpar_no_hypervisor",
             state="AVAILABLE",
             modifier="user_user@domain.com",
-            type="cpc",
-            hostname="cpc-0.domain.com",
+            type="lpar",
+            hostname="lpar_no_hyp.domain.com",
             project=self._project_name,
             model="ZEC12_H20",
             owner="user_user@domain.com",
@@ -510,5 +555,6 @@ class TestSystemProfile(TestSecureResource):
     # TODO: add tests with hypervisor_profile (need to improve handling of
     # indirect value hyp_name/hyp_profile_name first)
     # TODO: add tests for attach/detach of volumes/network interfaces
+    # (including negative test of multiple disks to a cpc)
     # TODO: add tests with same hyp_profile name
 # TestSystemProfile

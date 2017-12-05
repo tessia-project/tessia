@@ -49,6 +49,10 @@ tasks:
     # create the storage resources
     - - storage server-add --name=DS8K16 --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
       - Item added successfully.
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3950 --size=7gb --project='GEO_1 labadmins' --desc='live-image disk for cpc cpc3'
+      - Item added successfully.
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3951 --size=7gb --project='GEO_1 labadmins' --desc='second live-image disk for cpc cpc3'
+      - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3952 --size=7gb --owner= --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3956 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
@@ -683,6 +687,8 @@ tasks:
       - invalid memory size specified.
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136gib --login='DEVEL1:somepwd'
       - Item added successfully.
+    - - system prof-add --system=cpc3 --name='alternate' --cpu=43 --memory=1136gib --login='DEVEL1:somepwd'
+      - A CPC system can only have one system profile
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='cpc3/default cpc3'
       - 'Invalid value for "--hyp"'
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root-mypasswd' --hyp='default cpc3'
@@ -928,6 +934,10 @@ tasks:
       - Volume attached successfully.
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
       - Volume attached successfully.
+    - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3950
+      - Volume attached successfully.
+    - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3951
+      - A CPC system can have only one volume associated
     # 'system poweron' subcommand
     - - system poweron
       - Missing option "--name".
@@ -1026,7 +1036,7 @@ tasks:
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3956
       - Volume detached successfully.
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3957
-      - "request failed. Server answered: No associated item found with value '2,3' for field 'profile_id,volume_id'"
+      - "request failed. Server answered: No associated item found with value .* for field 'profile_id,volume_id'"
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
       - Volume detached successfully.
       # delete default profile if it is the last one

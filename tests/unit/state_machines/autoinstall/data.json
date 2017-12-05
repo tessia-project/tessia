@@ -113,6 +113,46 @@
     ],
     "StorageVolume": [
         {
+            "desc": "auxiliar live-image for cpc use",
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": null,
+            "project": "Admins",
+            "server": "DSK7K16",
+            "size": 7385,
+            "specs": {},
+            "system": "CPC3",
+            "system_attributes": {},
+            "type": "DASD",
+            "volume_id": "3960"
+        },
+        {
+            "desc": "auxiliar live-image for cpc use (fcp type)",
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": null,
+            "project": "Admins",
+            "server": "DSK7K16",
+            "size": 10000,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002000"
+            },
+            "system": "CPC3",
+            "system_attributes": {},
+            "type": "FCP",
+            "volume_id": "CPCDISK2"
+
+        },
+        {
             "desc": "- DASD disk for regression tests",
             "modifier": "admin",
             "owner": "admin",
@@ -703,6 +743,10 @@
     ],
     "StorageVolumeProfileAssociation": [
         {
+            "profile": "CPC3/default CPC3",
+            "volume": "DSK7K16/3960"
+        },
+        {
             "profile": "CPC3LP55/default_CPC3LP55",
             "volume": "DSK7K16/3961"
         },
@@ -784,7 +828,7 @@
             "address": "192.168.160.0/22",
             "desc": "Shared subnet of CPC3",
             "dns_1": "192.168.200.241",
-            "dns_2": null,
+            "dns_2": "192.168.200.242",
             "gateway": "192.168.160.1",
             "modifier": "admin",
             "name": "CPC3 shared",

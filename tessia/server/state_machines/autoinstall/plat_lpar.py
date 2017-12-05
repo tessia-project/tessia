@@ -21,6 +21,7 @@ Module to deal with operations on LPARs
 #
 from copy import deepcopy
 from tessia.baselib.common.ssh.client import SshClient
+from tessia.server.config import Config
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
 
@@ -39,9 +40,26 @@ class PlatLpar(PlatBase):
     """
 
     def __init__(self, *args, **kwargs):
+        """
+        Constructor, validate values provided.
+        """
         super().__init__(*args, **kwargs)
         # create our own logger so that the right module name is in output
         self._logger = logging.getLogger(__name__)
+
+        # make sure the CPC of the LPAR has a live-image disk configured
+        try:
+            self._live_disk = self._hyp_prof.storage_volumes_rel[0]
+        except IndexError:
+            raise ValueError(
+                'CPC {} has no disk configured to serve live-image'
+                .format(self._hyp_prof.system_rel.name)) from None
+        config = Config.get_config()
+        try:
+            self._live_passwd = config['auto_install']['liveimg_passwd']
+        except KeyError:
+            raise ValueError(
+                'Live-image password missing in config file') from None
     # __init__()
 
     def boot(self, kargs):
@@ -62,23 +80,44 @@ class PlatLpar(PlatBase):
         initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
 
         # parameters argument, see baselib schema for details
+        params = {}
+        if self._live_disk.type.lower() == 'fcp':
+            params['boot_params'] = {
+                'boot_method': 'scsi',
+                'zfcp_devicenr': self._live_disk.specs['adapters'][0]['devno'],
+                'wwpn': self._live_disk.specs['adapters'][0]['wwpns'][0],
+                'lun': self._live_disk.volume_id
+            }
+        else:
+            params['boot_params'] = {
+                'boot_method': 'dasd',
+                'devicenr': self._live_disk.volume_id
+            }
+        params['boot_params']['netboot'] = {
+            "kernel_url": kernel_uri,
+            "initrd_url": initrd_uri,
+            "cmdline": kargs
+        }
+        # network configuration
         options = deepcopy(self._gw_iface['attributes'])
         options.pop('ccwgroup')
-        params = {
-            "boot_params": {
-                "boot_method": "network",
-                "kernel_url": kernel_uri,
-                "initrd_url": initrd_uri,
-                "cmdline": kargs,
-                "mac": self._gw_iface['mac_addr'],
-                "ip": self._gw_iface['ip'],
-                "mask": self._gw_iface["mask"],
-                "gateway": self._gw_iface['gateway'],
-                "device": self._gw_iface['attributes']
-                          ['ccwgroup'].split(",")[0].split('.')[-1],
-                "options": options
-            }
+        params['boot_params']['netsetup'] = {
+            "mac": self._gw_iface['mac_addr'],
+            "ip": self._gw_iface['ip'],
+            "mask": self._gw_iface["mask"],
+            "gateway": self._gw_iface['gateway'],
+            "device": self._gw_iface['attributes']
+                      ['ccwgroup'].split(",")[0].split('.')[-1],
+            "options": options,
+            "password": self._live_passwd,
         }
+        dns_servers = []
+        if self._gw_iface.get('dns_1'):
+            dns_servers.append(self._gw_iface['dns_1'])
+        if self._gw_iface.get('dns_2'):
+            dns_servers.append(self._gw_iface['dns_2'])
+        if dns_servers:
+            params['boot_params']['netsetup']['dns'] = dns_servers
 
         self._hyp_obj.start(guest_name, cpu, memory, params)
     # boot()

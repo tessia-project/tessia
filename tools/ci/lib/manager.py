@@ -49,7 +49,7 @@ class Manager(object):
     STAGES = ['build', 'unittest', 'clitest', 'push', 'cleanup']
 
     def __init__(self, stage, docker_tag, images=None, registry_url=None,
-                 field_tests=None, baselib_file=None,
+                 field_tests=None, img_passwd_file=None,
                  install_server_hostname=None, verbose=True, **stage_args):
         """
         Create the image objects and set necessary configuration parameters
@@ -65,8 +65,8 @@ class Manager(object):
             field_tests (str): a path on the builder containing additional
                                tests for the client, as recognized by the
                                cli test runner
-            baselib_file (str): path to baselib conf file on builder, this is
-                                required if field_tests is specified
+            img_passwd_file (str): path to file containing the root password
+                                   of the auxiliar live-image
             install_server_hostname (str): used by clitest stage, custom
                 hostname to use as install server for cases where the detected
                 fqdn is not reachable by systems being installed during tests
@@ -77,14 +77,17 @@ class Manager(object):
             RuntimeError: in case fqdn of builder cannot be determined
             ValueError: 1- if a wrong stage is specified, 2- if 'images' var is
                         specified but stage is not build or push, 3- if
-                        baselib file is missing/invalid when clitests is
-                        specified
+                        liveimg password is missing when clitests is specified
         """
         self._logger = logging.getLogger(__name__)
         self._registry_url = registry_url
         self._field_tests = field_tests
-        self._baselib_file = baselib_file
         self._install_server_hostname = install_server_hostname
+        if img_passwd_file:
+            with open(img_passwd_file, 'r') as file_fd:
+                self._img_passwd = file_fd.read().strip()
+        else:
+            self._img_passwd = None
 
         # string 'all' specified: run all stages
         if stage == 'all':
@@ -109,19 +112,13 @@ class Manager(object):
         # used to execute commands on a local shell
         self._session = Shell(verbose)
 
-        # field tests demand a baselib file otherwise tests with
-        # LPAR installations will fail as there won't be an auxiliar disk
-        # configured to boot them
+        # field tests demand the live-image's password otherwise tests with
+        # LPAR installations will fail as it won't be possible to use the
+        # auxiliar disk to boot them
         if self._field_tests:
-            if not self._baselib_file:
-                raise ValueError(
-                    'Field tests specified but no baselib file provided')
-            # validate that baselib file exists
-            ret_code, _ = self._session.run('test -f {}'.format(
-                self._baselib_file))
-            if ret_code != 0:
-                raise ValueError(
-                    'Baselib file {} not found'.format(self._baselib_file))
+            if not self._img_passwd:
+                raise ValueError('Field tests specified but no password '
+                                 'provided for auxiliar live-image')
 
         # determine builder's fqdn
         ret_code, output = self._session.run('hostname --fqdn')
@@ -378,27 +375,33 @@ class Manager(object):
                 raise RuntimeError(
                     'failed to set authenticator config: {}'.format(output))
 
-        if self._baselib_file:
-            # copy the baselib file to enable lpar installations
+        if self._img_passwd:
+            # use env variable to hide password from logs
+            cmd_env = os.environ.copy()
+            cmd_env['img_password'] = self._img_passwd
             ret_code, output = self._session.run(
-                "docker cp {} tessia_server_1:/etc/tessia/tessia-baselib.yaml"
-                .format(self._baselib_file))
+                'docker exec tessia_server_1 yamlman update '
+                '/etc/tessia/server.yaml auto_install.liveimg_passwd '
+                '"$img_password"', stdout=False, env=cmd_env)
             if ret_code != 0:
-                raise RuntimeError(
-                    'failed to copy tessia-baselib file: {}'.format(output))
+                raise RuntimeError('failed to set live-image password in '
+                                   'config file')
 
-        # add auth token to admin user in cli container so that it is ready for
-        # use
+        # add auth token to admin user in client to make it ready for use
+        # better hide token from logs
         ret_code, output = self._session.run(
-            'docker exec tessia_server_1 tess-dbmanage get-token')
+            'docker exec tessia_server_1 tess-dbmanage get-token',
+            stdout=False)
         if ret_code != 0:
             raise RuntimeError(
                 "failed to fetch admin's authorization token: {}'"
                 .format(output))
+        cmd_env = os.environ.copy()
+        cmd_env['db_token'] = output.strip()
         ret_code, output = self._session.run(
-            "docker exec tessia_cli_1 bash -c 'mkdir {0} &>/dev/null; "
-            "echo {1} > {0}/auth.key && chown -R admin. {0}'".format(
-                '/home/admin/.tessia-cli', output.strip())
+            'docker exec tessia_cli_1 bash -c "mkdir {0} &>/dev/null; '
+            'echo $db_token > {0}/auth.key && chown -R admin. {0}"'
+            .format('/home/admin/.tessia-cli'), env=cmd_env
         )
         if ret_code != 0:
             raise RuntimeError(

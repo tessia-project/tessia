@@ -14,7 +14,7 @@
 # limitations under the License.
 
 """
-Script to orchestrate the executing of the tessia CI process
+Script to orchestrate the execution and testing of the tessia services
 """
 
 #
@@ -48,10 +48,9 @@ except ImportError:
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
     help='dir path with field tests to execute')
 @click.option(
-    'baselib_file', '--baselibfile',
+    'img_passwd_file', '--img-passwd-file',
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
-    help='path to baselib conf file (required when fieldtests are '
-         'specified)')
+    help='path to file containing root password of auxiliar live-image')
 @click.option('--registry', help='docker registry url to push image(s)')
 @click.option(
     'install_server_hostname', '--install-server-hostname',
@@ -59,18 +58,14 @@ except ImportError:
          'not reachable by installed systems)')
 @click.option('--quiet', is_flag=True, default=False,
               help='suppress output from commands')
-def all_(tag, field_tests, baselib_file, registry, install_server_hostname,
+def all_(tag, field_tests, img_passwd_file, registry, install_server_hostname,
          quiet):
     """
     execute all ci stages in one run
     """
-    if field_tests and not baselib_file:
-        raise click.ClickException(
-            '--baselibfile is required when --fieldtests is specified')
-
     manager = Manager(
         'all', tag, registry_url=registry, field_tests=field_tests,
-        baselib_file=baselib_file,
+        img_passwd_file=img_passwd_file,
         install_server_hostname=install_server_hostname, verbose=not quiet)
     manager.run()
 # all_()
@@ -128,24 +123,20 @@ def cleanup(tag):
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
     help='dir path with additional field tests to execute')
 @click.option(
-    'baselib_file', '--baselibfile',
+    'img_passwd_file', '--img-passwd-file',
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
-    help='path to baselib conf file (required when '
-         'fieldtests are specified)')
+    help='path to file containing root password of auxiliar live-image')
 @click.option(
     'install_server_hostname', '--install-server-hostname',
     help='custom hostname/ip to use as install server (when detected fqdn is '
          'not reachable by installed systems)')
-def clitest(tag, field_tests, baselib_file, install_server_hostname):
+def clitest(tag, field_tests, img_passwd_file, install_server_hostname):
     """
     execute the client integration tests
     """
-    if field_tests and not baselib_file:
-        raise click.ClickException(
-            '--baselibfile is required when --fieldtests is specified')
-
     manager = Manager(
-        'clitest', tag, field_tests=field_tests, baselib_file=baselib_file,
+        'clitest', tag, field_tests=field_tests,
+        img_passwd_file=img_passwd_file,
         install_server_hostname=install_server_hostname)
     manager.run()
 # clitest()
@@ -155,21 +146,21 @@ def clitest(tag, field_tests, baselib_file, install_server_hostname):
 @click.option('devmode', '--devmode', is_flag=True, default=False,
               help='bind mount source files inside containers')
 @click.option(
-    'baselib_file', '--baselibfile',
+    'img_passwd_file', '--img-passwd-file',
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
-    help='path to baselib conf file to be injected in server container')
+    help='path to file containing root password of auxiliar live-image')
 @click.option(
     'install_server_hostname', '--install-server-hostname',
     help='custom hostname/ip to use as install server (when detected fqdn is '
          'not reachable by installable systems)')
 @click.option('clitests', '--clitests', is_flag=True, default=False,
               help='execute all client tests')
-def run(tag, devmode, baselib_file, install_server_hostname, clitests):
+def run(tag, devmode, img_passwd_file, install_server_hostname, clitests):
     """
     start and keep services running until manually stopped
     """
     manager = Manager(
-        'run', tag, devmode=devmode, baselib_file=baselib_file,
+        'run', tag, devmode=devmode, img_passwd_file=img_passwd_file,
         install_server_hostname=install_server_hostname, clitests=clitests)
     manager.run()
 # run()

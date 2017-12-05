@@ -46,7 +46,7 @@ class Shell(object):
         self._verbose = verbose
     # __init__()
 
-    def run(self, cmd, error_msg=None, stdout=False):
+    def run(self, cmd, error_msg=None, stdout=None, env=None):
         """
         Execute a local command in a shell environment.
 
@@ -55,6 +55,7 @@ class Shell(object):
             error_msg (str): if not None then raise an exception with that msg
                              in case the command returns exit code != 0
             stdout (bool): if True will print the output consumed to stdout
+            env (dict): run using this map of environment variables
 
         Returns:
             tuple: (int_exit_code, str_output)
@@ -64,9 +65,12 @@ class Shell(object):
         """
         if self._verbose:
             print('$ ' + cmd)
+        # print stdout if verbose was set and stdout was not explicitly disabled
+        # or if stdout was explicitly enabled
+        print_stdout = bool((self._verbose and stdout is not False) or stdout)
         proc = subprocess.Popen(
             ['bash', '-c', cmd], stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT, universal_newlines=True)
+            stderr=subprocess.STDOUT, universal_newlines=True, env=env)
         # read from pipe in an non-blocking way to avoid hanging in ssh related
         # commands (i.e. git clone) due to stderr left open by ssh
         # controlpersist background process
@@ -80,7 +84,7 @@ class Shell(object):
                     break
                 time.sleep(0.2)
                 continue
-            if self._verbose or stdout:
+            if print_stdout:
                 print(output_buffer, end='', flush=True)
             output += output_buffer
 

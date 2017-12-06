@@ -359,9 +359,9 @@ tasks:
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,0x100207630503c1a1'
       - Item successfully updated.
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,0x5555'
-      - 'Invalid value for "--delpath": 5555 is not a valid wwpn'
+      - 'Invalid value for "--delpath": 0x5555 is not a valid wwpn'
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='55,100207630503c1a1'
-      - 'Invalid value for "--delpath": 0.0.55 is not a valid devno'
+      - 'Invalid value for "--delpath": 55 is not a valid devno'
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800 100207630503c1a1'
       - 'Invalid value for "--delpath": 1800 100207630503c1a1 is not a valid FCP path'
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630503c1a1'

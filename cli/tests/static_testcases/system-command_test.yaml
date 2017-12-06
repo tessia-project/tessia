@@ -381,7 +381,7 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501
       - 'Invalid value for "--ccwgroup": f500,f501 is not a valid qeth ccwgroup'
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=500,501,502
-      - 'Invalid value for "--ccwgroup": 0.0.500 is not a valid devno'
+      - 'Invalid value for "--ccwgroup": 500 is not a valid devno'
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
@@ -540,7 +540,7 @@ tasks:
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=
       - 'Invalid value for "--ccwgroup":  is not a valid qeth ccwgroup'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=500,f501,f502
-      - 'Invalid value for "--ccwgroup": 0.0.500 is not a valid devno'
+      - 'Invalid value for "--ccwgroup": 500 is not a valid devno'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=f500
       - 'Invalid value for "--ccwgroup": f500 is not a valid qeth ccwgroup'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=f500,f501,f502

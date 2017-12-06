@@ -2,25 +2,23 @@
 docs_dir: doc
 # where to store output files
 site_dir: ../build/html
-# TODO: create tessia logo
-#site_favicon: favicon.ico
 # enable permalinks for each header
 markdown_extensions:
     - toc:
         permalink: True
 # css/html theme
-theme: cerulean
+theme: readthedocs
 site_name: tessia
 repo_url: https://gitlab.com/tessia-project/tessia
-copyright: IBM Corp.
+copyright: Copyright IBM Corp. 2016, 2017
 pages:
 - Home: 'index.md'
 - Users:
     - Client installation: 'users/client_install.md'
     - Server installation: 'users/server_install.md'
     - Server configuration: 'users/server_conf.md'
-    - Resources model: 'users/resources_model.md'
     - Getting started: 'users/getting_started.md'
+    - Resources model: 'users/resources_model.md'
     - Power Manager machine: 'users/powerman_machine.md'
     - Ansible machine: 'users/ansible_machine.md'
     - Permissions model: 'users/permissions_model.md'

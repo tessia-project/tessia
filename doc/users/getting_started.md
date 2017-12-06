@@ -15,10 +15,30 @@ limitations under the License.
 -->
 # Getting started
 
-If you are not yet familiar with the different types of resources available in the tool we strongly suggest that you read about them first. You can learn about tessia's resources
-model [here](resources_model.md).
+At the end of this guide you will have learned:
 
-## Initial configuration
+- how to create the initial resources in the tool so that the first system installation can happen;
+- how to use the command line client
+
+Before systems can be installed, the tool needs information about the datacenter resources available. That means you need to specify:
+
+- a storage server;
+- volumes (disks) on the storage server;
+- a network zone;
+- a network subnet in the network zone;
+- an IP address of the network subnet;
+- a URL to a distribution package repository.
+
+If you are not yet familiar with the definitions of different resource names used, we suggest that you read the [Resources model](resources_model.md) page first.
+
+Note that the tool does not have the capability (yet) to actually create these resources in the infrastructure.
+It is assumed that they are already in place. For example, the tool will **NOT**:
+
+- connect to the storage server and create the volumes
+- connect to a switch/firewall appliance to configure network zones/subnets/ip addresses
+- create a new LPAR on the HMC (it will, however, change the LPAR's activation profile as necessary for the desired cpus, memory, etc.)
+
+# Initial client configuration
 
 Upon first usage the client needs to learn two things from you:
 
@@ -27,13 +47,13 @@ Upon first usage the client needs to learn two things from you:
 
 If you have those already configured, just skip the next two sections.
 
-### API server hostname
+## API server location
 
 If the server is running under HTTPS (most likely), you have to place a copy of the SSL certificate beforehand either in `~/.tessia-cli/ca.crt` (local user) or
 `/etc/tessia-cli/ca.crt` (global). If you don't do so, you will see an error like this:
 
 ```
-[user@host ~]$ tess conf set-server https://server.domain.com:5000
+$ tess conf set-server https://server.domain.com:5000
 Error: The validation of the server's SSL certificate failed. In order to assure the connection is safe, place a copy of the trusted CA's certificate file in /home/user/.tessia-cli/ca.crt and try again.
 ```
 
@@ -42,585 +62,521 @@ The CA's certificate file is usually provided by the server administrator throug
 Once the certificate file is available, we can enter the API server's hostname successfully:
 
 ```
-[user@host ~]$ tess conf set-server https://server.domain.com:5000
+$ tess conf set-server https://server.domain.com:5000
 Server successfully configured.
 ```
 
-### User credentials
+## User credentials
 
 The client must generate an authentication token for communication with the server. Here's how to do it:
 
-```console
-[user@host ~]$ tess conf key-gen
+```
+$ tess conf key-gen
 Login: user@domain.com
 Password: 
 Key successfully created and added to client configuration.
-[user@host ~]$ 
 ```
 
 Let's confirm that the operation worked by checking the client configuration:
 ```
-[user@host ~]$ tess conf show
+$ tess conf show
 
 Authentication key in use : 9e5e749c135740269b5e64cab32a6b1f
 Key owner login           : user@domain.com
 Client API version        : 20160916
 Server address            : https://server.domain.com:5000
 Server API version        : 20160916
-
-[user@host ~]$ 
 ```
 
 Looks good, we can start using the tool now.
 
-## Creating your first system
+# Define user permissions
 
-A system can have many different attributes and some of them are required when creating a system. To have an idea of the attributes available, check the help menu for the add action:
-```console
-[user@host ~]$ tess system add --help
-Usage: tess system add [OPTIONS]
+As explained in the [Permissions model](permissions_model.md), there are projects (groups), users and roles.
+One can configure them according to the needs of their organization.
+A common scenario is where a group of lab administrators handles the creation of datacenter resources like storage servers, volumes and ip addresses,
+while the other users control their systems in their own groups.
 
-  create a new system
+We are going to use this described setup as an example. Assuming you are currently using the admin token (as explained in the [installation](server_install.md) instructions),
+ create the first projects and users:
 
-Options:
-  --name TEXT      system name  [required]
-  --hostname TEXT  resolvable hostname or ip address  [required]
-  --hyp TEXT       system's hypervisor
-  --type TEXT      system type (see types)  [required]
-  --model TEXT     system model (see model-list)
-  --state TEXT     system state (see states)
-  --project TEXT   project owning system
-  --desc TEXT      free form field describing system
-  -h, --help       Show this message and exit.
 ```
-
-The text menu is mostly self-explanatory, so let's try to create a system based on that information. Assume we have a System z LPAR named 'lpar65' on a CPC called 'cpc50'.
-Since the lpar control is done with actions on the CPC, we should start by verifying first if the CPC is already present in the tool. This is a chance to learn about list commands, so we use the system list command and specify the system type:
-```console
-[user@host ~]$ tess system list --type=CPC
-
-Name            : cpc50
-Hostname        : hmc2.domain.com
-Hypervisor name : 
-Type            : CPC
-Model           : ZEC12_H20
-Current state   : AVAILABLE
-Owner           : sysadmin@domain.com
-Project         : Devops
-Last modified   : 2017-02-08 10:28:44
-Modified by     : sysadmin@domain.com
-Description     : CPC for Performance tests
-
-
-Name            : cpc20
-Hostname        : hmc2.domain.com
-Hypervisor name : 
-Type            : CPC
-Model           : ZEC12_H20
-Current state   : AVAILABLE
-Owner           : sysadmin@domain.com
-Project         : Devops
-Last modified   : 2017-02-08 10:28:44
-Modified by     : sysadmin@domain.com
-Description     : Production systems
-```
-
-Here we filtered the list by type with the use of the parameter `--type`. Other filters are possible, you can check the available ones by typing `tess system list --help`.
-
-Good, our CPC is already registered. Note that it does not have a hypervisor defined (because CPCs have no hypervisors), but most times a system will have one. In our example, cpc50
-is the hypervisor for lpar65 which in turn could be the hypervisor of a KVM guest 'guest39', and so on.
-
-It's time to add our lpar to the tool. Our command looks like:
-
-```console
-[user@host ~]$ tess system add --name=lpar65 --hyp=cpc50 --type=LPAR --hostname=lpar65.mydomain.com --desc='System for database performance tests'
+# create the lab administrator user and grant the admin_lab role
+$ tess perm project-add --name='devops' --desc='Devops team (lab administrators)'
 Item added successfully.
+$ tess perm user-add --login=jstone@example.com --name='Jack Stone' --title='Lab administrator'
+User added successfully.
+$ tess perm role-grant --login=jstone@example.com --name='ADMIN_LAB' --project='devops'
+User role added successfully.
 
-[user@host ~]$ tess system list --name=lpar65
-
-Name            : lpar65
-Hostname        : lpar65.mydomain.com
-Hypervisor name : cpc50
-Type            : LPAR
-Model           : ZEC12_H20
-Current state   : AVAILABLE
-Owner           : user@domain.com
-Project         : Performance test
-Last modified   : 2017-02-09 09:18:57
-Modified by     : user@domain.com
-Description     : System for database performance tests
-```
-
-That's it, our first system registered in the tool. Now we need to add the appropriate resources in order to make the system usable, like network interfaces and disks.
-
-## Creating a network interface
-
-Under the `tess system` family of commands you will notice the subset of `iface-*` commands. We are going to use them to create a network interface for our system.
-
-Let's start by learning what attributes are necessary, again with the aid of the help menu:
-
-```console
-[user@host ~]$ tess system iface-add --help
-Usage: tess system iface-add [OPTIONS]
-
-  create a new network interface
-
-Options:
-  --system TEXT       target system  [required]
-  --name TEXT         interface name  [required]
-  --type TEXT         interface type (see iface-types)  [required]
-  --osname TEXT       interface name in operating system (i.e. en0)
-  --mac TEXT          mac address  [required]
-  --subnet TEXT       subnet of ip address to be assigned
-  --ip TEXT           ip address to be assigned to interface
-  --layer2 BOOLEAN    enable layer2 mode (OSA only)
-  --ccwgroup TEXT     device channels (OSA only)
-  --portno TEXT       port number (OSA only)
-  --portname TEXT     port name (OSA only)
-  --hostiface TEXT    host iface to bind (KVM only)
-  --libvirt XML_FILE  libvirt definition file (KVM only)
-  --desc TEXT         free form field describing interface
-  -h, --help          Show this message and exit.
-```
-
-We need to create an OSA card, so the parameters described as *(OSA only)* are of interest. The help also suggests to check the sub-command `iface-types` in case the user does not
-know the name of the interface type. In this case we already know from the help that it is `OSA` so it's not necessary to check it. Our command therefore is:
-
-```console
-[user@host ~]$ tess system iface-add --system=lpar65 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=aa:bb:cc:dd:ee:ff --layer2=true --ccwgroup=f500,f501,f502 --desc='default gateway interface'
+# create a developer user with access to control systems
+$ tess perm project-add --name='developers' --desc='Developers team'
 Item added successfully.
-[user@host ~]$ tess system iface-list --system=lpar65
-
-Interface name             : default osa
-Operating system name      : enccw0.0.f500
-System                     : lpar65
-Interface type             : OSA
-IP address                 : 
-MAC address                : aa:bb:cc:dd:ee:ff
-Attributes                 : {'layer2': True, 'ccwgroup': 'f500,f501,f502'}
-Associated system profiles : 
-Description                : default gateway interface
+$ tess perm user-add --login=msmith@example.com --name='Mark Smith' --title='Developer'
+User added successfully.
+$ tess perm role-grant --login=msmith@example.com --name='USER' --project='developers'
+User role added successfully.
 ```
 
-One field worth mentioning here is *Operating system name*. Under Linux the interfaces have names and this field specifies how the interface should be named in the operating
-system. In our example we followed the recommended convention and named it after the channel number.
+# Create the resources
 
-For the interface to be usable we also need an IP address. Let's learn how to do it in the next section.
+For the next sections the resources can be created either by the admin user or by the user with the `ADMIN_LAB` role. **For education purposes on the next sections we assume you
+ are logged in as the lab admin user we just created**.
 
-## Associating an IP address
+## Storage server
 
-Here we get introduced to the `tess net` family of commands. From the [resources model](resources_model.md) explanation we know that a subnet is required in order to create an IP address.
-Usually the management of the network infrastructure is done by a lab administrator and most users will just pick up an IP assigned to them but for learning purposes we are going to create one.
+A storage server is needed so that we can create volumes. For storage related commands (servers, volumes), we use the `storage` sub-family of commands.
+A server can be created with:
 
-We start by checking which subnets are available with the list command of the subset `subnet-*`:
-
-```console
-[user@host ~]$ tess net subnet-list
-Error: at least one of --zone or --name must be specified (hint: use zone-list to find available zones)
 ```
+$ tess storage server-add --name=ds8k16 --model=DS8000 --type=DASD-FCP --project='devops' --desc='Storage server 1'
 
-Oops, something went wrong. As there can be many different subnets in a given infrastructure the client asks us to be more specific so that we don't get lost in hundreds of results. Ok, we have no idea
-what is the name of the subnet we want and we don't know which network zones are available either but we can find it out with the `zone-list` sub-command:
+$ tess storage server-list --name=ds8k16
 
-```console
-[user@host ~]$ tess net zone-list
-
-Zone name     : Production zone
-Owner         : sysadmin@domain.com
-Project       : Devops
-Last modified : 2017-02-08 10:28:44
-Modified by   : sysadmin@domain.com
-Description   : Network zone for production systems
-
-
-Zone name     : Lab1
-Owner         : sysadmin@domain.com
-Project       : Devops
-Last modified : 2017-02-09 10:09:31
-Modified by   : sysadmin@domain.com
-Description   : Lab1 network infrastructure
-```
-
-Let's assume we already know that our lpar65 is located in the Lab1, so the zone `Lab1` is what we want. Back to the subnet listing:
-
-```console
-[user@host ~]$ tess net subnet-list --zone='Lab1'
-
-Subnet name     : CPC50 shared
-Network zone    : Lab1
-Network address : 192.168.0.0/24
-Gateway         : 192.168.0.1
-DNS server 1    : 192.168.0.5
-DNS server 2    : 
-VLAN            : 
-Owner           : sysadmin@domain.com
-Project         : Performance test
-Last modified   : 2017-02-09 10:04:55
-Modified by     : sysadmin@domain.com
-Description     : CPC50 LPARs network
-```
-
-Great, we found a subnet available for systems running on cpc50 which is the hypervisor of our lpar65. Now let's see what IP addresses are registered under this subnet:
-
-```console
-[user@host ~]$ tess net ip-list --subnet='CPC50 shared'
-
-IP address        : 192.168.0.15
-Part of subnet    : CPC50 shared
-Owner             : jdoe@domain.com
-Project           : CRM team
-Last modified     : 2017-02-09 11:47:38
-Modified by       : user@domain.com
-Description       : For production usage
-Associated system : zVM25
-```
-
-Ok, there is one IP registered and already assigned to a system named `zVM25`, so we can't use it. Let's then create a new address for us:
-
-```console
-[user@host ~]$ tess net ip-add --subnet='CPC50 shared' --ip=192.168.0.16 --project='Performance test' --desc='For performance measurements in system lpar65'
-Item added successfully.
-[user@host ~]$ tess net ip-list --subnet='CPC50 shared' --ip=192.168.0.16
-
-IP address        : 192.168.0.16
-Part of subnet    : CPC50 shared
-Owner             : user@domain.com
-Project           : Performance test
-Last modified     : 2017-02-09 12:07:22
-Modified by       : user@domain.com
-Description       : For performance measurements in system lpar65
-Associated system : 
-```
-
-Very good, we have our own IP now. As you can see from the output above the IP is not yet associated with any system so we have to assign it to our lpar65. IP addresses
-are not associated to a system directly but to one of its network interfaces. To create such association we use the `iface-edit` command:
-
-```console
-[user@host ~]$ tess system iface-edit --system=lpar65 --name='default osa' --ip='192.168.0.16'
-Error: --subnet and --ip must be specified together
-```
-
-Oops, another mistake. Of course a private IP like this can belong to many different network zones so we need to be specific and tell the tool which subnet we are referring to. One more try:
-
-```console
-[user@host ~]$ tess system iface-edit --system=lpar65 --name='default osa' --subnet='CPC50 shared' --ip='192.168.0.16'
-Item successfully updated.
-[user@host ~]$ tess system iface-list --system=lpar65
-
-Interface name             : default osa
-Operating system name      : enccw0.0.f500
-System                     : lpar65
-Interface type             : OSA
-IP address                 : CPC50 shared/192.168.0.16
-MAC address                : aa:bb:cc:dd:ee:ff
-Attributes                 : {'ccwgroup': 'f500,f501,f502', 'layer2': True}
-Associated system profiles : 
-Description                : default gateway interface
-```
-
-Perfect, we now have a usable network interface for our system. We are almost done, we still need at least one disk.
-
-## Creating a volume
-
-Similiar to IP addresses, volumes are usually managed by a lab administrator and most users are only told which ones to use. But again for education purposes we are going to create one.
-
-Assume we know that our disk is a DASD with id 3950 from the storage server DS8K16. Let's check if such storage server is available on the tool, now by using the `tess storage` family of commands:
-
-```console
-[user@host ~]$ tess storage server-list
-
-Name           : DS7K16
+Name           : ds8k16
 Hostname       : 
-Model          : DS8800
+Model          : DS8000
 Server type    : DASD-FCP
 Firmware level : 
-Owner          : sysadmin@domain.com
-Project        : Devops
-Last modified  : 2017-02-08 10:28:44
-Modified by    : jdoe@domain.com
-Description    : Storage for CPCs 20 and 21
+Owner          : jstone@example.com
+Project        : devops
+Last modified  : 2017-12-07 09:14:33
+Modified by    : jstone@example.com
+Description    : Storage server 1
 
-
-Name           : DS8K16
-Hostname       : 
-Model          : DS8800
-Server type    : DASD-FCP
-Firmware level : 
-Owner          : sysdmin@domain.com
-Project        : Devops
-Last modified  : 2017-02-08 10:28:45
-Modified by    : system
-Description    : Storage for CPC 50
 ```
 
-So the server is there and its name is `DS8K16`. Perhaps our disk is already registered, let's check:
+## Storage volume (disk)
 
-```console
-[user@host ~]$ tess storage vol-list --server=DS8K16 --id=3950
-No results were found.
-[user@host ~]$
+Again by using the `storage` sub-family we can register the first volumes in the tool:
+
 ```
-
-Not yet, so by using the help menu again we can learn which parameters are necessary to register a volume:
-
-```console
-[user@host ~]$ tess storage vol-add --help
-Usage: tess storage vol-add [OPTIONS]
-
-  create a new storage volume
-
-Options:
-  --server TEXT   target storage server  [required]
-  --id TEXT       volume id  [required]
-  --size TEXT     volume size (i.e. 10gb)  [required]
-  --type TEXT     volume type (see vol-types)  [required]
-  --pool TEXT     assign volume to this storage pool
-  --specs TEXT    volume specification (json)
-  --project TEXT  project owning volume
-  --desc TEXT     free form field describing volume
-  -h, --help      Show this message and exit.
-```
-
-Again we must know the name of the volume type for dasd disks and you can learn this with the `vol-types` command. We already know in advance that it is `DASD`, so our command looks like:
-
-```console
-[user@host ~]$ tess storage vol-add --server=DS8K16 --type=DASD --id=3950 --size=7gb
+$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2d --size=7gb --desc='to be used as the live-image disk on cpc3'
 Item added successfully.
-[user@host ~]$ tess storage vol-list --server=DS8K16 --id=3950
-Volume id                  : 3950
-Storage server             : DS8K16
-Volume size                : 7.0GB
+$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2e --size=7gb --desc='for use by lpar cpc3lp25'
+Item added successfully.
+$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2f --size=7gb --desc='for use by lpar cpc3lp25'
+Item added successfully.
+
+$ tess storage vol-list --server=ds8k16
+
+Volume id                  : 7e2f
+Storage server             : ds8k16
+Volume size                : 6.52 GiB
 Volume specifications      : {}
 Volume type                : DASD
 Attached to system         : 
 System related attributes  : {}
 Associated system profiles : 
 Attached to storage pool   : 
-Owner                      : user@domain.com
-Project                    : Performance test
-Last modified              : 2017-02-09 12:49:43
-Modified by                : user@domain.com
-Description                : 
+Owner                      : jstone@example.com
+Project                    : devops
+Last modified              : 2017-12-07 09:59:50
+Modified by                : jstone@example.com
+Description                : for use by lpar cpc3lp25
+
+
+Volume id                  : 7e2e
+Storage server             : ds8k16
+Volume size                : 6.52 GiB
+Volume specifications      : {}
+Volume type                : DASD
+Attached to system         : 
+System related attributes  : {}
+Associated system profiles : 
+Attached to storage pool   : 
+Owner                      : jstone@example.com
+Project                    : devops
+Last modified              : 2017-12-07 09:59:20
+Modified by                : jstone@example.com
+Description                : for use by lpar cpc3lp25
+
+
+Volume id                  : 7e2d
+Storage server             : ds8k16
+Volume size                : 6.52 GiB
+Volume specifications      : {}
+Volume type                : DASD
+Attached to system         : 
+System related attributes  : {}
+Associated system profiles : 
+Attached to storage pool   : 
+Owner                      : jstone@example.com
+Project                    : devops
+Last modified              : 2017-12-07 09:59:02
+Modified by                : jstone@example.com
+Description                : to be used as live-image disk on cpc3
 ```
 
-An empty disk is not very useful so we need to create partitions. Let's have a look at the `part-*` sub-commands, particularly the one to initialize a partition table:
+**Note:** pay special attention when specifying the size of the disk as it's not possible to validate the value provided against the actual disk.
+An incorrect value (i.e. size entered is bigger than the actual disk) will cause installations to fail.
 
-```console
-[user@host ~]$ tess storage part-init --server=DS8K16 --id=3950 --label=dasd
+The volumes will be assigned to the target systems via system activation profiles later.
+
+## Network zone
+
+For network related commands we make use of the `net` sub-family of commands. Let's create a zone for a given network segment:
+
+```
+$ tess net zone-add --name='lab1-zone-c' --desc='Lab 1 Zone C'
+Item added successfully.
+$ tess net zone-list
+
+Zone name     : lab1-zone-c
+Owner         : jstone@example.com
+Project       : devops
+Last modified : 2017-12-07 10:15:12
+Modified by   : jstone@example.com
+Description   : Lab 1 Zone C
+```
+
+The network zones exist to organize the subnets ranges so that they can coexist without conflict even if they overlap. A common scenario where this happens is when
+different systems use a private subnet range (i.e. 192.168.0.0/24). As these subnets will be in different zones the tool can manage them separately.
+
+## Subnet
+
+A subnet defines a range of IP addresses with information about routing and name servers:
+
+```
+$ tess net subnet-add --zone=lab1-zone-c --name='lab1-zone-c-s1' --address=192.168.0.0/24 --gw=192.168.0.1 --dns1=8.8.8.8 --desc='shared subnet on zone-c'
+Item added successfully.
+
+$ tess net subnet-list --zone=lab1-zone-c
+
+Subnet name     : lab1-zone-c-s1
+Network zone    : lab1-zone-c
+Network address : 192.168.0.0/24
+Gateway         : 192.168.0.1
+DNS server 1    : 8.8.8.8
+DNS server 2    : 
+VLAN            : 
+Owner           : jstone@example.com
+Project         : devops
+Last modified   : 2017-12-07 10:33:46
+Modified by     : jstone@example.com
+Description     : shared subnet on zone-c
+```
+
+## IP address
+
+Create an IP address which will be associated to a system later:
+
+```
+$ tess net ip-add --subnet='lab1-zone-c-s1' --ip=192.168.0.9 --desc='Gateway IP for lpar cpc3lp25'
+Item added successfully.
+
+$ tess net ip-list --subnet='lab1-zone-c-s1'
+
+IP address        : 192.168.0.9
+Part of subnet    : lab1-zone-c-s1
+Owner             : jstone@example.com
+Project           : devops
+Last modified     : 2017-12-07 10:50:30
+Modified by       : jstone@example.com
+Description       : Gateway IP for lpar cpc3lp25
+Associated system : 
+```
+
+## Hypervisor (CPC)
+
+Each system must have a hypervisor so that it can be managed/installed (except for CPCs, which can't be installed).
+As we want to install LPARs the hypervisor is a CPC which we create below:
+
+```
+$ tess system add --name=cpc3 --type=cpc --hostname=hmc2.domain.com --model=zec12_h43 --desc='2 books'
+Item added successfully.
+
+$ tess system list --name=cpc3
+
+Name            : cpc3
+Hostname        : hmc2.domain.com
+Hypervisor name : 
+Type            : CPC
+Model           : ZEC12_H43
+Current state   : AVAILABLE
+Owner           : jstone@example.com
+Project         : devops
+Last modified   : 2017-12-07 10:58:01
+Modified by     : jstone@example.com
+Description     : 2 books
+```
+
+**Note:** the use of the `--hostname` parameter in the case of CPC systems has a special meaning as it should point to the URL of the HMC that manages them.
+
+We still need to provide the user credentials for logging on the HMC, this is done by defining a profile:
+
+```
+$ tess system prof-add --system=cpc3 --name='default' --cpu=43 --memory=800gib --login='hmc_user:hmc_password'
+Item added successfully.
+
+$ tess system prof-list --system=cpc3
+
+Profile name                : default
+System                      : cpc3
+Required hypervisor profile : 
+Operating system            : 
+Default                     : True
+CPU(s)                      : 43
+Memory                      : 800.0 GiB
+Parameters                  : 
+Credentials                 : {'passwd': 'hmc_password', 'user': 'hmc_user'}
+Storage volumes             : 
+Network interfaces          : 
+Gateway interface           : 
+```
+
+The concept of profiles is explained in more detail later during the creation of the target system.
+
+**Note**: as of today the cpu and memory parameters for CPC systems are only for information purposes and not used.
+
+The user `hmc_user` entered above must be allowed in the HMC configuration to use the Web Services API and must have access to the management tasks
+ (activate, deactivate, load, and customize/delete activation profiles) of the LPARs to be installed.
+
+As mentioned in the [installation]() instructions, the HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
+For this reason, tessia makes use of an auxiliar live-image installed on a pre-allocated disk in order to enable this functionality.
+If you haven't deployed this live-image disk yet, refer to [Live image to enable HMC netboot](https://gitlab.com/tessia-project/tessia-baselib/blob/master/doc/users/live_image.md)
+for instructions on how to do it.
+
+The pre-allocated live-image disk must be assigned to the CPC so that the tool knows which disk to use when LPARs are to be installed.
+This is done by attaching the disk to the CPC's system profile:
+
+```
+$ tess system vol-attach --system=cpc3 --profile='default' --server=ds8k16 --vol=7e2d
+Volume attached successfully.
+
+$ tess system prof-list --system=cpc3
+
+Profile name                : default
+System                      : cpc3
+Required hypervisor profile : 
+Operating system            : 
+Default                     : True
+CPU(s)                      : 43
+Memory                      : 800.0 GiB
+Parameters                  : 
+Credentials                 : {'passwd': 'hmc_password', 'user': 'hmc_user'}
+Storage volumes             : [ds8k16/7e2d]
+Network interfaces          : 
+Gateway interface           : 
+```
+
+## Target system (LPAR)
+
+It's time to finally add the target LPAR to the tool. During creation we point to the previously created CPC `cpc3` as the LPAR's hypervisor:
+
+```
+$ tess system add --name=cpc3lp25 --hyp=cpc3 --type=LPAR --hostname=cpc3lp25.domain.com --desc='System for database performance tests'
+Item added successfully.
+
+$ tess system list --name=cpc3lp25
+
+Name            : cpc3lp25
+Hostname        : cpc3lp25.domain.com
+Hypervisor name : cpc3
+Type            : LPAR
+Model           : ZEC12_H43
+Current state   : AVAILABLE
+Owner           : jstone@example.com
+Project         : devops
+Last modified   : 2017-12-07 14:16:22
+Modified by     : jstone@example.com
+Description     : System for database performance tests
+```
+
+The parameter `--hostname` must be a DNS resolvable name or an IP address reachable by the tessia server.
+
+In order to be usable a system needs disks and network interfaces. This is done through a system activation profile on the next section.
+
+## System activation profile
+
+The profile object is the "glue" that puts together a system and its assigned resources. It is a definition of which resources and parameters
+ are to be used when booting up a system. In addition to the network interfaces and disks, one can also define the amount of memory and CPUs to use,
+ boot parameters (depending on the system type), and so on.
+
+**Note:** although the names are similar, tessia's system activation profile is not the same as the LPAR's activation profile in the HMC.
+
+We have already created a profile for the CPC earlier, the command is similar:
+
+```
+$ tess system prof-add --system=cpc3lp25 --name='default' --cpu=2 --memory=4gib --login='root:mypasswd'
+Item added successfully.
+
+# attach the volumes previously created
+$ tess system vol-attach --system=cpc3lp25 --profile=default --server=ds8k16 --vol=7e2e
+Volume attached successfully.
+$ tess system vol-attach --system=cpc3lp25 --profile=default --server=ds8k16 --vol=7e2f
+Volume attached successfully.
+
+
+tess system prof-list --system=cpc3lp25
+
+Profile name                : default
+System                      : cpc3lp25
+Required hypervisor profile : 
+Operating system            : 
+Default                     : True
+CPU(s)                      : 2
+Memory                      : 4.0 GiB
+Parameters                  : 
+Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
+Storage volumes             : [ds8k16/7e2e], [ds8k16/7e2f]
+Network interfaces          : 
+Gateway interface           : 
+```
+
+The `Credentials` field is used as the root password when a new operating system is installed and when connecting to a running system.
+
+We can see the newly attached disks at the `Storage volumes` field. We still need to define a partition table for them before they are installable.
+
+# Define disk partitioning
+
+Initialize the partition tables and define a simple setup with one root partition and one swap:
+
+```
+# root disk
+$ tess storage part-init --server=ds8k16 --id=7e2e --label=dasd
 Partition table successfully initialized.
-```
-
-Note that we used `--label=dasd` as we are dealing with a DASD disk but it could be a different type for other volume types. Remember to check the help menu with `--help` to learn the possible
-options.
-
-For the installation we want to perform one root partition and one swap should be enough:
-
-```console
-[user@host ~]$ tess storage part-add --server=DS8K16 --id=3950 --fs=ext4 --size=6gb --mp=/
+$ tess storage part-add --server=ds8k16 --id=7e2e --fs=ext4 --size=7gb --mp=/
 Partition successfully added.
-[user@host ~]$ tess storage part-add --server=DS8K16 --id=3950 --fs=swap --size=1gb
-Partition successfully added.
-[user@host ~]$ tess storage part-list --server=DS8K16 --id=3950
+$ tess storage part-list --server=ds8k16 --id=7e2e
 
 Partition table type: dasd
 
- number |  size |   type  | filesystem | mount point | mount options
---------+-------+---------+------------+-------------+---------------
- 1      | 6.0GB | primary | ext4       | /           |               
- 2      | 1.0GB | primary | swap       |             |               
+ number |   size  |   type  | filesystem | mount point | mount options 
+--------+---------+---------+------------+-------------+---------------
+ 1      | 6.52 GiB | primary | ext4       | /           |               
+
+
+# swap disk
+$ tess storage part-init --server=ds8k16 --id=7e2f --label=dasd
+Partition table successfully initialized.
+$ tess storage part-add --server=ds8k16 --id=7e2f --fs=swap --size=7gb
+Partition successfully added.
+$ tess storage part-list --server=ds8k16 --id=7e2f
+
+Partition table type: dasd
+
+ number |   size  |   type  | filesystem | mount point | mount options 
+--------+---------+---------+------------+-------------+---------------
+ 1      | 6.52 GiB | primary | swap       |             |               
 ```
 
-Looks good, so we already have a disk and a network interface. Time to tell the tool how we want the system to be activated by creating an activation profile.
+Configuration of disks is done and they are now ready for use.
 
-## Defining an activation profile
+## Network interface
 
-An activation profile is a definition of which resources and parameters should be used when booting up a system. In addition to the network interfaces and disks we can also define the
-amount of memory and CPUs to use, boot parameters (depending on the hypervisor type), and so on.
+Create a system network interface and associate the IP address previsouly created:
 
-In order to have a usable system for installation we are going to create a profile and attach the previously created network interface and volume to it. That leads us to the `prof-*` family of sub-commands.
-We start by creating the profile:
-
-```console
-[user@host ~]$ tess system prof-add --system=lpar65 --name='profile1' --cpu=2 --memory=2048mb --login='root:mypasswd'
+```
+$ tess system iface-add --system=cpc3lp25 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=02:20:10:10:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='lab1-zone-c-s1' --ip=192.168.0.9
 Item added successfully.
-[user@host ~]$ tess system prof-list --system=lpar65 
 
-Profile name                : profile1
-System                      : lpar65
-Required hypervisor profile : 
-Operating system            : 
-Default                     : True
-CPU(s)                      : 2
-Memory                      : 2.0GB
-Parameters                  : 
-Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
-Storage volumes             : 
-Network interfaces          : 
-```
-
-Most parameters are self-explanatory and the *Credentials* field is used when a new operating system is installed. We will see this working soon in the next step, but before we move to
-the installation we still need to attach our network interface:
-
-```console
-[user@host ~]$ tess system iface-attach --system=lpar65 --profile='profile1' --iface='default osa'
+# assign the network interface to the system profile
+$ tess system iface-attach --system=cpc3lp25 --profile=default --iface='default osa'
 Network interface attached successfully.
-[user@host ~]$ tess system prof-list --system=lpar65
 
-Profile name                : profile1
-System                      : lpar65
-Required hypervisor profile : 
-Operating system            : 
-Default                     : True
-CPU(s)                      : 2
-Memory                      : 2.0GB
-Parameters                  : 
-Credentials                 : {'passwd': 'mypasswd', 'user': 'root'}
-Storage volumes             : 
-Network interfaces          : [default osa/192.168.0.16]
+$ tess system iface-list --system=cpc3lp25
+
+Interface name             : default osa
+Operating system name      : enccw0.0.f500
+System                     : cpc3lp25
+Interface type             : OSA
+IP address                 : lab1-zone-c-s1/192.168.0.9
+MAC address                : 02:20:10:10:76:00
+Attributes                 : {'layer2': True, 'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'}
+Associated system profiles : [default]
+Description                : gateway interface
 ```
 
-We can see our interface and the IP we assigned to it in the *Network interfaces*  list. We are almost done, let's not forget to attach our volume as well:
+**Note:** The field `Operating system name` specifies under Linux how the interface should be named on the operating system.
+In the example above we followed the recommended convention and named it after the channel number.
 
-```console
-[user@host ~]$ tess system vol-attach --system=lpar65 --profile=profile1 --server=DS8K16 --vol=3950
-Volume attached successfully.
-[user@host ~]$ tess system prof-list --system=lpar65 
+The system configuration is done and it is now ready for installation.
 
-Profile name                : profile1
-System                      : lpar65
-Required hypervisor profile : 
-Operating system            : 
-Default                     : True
-CPU(s)                      : 2
-Memory                      : 1.0GB
-Parameters                  : 
-Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
-Storage volumes             : [DS8K16/3950]
-Network interfaces          : [default osa/192.168.0.16]
+## Distro package repository
+
+At least one package repository must be available for the installation to happen. The example below creates a repository entry pointing to the official Ubuntu URL:
+
+```
+$ tess repo add --name=ubuntu-xenial --url=http://ports.ubuntu.com/ubuntu-ports --kernel='/dists/xenial/main/installer-s390x/current/images/generic/kernel.ubuntu' --initrd='/dists/xenial/main/installer-s390x/current/images/generic/initrd.ubuntu' --os=ubuntu16.04.1
+Item added successfully.
+
+$ tess repo list --name=ubuntu-xenial
+
+Repository name : ubuntu-xenial
+Installable OS  : ubuntu16.04.1
+Network URL     : http://ports.ubuntu.com/ubuntu-ports
+Kernel path     : /dists/xenial/main/installer-s390x/current/images/generic/kernel.ubuntu
+Initrd path     : /dists/xenial/main/installer-s390x/current/images/generic/initrd.ubuntu
+Owner           : jstone@example.com
+Project         : devops
+Last modified   : 2017-12-08 10:11:01
+Modified by     : jstone@example.com
+Description     : 
 ```
 
-We can see the newly attached disk in the *Storage volumes* field. We are ready to do our first installation!
+# Install the system
 
-## Installing an operating system with an autotemplate
+We are going to install the LPAR via the `autoinstall` method, which works as follows:
 
-Tessia offers a library of templates powered by the [jinja2](http://jinja.pocoo.org) engine for operating system installations (i.e. kickstart, autoinst, preseed). During the installation
-process these templates are fulfilled with the system information from the database and passed to the installer (i.e. Anaconda, AutoYast). Therefore in order to install our system we need to choose one template and for that we can use the `tess autotemplate` family of commands:
+- the user starts the installation process while specifying a [jinja2](http://jinja.pocoo.org) template from the library and a Linux distro package repository;
+- the tool fills the template's variables with the suitable information from the database resulting in a valid distro installer autofile (i.e. kickstart);
+- the distro installer is downloaded from the specified package repository and executed with the created autofile on the target system;
+- the distro installer does its work and performs the installation as usual;
+- once the installation has finished the tool reboots the system and validate that the installed system conforms with the expected values from the database 
+(network interfaces, IP addresses, disks and partitions sizes, etc.)
 
-```console
-[user@host ~]$  tess autotemplate list
+tessia comes with a set of pre-defined templates for each supported Linux distro and users can also create their own templates (see `tess autotemplate --help`).
 
-Template name : SLES12.1
-Supported OS  : sles12.1
-Owner         : system
-Project       : System project
-Last modified : 2017-02-08 10:28:43
-Modified by   : system
-Description   : Template for SLES12.1
+In this example we use the pre-defined auto template for Ubuntu 16.04 to perform the installation:
 
-
-Template name : RHEL7.2
-Supported OS  : rhel7.2
-Owner         : system
-Project       : System project
-Last modified : 2017-02-08 10:28:43
-Modified by   : system
-Description   : Template for RHEL7.2
 ```
-
-We have to choose from one of the operating systems versions shown above. If you are curious about the content of a template you can print it with `tess autotemplate print` and
-if you are even more interested you can use it as a reference to create your own template and add it to the library with `tess autotemplate add`.
-
-Now that we know the available versions, let's perform a RHEL installation:
-
-```console
-[user@host ~]$ tess system autoinstall --template=RHEL7.2 --system=lpar65 --profile=profile1
+$ tess system autoinstall --template=UBUNTU16.04.1 --system=cpc3lp25
 
 Request #7 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%
 Request accepted; job id is #4
 Waiting for installation output (Ctrl+C to stop waiting)
-2017-02-10 11:25:42,774|INFO|sm_base.py(334)|new state: init
-2017-02-10 11:25:42,776|INFO|sm_base.py(337)|new state: collect_info
-2017-02-10 11:25:42,834|INFO|sm_base.py(340)|new state: create_autofile
-2017-02-10 11:25:42,834|INFO|sm_base.py(279)|generating autofile
-2017-02-10 11:25:42,853|INFO|sm_base.py(343)|new state: target_boot
-2017-02-10 11:28:20,293|INFO|sm_base.py(346)|new state: wait_install
-2017-02-10 11:28:47,134|WARNING|sm_base.py(218)|connection not available yet, retrying in 5 seconds.
-2017-02-10 11:28:52,457|INFO|sm_anaconda.py(146)|10:29:13,210 INFO anaconda: /usr/sbin/anaconda 21.48.22.56-1
-10:29:13,359 INFO anaconda: created new libuser.conf at /tmp/libuser.8xVrzl with instPath="/mnt/sysimage"
-10:29:13,360 INFO anaconda: 2097152 kB (2048 MB) are available
-10:29:13,372 INFO anaconda: check_memory(): total:2097152, needed:1070, graphical:1160
+2017-12-08 10:56:56 | INFO | new state: init
+2017-12-08 10:56:56 | INFO | new state: collect_info
+2017-12-08 10:56:56 | INFO | new state: create_autofile
+2017-12-08 10:56:56 | INFO | generating autofile
+2017-12-08 10:56:56 | INFO | new state: target_boot
 
-(lots of output ...)
+(lots of output from installer ...)
 
-10:29:14,513 INFO anaconda.stdout: The VNC server is now running.
-10:29:14,513 WARN anaconda.stdout: 
-
-(lots of output ...)
-
-2017-02-10 11:30:52,640|INFO|sm_base.py(349)|new state: target_reboot
-2017-02-10 11:30:52,640|INFO|plat_lpar.py(102)|Rebooting the system now!
-2017-02-10 11:30:52,991|INFO|sm_base.py(352)|new state: check_installation
-2017-02-10 11:31:20,734|WARNING|sm_base.py(218)|connection not available yet, retrying in 5 seconds.
-2017-02-10 11:31:25,982|INFO|sm_base.py(355)|new state: post_install
-2017-02-10 11:31:25,992|INFO|sm_base.py(358)|Installation finished successfully
-[user@host ~]$
+2017-12-08 11:02:06 | INFO | new state: target_reboot
+2017-12-08 11:02:06 | INFO | Rebooting the system now!
+2017-12-08 11:02:07 | WARNING | Could not determine charmap
+2017-12-08 11:02:07 | WARNING | Data in this ssh channel is encoded and decoded in UTF-8, but the shell locale seems to be using a different encoding.
+2017-12-08 11:02:08 | INFO | new state: check_installation
+2017-12-08 11:02:08 | INFO | Waiting for connection to be available (600 secs)
+2017-12-08 11:02:40 | INFO | Verifying if installed system match expected parameters
+2017-12-08 11:02:48 | WARNING | Max MiB size expected for disk /dev/disk/by-path/ccw-0.0.7e2e was 6875, but actual is 7043. You might want to adjust the volume size in the db entry.
+2017-12-08 11:02:48 | WARNING | Max MiB size expected for partnum 1 disk /dev/disk/by-path/ccw-0.0.7e2e was 6775, but actual is 7043. Certain Linux installers maximize disk usage automatically therefore this difference is ignored.
+2017-12-08 11:02:48 | WARNING | Max MiB size expected for disk /dev/disk/by-path/ccw-0.0.7e2f was 6875, but actual is 7043. You might want to adjust the volume size in the db entry.
+2017-12-08 11:02:48 | INFO | new state: post_install
+2017-12-08 11:02:48 | INFO | Installation finished successfully
 ```
 
-We ommitted certain parts of the anaconda installer output to make it short. Let's take a look at the resulting installation. Remember, we use the credentials from
-the activation profile to connect to the installed system:
+The password to access the installed system is the one specified in the system profile previously created.
 
-```console
-[user@host ~]$ ssh root@lpar65.mydomain.com
-Failed to add the host to the list of known hosts (/home/user/.ssh/known_hosts).
-root@lpar65.mydomain.com's password: 
-Last login: Fri Feb 10 05:42:58 2017 from laptop.mydomain.com
-[root@lpar65 ~]# cat /etc/os-release
-NAME="Red Hat Enterprise Linux Server"
-VERSION="7.2 (Maipo)"
-ID="rhel"
-ID_LIKE="fedora"
-VERSION_ID="7.2"
-PRETTY_NAME="Red Hat Enterprise Linux Server 7.2 (Maipo)"
-ANSI_COLOR="0;31"
-CPE_NAME="cpe:/o:redhat:enterprise_linux:7.2:GA:server"
-HOME_URL="https://www.redhat.com/"
-BUG_REPORT_URL="https://bugzilla.redhat.com/"
+Before you start having fun with your installations, one more thing: you probably noticed that when you executed the `autoinstall` commmand the client reported that a request was submitted and a job started. Job scheduling is an important concept in tessia, so we talk about it in the next section, just don't leave yet :)
 
-REDHAT_BUGZILLA_PRODUCT="Red Hat Enterprise Linux 7"
-REDHAT_BUGZILLA_PRODUCT_VERSION=7.2
-REDHAT_SUPPORT_PRODUCT="Red Hat Enterprise Linux"
-REDHAT_SUPPORT_PRODUCT_VERSION="7.2"
-[root@lpar65 ~]# parted /dev/dasda print
-Model: IBM S390 DASD drive (dasd)
-Disk /dev/dasda: 7385MB
-Sector size (logical/physical): 512B/4096B
-Partition Table: dasd
-Disk Flags: 
+# Checking jobs on the scheduler
 
-Number  Start   End     Size    File system     Flags
- 1      98.3kB  6292MB  6291MB  ext4
- 2      6292MB  7340MB  1049MB  linux-swap(v1)
+In tessia every long running action is treated as a job and as such must be scheduled for proper allocation and blocking of the resources involved. That means when you issue the command
+to start a system installation the client submits a request to the server to schedule a job. Usually the system in question belongs to the user and will most
+likely be free for use which results in immediate execution. But that might not be always the case. If you try to perform a system installation and the job does not get executed immediately
+then possibly the system is currenly blocked by a running action/job (i.e. another installation or task execution).
+
+So how can one tell what is going on? That is the purpose of the `job` sub-family of commands. There you will find the commands for dealing with job scheduling, such as verifying the
+ state of jobs and requests.
+
+An example of how to verify the jobs queue:
+
 ```
-
-As expected, disk partition corresponds to what we have configured and the operating system version too.
-
-Before you start having fun with your installations, one more thing: you probably noticed that when we executed the `autoinstall` commmand the client reported that a request was submitted and a job started. Job scheduling is an important concept in tessia, so we talk about it in the next section, just don't leave yet :)
-
-## Checking jobs on the scheduler
-
-In tessia every long running action is treated as a job and as such must be scheduled for proper allocation and blocking of the resources involved. That means when we issue the command
-to start a system installation what the client actually does is to submit a request to the server to schedule a job. Usually the system in question belongs to the user and will most
-likely be free for use which means immediate execution, but that might not be always the case. So if you try to perform a system installation and the job does not get executed immediately
-then possibly the system is currenly blocked by a running action/job (i.e. task execution or another installation).
-
-So how can one tell what is going on? That is the purpose of the `tess job` family of commands. There you find the commands for dealing with job scheduling, such as verifying the state of
-job and requests.
-
-An example of how to verify which jobs are currently running:
-
-```console
-[user@host ~]$ tess job list
+$ tess job list
 
  job_id |   job_type  |     submit_date     |      start_date     |       end_date      |    requester    |   state   |        description           
 --------+-------------+---------------------+---------------------+---------------------+---------------------+-----------+------------------------------
@@ -631,15 +587,15 @@ An example of how to verify which jobs are currently running:
  5      | autoinstall | 2017-02-10 10:27:21 | 2017-02-10 10:27:21 | 2017-02-10 10:31:25 | user@domain.com | COMPLETED | Auto installation of OS rhel7.2 
 ```
 
-Here we can see many installation jobs canceled and the last one successfully completed.
+We can see many installation jobs canceled and the last one successfully completed.
 
-The scheduler is a daemon process which constantly consumes the queue of requests to update the job queue accordingly. A request is a short lived entity that exists only during the
+The scheduler is a daemon process that constantly consumes the request queue and updates the job queue accordingly. A request is a short lived entity that exists only during the
 interval between each time the scheduler processes the request queue.
 
 It is possible to take a look at the request queue if you suspect something was not yet processed:
 
-```console
-[user@host ~]$ tess job req-list
+```
+$ tess job req-list
 
  request_id | action_type |   job_type  |     submit_date     |    requester    |   state   
 ------------+-------------+-------------+---------------------+---------------------+--------
@@ -654,11 +610,11 @@ It is possible to take a look at the request queue if you suspect something was 
  9          | SUBMIT      | autoinstall | 2017-02-10 10:27:21 | user@domain.com | COMPLETED 
 ```
 
-The queue shows that all existing requests were already processed (state COMPLETED) and a series of requests to submit new jobs (action_type SUBMIT) and cancellations
-(action_type CANCEL) occurred. Let's see which job the request 2 wanted to cancel:
+The queue shows that all existing requests were already processed (state `COMPLETED`) and a series of requests to submit new jobs (action_type `SUBMIT`) and cancellations
+(action_type `CANCEL`) occurred. Let's see which job the request 2 wanted to cancel:
 
-```console
-[user@host ~]$ tess job req-list --id=2
+```
+$ tess job req-list --id=2
 
 Request ID           : 2
 Action type          : CANCEL
@@ -675,7 +631,7 @@ Request result       : OK
 Machine parameters   : 
 ```
 
-The field *Target job ID* says 1, so this request was to stop job 1 which indeed showed up as canceled in the job list.
+The field `Target job ID` says 1, so this request was to stop job 1 which indeed showed up as canceled in the job list.
 
-By now we have covered the essential parts of the client to get you started. For details on specific commands you can always check the help menu with `--help` and the
-[users section](../index.md#users) for detailed information on specific topics.
+By now we have covered the essential parts of the client for you to get started. For details on specific commands you can always check the client help with `--help`
+ as well as refer to the [users section](../index.md#users) documentation for detailed information on specific topics.

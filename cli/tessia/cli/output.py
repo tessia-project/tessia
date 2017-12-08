@@ -204,7 +204,6 @@ def print_hor_table(headers, rows):
                 spaces = ' ' * (trunc_width+3)
                 output += '\n{}{}'.format(spaces, lines[i].strip())
         output += '\n'
-    output += '\n'
 
     click.echo(output)
 # print_hor_table()

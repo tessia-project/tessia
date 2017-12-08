@@ -25,29 +25,12 @@ For this task you should have:
 
 We assume that you are already familiar with the [Resources model](resources_model.md).
 
-## Checking the client's configuration
-
-To be sure that you are authenticated check the current configuration (or create an authentication token) with the `tessia conf show` command:
-
-
-```console
-$ tessia conf show
-
-Authentication key in use : e14a813ca971432981e3d6850732aa6b
-Key owner login           : user@domain.com
-Client API version        : 20160916
-Server address            : http://localhost:5000
-Server API version        : 20160916
-```
-
-For more details see [here](getting_started.md#first-steps).
-
 ## Creating a new KVM system
 
-At first look at the supported system types:
+First look at the supported system types:
 
-```console
-$ tessia system types
+```
+$ tess system types
 
 Type name    : KVM
 Architecture : s390x
@@ -69,12 +52,12 @@ Architecture : s390x
 Description  : System z CPC
 ```
 
-We are going to create a system for a new KVM guest on the LPAR 'lpar68'.
+We are going to create a system for a new KVM guest on the LPAR `lpar68`.
 
-Let's check if our host system 'lpar68' is already present in the tool:
+Let's check if our hypervisor system `lpar68` is already present in the tool:
 
-```console
-$ tessia system list --type=LPAR
+```
+$ tess system list --type=LPAR
 
 Name            : lpar68
 Hostname        : lpar68.mydomain.com
@@ -89,23 +72,23 @@ Modified by     : user@domain.com
 Description     : System for database performance tests
 ```
 
-Yes, it is present. If it isn't you should create it at first. How to do this and also for more details see [here](getting_started.md#creating-your-first-system).
+Yes, it is present. If it isn't you should create it first. How to do this and also for more details see [here](getting_started.md#target-system-lpar).
 
 And what about KVM systems?
 
-```console
-$ tessia system list --type=KVM
+```
+$ tess system list --type=KVM
 No results were found.
 $
 ```
 
-Let's create our first KVM system 'kvm25' with IP address '192.168.0.25' provided for it. We will use the command `system add`.
+Let's create our first KVM system `kvm25` with IP address `192.168.0.25` provided for it. We will use the command `system add`.
 The necessary options for the command can be seen in the help menu with `--help`.
 
-```console
-$ tessia system add --name=kvm25 --type=KVM --hostname=192.168.0.25 --desc='KVM for Perf test'
+```
+$ tess system add --name=kvm25 --type=KVM --hostname=192.168.0.25 --desc='KVM for Perf test'
 Item added successfully.
-$ tessia system list --type=KVM
+$ tess system list --type=KVM
 
 Name            : kvm25
 Hostname        : 192.168.0.25
@@ -120,12 +103,12 @@ Modified by     : user@domain.com
 Description     : KVM for Perf test
 ```
 
-The field 'Hypervisor name' is empty. It makes sense to associate the created system with a hypervisor. The host system 'lpar68' will be a hypervisor for a KVM guest:
+The field `Hypervisor name` is empty. It makes sense to associate the created system with a hypervisor. The host system `lpar68` will be a hypervisor for a KVM guest:
 
-```console
-$ tessia system edit --name=kvm25 --hyp=lpar68
+```
+$ tess system edit --name=kvm25 --hyp=lpar68
 Item successfully updated.
-$ tessia system list --type=KVM
+$ tess system list --type=KVM
 
 Name            : kvm25
 Hostname        : 192.168.0.25
@@ -140,7 +123,7 @@ Modified by     : user@domain.com
 Description     : KVM for Perf test
 ```
 
-The new KVM system 'kvm25' is created.
+The new KVM system `kvm25` is created.
 
 ## Creating a volume
 
@@ -154,10 +137,10 @@ ADAPTER_DEVNO: `1900`, `1940`;
 
 WWPN: `0x50050555050555e3`, `0x50050555051555e3`.
 
-Let's check at first if such storage server is available in the tool:
+Let's check first if such storage server is available in the tool:
 
-```console
-$ tessia storage server-list
+```
+$ tess storage server-list
 
 Name           : DS8K22
 Hostname       :
@@ -173,8 +156,8 @@ Description    : Storage for cpc50
 
 The server is there. Let's see if perhaps our disk is already registered:
 
-```console
-$ tessia storage vol-list --server=DS8K22 --id=1020304500000000
+```
+$ tess storage vol-list --server=DS8K22 --id=1020304500000000
 No results were found.
 $
 ```
@@ -184,10 +167,10 @@ The disk is not registered. So, let's do it.
 By using the help menu for the `storage vol-add` command you can learn which options are necessary to register a volume.
 The name of the volume-type for a disk can be learnt with the `vol-types` command.
 
-```console
-$ tessia storage vol-add --server=DS8K22 --type=FCP --id=1020304500000000 --size=20gb
+```
+$ tess storage vol-add --server=DS8K22 --type=FCP --id=1020304500000000 --size=20gb
 Item added successfully.
-$ tessia storage vol-list --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --server=DS8K22 --id=1020304500000000
 
 Volume id                  : 1020304500000000
 Storage server             : DS8K22
@@ -207,9 +190,9 @@ Description                :
 
 The disk is registered but it is not enough for FCP disk. To know which attributes should be added use help menu for the command `storage vol-edit`:
 
-```console
-$ tessia storage vol-edit --help
-Usage: tessia storage vol-edit [OPTIONS]
+```
+$ tess storage vol-edit --help
+Usage: tess storage vol-edit [OPTIONS]
 
   change properties of an existing storage volume
 
@@ -233,10 +216,10 @@ At least one path should be defined for FCP disk with `--addpath ADAPTER_DEVNO,W
 
 In our case we will use multipathing enabled, and we will define two FCP paths:
 
-```console
-$ tessia storage vol-edit --server=DS8K22 --id=1020304500000000 --addpath 1900,0x50050555050555e3 --addpath 1940,0x50050555051555e3 --mpath=true --wwid=33005566777fff5f30000000000008888
+```
+$ tess storage vol-edit --server=DS8K22 --id=1020304500000000 --addpath 1900,0x50050555050555e3 --addpath 1940,0x50050555051555e3 --mpath=true --wwid=33005566777fff5f30000000000008888
 Item successfully updated.
-$ tessia storage vol-list --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --server=DS8K22 --id=1020304500000000
 
 Volume id                  : 1020304500000000
 Storage server             : DS8K22
@@ -256,19 +239,19 @@ Description                :
 
 The disk is ready but it is empty. We also need to initialize a partition table and to create partitions:
 
-```console
-$ tessia storage part-init --server=DS8K22 --id=1020304500000000 --label=msdos
-Partition table successfully initialized.   
+```
+$ tess storage part-init --server=DS8K22 --id=1020304500000000 --label=msdos
+Partition table successfully initialized.
 ```
 
 To perform the installation it would be enough to have two partitions - root and swap:
 
-```console
-$ tessia storage part-add --server=DS8K22 --id=1020304500000000 --fs=ext4 --size=15gb --mp=/
+```
+$ tess storage part-add --server=DS8K22 --id=1020304500000000 --fs=ext4 --size=15gb --mp=/
 Partition successfully added.
-$ tessia storage part-add --server=DS8K22 --id=1020304500000000 --fs=swap --size=5gb
+$ tess storage part-add --server=DS8K22 --id=1020304500000000 --fs=swap --size=5gb
 Partition successfully added.
-$ tessia storage part-list --server=DS8K22 --id=1020304500000000
+$ tess storage part-list --server=DS8K22 --id=1020304500000000
 
 Partition table type: msdos
 
@@ -285,12 +268,12 @@ The defined changes will only be applied to the disk at installation time.
 
 ## Creating a network interface
 
-We were provided with IP address '192.168.0.25' for our 'kvm25' system. Let's check if this address is registered in any subnet.
+We were provided with IP address `192.168.0.25` for our `kvm25` system. Let's check if this address is registered in any subnet.
 
-At first let's check available network zones and subnets with `net zone-list` and `net subnet-list` commands:
+First let's check available network zones and subnets with `net zone-list` and `net subnet-list` commands:
 
-```console
-$ tessia net zone-list
+```
+$ tess net zone-list
 
 Zone name     : Production zone
 Owner         : sysadmin@domain.com
@@ -308,10 +291,10 @@ Modified by   : sysadmin@domain.com
 Description   : Lab1 network infrastructure
 ```
 
-Assume we already know that our lpar68 is located in the 'Lab1' zone, so check subnets in it:
+Assume we already know that our lpar68 is located in the `Lab1` zone, so check subnets in it:
 
-```console
-$ tessia net subnet-list --zone='Lab1'
+```
+$ tess net subnet-list --zone='Lab1'
 
 Subnet name     : CPC50 shared
 Network zone    : Lab1
@@ -327,10 +310,10 @@ Modified by     : sysadmin@domain.com
 Description     : CPC50 LPARs network
 ```
 
-It looks like the subnet 'CPC50 shared' is suitable for our IP address. Let's check if IP address '192.168.0.25' is registered in the subnet:
+It looks like the subnet `CPC50 shared` is suitable for our IP address. Let's check if IP address `192.168.0.25` is registered in the subnet:
 
-```console
-$ tessia net ip-list --subnet='CPC50 shared' --ip=192.168.0.25
+```
+$ tess net ip-list --subnet='CPC50 shared' --ip=192.168.0.25
 
 IP address        : 192.168.0.25
 Part of subnet    : CPC50 shared
@@ -342,23 +325,23 @@ Description       : For performance measurements in system kvm25
 Associated system :
 ```
 
-We see our IP address in the 'CPC50 shared' subnet.
+We see our IP address in the `CPC50 shared` subnet.
 
 If this address wasn't found in the subnet ip list, it could be registered with the following command:
 
-```console
-tessia net ip-add --subnet='CPC50 shared' --ip=192.168.0.25 --project='Performance test' --desc='For performance measurements in system kvm25'
+```
+tess net ip-add --subnet='CPC50 shared' --ip=192.168.0.25 --project='Performance test' --desc='For performance measurements in system kvm25'
 ```
 
-But at first you should ask your **lab administrator**, who usually manages the network infrastructure.
+But first you should ask your **lab administrator**, who usually manages the network infrastructure.
 
 So, the IP address is registered, but it is not associated with the system yet.
 
 Now it's time to create a network interface with the command `system iface-add`. You can see the required options for this command in the help menu:
 
-```console
-$ tessia system iface-add --help
-Usage: tessia system iface-add [OPTIONS]
+```
+$ tess system iface-add --help
+Usage: tess system iface-add [OPTIONS]
 
   create a new network interface
 
@@ -381,13 +364,13 @@ Options:
   -h, --help                  Show this message and exit.
 ```
 
-To choose a correct id for the interface type you may use the `system iface-types` command. We know already that we will use KVM macvtap interface type with the name 'MACVTAP'.
+To choose a correct id for the interface type you may use the `system iface-types` command. We know already that we will use KVM macvtap interface type with the name `MACVTAP`.
 The provided IP address may be assigned to the interface at once. Don't forget to specify a subnet also, otherwise you will get an error. Let's create the interface:
 
-```console
-$ tessia system iface-add --system=kvm25 --name='KVM macvtap' --type=MACVTAP --desc='KVM macvtap interface' --osname=eth0 --hostiface='enccw0.0.1260' --mac=aa:bb:cc:dd:ee:11 --subnet='CPC50 shared' --ip=192.168.0.25 --system=kvm25
+```
+$ tess system iface-add --system=kvm25 --name='KVM macvtap' --type=MACVTAP --desc='KVM macvtap interface' --osname=eth0 --hostiface='enccw0.0.1260' --mac=aa:bb:cc:dd:ee:11 --subnet='CPC50 shared' --ip=192.168.0.25 --system=kvm25
 Item added successfully.
-$ tessia system iface-list --system=kvm25
+$ tess system iface-list --system=kvm25
 
 Interface name             : KVM macvtap
 Operating system name      : eth0
@@ -400,10 +383,10 @@ Associated system profiles :
 Description                : KVM macvtap interface
 ```
 
-We can see that the interface is associated with the IP address. And we can also see that the IP address is already associated with the 'kvm25' system:
+We can see that the interface is associated with the IP address. And we can also see that the IP address is already associated with the `kvm25` system:
 
-```console
-$ tessia net ip-list --subnet='CPC50 shared' --ip=192.168.0.25
+```
+$ tess net ip-list --subnet='CPC50 shared' --ip=192.168.0.25
 
 IP address        : 192.168.0.25
 Part of subnet    : CPC50 shared
@@ -419,18 +402,18 @@ It's all right now.
 
 ## Defining an activation profile
 
-There are several steps left that we should complete before installing a KVM guest:
+There are some steps left that we should complete before installing a KVM guest:
 
 - define an activation profile for the 'kvm25' system (`system prof-add`);
 - attach our network interface to the 'kvm25' system (`system iface-attach`);
 - attach the FCP disk to the 'kvm25' system (`system vol-attach`).
 
-More details and explanations about an activation profile you can find [here](getting_started.md#defining-an-activation-profile).
+More details and explanations about an activation profile you can find [here](getting_started.md#system-activation-profile).
 Let's first look at the options of the command `system prof-add`:
 
-```console
-$ tessia system prof-add --help
-Usage: tessia system prof-add [OPTIONS]
+```
+$ tess system prof-add --help
+Usage: tess system prof-add [OPTIONS]
 
   create a new system activation profile
 
@@ -446,11 +429,11 @@ Options:
   -h, --help           Show this message and exit.
 ```
 
-As for a hypervisor profile, our LPAR 'lpar68' is used as a hypervisor for the 'kvm25' system.
-Let's see which profiles are available for 'lpar68':
+As for a hypervisor profile, our LPAR `lpar68` is used as a hypervisor for the `kvm25` system.
+Let's see which profiles are available for `lpar68`:
 
-```console
-$ tessia system prof-list --system=s83lp68
+```
+$ tess system prof-list --system=s83lp68
 
 Profile name                : profile1
 System                      : lpar68
@@ -466,12 +449,12 @@ Network interfaces          : [default osa/192.168.0.20]
 Gateway interface           :
 ```
 
-So, 'profile1' may be used as a hypervisor profile required for the KVM system profile. Let's define the activation profile for 'kvm25' with the name 'profile2':
+So, `profile1` may be used as a hypervisor profile required for the KVM system profile. Let's define the activation profile for 'kvm25' with the name 'profile2':
 
-```console
-$ tessia system prof-add --system=kvm25 --name='profile2' --cpu=2 --memory=1024mb --login='root:mypasswd' --hyp=profile1
+```
+$ tess system prof-add --system=kvm25 --name='profile2' --cpu=2 --memory=1024mb --login='root:mypasswd' --hyp=profile1
 Item added successfully.
-$ tessia system prof-list --system=kvm25
+$ tess system prof-list --system=kvm25
 
 Profile name                : profile2
 System                      : kvm25
@@ -487,12 +470,12 @@ Network interfaces          :
 Gateway interface           :
 ```
 
-Now let's attach our network interface to the 'kvm25' system:
+Now let's attach our network interface to the `kvm25` system:
 
-```console
-$ tessia system iface-attach --system=kvm25 --profile='profile2' --iface='KVM macvtap'
+```
+$ tess system iface-attach --system=kvm25 --profile='profile2' --iface='KVM macvtap'
 Network interface attached successfully.
-$ tessia system iface-list --system=kvm25
+$ tess system iface-list --system=kvm25
 
 Interface name             : KVM macvtap
 Operating system name      : eth0
@@ -507,10 +490,10 @@ Description                : KVM macvtap interface
 
 Let's also attach the FCP disk to the 'kvm25' system:
 
-```console
-$ tessia system vol-attach --system=kvm25 --profile=profile2 --server=DS8K22 --vol=1020304500000000
+```
+$ tess system vol-attach --system=kvm25 --profile=profile2 --server=DS8K22 --vol=1020304500000000
 Volume attached successfully.
-$ tessia storage vol-list --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --server=DS8K22 --id=1020304500000000
 
 Volume id                  : 1020304500000000
 Storage server             : DS8K22
@@ -530,8 +513,8 @@ Description                :
 
 Check the profile for the 'kvm25' system now:
 
-```console
-$ tessia system prof-list --system=kvm25
+```
+$ tess system prof-list --system=kvm25
 
 Profile name                : profile2
 System                      : kvm25
@@ -553,8 +536,8 @@ We can see that the network interface and the volume are associated with the sys
 
 Choose a template for an operating system installation from the autotemplate list:
 
-```console
-$  tessia autotemplate list
+```
+$ tess autotemplate list
 
 Template name : SLES12.1
 Supported OS  : sles12.1
@@ -574,12 +557,12 @@ Modified by   : system
 Description   : Template for RHEL7.2
 ```
 
-For more details about templates and about installing see [here](getting_started.md#installing-an-operating-system-with-an-autotemplate).
+For more details about templates and about installing see [here](getting_started.md#install-the-system).
 
 Let's perform a RHEL installation:
 
-```console
-$ tessia system autoinstall --template=RHEL7.2 --system=kvm25 --profile=profile2
+```
+$ tess system autoinstall --template=RHEL7.2 --system=kvm25 --profile=profile2
 
 Request #64 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%
@@ -605,10 +588,10 @@ Waiting for installation output (Ctrl+C to stop waiting)
 $
 ```
 
-The installation finished successfully. Let's take a look at its results. 
-First connect via ssh to lpar68 using the credentials from the activation profile for lpar68 'profile1':
+The installation finished successfully. Let's take a look at its results.
+First connect via ssh to lpar68 using the credentials from the activation profile for lpar68 `profile1`:
 
-```console
+```
 $ ssh root@lpar68.mydomain.com
 Failed to add the host to the list of known hosts (/home/user/.ssh/known_hosts).
 root@lpar68.mydomain.com's password: 
@@ -618,7 +601,7 @@ Last login: Tue Apr 18 11:26:57 2017 from laptop.mydomain.com
 
 Look at the KVM domains which were created on the host:
 
-```console
+```
 [root@s83lp68kvm ~]# virsh list --all
 setlocale: No such file or directory
  Id    Name                           State
@@ -626,9 +609,9 @@ setlocale: No such file or directory
  1     kvm25                         running
 ```
 
-Our KVM guest 'kvm25' is running. Let's connect to it using the credentials from the activation profile for kvm25 'profile2' and check the installation results:
+Our KVM guest `kvm25` is running. Let's connect to it using the credentials from the activation profile for kvm25 `profile2` and check the installation results:
 
-```console
+```
 [root@s83lp68kvm ~]# virsh -e @  console  kvm25
 setlocale: No such file or directory
 Connected to domain kvm25
@@ -638,11 +621,11 @@ Escape character is @
 Red Hat Enterprise Linux Server 7.2 (Maipo)
 Kernel 3.10.0-327.el7.s390x on an s390x
 
-9 login: root
+kvm25 login: root
 Password:
 Last login: Tue Apr 18 05:29:53 from tessia-host.domain.com
-[root@9 ~]#
-[root@9 ~]# cat /etc/os-release
+[root@kvm25 ~]#
+[root@kvm25 ~]# cat /etc/os-release
 NAME="Red Hat Enterprise Linux Server"
 VERSION="7.2 (Maipo)"
 ID="rhel"
@@ -663,7 +646,7 @@ NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINT
 vda    253:0    0   20G  0 disk
 +-vda1 253:1    0 14.7G  0 part /
 L-vda2 253:2    0  4.9G  0 part [SWAP]
-[root@9 ~]# parted /dev/vda print
+[root@kvm25 ~]# parted /dev/vda print
 Model: Virtio Block Device (virtblk)
 Disk /dev/vda: 21.5GB
 Sector size (logical/physical): 512B/512B

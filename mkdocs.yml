@@ -21,7 +21,6 @@ pages:
     - Resources model: 'users/resources_model.md'
     - Power Manager machine: 'users/powerman_machine.md'
     - Ansible machine: 'users/ansible_machine.md'
-    - Permissions model: 'users/permissions_model.md'
     - Supported installation combinations: 'users/supported_install_combinations.md'
     - Howtos: 'users/howtos.md'
     - Project versioning scheme: 'users/versioning.md'

@@ -92,8 +92,9 @@ Looks good, we can start using the tool now.
 
 # Define user permissions
 
-As explained in the [Permissions model](permissions_model.md), there are projects (groups), users and roles.
-One can configure them according to the needs of their organization.
+The permissions system is composed of projects (groups), users and roles.
+One can configure them according to the needs of their organization by using the `perm` sub-family of commands.
+
 A common scenario is where a group of lab administrators handles the creation of datacenter resources like storage servers, volumes and ip addresses,
 while the other users control their systems in their own groups.
 
@@ -493,7 +494,7 @@ In the example above we followed the recommended convention and named it after t
 
 The system configuration is done and it is now ready for installation.
 
-## Distro package repository
+## Register a package repository
 
 At least one package repository must be available for the installation to happen. The example below creates a repository entry pointing to the official Ubuntu URL:
 

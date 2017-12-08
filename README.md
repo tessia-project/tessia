@@ -15,8 +15,8 @@ limitations under the License.
 -->
 # Tessia - Task Execution Supporter and System Installation Assistant
 
-[![pipeline status](https://gitlab.com/tessia-project/tessia/badges/master/pipeline.svg)](https://gitlab.com/tessia-project/tessia/commits/master)
-[![coverage report](https://gitlab.com/tessia-project/tessia/badges/master/coverage.svg)](https://gitlab.com/tessia-project/tessia/commits/master)
+[![pipeline status](https://gitlab.com/tessia-project/tessia/badges/master/build.svg)](https://gitlab.com/tessia-project/tessia/commits/master)
+[![coverage report](https://gitlab.com/tessia-project/tessia/badges/master/coverage.svg?job=unittest)](https://gitlab.com/tessia-project/tessia/commits/master)
 
 # What is it?
 
@@ -77,7 +77,17 @@ You can manage the service with the usual `docker-compose` commands. If you want
 
 The `admin` user in the client container is the entry point for creating additional users, resources, etc. Note that you need to adjust the server
 authentication configuration before newly created users are able to login. See the [Server configuration](doc/users/server_conf.md) page to learn how to set proper authentication
-and other configuration details. See also the [Permissions model](doc/users/permissions_model.md) page to understand how to manage multiple users.
+and other configuration details.
+
+**IMPORTANT**: In order to be able to install LPARs, one more step is needed. The HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
+For this reason, tessia makes use of an auxiliar live-image installed on a pre-allocated disk in order to enable this functionality.
+Perform these steps to deploy the live-image:
+
+- Follow the instructions at [Live image to enable HMC netboot](https://gitlab.com/tessia-project/tessia-baselib/blob/master/doc/users/live_image.md)
+- Enter the image's root password in the server's configuration file as explained in [Section auto_install](doc/users/server_conf.md#section-auto_install).
+- Keep note of the disk used as you will associate it to the CPC in the tool configuration later as explained [here](doc/users/getting_started.md#hypervisor-cpc).
+
+The tool is ready for use. To learn how to install your first system, visit [Getting started](doc/users/getting_started.md).
 
 If you prefer a manual installation method (without docker), see [Manual method](doc/users/server_install.md#manual-method).
 

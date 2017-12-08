@@ -19,6 +19,8 @@ Module for the TestPlatLpar class.
 #
 # IMPORTS
 #
+from sqlalchemy.orm.session import make_transient
+from tessia.server.db import models
 from tessia.server.db.connection import MANAGER
 from tessia.server.state_machines.autoinstall import plat_base, plat_lpar
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
@@ -42,7 +44,7 @@ class TestPlatLpar(TestCase):
         """
         Called once for the setup of DbUnit.
         """
-        utils.setup_dbunit()
+        cls.db = utils.setup_dbunit()
     # setUpClass()
 
     def setUp(self):
@@ -54,6 +56,15 @@ class TestPlatLpar(TestCase):
         patcher = patch.object(plat_base, 'Hypervisor')
         self._mock_hypervisor_cls = patcher.start()
         self.addCleanup(patcher.stop)
+
+        patcher = patch.object(plat_lpar, 'Config', autospec=True)
+        self._mock_config = patcher.start()
+        self.addCleanup(patcher.stop)
+        self._mock_config.get_config.return_value = {
+            'auto_install': {
+                'liveimg_passwd': 'some_test_password'
+            }
+        }
 
         patcher = patch.object(plat_lpar, 'SshClient', autospec=True)
         self._mock_ssh_client_cls = patcher.start()
@@ -102,6 +113,82 @@ class TestPlatLpar(TestCase):
         mock_hyp.start.assert_called_with(guest_name, cpu, memory,
                                           mock.ANY)
     # test_boot()
+
+    def test_boot_fcp(self):
+        """
+        Test the boot operation.
+        """
+        assoc_model = models.StorageVolumeProfileAssociation
+        assoc_obj = self.db.session.query(
+            assoc_model
+        ).join(
+            assoc_model.profile_rel
+        ).filter(
+            assoc_model.profile == 'default CPC3'
+        ).one()
+        orig_vol_id = assoc_obj.volume_id
+
+        vol_model = models.StorageVolume
+        vol_obj = self.db.session.query(
+            vol_model).filter_by(volume_id='CPCDISK2').one()
+        assoc_obj.volume_id = vol_obj.id
+        self.db.session.add(assoc_obj)
+        self.db.session.commit()
+
+        mock_hyp = self._mock_hypervisor_cls.return_value
+        plat = self._create_plat_lpar()
+        plat.boot("some kargs")
+
+        guest_name = self._profile_entry.system_rel.name
+        cpu = self._profile_entry.cpu
+        memory = self._profile_entry.memory
+
+        mock_hyp.start.assert_called_with(guest_name, cpu, memory,
+                                          mock.ANY)
+
+        # restore values
+        assoc_obj.volume_id = orig_vol_id
+        self.db.session.add(assoc_obj)
+        self.db.session.commit()
+    # test_boot()
+
+    def test_boot_no_liveimg(self):
+        """
+        Test the boot operation when no live image is set.
+        """
+        assoc_model = models.StorageVolumeProfileAssociation
+        assoc_obj = self.db.session.query(
+            assoc_model
+        ).join(
+            assoc_model.profile_rel
+        ).filter(
+            assoc_model.profile == 'default CPC3'
+        ).one()
+        self.db.session.delete(assoc_obj)
+        self.db.session.commit()
+
+        with self.assertRaisesRegex(
+            ValueError, 'CPC .* has no disk configured to serve live-image'):
+            self._create_plat_lpar()
+
+        # restore association
+        make_transient(assoc_obj)
+        self.db.session.add(assoc_obj)
+        self.db.session.commit()
+    # test_boot_no_liveimg()
+
+    def test_boot_liveimg_no_pwd(self):
+        """
+        Test the boot operation when no password for the live image is set in
+        the config file.
+        """
+        self._mock_config.get_config.return_value = {}
+
+        with self.assertRaisesRegex(
+            ValueError,
+            'Live-image password missing in config file'):
+            self._create_plat_lpar()
+    # test_boot_liveimg_no_pwd()
 
     def test_get_vol_devpath(self):
         """

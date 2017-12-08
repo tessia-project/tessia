@@ -9,6 +9,8 @@ auto_install:
   # the url must be accessible from the systems being installed
   url: http://localhost/static
   dir: var/tessia/www
+  # root password of the auxiliar live image used to netboot LPARs
+  liveimg_passwd: somepwd
 
 # authentication subsystem
 auth:

@@ -34,7 +34,8 @@ unittests_server:
 clitests:
   stage: clitests
   script:
-    - tools/ci/orc clitest --fieldtests=/home/tessia-builder/field_tests --baselibfile=/home/tessia-builder/cfg/tessia-baselib.yaml
+    # variables are set by each runner
+    - tools/ci/orc clitest --fieldtests=${TESSIA_FIELD_TESTS_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
 
 push:
   stage: push

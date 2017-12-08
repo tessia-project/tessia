@@ -45,15 +45,12 @@ tasks:
     - - repo add --name='SLES12.1-GA' --url='http://example.com/suse/s390x/SLES12.1/DVD' --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd' --os=sles12.1
       - Item added successfully.
   lpar_add:
-    # switch to lab admin user
-    - - - conf key-gen
-        - lab_admin@example.com
-        - password
-      - Key successfully created and added to client configuration.
     # create the net resources
     - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.222  --project='GEO_1 developers' --desc='For use by lpar 52'
       - Item added successfully.
     # create the storage resources
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3951 --size=7gb --project='GEO_1 labadmins' --desc='live-image disk for cpc cpc3'
+      - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3956 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
     - - storage part-init --server=DS8K16 --id=3956 --label=dasd
@@ -86,6 +83,8 @@ tasks:
     # create activation profiles
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136gb --login='DEVEL1:somepwd'
       - Item added successfully.
+    - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3951
+      - Volume attached successfully.
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mb --login='root:mypasswd' --hyp='default cpc3'
       - Item added successfully.
     - - system iface-attach --system=cpc3lp52 --profile='DASD root1' --iface='default osa'
@@ -100,17 +99,7 @@ tasks:
       - Network interface attached successfully.
     - - system vol-attach --system=cpc3lp52 --profile='FCP root1' --server=DS8K16 --vol=1022400100000000
       - Volume attached successfully.
-    # switch to target user
-    - - - conf key-gen
-        - dev1@example.com
-        - password
-      - Key successfully created and added to client configuration.
   kvm_add:
-    # switch to lab admin user
-    - - - conf key-gen
-        - lab_admin@example.com
-        - password
-      - Key successfully created and added to client configuration.
     # network
     - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.160.55  --project='GEO_1 developers' --desc='For use by guest55'
       - Item added successfully.
@@ -147,12 +136,12 @@ tasks:
       - Volume attached successfully.
     - - system vol-attach --system=guest55 --profile='KVM root1' --server=DS8K16 --vol=1022400300000000
       - Volume attached successfully.
-    # switch to target user
+  kvm_del:
+    # switch to developer user to test whether they have the rights to perform the following actions
     - - - conf key-gen
         - dev1@example.com
         - password
       - Key successfully created and added to client configuration.
-  kvm_del:
     - - system iface-detach --system=guest55 --profile='KVM root1' --iface='default macvtap'
       - Network interface detached successfully.
     - - system vol-detach --system=guest55 --profile='KVM root1' --server=DS8K16 --vol=1022400200000000
@@ -190,9 +179,13 @@ tasks:
         - lab_admin@example.com
         - password
       - Key successfully created and added to client configuration.
+    - - system vol-detach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3951
+      - Volume detached successfully.
     - - system prof-del --system=cpc3 --name='default cpc3'
       - Item successfully deleted.
     - - system del --name=cpc3
+      - Item successfully deleted.
+    - - storage vol-del --server=DS8K16 --id=3951
       - Item successfully deleted.
     - - storage vol-del --server=DS8K16 --id=3956
       - Item successfully deleted.

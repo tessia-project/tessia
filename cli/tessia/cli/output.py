@@ -310,6 +310,7 @@ def print_ver_table(headers, entries, fields_map):
             output += '\n{}'.format('|'.join(output_row))
         # send the rows to the pager's stdin
         pager.write(output)
+    pager.write('\n')
 
     # kill pager's process
     pager.close()

@@ -216,7 +216,7 @@ tasks:
     - - job list --state
       - '--state option requires an argument'
     - - job list --state=FAILED
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+      - 'job_id(.|\n)+\n$'
     - - job list --state=failed
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     - - job list --state=success
@@ -266,7 +266,7 @@ tasks:
     - - job req-list --owner
       - '--owner option requires an argument'
     - - job req-list --owner=dev1@example.com
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - 'request_id(.|\n)+\n$'
     - - job req-list --owner=test@example.com
       - 'No results were found.'
     - - job req-list --state

@@ -479,7 +479,7 @@ tasks:
     - - storage part-list --server=DS8K16 --id=9955
       - volume not found.
     - - storage part-list --server=DS8K16 --id=3955
-      - 'Partition table type: dasd'
+      - 'Partition table type: dasd(.|\n)+\n$'
     - - storage part-list --server=DS8K16 --id=3952
       - 'Partition table type: gpt'
     - - storage part-list --server=DS8K16 --id=1022400200000000

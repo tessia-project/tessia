@@ -15,39 +15,25 @@ limitations under the License.
 -->
 # Versioning scheme
 
-The project uses a date based versioning scheme, similar to the proposal from [Calendar Versioning](calver.org).
-The advantages of using such scheme are:
+The project uses a date based PEP440 compliant versioning scheme in the form `YY.MM[.MICRO]`, similar to the proposal from [Calendar Versioning](https://calver.org).
+For projects that are not libraries this scheme can provide more meaningful versions where one can tell solely based on the version number when it
+ was released and have a good idea of how newer a version is compared to another, as opposed to the traditional arbitrary versions
+ where each project has its own semantics (i.e. `v1.0` vs `v1.1` and `17.04` vs `18.01`).
 
-- meaningful versions: from the version number one can tell when it was released and have a good idea of how newer is a version compared to 
-another, as opposed to the traditional arbitrary versions where each project has their own semantics.
-    - Example: v1.0 vs v1.1 and 17.04 vs 18.01
-- auto generation: no need for the project maintainer to manually manage tags in the repository.
+This is how the version is determined for a given commit:
 
-## Generation steps
+- if commit matches a release tag: `{release_tag}`
+- if commit matches a release tag and there are local changes: `{release_tag}.dev0+g{commit_id}.dirty`
+- if commit is after a release tag: `{release_tag}.post{commit_qty}.dev0+g{commit_id}`
+- if commit is after a release tag and there are local changes: `{release_tag}.post{commit_qty}.dev0+g{commit_id}.dirty`
+- if there's no release tag: `0.post{commit_qty}.dev0+g{commit_id}`
+- if there's no release tag and there are local changes: `0.post{commit_qty}.dev0+g{commit_id}.dirty`
+- if git is not available to determine version (i.e. no `.git` directory): `0+unknown`
 
-A release version is generated according to the following steps:
+Note that `{commit_qty}` is the number of commits since the tagged commit.
 
-- if current HEAD is the master branch, then:
-    - extract the commiter's date of the master's branch HEAD, as in the command `git show -s --pretty='%ct' HEAD`
-    - create release version in the format: `{YEAR}.{MONTH}{DAY}.{HOUR}{MINUTE}`
-- if current HEAD is not the master branch:
-    - find the point where this branch forked from master by using the merge-base command `git merge-base --fork-point master HEAD`
-    - extract the commiter's date of the fork point commit (the commit where master and the current branch diverged)
-    - create release version in the same format as for master: `{YEAR}.{MONTH}{DAY}.{HOUR}{MINUTE}`
-    - add a suffix `+dev{HEAD_SHA}` to denote it's a local development version according to the PEP 440 [1]
+Some examples:
 
-For implementation details, see the setup.py file of the project's root directory.
-
-The year is the last two digits and the months/days/hours/minutes are always without a leading zero (i.e. 24th July is 724 and not 0724).
-
-Pay attention to the fact that the date used is the committer's date, not the author's date (commonly the latter is displayed when `git log` is executed).
-We use the committer's date to make sure a commit date is always unique, which might not be the case for the author's date when two developers create a patch at
-the same time but in separate branches. From the git manual [2]:
-> You may be wondering what the difference is between author and committer. The author is the person who originally wrote the work, whereas the
-> committer is the person who last applied the work. So, if you send in a patch to a project and one of the core members applies the patch, both
-> of you get credit – you as the author, and the core member as the committer.
-
-[1] https://www.python.org/dev/peps/pep-0440/#local-version-identifiers
-
-[2] https://git-scm.com/book/en/v2/Git-Basics-Viewing-the-Commit-History
-
+- commit matching release tag 17.05: `17.05`
+- two commits after the release tag: `17.05.post2.dev0+b38ff82d`
+- two commits after the release tag with local changes: `17.05.post2.dev0+b38ff82d.dirty`

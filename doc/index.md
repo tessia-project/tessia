@@ -36,7 +36,7 @@ Documentation explaining how to install and use the tool.
         - [Ansible playbooks](users/ansible_machine.md)
 - Misc
     - See [Howtos](users/howtos.md) for usage examples
-    - Explanation about the project's [versioning scheme](users/versioning.md)
+    - Project's [versioning scheme](users/versioning.md)
     - [REST-like API](users/api.md): if you are interested in using tessia with your own automation tools
 
 # Developers

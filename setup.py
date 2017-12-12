@@ -20,7 +20,6 @@ Entry point to setuptools, used for installing and packaging
 #
 # IMPORTS
 #
-from datetime import datetime
 from setuptools import find_packages, setup
 
 import os
@@ -143,50 +142,81 @@ def _find_requirements():
 
 def gen_version():
     """
-    Release version is created from the commiter date of the HEAD of the master
-    branch in the following format:
-    {YEAR}.{MONTH}{DAY}.{HOUR}{MINUTE}
-    In case the current HEAD is not master, the fork point commit from master
-    will be used and a suffix 1.dev{HEAD_SHA} is added
-    to denote it's a development version.
+    Return a PEP440 compliant version, possible values:
+    Tagged commit:
+        {tag}
+    Tagged commit with local changes:
+        {tag}.dev0+g{commit_id}.dirty
+    Post tagged commit:
+        {tag}.post{commit_qty}.dev0+g{commit_id}
+    Post tagged commit with local changes:
+        {tag}.post{commit_qty}.dev0+g{commit_id}.dirty
+    No tag found:
+        0.post{commit_qty}.dev0+g{commit_id}
+    No tag found with local changes:
+        0.post{commit_qty}.dev0+g{commit_id}.dirty
+    No git available, parse errors:
+        0+unknown
 
     Returns:
         str: the calculated version
-
-    Raises:
-        RuntimeError: if one of the git commands fail
     """
-    # determine if it's a dev build by checking if the current HEAD is the
-    # same as the master branch
-    head_sha = _run('git show -s --oneline --no-abbrev-commit').split()[0]
-    # make sure branch master exists; it might not exist yet when the repo
-    # was cloned from a different HEAD as it is the case when creating the
-    # docker image
-    _run('git branch master origin/master || true')
-    fork_point_sha = _run('git merge-base --fork-point master HEAD')
-    dev_build = bool(head_sha != fork_point_sha)
+    unknown_version = '0+unknown'
 
-    # determine date of reference commit
     try:
-        commit_time = float(_run(
-            "git show -s --pretty='%ct' {}".format(fork_point_sha)))
-    except (RuntimeError, ValueError) as exc:
-        raise RuntimeError('failed to determine commit date of {}: {}'.format(
-            fork_point_sha, str(exc)))
-    date_obj = datetime.utcfromtimestamp(commit_time)
+        version_fields = _run(
+            'git describe --long --tags --dirty --always').strip().split('-')
+    except RuntimeError:
+        return unknown_version
 
-    # build version string, remove leading zeroes
-    version = '{}.{}.{}'.format(
-        date_obj.strftime('%y'), date_obj.strftime('%m%d').lstrip('0'),
-        date_obj.strftime('%H%M').lstrip('0')
-    )
-    # dev build: add dev version string
-    if dev_build:
-        # this scheme allows setuptools to recognize the dev version as newer
-        # than the official version for upgrades in devel environment.
-        version += '+dev{}'.format(head_sha[:7])
+    fields_qty = len(version_fields)
+    # unexpected output: return unknown version
+    if fields_qty == 0:
+        return unknown_version
 
-    return version
+    # collect the values that compose the version
+    fields_map = {
+        'dirty': '',
+        'tag': '0',
+        'commit_qty': '',
+        'commit_id': ''
+    }
+
+    # local changes exist: mark it in the version
+    if version_fields[-1] == 'dirty':
+        fields_map['dirty'] = '.dirty'
+        version_fields.pop(-1)
+        fields_qty -= 1
+
+    # tagged or post tagged commit
+    if fields_qty >= 3:
+        # processing fields backwards allows to correctly handle tags
+        # containing hyphens
+        fields_map['commit_id'] = version_fields[-1]
+        fields_map['commit_qty'] = version_fields[-2]
+        fields_map['tag'] = '-'.join(version_fields[:-2])
+    # no tag found
+    elif fields_qty == 1:
+        fields_map['commit_id'] = 'g{}'.format(version_fields[0])
+        try:
+            fields_map['commit_qty'] = _run(
+                'git rev-list --count HEAD').strip()
+        except RuntimeError:
+            return unknown_version
+    # unexpected output
+    else:
+        return unknown_version
+
+    # commit matches the tag: skip additional fields
+    if fields_map['commit_qty'] == '0':
+        if fields_map['dirty']:
+            final_version = '{tag}.dev0+{commit_id}{dirty}'
+        else:
+            final_version = '{tag}'
+    else:
+        final_version = '{tag}.post{commit_qty}.dev0+{commit_id}{dirty}'
+
+    return final_version.format(**fields_map)
 # gen_version()
 
 if __name__ == '__main__':

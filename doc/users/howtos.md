@@ -15,7 +15,7 @@ limitations under the License.
 -->
 # Howtos
 
-Here you can find a useful material for a specific task that you need. Please look at the proper section.
+This page indexes usage examples for specific tasks.
 
 # Installations
 

@@ -93,11 +93,10 @@ ubuntu              latest                  d355ed3537e9        3 weeks ago     
 
 You can now start the containers by using the `run` command. Before you do so, we need to discuss about two parameters:
 
-- `--baselibfile`: tessia-baselib is the underlying library used for communication with the hypervisors and guests.
-When it comes to LPAR network boot support the baselib performs the operation by IPLing a pre-deployed Linux image from an
-auxiliar disk. In order to know which disk to use the baselib depends on a configuration file that maps each CEC to its
-auxiliar disk. The parameter `baselibfile` specifies the path to such configuration file to be injected in the tessia-server
-container so that LPARs can be IPLed for installation.
+- `--img-passwd-file`: tessia-baselib is the underlying library used for communication with the hypervisors and guests.
+When it comes to LPAR network boot support the baselib performs the operation by IPLing a pre-deployed Linux live-image from an
+auxiliar disk. This parameter specifies the path to a file containing the root password of the live-image which is injected in
+the tessia-server configuration inside the container so that LPARs can be IPLed for installation.
 - `--install-server-hostname`: it's very likely that your workstation does not have a resolvable hostname reachable by the
 test systems so that they can fetch the auto files (i.e. kickstart) via HTTP during installation. To overcome this you can
 use this parameter to specify an IP address or an alternate hostname that the test systems can reach from the network.
@@ -106,7 +105,7 @@ Failure to use an adequate hostname will cause systems installations to fail.
 Now that we have the parameters clarified, here's how you start your development environment:
 
 ```
-[user@myhost tessia]$ tools/ci/orc run --devmode --baselibfile=/home/user/files/tessia-baselib.yaml
+[user@myhost tessia]$ tools/ci/orc run --devmode --img-passwd-file=/home/user/files/.liveimg-passwd.txt
 ```
 
 You should see a message informing it's ready:

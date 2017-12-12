@@ -17,8 +17,10 @@ limitations under the License.
 
 Tessia keeps an inventory and manages the availability of a myriad of resources that comprise the IT Infrastructure: disks, ip addresses, storage servers, systems, and so on.
 In order to effectively track all of them in a way that logically makes sense for the user, the tool defines a model where each type of resource has certain attributes and relationships
-with other resources. Below you can find a detailed explanation of each type of resource and how it relates to the others.
+with other resources. Below you can see a chart depicting this model and in the next sections detailed explanations of each type of resource and how it relates to the others.
 
+
+![Resources model chart](../img/resource_model.png)
 
 ## Storage servers
 

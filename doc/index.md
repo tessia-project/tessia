@@ -22,20 +22,20 @@ This tool aims to automate and simplify the installation/configuration/testing o
 Documentation explaining how to install and use the tool.
 
 - Installation
-    - How to to deploy a server: [Server installation](users/server_install.md)
-    - Server configuration reference: [Server configuration](users/server_conf.md)
-    - How to install the command line client: [Client installation](users/client_install.md)
+    - [Server installation](users/server_install.md): how to deploy a server
+    - [Client installation](users/client_install.md): how to install the command line client
+    - [Server configuration](users/server_conf.md): server configuration reference
 - First usage steps
-    - To learn how to use the command line client, visit [Getting started](users/getting_started.md)
-    - To understand the resources model and terminology used within the solution, we recommend to read the [Resources model](users/resources_model.md)
+    - [Getting started](users/getting_started.md): using the client to install the first system
+    - [Resources model](users/resources_model.md): recommended read to understand the resources model and terminology used
 - Features
-    - **Autofile based system installation**: automatically install systems with kickstart/preseed/autoinst templates, see examples in [Installations](users/howtos.md#installations).
-        - Which installation combinations are supported by the tool can be found at [Supported installation combinations](users/supported_install_combinations.md)
-    - **System Management**: power on systems with different activation profiles, see details in [Power Manager machine](users/powerman_machine.md)
-    - **Task execution**: schedule a job to perform automated tasks on one or more system(s). Supported methods:
-        - Ansible playbooks via [Ansible machine](users/ansible_machine.md)
+    - [Auto installation](users/getting_started.md#install-the-system): automatic system installation using kickstart/preseed/autoinst templates
+        - The installation combinations supported can be found at [Supported installation combinations](users/supported_install_combinations.md)
+    - System Management: power on systems with different activation profiles, see details in [Power Manager machine](users/powerman_machine.md)
+    - Task execution: schedule a job to perform automated tasks on one or more system(s). Supported methods:
+        - [Ansible playbooks](users/ansible_machine.md)
 - Misc
-    - [Howtos](users/howtos.md) main page with usage examples
+    - See [Howtos](users/howtos.md) for usage examples
     - Explanation about the project's [versioning scheme](users/versioning.md)
     - [REST-like API](users/api.md): if you are interested in using tessia with your own automation tools
 

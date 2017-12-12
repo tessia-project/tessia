@@ -18,7 +18,7 @@ limitations under the License.
 At the end of this guide you will have learned:
 
 - how to create the initial resources in the tool so that the first system installation can happen;
-- how to use the command line client
+- how to use the command line client.
 
 Before systems can be installed, the tool needs information about the datacenter resources available. That means you need to specify:
 
@@ -34,9 +34,9 @@ If you are not yet familiar with the definitions of different resource names use
 Note that the tool does not have the capability (yet) to actually create these resources in the infrastructure.
 It is assumed that they are already in place. For example, the tool will **NOT**:
 
-- connect to the storage server and create the volumes
-- connect to a switch/firewall appliance to configure network zones/subnets/ip addresses
-- create a new LPAR on the HMC (it will, however, change the LPAR's activation profile as necessary for the desired cpus, memory, etc.)
+- connect to the storage server and create the volumes;
+- connect to a switch/firewall appliance to configure network zones/subnets/ip addresses;
+- create a new LPAR on the HMC (it will, however, change the LPAR's activation profile as necessary for the desired cpus, memory, etc.).
 
 # Initial client configuration
 
@@ -333,9 +333,9 @@ The concept of profiles is explained in more detail later during the creation of
 The user `hmc_user` entered above must be allowed in the HMC configuration to use the Web Services API and must have access to the management tasks
  (activate, deactivate, load, and customize/delete activation profiles) of the LPARs to be installed.
 
-As mentioned in the [installation]() instructions, the HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
+As mentioned in the [installation](server_install.md) instructions, the HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
 For this reason, tessia makes use of an auxiliar live-image installed on a pre-allocated disk in order to enable this functionality.
-If you haven't deployed this live-image disk yet, refer to [Live image to enable HMC netboot](https://gitlab.com/tessia-project/tessia-baselib/blob/master/doc/users/live_image.md)
+If you haven't deployed this live-image disk yet, refer to [Deployment of the auxiliar live-image](server_install.md#deployment-of-the-auxiliar-live-image)
 for instructions on how to do it.
 
 The pre-allocated live-image disk must be assigned to the CPC so that the tool knows which disk to use when LPARs are to be installed.
@@ -466,7 +466,7 @@ Configuration of disks is done and they are now ready for use.
 
 ## Network interface
 
-Create a system network interface and associate the IP address previsouly created:
+Create a system network interface and associate the IP address previously created:
 
 ```
 $ tess system iface-add --system=cpc3lp25 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=02:20:10:10:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='lab1-zone-c-s1' --ip=192.168.0.9

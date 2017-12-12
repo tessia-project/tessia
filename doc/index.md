@@ -22,9 +22,9 @@ This tool aims to automate and simplify the installation/configuration/testing o
 Documentation explaining how to install and use the tool.
 
 - Installation
-    - [Server installation](users/server_install.md): how to to deploy a server
+    - [Server installation](users/server_install.md): how to deploy a server
     - [Client installation](users/client_install.md): how to install the command line client
-    - [Server configuration](users/server_conf.md): Server configuration reference
+    - [Server configuration](users/server_conf.md): server configuration reference
 - First usage steps
     - [Getting started](users/getting_started.md): using the client to install the first system
     - [Resources model](users/resources_model.md): recommended read to understand the resources model and terminology used

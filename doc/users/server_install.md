@@ -55,13 +55,8 @@ The server container runs the API and job scheduler while the client contains th
 From this point you can manage the service with the usual `docker-compose` commands. If you want to manage it from a different folder, simply copy the generated files
 `.env` and `.docker-compose.yaml` to the desired folder.
 
-**IMPORTANT**: In order to be able to install LPARs, one more step is needed. The HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
-For this reason, tessia makes use of an auxiliar live-image installed on a pre-allocated disk in order to enable this functionality.
-Perform these steps to deploy the live-image:
-
-- Follow the instructions at [Live image to enable HMC netboot](https://gitlab.com/tessia-project/tessia-baselib/blob/master/doc/users/live_image.md)
-- Enter the image's root password in the server's configuration file as explained in [Section auto_install](server_conf.md#section-auto_install).
-- Keep note of the disk used as you will associate it to the CPC in the tool configuration later as explained [here](getting_started.md#hypervisor-cpc).
+**IMPORTANT**: In order to be able to install LPARs, one more step is needed.
+Refer to the section [Deployment of the auxiliar live-image](#deployment-of-the-auxiliar-live-image) for details.
 
 The `admin` user in the client container is the entry point for creating additional users, resources, etc. Note that you need to adjust the server authentication
 configuration before newly created users are able to login. See the [Server Configuration](server_conf.md) page to learn how to set proper authentication and other
@@ -320,12 +315,17 @@ $ tess conf show
 If the last command reported server information, the service is correctly running and the token was successfully configured.
 Make sure to keep the token secure as it provides admin access to the application.
 
-**IMPORTANT**: In order to be able to install LPARs, one more step is needed. The HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
+**IMPORTANT**: In order to be able to install LPARs, one more step is needed.
+Refer to the section [Deployment of the auxiliar live-image](#deployment-of-the-auxiliar-live-image) for details.
+
+The tool is now ready for use. To learn how to install your first system, visit [Getting started](getting_started.md).
+
+# Deployment of the auxiliar live-image
+
+The HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
 For this reason, tessia makes use of an auxiliar live-image installed on a pre-allocated disk in order to enable this functionality.
 Perform these steps to deploy the live-image:
 
 - Follow the instructions at [Live image to enable HMC netboot](https://gitlab.com/tessia-project/tessia-baselib/blob/master/doc/users/live_image.md)
 - Enter the image's root password in the server's configuration file as explained in [Section auto_install](server_conf.md#section-auto_install).
 - Keep note of the disk used as you will associate it to the CPC in the tool configuration later as explained [here](getting_started.md#hypervisor-cpc).
-
-The tool is now ready for use. To learn how to install your first system, visit [Getting started](getting_started.md).

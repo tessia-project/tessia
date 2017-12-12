@@ -373,8 +373,7 @@ class PostInstallChecker(object):
                             exp_prefixlen, actual_prefixlen)
     # _pass_or_raise_ipv6()
 
-    @staticmethod
-    def _pass_or_raise_mo(devpath, part_num, expected, actual):
+    def _pass_or_raise_mo(self, devpath, part_num, expected, actual):
         """
         Helper to validate if an expected list of mount options is included in
         the actual list.
@@ -394,9 +393,13 @@ class PostInstallChecker(object):
             # option found: check next
             if option in actual_options:
                 continue
-            raise Misconfiguration(
-                'mount option partnum {} disk {}'.format(part_num, devpath),
-                option, None)
+            self._logger.warning(
+                'Mount option expected for partnum %s disk %s was %s, '
+                'but is not applied. Note that some Linux distributions '
+                'have errors related to using certain mount options. You '
+                'can skip this difference, otherwise try to set these '
+                'parameters manually.',
+                part_num, devpath, exp_options)
     # _pass_or_raise_mo()
 
     def _pass_or_raise_part(self, devpath, part_pos, exp_part, actual_part):

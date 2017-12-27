@@ -52,6 +52,10 @@ TYPE_FIELDS = (
     'name', 'desc'
 )
 
+WRONG_USAGE_FCP_PARAM = (
+    "FCP parameters can't be applied to a non FCP disk."
+)
+
 #
 # CODE
 #
@@ -303,7 +307,6 @@ def vol_del(**kwargs):
               help="new volume's id in form volume-id")
 @click.option('--size',
               help="volume size (i.e. 10gb)")
-@click.option('--type', help="volume type (see vol-types)")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
@@ -344,6 +347,9 @@ def vol_edit(server, cur_id, **kwargs):
 
         # process multipath arg
         if key == 'mpath':
+            if item['type'] != 'FCP':
+                raise click.ClickException(WRONG_USAGE_FCP_PARAM)
+
             update_dict.setdefault('specs', item.specs)
             update_dict['specs']['multipath'] = kwargs['mpath']
 
@@ -352,6 +358,9 @@ def vol_edit(server, cur_id, **kwargs):
             # option was not specified: skip it
             if len(value) == 0:
                 continue
+
+            if item['type'] != 'FCP':
+                raise click.ClickException(WRONG_USAGE_FCP_PARAM)
 
             # add the necessary keys to the update dict in case they are not
             # there yet
@@ -385,6 +394,10 @@ def vol_edit(server, cur_id, **kwargs):
             # option was not specified: skip it
             if len(value) == 0:
                 continue
+
+            if item['type'] != 'FCP':
+                raise click.ClickException(WRONG_USAGE_FCP_PARAM)
+
             # add the necessary keys to the update dict in case they are not
             # there yet
             update_dict.setdefault('specs', item.specs)
@@ -417,6 +430,9 @@ def vol_edit(server, cur_id, **kwargs):
                     'fcp volume must have at least one path')
 
         elif key == 'wwid':
+            if item['type'] != 'FCP':
+                raise click.ClickException(WRONG_USAGE_FCP_PARAM)
+
             # add the necessary key to the update dict in case they are not
             # there yet
             update_dict.setdefault('specs', item.specs)

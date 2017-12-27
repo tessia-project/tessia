@@ -308,8 +308,8 @@ tasks:
     - - storage vol-edit --server=DS8K16 --id=3955 --size=7g
       - invalid size specified.
     - - storage vol-edit --server=DS8K16 --id=3955 --type=DASD
-      - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --type=DASD --id=3950 --size=7gb
+      - 'no such option: --type'
+    - - storage vol-edit --server=DS8K16 --id=3950 --size=7gb
       - volume not found.
     - - storage vol-edit --server=DS8K16 --id=3955 --owner=
       - "Error: request failed. Server answered: No associated item found with value '' for field 'Owner'"
@@ -326,15 +326,18 @@ tasks:
     - - storage vol-edit --server=DS8K16 --id=3955 --desc='belongs to LPAR'
       - Item successfully updated.
     - - storage vol-edit --server=DS8K16 --id=3955 --mpath=TRUE
-      - 'The server did not accept our request. The response is: specs must be oneOf='
-      # Issue 53: add FCP parameters for DASD
+      - "FCP parameters can't be applied to a non FCP disk."
     - - storage vol-edit --server=DS8K16 --id=3952 --addpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
-      - Item successfully updated.
+      - "FCP parameters can't be applied to a non FCP disk."
+    - - storage vol-edit --server=DS8K16 --id=3952 --type=FCP
+      - 'no such option: --type'
     - - storage vol-list --id=3952
       - 'Volume id                  : 3952'
     - - storage vol-edit --server=DS8K16 --id=3955 --login=lab_admin@example.com
       - 'no such option: --login'
     # 'storage vol-edit' subcommand for FCP
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --type=DASD
+      - 'no such option: --type'
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=
       - 'Invalid value for "--mpath":  is not a valid boolean'
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=true
@@ -345,30 +348,30 @@ tasks:
       - 'The server did not accept our request. The response is: specs must be oneOf='
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=true --wwid=11002076305aac1a0000000000002202
       - 'The server did not accept our request. The response is: specs must be oneOf='
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --addpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
       - Item successfully updated.
        # delete the only path
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --delpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
       - fcp volume must have at least one path
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --wwid=
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --wwid=
       - 'Invalid value for "--wwid":  is not a valid wwid'
         # wwpn not found: no error message
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --delpath='1800,0x100207630503c1a1'
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,0x100207630503c1a1'
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --delpath='1800,0x5555'
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,0x5555'
       - 'Invalid value for "--delpath": 5555 is not a valid wwpn'
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --delpath='55,100207630503c1a1'
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='55,100207630503c1a1'
       - 'Invalid value for "--delpath": 0.0.55 is not a valid devno'
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --delpath='1800 100207630503c1a1'
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800 100207630503c1a1'
       - 'Invalid value for "--delpath": 1800 100207630503c1a1 is not a valid FCP path'
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --delpath='1800,100207630503c1a1'
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630503c1a1'
       - Item successfully updated.
         # adapter not found: no error message
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --delpath='1900,100207630503c1ae'
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1900,100207630503c1ae'
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400200000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --type=FCP --id=1022400300000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002203
+    - - storage vol-edit --server=DS8K16 --id=1022400300000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002203
       - Item successfully updated.
     # 'storage vol-del' subcommand
     - - storage vol-del

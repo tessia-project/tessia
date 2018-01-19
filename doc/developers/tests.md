@@ -20,7 +20,7 @@ All testing in the project is automated by creating unit tests and integration t
 - [Integration (cmdline client) tests](#integration-cmdline-client-tests)
     - [Rationale](#rationale)
     - [How to run all client tests at once](#how-to-run-all-client-tests-at-once)
-    - [How to run client tests individually](#how-to-run-client-tests-manually)
+    - [How to run client tests individually](#how-to-run-client-tests-individually)
     - [How to create client tests](#how-to-create-client-tests)
 - [Unit tests](#unit-tests)
     - [How to run unit tests](#how-to-run-unit-tests)

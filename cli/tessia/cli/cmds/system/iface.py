@@ -127,12 +127,21 @@ def iface_add(**kwargs):
         try:
             item.attributes['hostiface']
         except KeyError:
-            try:
-                item.attributes['libvirt']
-            except KeyError:
-                raise click.ClickException(
-                    'at least one of --hostiface or --libvirt must be '
-                    'specified')
+            set_hostiface = False
+        else:
+            set_hostiface = True
+
+        try:
+            item.attributes['libvirt']
+        except KeyError:
+            set_libvirt = False
+        else:
+            set_libvirt = True
+
+        if set_hostiface ^ set_libvirt is False:
+            raise click.ClickException(
+                'one of --hostiface or --libvirt must be specified, '
+                'but not both')
     else:
         raise click.ClickException('invalid interface type (see iface-types)')
 
@@ -317,8 +326,8 @@ def iface_edit(system, cur_name, **kwargs):
                     update_dict['attributes']['libvirt']
                 except KeyError:
                     raise click.ClickException(
-                        'at least one of --hostiface or --libvirt must be '
-                        'present')
+                        'one of --hostiface or --libvirt must be present, '
+                        'but not both')
         else:
             raise click.ClickException(
                 'invalid interface type (see iface-types)')

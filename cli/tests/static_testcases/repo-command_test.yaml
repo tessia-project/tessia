@@ -85,11 +85,12 @@ tasks:
       - 'Repository name : RHEL7.2-GA'
     - - repo list --url='http://example.com/xxx'
       - No results were found.
-      # Issue 51: 'The server did not accept our request. The response is: where must be additionalProperties=False'
     - - repo list --os=sles12.1
-      - 'The server did not accept our request. The response is: where must be additionalProperties=False'
+      - 'Repository name : SLES12.1-GA'
     - - repo list --os=''
-      - 'The server did not accept our request. The response is: where must be additionalProperties=False'
+      - No results were found.
+    - - repo list --os=wrong_os
+      - No results were found.
     - - repo list --kernel='/images/kernel.img'
       - 'Repository name : RHEL7.2-GA'
     - - repo list --kernel='/xxx/kernel.img'

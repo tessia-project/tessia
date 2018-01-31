@@ -126,7 +126,7 @@ def edit(cur_name, **kwargs):
 @repo.command(name='list')
 @click.option('--name', type=NAME, help="filter by repository name")
 @click.option('--url', type=URL, help="filter by network url")
-@click.option('--os', help="filter by operating system")
+@click.option('operating_system', '--os', help="filter by operating system")
 @click.option('--kernel', help="filter by kernel path")
 @click.option('--initrd', help="filter by initrd path")
 @click.option('--owner', help="filter by owner")
@@ -141,7 +141,6 @@ def list_(**kwargs):
     parsed_filter = dict_to_filter(kwargs)
     # fetch data from server
     entries = client.Repositories.instances(**parsed_filter)
-
     # present results
     print_items(
         MODEL_FIELDS, client.Repositories, None, entries)

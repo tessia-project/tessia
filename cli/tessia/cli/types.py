@@ -118,19 +118,23 @@ class FcpPath(click.ParamType):
         except ValueError:
             self.fail('{} is not a valid FCP path'.format(value), param, ctx)
 
+        # save original values for unsuccessful verification output
+        orig_devno = devno
+        orig_wwpn = wwpn
+
         # format and validate devno format
         if devno.find('.') < 0:
             devno = '0.0.' + devno
         ret = re.match(r"^(([a-fA-F0-9]\.){2})?[a-fA-F0-9]{4}$", devno)
         if ret is None:
-            self.fail('{} is not a valid devno'.format(devno), param, ctx)
+            self.fail('{} is not a valid devno'.format(orig_devno), param, ctx)
 
         # format and validate wwpn format
         if wwpn.startswith('0x'):
             wwpn = wwpn[2:]
         ret = re.match(r'^[a-f0-9]{16}$', wwpn)
         if ret is None:
-            self.fail('{} is not a valid wwpn'.format(wwpn), param, ctx)
+            self.fail('{} is not a valid wwpn'.format(orig_wwpn), param, ctx)
 
         return (devno, wwpn)
     # convert()
@@ -285,13 +289,15 @@ class QethGroup(click.ParamType):
         # format and validate for devno format
         result = []
         for devno in devnos:
+            orig_devno = devno
             if devno.startswith('0x'):
                 devno = '0.0.' + devno[2:]
             elif devno.find('.') < 0:
                 devno = '0.0.' + devno
             ret = re.match(r"^([a-fA-F0-9]\.){2}[a-fA-F0-9]{4}$", devno)
             if ret is None:
-                self.fail('{} is not a valid devno'.format(devno), param, ctx)
+                self.fail(
+                    '{} is not a valid devno'.format(orig_devno), param, ctx)
             result.append(devno)
 
         return ','.join(result)

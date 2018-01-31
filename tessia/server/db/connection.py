@@ -121,7 +121,8 @@ class _DbManager(object):
                     class_entry.query = session.query_property()
 
         self._conn = (engine, session)
-    # _connect()
+        return self._conn
+    # connect()
 # _DbManager
 
 MANAGER = _DbManager()

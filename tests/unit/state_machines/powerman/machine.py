@@ -316,9 +316,8 @@ class TestPowerManagerMachine(TestCase):
             System.name != exclusive_system
         ).all())
         hyp_prof = self._get_profile(system_obj.hypervisor_rel.name)
-        for i in range(0, len(sibling_systems)):
-            self._assert_poweroff_action(
-                'hmc', hyp_prof, sibling_systems[i], 0, i)
+        for index, entry in enumerate(sibling_systems):
+            self._assert_poweroff_action('hmc', hyp_prof, entry, 0, index)
 
         # validate call to verify if system is up
         self._assert_system_up_action(prof_obj, 0)

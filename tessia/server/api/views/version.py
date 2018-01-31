@@ -72,6 +72,7 @@ def check_version():
             error = BaseHttpError(417, {'message': msg, 'status': 417})
             return error.get_response()
 
+    return None
 # check_version()
 
 def report_version(response):

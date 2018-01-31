@@ -714,16 +714,16 @@ class PostInstallChecker(object):
             raise Misconfiguration('OS version', exp_version, actual_version)
 
         # compare each part of the version string
-        for i in range(0, len(exp_version_parts)):
+        for index, _ in enumerate(exp_version_parts):
             # try first a numeric version comparison to eliminate differences
             # like ubuntu 16.4 and 16.04
             try:
-                exp_version_part = int(exp_version_parts[i])
-                actual_version_part = int(actual_version_parts[i])
+                exp_version_part = int(exp_version_parts[index])
+                actual_version_part = int(actual_version_parts[index])
             # numeric not possible, compare strings directly
             except ValueError:
-                exp_version_part = exp_version_parts[i]
-                actual_version_part = actual_version_parts[i]
+                exp_version_part = exp_version_parts[index]
+                actual_version_part = actual_version_parts[index]
 
             self._pass_or_raise(
                 'OS version release', exp_version_part, actual_version_part)

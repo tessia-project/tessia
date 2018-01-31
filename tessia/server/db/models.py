@@ -548,9 +548,10 @@ class Subnet(CommonMixin, ResourceMixin, BASE):
 
         Returns:
             str: field's value to populate row
+            None: in case no value is provided
         """
         if value is None:
-            return
+            return None
         try:
             if key == 'address':
                 address_obj = ipaddress.ip_network(value, strict=True)

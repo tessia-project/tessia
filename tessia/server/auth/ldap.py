@@ -255,6 +255,7 @@ class LdapLoginManager(BaseLoginManager):
 
         Returns:
             dict: entry containing user attributes retrieved from ldap server
+            None: in case no entry is found
 
         Raises:
             RuntimeError: in case one of the expected attributes is not
@@ -279,7 +280,7 @@ class LdapLoginManager(BaseLoginManager):
         # user not found: return nothing
         if ret is False or not conn.response:
             self._logger.debug('user not found, result: %s', conn.result)
-            return
+            return None
 
         # build a dict of attributes we need from the user entry
         user_attrs = {}
@@ -320,6 +321,7 @@ class LdapLoginManager(BaseLoginManager):
         Returns:
             dict: entry containing the attributes defined in section
                   user_attributes of config file
+            None: in case authentication fails
 
         Raises:
             None
@@ -333,20 +335,20 @@ class LdapLoginManager(BaseLoginManager):
             entry = self._search_user(conn, username)
             if entry is None:
                 self._logger.warning('user %s not found', username)
-                return
+                return None
 
             # verify group membership if activated
             if not self._is_group_member(conn, entry['dn']):
                 self._logger.warning(
                     'user %s not member of allowed group(s)', username)
-                return
+                return None
 
         # password invalid: user is not authorized
         if not self._bind(entry['dn'], password):
             self._logger.warning(
                 'authentication failed for user %s (invalid password)',
                 username)
-            return
+            return None
 
         # 'dn' is ldap specific and should not be returned
         entry.pop('dn')

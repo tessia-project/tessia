@@ -45,9 +45,10 @@ class FreeLoginManager(BaseLoginManager):
 
         Returns:
             dict: user information
+            None: if special username 'fail' is provided
         """
         if username == 'fail':
-            return
+            return None
 
         resp = {
             'login': username,

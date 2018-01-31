@@ -84,6 +84,15 @@ class PlatKvm(PlatBase):
         """
         Given a volume entry, return the correspondent device path on operating
         system.
+
+        Args:
+            vol_obj (StorageVolume): volume sqlsa object
+
+        Returns:
+            str: device path
+
+        Raises:
+            ValueError: in case volume type is not supported
         """
         if vol_obj.type == 'DASD':
             vol_id = vol_obj.volume_id
@@ -97,6 +106,9 @@ class PlatKvm(PlatBase):
             else:
                 prefix = '/dev/disk/by-id/scsi-{}'
             return prefix.format(vol_obj.specs['wwid'])
+        else:
+            raise ValueError(
+                'Unsupported volume type {}'.format(vol_obj.type))
     # _kvm_get_vol_devpath_on_host()
 
     @staticmethod

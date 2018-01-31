@@ -105,8 +105,8 @@ class EchoMachine(BaseMachine):
         commands = ret['commands']
 
         lines = content.split('\n')
-        for i in range(0, len(lines)):
-            fields = lines[i].split('#', 1)[0].split()
+        for index, line in enumerate(lines):
+            fields = line.split('#', 1)[0].split()
 
             # empty line or comments: skip it
             if not fields:
@@ -125,21 +125,21 @@ class EchoMachine(BaseMachine):
                 if len(fields) < 3:
                     raise SyntaxError(
                         'Wrong number of arguments in USE statement at '
-                        'line {}'.format(i+1))
+                        'line {}'.format(index+1))
 
                 try:
                     ret['resources'][fields[1].lower()].extend(fields[2:])
                 except KeyError:
                     raise SyntaxError(
                         'Invalid mode {} in USE statement at line {}'.format(
-                            fields[1].lower(), i+1))
+                            fields[1].lower(), index+1))
 
             elif fields[0].lower() == 'echo':
                 # syntax check
                 if len(fields) < 2:
                     raise SyntaxError(
                         'Wrong number of arguments in ECHO statement at line '
-                        '{}'.format(i+1))
+                        '{}'.format(index+1))
 
                 commands.append(['echo', ' '.join(fields[1:])])
 
@@ -148,13 +148,13 @@ class EchoMachine(BaseMachine):
                     raise SyntaxError(
                         'Wrong number of arguments in '
                         'SLEEP statement at line '
-                        '{}'.format(i+1))
+                        '{}'.format(index+1))
                 try:
                     seconds = int(fields[1])
                 except ValueError:
                     raise SyntaxError(
                         'SLEEP argument must be a number at line {}'
-                        .format(i+1))
+                        .format(index+1))
 
                 commands.append(['sleep', seconds])
             elif fields[0].lower() == 'return':
@@ -162,20 +162,20 @@ class EchoMachine(BaseMachine):
                     raise SyntaxError(
                         'Wrong number of arguments in RETURN '
                         'statement at line '
-                        '{}'.format(i+1))
+                        '{}'.format(index+1))
                 try:
                     ret_value = int(fields[1])
                 except ValueError:
                     raise SyntaxError(
                         'RETURN argument must be a number at line {}'
-                        .format(i+1))
+                        .format(index+1))
 
                 commands.append(['return', ret_value])
             elif fields[0].lower() == 'raise':
                 commands.append(['raise'])
             else:
                 raise SyntaxError('Invalid command {} at line {}'.format(
-                    fields[0], i+1))
+                    fields[0], index+1))
 
         return ret
     # parse()

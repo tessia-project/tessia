@@ -198,10 +198,9 @@ class ResourcesManager(object):
             None
         """
         position = 0
-        for position in range(0, len(queue)):
+        for position, queue_entry in enumerate(queue):
 
-            queue_job = queue[position][0]
-
+            queue_job = queue_entry[0]
             # new job has a start date: check the start date of the queued job
             if job.start_date is not None:
 

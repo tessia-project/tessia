@@ -140,27 +140,27 @@ class TestSecureResource(TestCase):
 
         # compare each entry, the order by default is by id number which
         # matches our list
-        for i in range(0, len(listed_entries)):
+        for index, entry in enumerate(listed_entries):
 
             # model is a resourcemixin: check modified time
             if is_resource:
-                modified_field = listed_entries[i]['modified']
+                modified_field = entry['modified']
                 mod_datetime = modified_field['$date'] / 1000.0
                 self.assertTrue(
                     (mod_datetime > time_range[0] and
                      mod_datetime < time_range[1]))
 
-            for key, value in entries[i].items():
+            for key, value in entries[index].items():
                 # id field
                 if key == 'id':
                     self.assertEqual(
                         '{}/{}'.format(self.RESOURCE_URL, value),
-                        listed_entries[i]['$uri']
+                        entry['$uri']
                     )
 
                 # item content
                 else:
-                    db_field = listed_entries[i][key]
+                    db_field = entry[key]
                     self.assertEqual(value, db_field)
     # _assert_listed_or_read()
 

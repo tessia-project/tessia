@@ -187,6 +187,7 @@ def parse_cmdline():
     Returns:
         argparse.Namespace: namespace as returned by
                             ArgumentParser.parse_args()
+        None: in case parsing fails
 
     Raises:
         None
@@ -279,7 +280,7 @@ def parse_cmdline():
     # no subcommand entered: show help usage
     if not hasattr(parsed_args, 'func'):
         parser.print_help()
-        return
+        return None
 
     return parsed_args
 # parse_cmdline()

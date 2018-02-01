@@ -62,7 +62,7 @@ class TestPlatLpar(TestCase):
         self.addCleanup(patcher.stop)
         self._mock_config.get_config.return_value = {
             'auto_install': {
-                'liveimg_passwd': 'some_test_password'
+                'live_img_passwd': 'some_test_password'
             }
         }
 

@@ -301,6 +301,10 @@ class Manager(object):
                 compose_cfg['services']['cli']['volumes'] = [
                     '{}/cli:/home/admin/cli:ro'.format(REPO_DIR)]
 
+        if self._img_passwd:
+            (compose_cfg['services']['server']['environment']
+             ['TESSIA_LIVE_IMG_PASSWD']) = self._img_passwd
+
         # create compose file
         with open('.docker-compose.yaml', 'w') as file_fd:
             file_fd.write(yaml.dump(compose_cfg, default_flow_style=False))
@@ -374,18 +378,6 @@ class Manager(object):
             if ret_code != 0:
                 raise RuntimeError(
                     'failed to set authenticator config: {}'.format(output))
-
-        if self._img_passwd:
-            # use env variable to hide password from logs
-            cmd_env = os.environ.copy()
-            cmd_env['img_password'] = self._img_passwd
-            ret_code, output = self._session.run(
-                'docker exec tessia_server_1 yamlman update '
-                '/etc/tessia/server.yaml auto_install.liveimg_passwd '
-                '"$img_password"', stdout=False, env=cmd_env)
-            if ret_code != 0:
-                raise RuntimeError('failed to set live-image password in '
-                                   'config file')
 
         # add auth token to admin user in client to make it ready for use
         # better hide token from logs

@@ -154,7 +154,7 @@ Configuration of the autoinstall execution machine
 - Description: directory path on the filesystem where the machine can place the autofiles (kickstart, autoinst, etc.) generated from the templates during installation time.
 The path set here should be reflected in the `uwsgi.yaml` configuration so that the files can be served in the network to the target systems being installed.
 
-`liveimg_passwd`
+`live_img_passwd`
 
 - Type: string
 - Default: (must be specified)

@@ -114,6 +114,11 @@ function _tweak_cfg() {
     if [ -n "$TESSIA_DB_URI" ]; then
         yamlman update /etc/tessia/server.yaml db.url "$TESSIA_DB_URI"
     fi
+
+    # set live image password if env variable was set
+    if [ -n "$TESSIA_LIVE_IMG_PASSWD" ]; then
+        yamlman update /etc/tessia/server.yaml auto_install.live_img_passwd "$TESSIA_LIVE_IMG_PASSWD"
+    fi
 }
 
 # instance specific settings to config file

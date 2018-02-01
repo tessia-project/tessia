@@ -56,7 +56,7 @@ class PlatLpar(PlatBase):
                 .format(self._hyp_prof.system_rel.name)) from None
         config = Config.get_config()
         try:
-            self._live_passwd = config['auto_install']['liveimg_passwd']
+            self._live_passwd = config['auto_install']['live_img_passwd']
         except KeyError:
             raise ValueError(
                 'Live-image password missing in config file') from None

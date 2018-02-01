@@ -369,7 +369,7 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=os --osname=en0 --mac=02:57:52:00:70:00
       - 'invalid interface type \(see iface-types\)'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=MACVTAP --osname=en0 --mac=02:57:52:00:70:00
-      - 'at least one of --hostiface or --libvirt must be specified'
+      - 'one of --hostiface or --libvirt must be specified, but not both'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=osa --osname= --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - 'Invalid value for "--osname": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=  --ccwgroup=f500,f501,f502
@@ -414,7 +414,7 @@ tasks:
       - invalid attribute for this iface type
       # iface-add: macvtap without libvirt or hostiface
     - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55
-      - 'at least one of --hostiface or --libvirt must be specified'
+      - 'one of --hostiface or --libvirt must be specified, but not both'
     - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
       - Item added successfully.
     - - system iface-add --system=guest55 --name='default macvtap1' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=
@@ -426,7 +426,7 @@ tasks:
     - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm-guest.xml'
       - Item added successfully.
     - - system iface-add --system=guest55 --name='default macvtap5' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm-guest.xml' --hostiface=enccw0.0.f500
-      - 'The server did not accept our request. The response is: attributes must be oneOf='
+      - 'one of --hostiface or --libvirt must be specified, but not both'
    # 'system iface-list' subcommand
     - - system iface-list
       - at least one of --system or --name must be specified
@@ -595,14 +595,14 @@ tasks:
       - no update criteria provided.
       # macvtap without libvirt or hostiface
     - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=''
-      - 'at least one of --hostiface or --libvirt must be present'
+      - 'one of --hostiface or --libvirt must be present, but not both'
       # macvtap with libvirt; an empty file ~/tessia/cli/tests/kvm-guest.xml is used
     - - system iface-edit --system=guest55 --name='default macvtap'  --hostiface= --libvirt='kvm-guest.xml'
       - Item successfully updated.
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='kvm.xml'
       - 'The client encountered an unexpected problem, the error is:'
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt=''
-      - at least one of --hostiface or --libvirt must be present
+      - 'one of --hostiface or --libvirt must be present, but not both'
       # change type to OSA
     - - system iface-edit --system=guest55 --name='default macvtap' --type=OSA
       - Item successfully updated.

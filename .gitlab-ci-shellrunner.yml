@@ -1,0 +1,53 @@
+stages:
+  - build
+  - unittests
+  - clitests
+  - release
+  - cleanup
+
+before_script:
+    # make sure the deps from orc are met and up-to-date
+    - pip3 install --user -U pip -rtools/ci/requirements.txt
+
+build_cli:
+  stage: build
+  script:
+    - tools/ci/orc build --tag=$CI_COMMIT_REF_SLUG --image=tessia-cli
+
+build_server:
+  stage: build
+  script:
+    - tools/ci/orc build --tag=$CI_COMMIT_REF_SLUG --image=tessia-server
+
+unittests_server:
+  coverage: '/^TOTAL.*\s+(\d+\%)$/'
+  stage: unittests
+  script:
+    - tools/ci/orc unittest --tag=$CI_COMMIT_REF_SLUG --image=tessia-server
+
+clitests:
+  stage: clitests
+  script:
+    # additional supported parameters are set by runner
+    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG ${TESSIA_CLITEST_PARAMS}
+
+release:
+  stage: release
+  script:
+    - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print(gen_version().replace("+", "-"))'`
+    - docker tag tessia-cli:${CI_COMMIT_REF_SLUG} tessia-cli:${TESSIA_IMAGE_TAG}
+    - docker tag tessia-server:${CI_COMMIT_REF_SLUG} tessia-server:${TESSIA_IMAGE_TAG}
+    - tools/ci/orc push --tag=${TESSIA_IMAGE_TAG} --registry=${CI_REGISTRY}
+    - tools/ci/orc cleanup --tag=${TESSIA_IMAGE_TAG}
+    # keep registry size under control
+    - tools/dregman clean ${CI_REGISTRY} tessia-cli
+    - tools/dregman clean ${CI_REGISTRY} tessia-server
+  only:
+    - master
+    - tags
+
+cleanup:
+  stage: cleanup
+  script:
+    - tools/ci/orc cleanup --tag=$CI_COMMIT_REF_SLUG
+  when: always

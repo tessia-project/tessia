@@ -1,54 +1,65 @@
+image: docker:latest
+services:
+  - docker:dind
+
 variables:
-  GIT_STRATEGY: clone
-  REGISTRY: tessia-dev.domain.com:5000
+  CLI_IMAGE_NAME: tessia-cli:${CI_COMMIT_REF_SLUG}
+  SERVER_IMAGE_NAME: tessia-server:${CI_COMMIT_REF_SLUG}
+  REGISTRY_CLI_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/tessia-cli:${CI_COMMIT_REF_SLUG}
+  REGISTRY_SERVER_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/tessia-server:${CI_COMMIT_REF_SLUG}
 
 stages:
-  - prepare
   - build
-  - unittests
-  - clitests
-  - push
-  - cleanup
+  - tests
+  - release
 
-prepare:
-  stage: prepare
-  script:
-    # make sure the deps from orc are met and up-to-date
-    - pip3 install --user -U pip -rtools/ci/requirements.txt
+before_script:
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - apk add --no-cache bash git python3
+  - pip3 install --user -U pip -rtools/ci/requirements.txt
 
 build_cli:
   stage: build
   script:
-    - tools/ci/orc build --image=tessia-cli
+    - tools/ci/orc build --tag=$CI_COMMIT_REF_SLUG --image=tessia-cli
+    - docker tag $CLI_IMAGE_NAME $REGISTRY_CLI_IMAGE_NAME
+    - docker push $REGISTRY_CLI_IMAGE_NAME
 
 build_server:
   stage: build
   script:
-    - tools/ci/orc build --image=tessia-server
+    - tools/ci/orc build --tag=$CI_COMMIT_REF_SLUG --image=tessia-server
+    - docker tag $SERVER_IMAGE_NAME $REGISTRY_SERVER_IMAGE_NAME
+    - docker push $REGISTRY_SERVER_IMAGE_NAME
 
 unittests_server:
-  stage: unittests
+  coverage: '/^TOTAL.*\s+(\d+\%)$/'
+  stage: tests
   script:
-    - tools/ci/orc unittest --image=tessia-server
+    - docker pull $REGISTRY_SERVER_IMAGE_NAME
+    - docker tag $REGISTRY_SERVER_IMAGE_NAME $SERVER_IMAGE_NAME
+    - tools/ci/orc unittest --tag=$CI_COMMIT_REF_SLUG --image=tessia-server
 
 clitests:
-  stage: clitests
+  stage: tests
   script:
-    # variables are set by each runner
-    - tools/ci/orc clitest --fieldtests=${TESSIA_FIELD_TESTS_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
+    - pip3 install docker-compose
+    - docker pull $REGISTRY_SERVER_IMAGE_NAME
+    - docker tag $REGISTRY_SERVER_IMAGE_NAME $SERVER_IMAGE_NAME
+    - docker pull $REGISTRY_CLI_IMAGE_NAME
+    - docker tag $REGISTRY_CLI_IMAGE_NAME $CLI_IMAGE_NAME
+    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG
 
-push:
-  stage: push
+release:
+  stage: release
   script:
-    - tools/ci/orc push --registry=${REGISTRY}
-    # keep registry size under control
-    - tools/dregman clean ${REGISTRY} tessia-cli
-    - tools/dregman clean ${REGISTRY} tessia-server
+    - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print(gen_version().replace("+", "-"))'`
+    - docker pull $REGISTRY_CLI_IMAGE_NAME
+    - docker pull $REGISTRY_SERVER_IMAGE_NAME
+    - docker tag $REGISTRY_CLI_IMAGE_NAME ${CI_REGISTRY_IMAGE}/tessia-cli:${TESSIA_IMAGE_TAG}
+    - docker tag $REGISTRY_SERVER_IMAGE_NAME ${CI_REGISTRY_IMAGE}/tessia-server:${TESSIA_IMAGE_TAG}
+    - docker push ${CI_REGISTRY_IMAGE}/tessia-cli:${TESSIA_IMAGE_TAG}
+    - docker push ${CI_REGISTRY_IMAGE}/tessia-server:${TESSIA_IMAGE_TAG}
   only:
     - master
-
-cleanup:
-  stage: cleanup
-  script:
-    - tools/ci/orc cleanup
-  when: always
+    - tags

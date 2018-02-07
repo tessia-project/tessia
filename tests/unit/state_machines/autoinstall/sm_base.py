@@ -456,4 +456,57 @@ class TestSmBase(TestCase):
             self._create_sm(self._child_cls, "AnotherOS",
                             "kvm054/kvm_kvm054_install", "RHEL7.2")
     # test_no_repo_os()
+
+    def test_multi_root(self):
+        """
+        Test the case where a system profile has multiple root disks defined.
+        """
+        profile_obj = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        mock_table = {
+            "table": [
+                {
+                    "fs": "ext4",
+                    "mo": None,
+                    "mp": "/",
+                    "size": 6000,
+                    "type": "primary"
+                }
+            ],
+            "type": "msdos"
+        }
+        first_disk = profile_obj.storage_volumes_rel[0]
+        second_disk = profile_obj.storage_volumes_rel[1]
+        with self._mock_db_obj(first_disk, 'part_table', mock_table):
+            with self._mock_db_obj(second_disk, 'part_table', mock_table):
+                mach = self._create_sm(self._child_cls, "rhel7.2",
+                                       "CPC3LP55/default_CPC3LP55", "RHEL7.2")
+                with self.assertRaisesRegex(
+                    ValueError, "multiple root disks defined"):
+                    mach.start()
+    # test_multi_root()
+
+    def test_no_root(self):
+        """
+        Test the case where a system profile has no root disks defined.
+        """
+        profile_obj = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        mock_table = {
+            "table": [
+                {
+                    "fs": "ext4",
+                    "mo": None,
+                    "mp": "/home",
+                    "size": 6000,
+                    "type": "primary"
+                }
+            ],
+            "type": "msdos"
+        }
+        first_disk = profile_obj.storage_volumes_rel[0]
+        with self._mock_db_obj(first_disk, 'part_table', mock_table):
+            mach = self._create_sm(self._child_cls, "rhel7.2",
+                                   "CPC3LP55/default_CPC3LP55", "RHEL7.2")
+            with self.assertRaisesRegex(ValueError, "no root disk defined"):
+                mach.start()
+    # test_no_root()
 # TestSmBase

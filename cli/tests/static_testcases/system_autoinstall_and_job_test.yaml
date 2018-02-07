@@ -68,10 +68,8 @@ tasks:
       - Partition table successfully initialized.
     - - storage part-add --server=DS8K16 --id=3957 --fs=swap --size=7gb
       - Partition successfully added.
-    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400100000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400100000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c1ae' --path='1800,100207630508c1ae' --path='1800,100207630510c1ae' --path='1800,100207630513c1ae' --path='1880,100207630503c1ae' --path='1880,100207630508c1ae' --path='1880,100207630510c1ae' --path='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002201
       - Item added successfully.
-    - - storage vol-edit --server=DS8K16 --id=1022400100000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002201
-      - Item successfully updated.
     - - storage part-init --server=DS8K16 --id=1022400100000000 --label=msdos
       - Partition table successfully initialized.
     - - storage part-add --server=DS8K16 --id=1022400100000000 --fs=ext4 --size=9gb --mp=/

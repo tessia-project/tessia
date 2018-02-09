@@ -24,7 +24,7 @@ from flask import g as flask_global
 from flask import request as flask_request
 from sqlalchemy.sql import func
 from tessia.server import auth
-from tessia.server.api.app import API
+from tessia.server.api.db import API_DB
 from tessia.server.api.exceptions import UnauthorizedError
 from tessia.server.config import CONF
 from tessia.server.db.models import User
@@ -101,8 +101,8 @@ class _LoginManager(object):
                 user_entry.title = result.get('title', None)
 
             if changed:
-                API.db.session.add(user_entry)
-                API.db.session.commit()
+                API_DB.db.session.add(user_entry)
+                API_DB.db.session.commit()
 
             return user_entry
 
@@ -123,8 +123,8 @@ class _LoginManager(object):
         new_user.title = result.get('title', None)
         new_user.restricted = False
         new_user.admin = False
-        API.db.session.add(new_user)
-        API.db.session.commit()
+        API_DB.db.session.add(new_user)
+        API_DB.db.session.commit()
 
         return new_user
     # authenticate_basic()
@@ -157,8 +157,8 @@ class _LoginManager(object):
             raise UnauthorizedError()
 
         key_entry.last_used = func.now()
-        API.db.session.add(key_entry)
-        API.db.session.commit()
+        API_DB.db.session.add(key_entry)
+        API_DB.db.session.commit()
         return key_entry.user_rel
     # authenticate_key()
 # _LoginManager

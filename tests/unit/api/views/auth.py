@@ -21,7 +21,6 @@ Unit test for api.views.auth module
 #
 from base64 import b64encode
 from tessia.server.api.app import API
-from tessia.server.api.resources import RESOURCES
 from tessia.server.api.views import auth
 from tessia.server.db import models
 from tests.unit.config import EnvConfig
@@ -63,11 +62,7 @@ class TestAuth(TestCase):
         cls._env_config.start(DEFAULT_CONFIG)
 
         # force recreation of object
-        API._api = None
-        # the potion resource might be tied to a previous instance so we remove
-        # the association
-        for resource in RESOURCES:
-            resource.api = None
+        API.reset()
         # create the flask app instance
         API.app.config['TESTING'] = True
         cls.app = API.app.test_client()

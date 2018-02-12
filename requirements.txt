@@ -1,6 +1,7 @@
 # order is the order pip will install, so if package A depends on B make sure B comes first
-# postgres python driver
-psycopg2>=2.6.1
+# postgres python driver, no binary due to https://github.com/psycopg/psycopg2/issues/543
+# can be removed when 2.8 is out
+psycopg2>=2.7 --no-binary psycopg2
 # ORM tool
 SQLAlchemy>=1.0.11
 # database migrations

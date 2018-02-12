@@ -135,6 +135,9 @@ def _find_requirements():
                       file=sys.stderr)
                 continue
             line = line[egg_index+5:]
+        # normal format: use requirement and drop additional parameters
+        else:
+            line = line.split()[0]
         req_list.append(line)
 
     return req_list

@@ -68,7 +68,7 @@ confidence=
 # from abstract ones that do nothing.
 # * protected-access: sometimes it's acceptable to access a protected
 # member (specially in unit tests).
-disable=wrong-import-order,arguments-differ,useless-super-delegation,protected-access
+disable=wrong-import-order,arguments-differ,useless-super-delegation,protected-access,similarities
 
 
 [REPORTS]

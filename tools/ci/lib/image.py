@@ -83,7 +83,7 @@ class DockerImage(object):
 
             docker_build = (
                 'docker build --force-rm --label com.tessia.version={version} '
-                '-t {image_name} {args} {context_dir}'
+                '--pull -t {image_name} {args} {context_dir}'
             )
             docker_cmd = docker_build.format(
                 image_name=self._fullname,

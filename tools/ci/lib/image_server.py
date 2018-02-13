@@ -80,45 +80,14 @@ class DockerImageServer(DockerImage):
         """
         # start the container with a hanging command so that it does not exit
         docker_cmd = self._gen_docker_cmd(
-            'run', args='-d', cmd='tail -f /dev/null')
+            'run', args='--rm -v $PWD:/root/tessia-server:ro',
+            cmd='bash -c "cd /root/tessia-server && tools/run_pylint.py && '
+                'tools/run_tests.py"'
+        )
         ret_code, output = self._session.run(docker_cmd)
         if ret_code != 0:
             raise RuntimeError(
-                'failed to start unittest container: {}'.format(output))
-
-        try:
-            # pipe the tar file from the repo to a tar cmd reading from stdin
-            # in the container
-            repo_dir = '/root/{}'.format(self._name)
-            cmd = (
-                "bash -c '{ mkdir " + repo_dir + " && "
-                "tar -C " + repo_dir + " -xf -; }'"
-            )
-            docker_cmd = self._gen_docker_cmd('exec', args='-i', cmd=cmd)
-            ret_code, output = self._session.run(
-                "git archive HEAD | {}".format(docker_cmd))
-            if ret_code != 0:
-                raise RuntimeError(
-                    'failed to copy repo to container: {}'.format(
-                        output))
-
-            # run the lint and unit test commands
-            cmd = (
-                "bash -c 'cd {} && tools/run_pylint.py && "
-                "tools/run_tests.py'".format(repo_dir))
-            docker_cmd = self._gen_docker_cmd('exec', cmd=cmd)
-            ret_code, output = self._session.run(docker_cmd)
-            if ret_code != 0:
-                raise RuntimeError(
-                    'failed to run unit tests: {}'.format(output))
-        finally:
-            # stop and remove the container
-            ret_code, output = self._session.run(
-                self._gen_docker_cmd('rm', args='-f'))
-            if ret_code != 0:
-                self._logger.warning(
-                    '[unittest] failed to remove container: %s', output)
-
+                'failed to run unit tests: {}'.format(output))
     # unit_test()
 
 # DockerImageServer

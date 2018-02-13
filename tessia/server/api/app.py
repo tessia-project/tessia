@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Configuration of API objects
+Initialization of API objects
 """
 
 #
@@ -23,11 +23,14 @@ from flask import Flask
 from flask_potion import Api
 from flask_potion import exceptions as potion_exceptions
 from tessia.server.config import CONF
+from tessia.server.api import exceptions as api_exceptions
+from tessia.server.api.db import API_DB
+from tessia.server.api.manager import ApiManager
+from tessia.server.api.resources import RESOURCES
+from tessia.server.api.views import version
+from tessia.server.api.views.auth import authorize
 from tessia.server.db.connection import MANAGER
-from tessia.server.db.models import BASE
 
-# used by potion to connect the Resources with the Models
-import flask_sqlalchemy as flask_sa
 import logging
 
 #
@@ -51,11 +54,11 @@ class _AppManager(object):
 
     def __init__(self):
         """
-        Constructor, defines the variable that stores the app and db objects
-        instances as empty. The app creation and db configuration are triggered
-        on the first time one of the variables app or db is referenced.
+        Constructor, defines the variable that stores the app object instance
+        as empty. The app creation is triggered on the first time the variable
+        'app' is referenced.
         """
-        self._api = None
+        self._app = None
     # __init__()
 
     def __new__(cls, *args, **kwargs):
@@ -83,19 +86,19 @@ class _AppManager(object):
         """
         Perform all necessary configuration steps to prepare the rest api.
         """
-        if self._api is not None:
+        if self._app is not None:
             return
 
         # create the flask app instance
         app = self._create_app()
 
-        # create the flask-sa object
-        database = self._create_db(app)
+        # initialize the flask-sa object
+        self._init_db(app)
 
         # create the api entry points
         self._create_api(app)
 
-        self._api = (app, database)
+        self._app = app
     # _configure()
 
     def _create_api(self, app):
@@ -111,13 +114,6 @@ class _AppManager(object):
         Raises:
             RuntimeError: in case a resource is missing mandatory attribute
         """
-        # these imports are made here to avoid circular import problems
-        from tessia.server.api.manager import ApiManager
-        from tessia.server.api.resources import RESOURCES
-        from tessia.server.api.views.auth import authorize
-        from tessia.server.api.views import version
-        from tessia.server.api import exceptions as api_exceptions
-
         # version verification routine when defined by the client in headers
         app.before_request(version.check_version)
         # add the api version header on each response
@@ -209,45 +205,18 @@ class _AppManager(object):
         return app
     # _create_app()
 
-    def _create_db(self, app):
+    @staticmethod
+    def _init_db(app):
         """
-        Create the flask-sqlalchemy instance for db communication
+        Init the app in the flask-sqlalchemy instance for db communication
 
         Args:
             app (Flask): flask object
-
-        Returns:
-            SQLAlchemy: instance of flask-SQLAlchemy
-
-        Raises:
-            RuntimeError: in case db url is not found in cfg file
         """
-        def patched_base(self, *args, **kwargs):
-            """
-            Change the flask_sqlalchemy base creator function to use our custom
-            declarative base in place of the default one.
-            """
-            # add our base to the query property of each model we have
-            # in case a query property was already added by the db.connection
-            # module it will be overriden here, which is ok because the
-            # flask_sa implementation just add a few bits more like pagination
-            for cls_model in BASE._decl_class_registry.values():
-                if isinstance(cls_model, type):
-                    cls_model.query_class = flask_sa.BaseQuery
-                    cls_model.query = flask_sa._QueryProperty(self)
-
-            # return our base as the base to be used by flask-sa
-            return BASE
-        # patched_base()
-
         app.config['SQLALCHEMY_DATABASE_URI'] = MANAGER.engine.url
         app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-        flask_sa.SQLAlchemy.make_declarative_base = patched_base
-        flask_sa.SQLAlchemy.create_session = lambda *args, **kwargs: \
-            MANAGER.session
-
-        return flask_sa.SQLAlchemy(app, model_class=BASE)
-    # _create_db()
+        API_DB.db.init_app(app)
+    # _init_db()
 
     @property
     def app(self):
@@ -255,16 +224,21 @@ class _AppManager(object):
         Return the flask's application instance
         """
         self._configure()
-        return self._api[0]
+        return self._app
+    # app
 
-    @property
-    def db(self):
+    def reset(self):
         """
-        Return the flask-sa's db object
+        Force recreation of app and db objects. This method is primarily
+        targeted for unit tests.
         """
-        self._configure()
-        return self._api[1]
-
+        self._app = None
+        API_DB._db = None
+        # the potion resource might be tied to a previous instance so we remove
+        # the association
+        for resource in RESOURCES:
+            resource.api = None
+    # reset()
 # _AppManager
 
 API = _AppManager()

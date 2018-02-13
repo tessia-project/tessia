@@ -22,7 +22,6 @@ Unit test for secure_resources module
 from base64 import b64encode
 from tessia.server import config
 from tessia.server.api.app import API
-from tessia.server.api.resources import RESOURCES
 from tessia.server.db import models
 from tests.unit.config import EnvConfig
 from tests.unit.db.models import DbUnit
@@ -322,11 +321,7 @@ class TestSecureResource(TestCase):
         config.CONF.log_config()
 
         # force recreation of objects
-        API._api = None
-        # the potion resource might be tied to a previous instance so we remove
-        # the association
-        for resource in RESOURCES:
-            resource.api = None
+        API.reset()
         API.app.config['TESTING'] = True
         cls.app = API.app.test_client()
 

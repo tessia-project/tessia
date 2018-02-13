@@ -382,7 +382,7 @@ class Manager(object):
         # add auth token to admin user in client to make it ready for use
         # better hide token from logs
         ret_code, output = self._session.run(
-            'docker exec tessia_server_1 tess-dbmanage get-token',
+            'docker exec tessia_server_1 tess-dbmanage get-token 2>/dev/null',
             stdout=False)
         if ret_code != 0:
             raise RuntimeError(

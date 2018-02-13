@@ -25,7 +25,7 @@ from flask_potion.routes import Route
 from flask_potion.contrib.alchemy.fields import InlineModel
 from flask_potion.instances import Pagination
 from sqlalchemy.exc import IntegrityError
-from tessia.server.api.app import API
+from tessia.server.api.db import API_DB
 from tessia.server.api.exceptions import BaseHttpError
 from tessia.server.api.exceptions import ConflictError
 from tessia.server.api.exceptions import ItemNotFoundError
@@ -257,7 +257,7 @@ class SystemProfileResource(SecureResource):
             def_profile.default = False
             # do not commit yet, let the manager do it when updating the
             # target profile to make it an atomic operation
-            API.db.session.add(def_profile)
+            API_DB.db.session.add(def_profile)
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
@@ -431,7 +431,7 @@ class SystemProfileResource(SecureResource):
                 def_profile.default = False
                 # do not commit yet, let the manager do it when updating the
                 # target profile to make it an atomic operation
-                API.db.session.add(def_profile)
+                API_DB.db.session.add(def_profile)
         # a profile cannot unset its default flag otherwise we would have a
         # state where a system has no default profile, instead it has to be
         # replaced by another
@@ -502,9 +502,9 @@ class SystemProfileResource(SecureResource):
         # create association
         new_attach = StorageVolumeProfileAssociation(
             profile_id=id, volume_id=properties['unique_id'])
-        API.db.session.add(new_attach)
+        API_DB.db.session.add(new_attach)
         try:
-            API.db.session.commit()
+            API_DB.db.session.commit()
         # duplicate entry
         except IntegrityError as exc:
             raise ConflictError(exc, None)
@@ -538,7 +538,7 @@ class SystemProfileResource(SecureResource):
             # TODO: create a schema to have human-readable content in the error
             # message
             raise ItemNotFoundError('profile_id,volume_id', value, None)
-        API.db.session.delete(match)
+        API_DB.db.session.delete(match)
 
         last = StorageVolumeProfileAssociation.query.filter_by(
             volume_id=vol_unique_id,
@@ -548,7 +548,7 @@ class SystemProfileResource(SecureResource):
             StorageVolume.query.filter_by(id=vol_unique_id).update(
                 {'system_id': None})
 
-        API.db.session.commit()
+        API_DB.db.session.commit()
         return True
     # detach_storage_volume
     detach_storage_volume.request_schema = None
@@ -574,9 +574,9 @@ class SystemProfileResource(SecureResource):
         # create association
         new_attach = SystemIfaceProfileAssociation(
             profile_id=id, iface_id=properties['id'])
-        API.db.session.add(new_attach)
+        API_DB.db.session.add(new_attach)
         try:
-            API.db.session.commit()
+            API_DB.db.session.commit()
         # duplicate entry
         except IntegrityError as exc:
             raise ConflictError(exc, None)
@@ -610,9 +610,9 @@ class SystemProfileResource(SecureResource):
             # TODO: create a schema to have human-readable content in the error
             # message
             raise ItemNotFoundError('profile_id,iface_id', value, None)
-        API.db.session.delete(match)
+        API_DB.db.session.delete(match)
 
-        API.db.session.commit()
+        API_DB.db.session.commit()
         return True
     # detach_iface
     detach_iface.request_schema = None

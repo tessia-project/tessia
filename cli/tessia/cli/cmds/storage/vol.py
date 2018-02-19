@@ -60,6 +60,43 @@ WRONG_USAGE_FCP_PARAM = (
 # CODE
 #
 
+def _process_fcp_path(prop_dict, value):
+    """
+    Validate a list of fcp paths and add them to the item's properties
+    dictionary.
+
+    Args:
+        prop_dict (dict): item's properties
+        value (list): fcp paths in the form [(devno, wwpn)]
+    """
+    # add the adapters list to the prop dict in case it's not
+    # there yet
+    prop_dict['specs'].setdefault('adapters', [])
+
+    for devno, wwpn in value:
+
+        # find the entry with the corresponding devno
+        adapter_entry = None
+        for check_entry in prop_dict['specs']['adapters']:
+            if check_entry.get('devno') == devno:
+                adapter_entry = check_entry
+                break
+
+        # adapter entry does not exist yet: create one
+        if adapter_entry is None:
+            adapter_entry = {
+                'devno': devno,
+                'wwpns': [wwpn]
+            }
+            prop_dict['specs']['adapters'].append(adapter_entry)
+        # adapter entry found: verify if it contains wwpn
+        else:
+            adapter_entry.setdefault('wwpns', [])
+            # wwpn not listed yet: add it
+            if wwpn not in adapter_entry['wwpns']:
+                adapter_entry['wwpns'].append(wwpn)
+# _process_fcp_path()
+
 # partition table related functions
 @click.command(name='part-add')
 @click.option('--server', required=True, help='target storage server')
@@ -282,10 +319,6 @@ def vol_add(**kwargs):
     setattr(item, 'system_attributes', {})
     setattr(item, 'type', kwargs['type'])
 
-    # set default value for '--mpath' in FCP case
-    if item['type'] == 'FCP':
-        item['specs']['multipath'] = True
-
     for key, value in kwargs.items():
         # option was not specified: skip it
         if value is None:
@@ -305,30 +338,8 @@ def vol_add(**kwargs):
 
             if item['type'] != 'FCP':
                 raise click.ClickException(WRONG_USAGE_FCP_PARAM)
-            item['specs'].setdefault('adapters', [])
 
-            for devno, wwpn in value:
-
-                # find the entry with the corresponding devno
-                adapter_entry = None
-                for check_entry in item['specs']['adapters']:
-                    if check_entry.get('devno') == devno:
-                        adapter_entry = check_entry
-                        break
-
-                # adapter entry does not exist yet: create one
-                if adapter_entry is None:
-                    adapter_entry = {
-                        'devno': devno,
-                        'wwpns': [wwpn]
-                    }
-                    item['specs']['adapters'].append(adapter_entry)
-                # adapter entry found: verify if it contains wwpn
-                else:
-                    adapter_entry.setdefault('wwpns', [])
-                    # wwpn not listed yet: add it
-                    if wwpn not in adapter_entry['wwpns']:
-                        adapter_entry['wwpns'].append(wwpn)
+            _process_fcp_path(item, value)
 
         # process wwid arg
         elif key == 'wwid':
@@ -339,13 +350,14 @@ def vol_add(**kwargs):
         else:
             setattr(item, key, value)
 
-    # check an availability of required FCP parameters
+    # check the availability of required FCP parameters
     if item['type'] == 'FCP':
-        try:
-            # 'mpath' already has a default value
-            item['specs']['wwid']
-            item['specs']['adapters']
-        except KeyError:
+        # multipath not specified: activate by default
+        if 'multipath' not in item['specs']:
+            item['specs']['multipath'] = True
+
+        # wwid or no fcp path specified: report error
+        if 'wwid' not in item['specs'] or 'adapters' not in item['specs']:
             raise click.ClickException('both --path and --wwid must be '
                                        'specified')
     item.save()
@@ -436,33 +448,10 @@ def vol_edit(server, cur_id, **kwargs):
             if item['type'] != 'FCP':
                 raise click.ClickException(WRONG_USAGE_FCP_PARAM)
 
-            # add the necessary keys to the update dict in case they are not
-            # there yet
+            # add the key in case it's not there yet
             update_dict.setdefault('specs', item.specs)
-            update_dict['specs'].setdefault('adapters', [])
 
-            for devno, wwpn in value:
-
-                # find the entry with the corresponding devno
-                adapter_entry = None
-                for check_entry in update_dict['specs']['adapters']:
-                    if check_entry.get('devno') == devno:
-                        adapter_entry = check_entry
-                        break
-
-                # adapter entry does not exist yet: create one
-                if adapter_entry is None:
-                    adapter_entry = {
-                        'devno': devno,
-                        'wwpns': [wwpn]
-                    }
-                    update_dict['specs']['adapters'].append(adapter_entry)
-                # adapter entry found: verify if it contains wwpn
-                else:
-                    adapter_entry.setdefault('wwpns', [])
-                    # wwpn not listed yet: add it
-                    if wwpn not in adapter_entry['wwpns']:
-                        adapter_entry['wwpns'].append(wwpn)
+            _process_fcp_path(update_dict, value)
 
         elif key == 'delpath':
             # option was not specified: skip it

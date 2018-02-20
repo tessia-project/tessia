@@ -316,10 +316,11 @@ class ScsiWwid(click.ParamType):
         """
         Make sure value is a non empty string.
         """
+        orig_value = value
         value = value.lower()
         ret = re.match(r"^[a-z0-9]+$", value)
         if ret is None:
-            self.fail('{} is not a valid wwid'.format(value), param, ctx)
+            self.fail('{} is not a valid wwid'.format(orig_value), param, ctx)
 
         return value
     # convert()

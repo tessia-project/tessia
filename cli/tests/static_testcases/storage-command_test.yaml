@@ -69,7 +69,7 @@ tasks:
       - 'Type name   : DASD-FCP'
     - - storage server-list
       - No results were found.
-    # 'storage server-add' subcommand  
+    # 'storage server-add' subcommand
     - - storage server-add --name=DS8K16 --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
       - Item added successfully.
     - - storage server-add
@@ -96,7 +96,7 @@ tasks:
       - 'Invalid value for "--hostname": value may not be empty'
     - - storage server-add --name=DS8K24 --model=DS8000 --type=DASD-FCP --hostname=s89.example.com --fwlevel= --project= --desc=
       - "request failed. Server answered: No associated item found with value '' for field 'Project'"
-    # 'storage server-list' subcommand  
+    # 'storage server-list' subcommand
     - - storage server-list
       - 'Name           : DS8K16'
     - - storage server-list --name=
@@ -133,7 +133,7 @@ tasks:
       - No results were found.
     - - storage server-list --owner lab_admin@example.com --name=DS8K22
       - 'Name           : DS8K22'
-    # 'storage server-edit' subcommand  
+    # 'storage server-edit' subcommand
     - - storage server-edit --name=
       - 'Invalid value for "--name": value may not be empty'
     - - storage server-edit --name= --model=DS8000
@@ -186,7 +186,7 @@ tasks:
       - Item successfully updated.
     - - storage server-edit --name=DS8K32 --type=DASD
       - "request failed. Server answered: No associated item found with value 'DASD' for field 'Server type'"
-    # 'storage server-del' subcommand  
+    # 'storage server-del' subcommand
     - - storage server-del
       - Missing option "--name".
     - - storage server-del --name=
@@ -204,27 +204,27 @@ tasks:
       - No results were found.
     # 'storage vol-add' subcommand
     - - storage vol-add
-      - Missing option "--server".    
+      - Missing option "--server".
     - - storage vol-add --server=DS8K16
-      - Missing option "--id".    
+      - Missing option "--id".
     - - storage vol-add --server=DS8K16 --id=3951
-      - Missing option "--size".    
+      - Missing option "--size".
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb
-      - Missing option "--type".    
+      - Missing option "--type".
     - - storage vol-add --server= --id=3951 --size=7gb --type=DASD
-      - "request failed. Server answered: No associated item found with value '' for field 'Storage server'"   
+      - "request failed. Server answered: No associated item found with value '' for field 'Storage server'"
     - - storage vol-add --server=DS8K16 --id= --size=7gb --type=DASD
-      - 'Error: Invalid value for "--id": value may not be empty'    
+      - 'Error: Invalid value for "--id": value may not be empty'
     - - storage vol-add --server=DS8K16 --id=3951 --size= --type=DASD
-      - invalid size specified.    
+      - invalid size specified.
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=
-      - "The server did not accept our request. The response is: The value 'type=' is invalid: it does not match storage server type 'DASD-FCP'"    
+      - "The server did not accept our request. The response is: The value 'type=' is invalid: it does not match storage server type 'DASD-FCP'"
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=DASD
-      - Item added successfully.    
+      - Item added successfully.
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=DASD
-      - 'Error: request failed. Server answered: An item with the provided value'  
+      - 'Error: request failed. Server answered: An item with the provided value'
     - - storage vol-add --server=DS8K16 --id=ED51 --size=7gb --type=DASD
-      - Item added successfully.    
+      - Item added successfully.
         # vol-add: wrong size
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7g --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - invalid size specified.
@@ -238,13 +238,43 @@ tasks:
       - "request failed. Server answered: No associated item found with value '' for field 'Project'"
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7gb --owner=dev1@example.com --project='GEO_1' --desc='belongs to zVM guest/LPAR'
       - "request failed. Server answered: No associated item found with value 'GEO_1' for field 'Project'"
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --mpath=true --desc=
+      - "Error: FCP parameters can't be applied to a non FCP disk."
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --path='1800,100207630503c001' --desc=
+      - "Error: FCP parameters can't be applied to a non FCP disk."
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --addpath='1800,100207630503c001' --desc=
+      - 'no such option: --addpath'
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers'  --wwid=11002076305aac1a0000000000002206 --desc=
+      - "Error: FCP parameters can't be applied to a non FCP disk."
     - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc=
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT'
+      - 'both --path and --wwid must be specified'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=false
+      - 'both --path and --wwid must be specified'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=false --path='1800,100207630503c001'
+      - 'both --path and --wwid must be specified'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=false --wwid=11002076305aac1a0000000000002206
+      - 'both --path and --wwid must be specified'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --addpath='1800,100207630513c001' --wwid=11002076305aac1a0000000000002206
+      - 'no such option: --addpath'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --wwid=11002076305aac1a0000000000002206 --mpath
+      - '--mpath option requires an argument'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath= --path='1800,100207630503c001' --wwid=11002076305aac1a0000000000002206
+      - 'Invalid value for "--mpath":  is not a valid boolean'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=fals --path='1800,100207630503c001' --wwid=11002076305aac1a0000000000002206
+      - 'Invalid value for "--mpath": fals is not a valid boolean'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,0x5555' --wwid=11002076305aac1a0000000000002206
+      - 'Invalid value for "--path": 0x5555 is not a valid wwpn'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --wwid=
+      - 'Invalid value for "--wwid":  is not a valid wwid'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --wwid=5555.50
+      - 'Invalid value for "--wwid": 5555.50 is not a valid wwid'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c1ae' --path='1800,100207630513c1ae' --mpath=false --wwid=11002076305aac1a0000000000002202
       - Item added successfully.
-    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400300000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT'
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400300000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c000' --path='1800,100207630508c000' --path='1800,100207630510c000' --path='1800,100207630513c000' --path='1880,100207630503c000' --path='1880,100207630508c000' --path='1880,100207630510c000' --path='1880,100207630513c000' --wwid=11002076305aac1a0000000000002207
       - Item added successfully.
     # 'storage vol-list' subcommand
     - - storage vol-list --server=DS8KKK
@@ -327,6 +357,10 @@ tasks:
       - Item successfully updated.
     - - storage vol-edit --server=DS8K16 --id=3955 --mpath=TRUE
       - "FCP parameters can't be applied to a non FCP disk."
+    - - storage vol-edit --server=DS8K16 --id=3952 --addpath='1800,100207630503c1ae'
+      - "FCP parameters can't be applied to a non FCP disk."
+    - - storage vol-edit --server=DS8K16 --id=3952 --wwid=11002076305aac1a0000000000002202
+      - "FCP parameters can't be applied to a non FCP disk."
     - - storage vol-edit --server=DS8K16 --id=3952 --addpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
       - "FCP parameters can't be applied to a non FCP disk."
     - - storage vol-edit --server=DS8K16 --id=3952 --type=FCP
@@ -340,18 +374,19 @@ tasks:
       - 'no such option: --type'
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=
       - 'Invalid value for "--mpath":  is not a valid boolean'
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=true
-      - 'The server did not accept our request. The response is: specs must be oneOf='
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=false
-      - 'The server did not accept our request. The response is: specs must be oneOf='
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630503c1ae' --mpath=true
-      - 'The server did not accept our request. The response is: specs must be oneOf='
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=true --wwid=11002076305aac1a0000000000002202
-      - 'The server did not accept our request. The response is: specs must be oneOf='
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=TRU
+      - 'Invalid value for "--mpath": tru is not a valid boolean'
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --path='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+      - 'no such option: --path'
+       # add the same path as exists
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630513c1ae'
+      - Item successfully updated.
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630523c1ae' --mpath=true
+      - Item successfully updated.
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630513c1ae' --delpath='1800,100207630523c1ae'
       - Item successfully updated.
        # delete the only path
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630503c1ae'
       - fcp volume must have at least one path
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --wwid=
       - 'Invalid value for "--wwid":  is not a valid wwid'
@@ -369,7 +404,7 @@ tasks:
         # adapter not found: no error message
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1900,100207630503c1ae'
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=false --wwid=11002076305aac1a0000000000002202
       - Item successfully updated.
     - - storage vol-edit --server=DS8K16 --id=1022400300000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002203
       - Item successfully updated.
@@ -394,7 +429,7 @@ tasks:
     - - storage part-list --server=DS8K16 --id=3955
       - partition table undefined; initialize it with the part-init command.
     - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7gb --mp=/
-      - partition table undefined; initialize it with the part-init command. 
+      - partition table undefined; initialize it with the part-init command.
     - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=ext4 --size=7gb --mp=/
       - 'partition table undefined; initialize it with the part-init command.'
     - - storage part-del --server=DS8K16 --id=3955 --num=1
@@ -421,7 +456,7 @@ tasks:
     - - storage part-init --server=DS8K16 --id=3955 --label=
       - 'Invalid value for "--label": invalid choice: .'
     - - storage part-init --server=DS8K16 --id=3955 --label=disk
-      - 'Invalid value for "--label": invalid choice: .'
+      - 'Invalid value for "--label": invalid choice: disk.'
     - - storage part-init --server=DS8K16 --id=3955 --label=dasd
       - Partition table successfully initialized.
     - - storage part-init --server=DS8K16 --id=3955 --label=dasd
@@ -476,7 +511,7 @@ tasks:
       -  Missing option "--id".
     - - storage part-list --server= --id=3955
       - volume not found.
-      # should be 'volume not found.' 
+      # should be 'volume not found.'
     - - storage part-edit --server= --id=3955 --num=1
       - nothing to update.
     - - storage part-list --server=DS8K16 --id=9955
@@ -513,7 +548,7 @@ tasks:
       - specified partition not found
     - - storage part-edit --server=DS8K16 --id=3955 --num=1 --size=7gb
       - Partition successfully updated.
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=ext4 
+    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=ext4
       - Partition successfully updated.
       # part-edit: for stmt 142
     - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=extt

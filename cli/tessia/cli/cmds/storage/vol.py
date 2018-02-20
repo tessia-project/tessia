@@ -60,6 +60,43 @@ WRONG_USAGE_FCP_PARAM = (
 # CODE
 #
 
+def _process_fcp_path(prop_dict, value):
+    """
+    Validate a list of fcp paths and add them to the item's properties
+    dictionary.
+
+    Args:
+        prop_dict (dict): item's properties
+        value (list): fcp paths in the form [(devno, wwpn)]
+    """
+    # add the adapters list to the prop dict in case it's not
+    # there yet
+    prop_dict['specs'].setdefault('adapters', [])
+
+    for devno, wwpn in value:
+
+        # find the entry with the corresponding devno
+        adapter_entry = None
+        for check_entry in prop_dict['specs']['adapters']:
+            if check_entry.get('devno') == devno:
+                adapter_entry = check_entry
+                break
+
+        # adapter entry does not exist yet: create one
+        if adapter_entry is None:
+            adapter_entry = {
+                'devno': devno,
+                'wwpns': [wwpn]
+            }
+            prop_dict['specs']['adapters'].append(adapter_entry)
+        # adapter entry found: verify if it contains wwpn
+        else:
+            adapter_entry.setdefault('wwpns', [])
+            # wwpn not listed yet: add it
+            if wwpn not in adapter_entry['wwpns']:
+                adapter_entry['wwpns'].append(wwpn)
+# _process_fcp_path()
+
 # partition table related functions
 @click.command(name='part-add')
 @click.option('--server', required=True, help='target storage server')
@@ -257,6 +294,13 @@ def part_list(server, volume_id, **kwargs):
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
+# options specific to FCP type
+@click.option('--mpath', type=click.BOOL,
+              help="enable/disable multipath (FCP only)")
+@click.option('--path', multiple=True, type=FCP_PATH,
+              help='add a FCP path (FCP only)')
+@click.option('--wwid', type=SCSI_WWID,
+              help='scsi world wide identifier (FCP only)')
 def vol_add(**kwargs):
     """
     create a new storage volume
@@ -269,11 +313,53 @@ def vol_add(**kwargs):
 
     client = Client()
     item = client.StorageVolumes()
-    for key, value in kwargs.items():
-        setattr(item, key, value)
-    # json fields are initially empty and populated later by edit commands
+
+    item.attributes = {}
     setattr(item, 'specs', {})
     setattr(item, 'system_attributes', {})
+    setattr(item, 'type', kwargs['type'])
+
+    for key, value in kwargs.items():
+        # option was not specified: skip it
+        if value is None:
+            continue
+
+        # process multipath arg
+        if key == 'mpath':
+            if item['type'] != 'FCP':
+                raise click.ClickException(WRONG_USAGE_FCP_PARAM)
+            item['specs']['multipath'] = kwargs['mpath']
+
+        # process add fcp path arg
+        elif key == 'path':
+            # option was not specified: skip it
+            if len(value) == 0:
+                continue
+
+            if item['type'] != 'FCP':
+                raise click.ClickException(WRONG_USAGE_FCP_PARAM)
+
+            _process_fcp_path(item, value)
+
+        # process wwid arg
+        elif key == 'wwid':
+            if item['type'] != 'FCP':
+                raise click.ClickException(WRONG_USAGE_FCP_PARAM)
+            item['specs']['wwid'] = value
+
+        else:
+            setattr(item, key, value)
+
+    # check the availability of required FCP parameters
+    if item['type'] == 'FCP':
+        # multipath not specified: activate by default
+        if 'multipath' not in item['specs']:
+            item['specs']['multipath'] = True
+
+        # wwid or no fcp path specified: report error
+        if 'wwid' not in item['specs'] or 'adapters' not in item['specs']:
+            raise click.ClickException('both --path and --wwid must be '
+                                       'specified')
     item.save()
     click.echo('Item added successfully.')
 # vol_add()
@@ -362,33 +448,10 @@ def vol_edit(server, cur_id, **kwargs):
             if item['type'] != 'FCP':
                 raise click.ClickException(WRONG_USAGE_FCP_PARAM)
 
-            # add the necessary keys to the update dict in case they are not
-            # there yet
+            # add the key in case it's not there yet
             update_dict.setdefault('specs', item.specs)
-            update_dict['specs'].setdefault('adapters', [])
 
-            for devno, wwpn in value:
-
-                # find the entry with the corresponding devno
-                adapter_entry = None
-                for check_entry in update_dict['specs']['adapters']:
-                    if check_entry.get('devno') == devno:
-                        adapter_entry = check_entry
-                        break
-
-                # adapter entry does not exist yet: create one
-                if adapter_entry is None:
-                    adapter_entry = {
-                        'devno': devno,
-                        'wwpns': [wwpn]
-                    }
-                    update_dict['specs']['adapters'].append(adapter_entry)
-                # adapter entry found: verify if it contains wwpn
-                else:
-                    adapter_entry.setdefault('wwpns', [])
-                    # wwpn not listed yet: add it
-                    if wwpn not in adapter_entry['wwpns']:
-                        adapter_entry['wwpns'].append(wwpn)
+            _process_fcp_path(update_dict, value)
 
         elif key == 'delpath':
             # option was not specified: skip it
@@ -423,7 +486,6 @@ def vol_edit(server, cur_id, **kwargs):
                 # no more wwpns listed: remove adapter entry
                 if len(adapter_entry['wwpns']) == 0:
                     update_dict['specs']['adapters'].pop(index)
-
             # at least one path must be available
             if len(update_dict['specs']['adapters']) == 0:
                 raise click.ClickException(

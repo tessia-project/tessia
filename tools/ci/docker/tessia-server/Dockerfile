@@ -21,6 +21,8 @@ RUN apt-get -q update > /dev/null && \
     locales \
     # used by baselib to check if hosts are up
     iputils-ping \
+    # used by baselib for zvm communication
+    s3270 \
     # used to install python libraries
     python3-pip \
     # used by setuptools to detect module version numbers

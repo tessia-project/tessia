@@ -27,6 +27,7 @@ from tessia.server.db.models import System, SystemProfile
 from tessia.server.lib.post_install import PostInstallChecker
 from tessia.server.state_machines.autoinstall.plat_lpar import PlatLpar
 from tessia.server.state_machines.autoinstall.plat_kvm import PlatKvm
+from tessia.server.state_machines.autoinstall.plat_zvm import PlatZvm
 from time import sleep
 from time import time
 from urllib.parse import urlsplit
@@ -45,6 +46,7 @@ CONNECTION_TIMEOUT = 600
 PLATFORMS = {
     'lpar': PlatLpar,
     'kvm': PlatKvm,
+    'zvm': PlatZvm,
 }
 
 #

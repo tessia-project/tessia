@@ -25,6 +25,14 @@
             "subnet": "CPC3 shared"
         },
         {
+            "address": "192.168.161.226",
+            "desc": "Used by vmguest01",
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
+            "subnet": "CPC3 shared"
+        },
+        {
             "address": "10.100.54.2",
             "desc": null,
             "modifier": "admin",
@@ -258,6 +266,110 @@
             "system_attributes": {},
             "type": "FCP",
             "volume_id": "1020400000000000"
+        },
+        {
+            "desc": "- DASD disk for vmguest01",
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/",
+                        "size": 6000,
+                        "type": "primary"
+                    },
+                    {
+                        "fs": "swap",
+                        "mo": null,
+                        "mp": null,
+                        "size": 1000,
+                        "type": "primary"
+                    }
+                ],
+                "type": "dasd"
+            },
+            "project": "Admins",
+            "server": "DSK7K16",
+            "size": 7000,
+            "specs": {},
+            "system": "vmguest01",
+            "system_attributes": {},
+            "type": "DASD",
+            "volume_id": "3963"
+        },
+        {
+            "desc": "FCP-SCSI DISK for vmguest01",
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/var",
+                        "size": 4000,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "Admins",
+            "server": "DSK7K16",
+            "size": 20000,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "multipath": true,
+                "wwid": "11002076305aac1a0000000000002002"
+            },
+            "system": "vmguest01",
+            "system_attributes": {},
+            "type": "FCP",
+            "volume_id": "1020400000000002"
+        },
+        {
+            "desc": "FCP-SCSI DISK mpath off for vmguest01",
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/home",
+                        "size": 4000,
+                        "type": "primary"
+                    }
+                ],
+                "type": "msdos"
+            },
+            "project": "Admins",
+            "server": "DSK7K16",
+            "size": 20000,
+            "specs": {
+                "adapters": [
+                    {
+                        "devno": "0.0.1800",
+                        "wwpns": [
+                            "100207630503c1ae"
+                        ]
+                    }
+                ],
+                "multipath": false,
+                "wwid": "11002076305aac1a0000000000002003"
+            },
+            "system": "vmguest01",
+            "system_attributes": {},
+            "type": "FCP",
+            "volume_id": "1020400000000003"
         },
         {
             "desc": "- DASD disk for regression tests",
@@ -783,6 +895,18 @@
             "volume": "DSK7K16/1024400700000000"
         },
         {
+            "profile": "vmguest01/default",
+            "volume": "DSK7K16/3963"
+        },
+        {
+            "profile": "vmguest01/default",
+            "volume": "DSK7K16/1020400000000002"
+        },
+        {
+            "profile": "vmguest01/default",
+            "volume": "DSK7K16/1020400000000003"
+        },
+        {
             "profile": "kvm054/kvm_kvm054_install",
             "volume": "DSK7K16/1024400100000000"
         },
@@ -888,6 +1012,18 @@
             "type": "lpar"
         },
         {
+            "desc": "ZVM Guest",
+            "hostname": "vmguest01.domain.com",
+            "hypervisor": "CPC3LP54",
+            "model": "ZEC12_H20",
+            "modifier": "admin",
+            "name": "vmguest01",
+            "owner": "admin",
+            "project": "Admins",
+            "state": "AVAILABLE",
+            "type": "zvm"
+        },
+        {
             "desc": "KVM Guest",
             "hostname": "kvm054.domain.com",
             "hypervisor": "CPC3LP55",
@@ -913,7 +1049,7 @@
             "system": "CPC3LP55",
             "type": "OSA"
         },
-		{
+        {
             "attributes": {
                 "ccwgroup": "0.0.1203,0.0.1204,0.0.1205",
                 "layer2": true
@@ -923,6 +1059,18 @@
             "name": "second osa",
             "osname": "eth02",
             "system": "CPC3LP55",
+            "type": "OSA"
+        },
+        {
+            "attributes": {
+                "ccwgroup": "0.0.f500,0.0.f501,0.0.f502",
+                "layer2": false
+            },
+            "ip_address": "CPC3 shared/192.168.161.226",
+            "mac_address": "ff:ff:ff:ff:ff:ff",
+            "name": "gateway osa",
+            "osname": "enccwf500",
+            "system": "vmguest01",
             "type": "OSA"
         },
         {
@@ -981,6 +1129,10 @@
         {
             "iface": "CPC3LP55/external osa",
             "profile": "CPC3LP55/default_CPC3LP55_SCSI"
+        },
+        {
+            "iface": "vmguest01/gateway osa",
+            "profile": "vmguest01/default"
         },
         {
             "iface": "kvm054/external macvtap",
@@ -1088,6 +1240,24 @@
             "operating_system": "sles12.1",
             "parameters": {},
             "system": "CPC3LP54"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+                "passwd": "somepasswd",
+                "user": "root",
+                "host_zvm": {
+                    "passwd": "vmpasswd",
+                    "byuser": "vmadmin"
+                }
+            },
+            "default": true,
+            "hypervisor_profile": "CPC3LP54/lpar_cpc3lp54_install",
+            "memory": 4096,
+            "name": "default",
+            "operating_system": "sles12.1",
+            "parameters": {},
+            "system": "vmguest01"
         },
         {
             "cpu": 2,

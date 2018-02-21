@@ -17,11 +17,11 @@ limitations under the License.
 
 This page contains a detailed view of the current supported combinations and usage restrictions regarding system installation.
 
-**Note that currently z/VM guests are *not* supported for system installations.**
-
 - [Network and volumes on LPAR](#network-and-volumes-on-lpar)
+- [Network and volumes on z/VM](#network-and-volumes-on-zvm)
 - [Network and volumes on KVM](#network-and-volumes-on-kvm)
 - [Partitioning on LPAR](#partitioning-on-lpar)
+- [Partitioning on z/VM](#partitioning-on-zvm)
 - [Partitioning on KVM](#partitioning-on-kvm)
 
 # Network and volumes on LPAR
@@ -35,6 +35,10 @@ This page contains a detailed view of the current supported combinations and usa
 | network interface OSA    | Y    | Y    | Y      |
 | layer2 on (OSA only)     | Y    | Y    | Y      |
 | layer2 off (OSA only)    | Y    | Y    | Y      |
+
+# Network and volumes on z/VM
+
+The supported network and volumes combinations for z/VM are the same as for LPAR.
 
 # Network and volumes on KVM
 
@@ -65,6 +69,10 @@ Remarks:
 | FAT16                | N    | N    | N      |
 | FAT32                | N    | N    | N      |
 | set mount options    | Y    | Y    | Y      |
+
+# Partitioning on z/VM
+
+The supported partitioning combinations for z/VM are the same as for LPAR.
 
 # Partitioning on KVM
 

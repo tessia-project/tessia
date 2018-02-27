@@ -363,6 +363,8 @@ tasks:
       - "FCP parameters can't be applied to a non FCP disk."
     - - storage vol-edit --server=DS8K16 --id=3952 --addpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
       - "FCP parameters can't be applied to a non FCP disk."
+    - - storage vol-edit --server=DS8K16 --id=3952 --delpath='1800,100207630503c1ae'
+      - "FCP parameters can't be applied to a non FCP disk."
     - - storage vol-edit --server=DS8K16 --id=3952 --type=FCP
       - 'no such option: --type'
     - - storage vol-list --id=3952

@@ -1,5 +1,5 @@
 description: Additional test for the commands 'system autoinstall' and 'job'
-# An empty file ~/tessia/cli/tests/test_parmfile is used to check 'job submit' command
+# test_parmfile and test_parmfile_2 are used to check 'job' command (located in the directory ~/tessia/cli/tests)
 base_user: admin
 tasks_order:
   - base_add
@@ -198,6 +198,8 @@ tasks:
       - 'request failed, reason is: Parsing of parameters failed with: Invalid request parameters'
     - - job submit --type=autoinstall --parmfile='test_parmfile' --startdate=xxxx
       - 'request failed, reason is: Parsing of parameters failed with: Invalid request parameters'
+    - - job submit --type=autoinstall --parmfile='test_parmfile_2' --timeout=1 --prio=2 --startdate=today
+      - 'request failed, reason is: Parsing of parameters failed with: Invalid request parameters'
     # job list
     - - job list
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
@@ -250,6 +252,11 @@ tasks:
       - job not found.
     - - job output --id=1
       - 'Process Process-1:'
+      # cover stmt 148 in job.py
+    - - job submit --type=echo --parmfile='test_parmfile_2'
+      - 'Request accepted; job id is'
+    - - job output --id=4
+      - 'Hello, world!'
     # job req-list
     - - job req-list
       - 'request_id | action_type |   job_type  |     submit_date'
@@ -259,6 +266,9 @@ tasks:
       - 'Request ID           : 2'
     - - job req-list --id=7
       - 'Request ID           : 7'
+      # cover stmts 204-205 in output.py
+    - - job req-list --id=12
+      - 'Request ID           : 12'
     - - job req-list --id=22
       - request not found.
     - - job req-list --action
@@ -306,4 +316,21 @@ tasks:
       - 'request failed, reason is: Cannot cancel job because it already ended'
     - - job cancel --id=22
       - 'request failed. Server answered: Job id provided does not exist'
+    - - job submit --type=echo --parmfile='test_parmfile_2'
+      - 'Request accepted; job id is'
+    - - job cancel --id=5
+      - 'Request accepted; job canceled.'
+    - - job list --id=5
+      - 'Job ID         : 5'
+    - - job submit --type=echo --parmfile='test_parmfile_2' --timeout=1
+      - 'Request accepted; job id is'
+    - - job list
+      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+    - - job list --id=6
+      - 'Job ID         : 6'
+    - - job list
+      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+    - - job list --id=6
+      - 'Job ID         : 6'
+
 

@@ -312,8 +312,17 @@ class SmBase(metaclass=abc.ABCMeta):
 
         # iterate over all available volumes and ifaces and filter data for
         # template processing later
+        has_root = False
         for svol in self._profile.storage_volumes_rel:
-            info['svols'].append(self._parse_svol(svol))
+            svol_dict = self._parse_svol(svol)
+            if svol_dict['is_root']:
+                if has_root:
+                    raise ValueError(
+                        'Partitioning scheme has multiple root disks defined')
+                has_root = True
+            info['svols'].append(svol_dict)
+        if not has_root:
+            raise ValueError('Partitioning scheme has no root disk defined')
         for iface in self._profile.system_ifaces_rel:
             info['ifaces'].append(self._parse_iface(
                 iface, iface.osname == self._gw_iface['osname']))

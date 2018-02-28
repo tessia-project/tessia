@@ -351,9 +351,8 @@ tasks:
       - Missing option "--osname".
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA --osname=en0
       - a mac address must be specified
-      # iface-add: '--ccwgroup' must be specified with OSA
-    - - system iface-add --system= --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00
-      - 'Invalid value for "--system": value may not be empty'
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00
+      - '--ccwgroup must be specified'
     - - system iface-add --system= --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - 'Invalid value for "--system": value may not be empty'
     - - system iface-add --system=xxxx --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502

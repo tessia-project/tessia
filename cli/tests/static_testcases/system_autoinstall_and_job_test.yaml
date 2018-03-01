@@ -328,9 +328,5 @@ tasks:
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     - - job list --id=6
       - 'Job ID         : 6'
-    - - job list
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
-    - - job list --id=6
-      - 'Job ID         : 6'
 
 

@@ -21,6 +21,8 @@ Module for the ip (ip addresses) command
 #
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
+from tessia.cli.types import IPADDRESS
+from tessia.cli.types import SUBNET
 from tessia.cli.output import print_items
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
@@ -39,8 +41,8 @@ FIELDS = (
 # CODE
 
 @click.command(name='ip-add')
-@click.option('--subnet', required=True, help='target subnet')
-@click.option('address', '--ip', required=True,
+@click.option('--subnet', required=True, type=SUBNET, help='target subnet')
+@click.option('address', '--ip', required=True, type=IPADDRESS,
               help="ip address to create (i.e. 192.168.0.50)")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning ip address")
@@ -59,8 +61,10 @@ def ip_add(**kwargs):
 # ip_add()
 
 @click.command(name='ip-del')
-@click.option('--subnet', required=True, help='subnet containing ip')
-@click.option('address', '--ip', required=True, help="ip address to delete")
+@click.option('--subnet', required=True, type=SUBNET,
+              help='subnet containing ip')
+@click.option('address', '--ip', required=True, type=IPADDRESS,
+              help="ip address to delete")
 def ip_del(**kwargs):
     """
     remove an existing ip address
@@ -76,9 +80,11 @@ def ip_del(**kwargs):
 # ip_del()
 
 @click.command(name='ip-edit')
-@click.option('--subnet', required=True, help='subnet containing ip')
-@click.option('cur_address', '--ip', required=True, help="ip address to edit")
-@click.option('address', '--newip', help="new ip-addr")
+@click.option('--subnet', required=True, type=SUBNET,
+              help='subnet containing ip')
+@click.option('cur_address', '--ip', required=True, type=IPADDRESS,
+              help="ip address to edit")
+@click.option('address', '--newip', type=IPADDRESS, help="new ip-addr")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning ip address")
 @click.option('--desc', help="free form field describing address")
@@ -96,8 +102,9 @@ def ip_edit(subnet, cur_address, **kwargs):
 # ip_edit()
 
 @click.command(name='ip-list')
-@click.option('--subnet', help='the subnet to list')
-@click.option('address', '--ip', help='filter by ip address')
+@click.option('--subnet', type=SUBNET, help='the subnet to list')
+@click.option('address', '--ip', type=IPADDRESS,
+              help='filter by ip address')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 def ip_list(**kwargs):

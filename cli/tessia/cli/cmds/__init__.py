@@ -21,6 +21,7 @@ Root group to which all commands are attached
 #
 from pkg_resources import get_distribution
 from tessia.cli.client import Client
+from tessia.cli.cmds.os import _os
 from tessia.cli.cmds.autotemplate import autotemplate
 from tessia.cli.cmds.conf import conf
 from tessia.cli.cmds.conf import key_gen
@@ -48,6 +49,7 @@ CMDS = [
     conf,
     job,
     net,
+    _os,
     perm,
     repo,
     storage,

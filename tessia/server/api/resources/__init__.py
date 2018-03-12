@@ -43,6 +43,8 @@ from tessia.server.api.resources.systems import SystemResource
 from tessia.server.api.resources.system_profiles import SystemProfileResource
 from tessia.server.api.resources.volume_types import VolumeTypeResource
 from tessia.server.api.resources.repositories import RepositoryResource
+from tessia.server.api.resources.operating_systems import \
+    OperatingSystemResource
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -71,6 +73,7 @@ RESOURCES = [
     UserRoleResource,
     VolumeTypeResource,
     RepositoryResource,
+    OperatingSystemResource,
 ]
 
 #

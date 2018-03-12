@@ -30,7 +30,6 @@ from tessia.server.db.models import Template
 DESC = {
     'name': 'Template name',
     'content': 'Template content',
-    'operating_system': 'Supported OS',
     'modified': 'Last modified',
     'desc': 'Description',
     'modifier': 'Modified by',
@@ -76,9 +75,6 @@ class AutoTemplateResource(SecureResource):
         desc = fields.String(
             title=DESC['desc'], description=DESC['desc'], nullable=True)
         # relations
-        operating_system = fields.String(
-            title=DESC['operating_system'],
-            description=DESC['operating_system'])
         modifier = fields.String(
             title=DESC['modifier'], description=DESC['modifier'], io='r')
         project = fields.String(

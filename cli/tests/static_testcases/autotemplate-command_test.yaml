@@ -53,22 +53,16 @@ tasks:
       - 'Usage: tess autotemplate print'
     # autotemplate list, autotemplate print
     - - autotemplate list
-      - 'Template name : SLES12.1'
-    - - autotemplate list --name=RHEL7.2
-      - 'Template name : RHEL7.2'
+      - 'Template name : sles12-default'
+    - - autotemplate list --name=rhel7-default
+      - 'Template name : rhel7-default'
     - - autotemplate list --owner=admin
-      - 'Template name : SLES12.1'
-    - - autotemplate list --os=sles12.1
-      - 'Template name : SLES12.1'
-    - - autotemplate list --owner=admin --os=sles12.1
-      - 'Template name : SLES12.1'
-    - - autotemplate list --name=RHEL7.2 --os=sles12.1
-      - No results were found.
+      - 'Template name : sles12-default'
     - - autotemplate print
       - 'Missing option "--name".'
     - - autotemplate print --name= 
       - 'Invalid value for "--name": value may not be empty'
-    - - autotemplate print --name=RHEL7.2 
+    - - autotemplate print --name=rhel7-default
       - '# System authorization information'
     # autotemplate add, edit and del
     - - autotemplate add
@@ -77,37 +71,29 @@ tasks:
       - Missing option "--content".
     - - autotemplate add --name=RHEL7.3 --content
       - '--content option requires an argument'
-    - - autotemplate add --os=rhel7.3
-      - Missing option "--name".
-    - - autotemplate add --name=RHEL7.3 --os=rhel7.3
+    - - autotemplate add --name=RHEL7.3
       - Missing option "--content".
       # cover stmts 139-143 in main.py, check output manually: 
       # The client encountered an unexpected problem, the error is: [Errno 2] No such file or directory: 'rhel7.3_template'
-    - - autotemplate add --name=RHEL7.3 --content='rhel7.3_template' --os=rhel7.3
+    - - autotemplate add --name=RHEL7.3 --content='rhel7.3_template'
       - 'The client encountered an unexpected problem, the error is:'
-    - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --os=ubuntu16.04 --desc='Template for Ubuntu 16.04'
+    - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --desc='Template for Ubuntu 16.04'
       - 'permission denied. Server answered: No create permission found for the user in any project'
-    - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --os=ubuntu16.04 --desc='Template for Ubuntu 16.04' --project='GEO_1 developers'
-      - "request failed. Server answered: No associated item found with value 'ubuntu16.04' for field 'os'"
-    - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --os=ubuntu16.04.1 --desc='Template for Ubuntu 16.04' --project='GEO_1 developers'
+    - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --desc='Template for Ubuntu 16.04' --project='GEO_1 developers'
       - Item added successfully.
     - - autotemplate edit
       - Missing option "--name".
-    - - autotemplate edit --name=RHEL7.2
+    - - autotemplate edit --name=rhel7-default
       - no update criteria provided.
-    - - autotemplate edit --name=RHEL7.2 --newname=RHEL7.2_GEO_1 
+    - - autotemplate edit --name=rhel7-default --newname=RHEL7.2_GEO_1 
       - Item successfully updated.
     - - autotemplate edit --name=RHEL7.2_GEO_1 --newname=
       - 'Invalid value for "--newname": value may not be empty'
-    - - autotemplate edit --name=RHEL7.2_GEO_1 --os=''
-      - 'The server did not accept our request. The response is: operating_system must be type=string'
-    - - autotemplate edit --name=RHEL7.2_GEO_1  --os=rhel7.2
-      - Item successfully updated.
     - - autotemplate edit --name=RHEL7.2_GEO_1 --desc='Template for RHEL7.2'
       - Item successfully updated.
     - - autotemplate edit --name=RHEL7.2_GEO_1 --owner=admin
       - Item successfully updated.
-    - - autotemplate edit --name=RHEL7.2_GEO_1 --newname=RHEL7.2
+    - - autotemplate edit --name=RHEL7.2_GEO_1 --newname=rhel7-default
       - Item successfully updated.
     - - autotemplate del --name=RHEL7.2_GEO
       - template not found.
@@ -115,15 +101,9 @@ tasks:
       - Item successfully deleted.
     - - autotemplate del --name
       - '--name option requires an argument'
-    - - autotemplate del --os=rhel7.2
-      - 'no such option: --os'
     - - autotemplate list
-      - 'Template name : SLES12.1'
-    - - autotemplate list --name=RHEL7.2
-      - 'Template name : RHEL7.2'
+      - 'Template name : sles12-default'
+    - - autotemplate list --name=rhel7-default
+      - 'Template name : rhel7-default'
     - - autotemplate list --owner=admin
-      - 'Template name : RHEL7.2'
-    - - autotemplate list --os=sles12.1
-      - 'Template name : SLES12.1'
-
-
+      - 'Template name : rhel7-default'

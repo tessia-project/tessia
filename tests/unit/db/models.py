@@ -540,6 +540,16 @@ class TestModels(TestCase):
                     'value': 'user_x_0@domain.com',
                 },
             ]),
+            (self.models.OperatingSystem, [
+                {
+                    # the relationship name in the model
+                    'rel_name': 'template_rel',
+                    # the field name in the model
+                    'attr_name': 'template',
+                    # the value of the field
+                    'value': 'rhel7-custom',
+                },
+            ]),
         ]
 
         for model, relations in relation_map:

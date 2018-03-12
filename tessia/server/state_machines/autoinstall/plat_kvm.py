@@ -40,12 +40,6 @@ DISK_TEMPLATE = """
     </disk> 
 """
 
-# mapping of distros that ship with udev 227 or less
-UDEV_227_BY_DISTRO = {
-    'rhel': (7, 2),
-    'sles': (12, 1)
-}
-
 #
 # CODE
 #
@@ -62,10 +56,10 @@ class PlatKvm(PlatBase):
         self._logger = logging.getLogger(__name__)
 
         # determine the type of devpath prefix used for virtio devices, distros
-        # with udev 228+ use newer naming
-        match = UDEV_227_BY_DISTRO.get(self._os.type)
-        if (match is not None and self._os.major <= match[0] and
-                self._os.minor <= match[1]):
+        # with systemd/udev >= 229 use newer naming
+        if ((self._os.name.startswith('rhel') and self._os.major <= 7 and
+             self._os.minor <= 3) or
+                (self._os.name.startswith('sles') and self._os.major <= 12)):
             self._devpath_prefix = '/dev/disk/by-path/ccw-0.{}.{}'
         else:
             self._devpath_prefix = '/dev/disk/by-path/virtio-pci-0.{}.{}'

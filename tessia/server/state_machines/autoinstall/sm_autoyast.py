@@ -23,8 +23,6 @@ from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from time import sleep
 from time import time
 
-import crypt
-import jinja2
 import logging
 
 
@@ -39,6 +37,9 @@ class SmAutoyast(SmBase):
     """
     State machine for Autoyast installer
     """
+    # the type of linux distribution supported
+    DISTRO_TYPE = 'suse'
+
     def __init__(self, os_entry, profile_entry, template_entry):
         """
         Constructor
@@ -69,22 +70,6 @@ class SmAutoyast(SmBase):
 
         return offset
     # _fetch_lines_until_end()
-
-    def _get_kargs(self):
-        """
-        Return the cmdline used for the os installer
-
-        Returns:
-            str: kernel cmdline string
-        """
-        template_cmdline = jinja2.Template(self._os.cmdline)
-
-        cmdline = template_cmdline.render(
-            config=self._info
-        )
-
-        return cmdline
-    # _get_kargs()
 
     def check_installation(self):
         """
@@ -122,15 +107,8 @@ class SmAutoyast(SmBase):
         """
         # collect repos, volumes, ifaces
         super().collect_info()
-        self._logger.info(
-            'auto-generated password for VNC is %s',
-            self._info['credentials']['vncpasswd'])
-
-        self._info["hostname"] = self._system.hostname
-        self._info["autofile"] = self._autofile_url
-        self._info["gw_iface"] = self._gw_iface
-        self._info["sha512rootpwd"] = crypt.crypt(
-            self._profile.credentials["passwd"])
+        self._logger.info('auto-generated password for VNC is %s',
+                          self._info['credentials']['vncpasswd'])
     # collect_info()
 
     def target_reboot(self):

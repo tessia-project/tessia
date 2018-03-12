@@ -120,20 +120,17 @@ class TestSmBase(TestCase):
 
         # The following mock objects are used to track the correct execution
         # of the install machine, assuring that each method was called.
-        mock_get_kargs = Mock()
         mock_wait_install = Mock()
-        self._mock_get_kargs = mock_get_kargs
         self._mock_wait_install = mock_wait_install
         class Child(sm_base.SmBase):
             """
             Child class created to implement all the base class methods.
             With this class we want to execute the start method.
             """
+            DISTRO_TYPE = 'redhat'
+
             def __init__(self, *args):
                 super().__init__(*args)
-
-            def _get_kargs(self):
-                mock_get_kargs()
 
             def wait_install(self):
                 mock_wait_install()
@@ -143,11 +140,10 @@ class TestSmBase(TestCase):
             Child class created to implement all the base class methods,
             but calling the original methods.
             """
+            DISTRO_TYPE = 'redhat'
+
             def __init__(self, *args):
                 super().__init__(*args)
-
-            def _get_kargs(self):
-                super()._get_kargs()
 
             def wait_install(self):
                 super().wait_install()
@@ -198,7 +194,7 @@ class TestSmBase(TestCase):
         """
         self._mock_os.remove.side_effect = OSError
         mach = self._create_sm(self._child_cls, "rhel7.2",
-                               "kvm054/kvm_kvm054_install", "RHEL7.2")
+                               "kvm054/kvm_kvm054_install", "rhel7-default")
         mock_client = self._mock_ssh_client.return_value
         mock_client.open_shell.return_value.run.return_value = 0, ""
         with self.assertRaisesRegex(RuntimeError, "Unable to delete"):
@@ -213,7 +209,7 @@ class TestSmBase(TestCase):
         os_obj = utils.get_os("rhel7.2")
         profile_obj = utils.get_profile("CPC3LP55/default_CPC3LP55")
         system_obj = profile_obj.system_rel
-        template_obj = utils.get_template("RHEL7.2")
+        template_obj = utils.get_template("rhel7-default")
 
         # system has no hypervisor defined
         error_msg = ('System {} cannot be installed because it has no '
@@ -245,7 +241,7 @@ class TestSmBase(TestCase):
 
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("kvm054/kvm_kvm054_install")
-        template_entry = utils.get_template("RHEL7.2")
+        template_entry = utils.get_template("rhel7-default")
 
         mach = self._child_cls(os_entry, profile_entry, template_entry)
         mach.start()
@@ -260,12 +256,16 @@ class TestSmBase(TestCase):
         """
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
-        template_entry = utils.get_template("RHEL7.2")
+        template_entry = utils.get_template("rhel7-default")
         system_entry = profile_entry.system_rel
         hyp_type = system_entry.type_rel.name.lower()
         repo_entry = os_entry.repository_rel[0]
         mock_client = self._mock_ssh_client.return_value
         mock_client.open_shell.return_value.run.return_value = 0, ""
+
+        # cmdline file mock
+        cmdline_content = self._mock_open(
+            ).__enter__.return_value.read.return_value
 
         mach = self._child_cls(os_entry, profile_entry, template_entry)
         mach.start()
@@ -287,22 +287,25 @@ class TestSmBase(TestCase):
             mock_config_dict["auto_install"]["url"], autofile_name)
         self.assertEqual(mach._autofile_url, autofile_url)
 
-        self._mock_os.path.join.assert_called_with(
-            mock_config_dict["auto_install"]["dir"], autofile_name)
-
-        self._mock_jinja2.Template.assert_called_with(template_entry.content)
-        mock_template = self._mock_jinja2.Template.return_value
-        mock_template.render.assert_called_with(config=mock.ANY)
-        autofile_content = mock_template.render.return_value
+        # verify that the cmdline and auto templates were rendered
+        self._mock_jinja2.Template.assert_has_calls([
+            call(template_entry.content),
+            call().render(config=mock.ANY),
+            call(cmdline_content),
+            call().render(config=mock.ANY),
+        ])
 
         # Assert the autofile is being written twice.
+        mock_template = self._mock_jinja2.Template.return_value
+        autofile_content = mock_template.render.return_value
+        self._mock_os.path.join.assert_called_with(
+            mock_config_dict["auto_install"]["dir"], autofile_name)
         calls = [call(autofile_content), call(autofile_content)]
         self._mock_open().__enter__.return_value.write.assert_has_calls(
             calls)
 
         # Assert that the methods implemented in the child class were
         # called in the execution of the Install Machine.
-        self._mock_get_kargs.assert_called_with()
         self._mock_wait_install.assert_called_with()
         self._mock_checker.assert_called_with(profile_entry, os_entry)
 
@@ -322,12 +325,16 @@ class TestSmBase(TestCase):
         os_obj = utils.get_os("rhel7.2")
         profile_obj = utils.get_profile("CPC3LP55/default_CPC3LP55")
         hyp_prof_obj = utils.get_profile("CPC3/default CPC3")
-        template_obj = utils.get_template("RHEL7.2")
+        template_obj = utils.get_template("rhel7-default")
         system_obj = profile_obj.system_rel
         hyp_type = system_obj.type_rel.name.lower()
         repo_obj = os_obj.repository_rel[0]
         mock_client = self._mock_ssh_client.return_value
         mock_client.open_shell.return_value.run.return_value = 0, ""
+
+        # cmdline file mock
+        cmdline_content = self._mock_open(
+            ).__enter__.return_value.read.return_value
 
         with self._mock_db_obj(profile_obj, 'hypervisor_profile_id', None):
             mach = self._child_cls(os_obj, profile_obj, template_obj)
@@ -344,26 +351,28 @@ class TestSmBase(TestCase):
             repo_obj,
             mock.ANY)
 
-        # validate correct creation of autofile
+        # validate correct creation of template
+        # verify that the cmdline and auto templates were rendered
+        self._mock_jinja2.Template.assert_has_calls([
+            call(template_obj.content),
+            call().render(config=mock.ANY),
+            call(cmdline_content),
+            call().render(config=mock.ANY),
+        ])
+
+        # Assert the autofile is being written twice.
+        mock_template = self._mock_jinja2.Template.return_value
+        autofile_content = mock_template.render.return_value
         mock_config_dict = self._mock_config.get_config.return_value
         autofile_name = '{}-{}'.format(system_obj.name, profile_obj.name)
         self._mock_os.path.join.assert_called_with(
             mock_config_dict["auto_install"]["dir"], autofile_name)
-
-        # validate correct creation of template
-        self._mock_jinja2.Template.assert_called_with(template_obj.content)
-        mock_template = self._mock_jinja2.Template.return_value
-        mock_template.render.assert_called_with(config=mock.ANY)
-        autofile_content = mock_template.render.return_value
-
-        # Assert the autofile is being written twice.
         calls = [call(autofile_content), call(autofile_content)]
         self._mock_open().__enter__.return_value.write.assert_has_calls(
             calls)
 
         # Assert that the methods implemented in the child class were
         # called in the execution of the Install Machine.
-        self._mock_get_kargs.assert_called_with()
         self._mock_wait_install.assert_called_with()
         self._mock_checker.assert_called_with(profile_obj, os_obj)
 
@@ -395,7 +404,7 @@ class TestSmBase(TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "Platform type"):
             self._create_sm(self._child_cls, "rhel7.2",
-                            "kvm054/kvm_kvm054_install", "RHEL7.2")
+                            "kvm054/kvm_kvm054_install", "rhel7-default")
     # test_not_supported_platform()
 
     def test_not_implemented_methods(self):
@@ -403,9 +412,9 @@ class TestSmBase(TestCase):
         Test the methods that are not implemented in te base class.
         """
         mach = self._create_sm(self._ni_child_cls, "rhel7.2",
-                               "kvm054/kvm_kvm054_install", "RHEL7.2")
+                               "kvm054/kvm_kvm054_install", "rhel7-default")
 
-        methods = ('_get_kargs', 'wait_install')
+        methods = ('wait_install',)
 
         for method_name in methods:
             method = getattr(mach, method_name)
@@ -420,7 +429,7 @@ class TestSmBase(TestCase):
         mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
         mock_shell.run.return_value = (-1, "Some text")
         mach = self._create_sm(self._child_cls, "rhel7.2",
-                               "kvm054/kvm_kvm054_install", "RHEL7.2")
+                               "kvm054/kvm_kvm054_install", "rhel7-default")
         with self.assertRaisesRegex(RuntimeError, "Error while checking"):
             mach.start()
     # test_check_install_error()
@@ -432,7 +441,7 @@ class TestSmBase(TestCase):
         """
         self._mock_ssh_client.return_value.login.side_effect = ConnectionError
         mach = self._create_sm(self._child_cls, "rhel7.2",
-                               "kvm054/kvm_kvm054_install", "RHEL7.2")
+                               "kvm054/kvm_kvm054_install", "rhel7-default")
         with self.assertRaisesRegex(ConnectionError, "Timeout occurred"):
             mach.start()
     # test_check_install_error()
@@ -446,15 +455,15 @@ class TestSmBase(TestCase):
                                          type="another",
                                          major="1",
                                          minor="0",
-                                         cmdline="foo",
-                                         desc="AnotherOS without repo")
+                                         template=None,
+                                         pretty_name="AnotherOS without repo")
         MANAGER.session.add(unsupported_os)
         MANAGER.session.commit()
         self.addCleanup(MANAGER.session.delete, unsupported_os)
 
         with self.assertRaisesRegex(RuntimeError, "No repository"):
             self._create_sm(self._child_cls, "AnotherOS",
-                            "kvm054/kvm_kvm054_install", "RHEL7.2")
+                            "kvm054/kvm_kvm054_install", "rhel7-default")
     # test_no_repo_os()
 
     def test_multi_root(self):
@@ -478,8 +487,9 @@ class TestSmBase(TestCase):
         second_disk = profile_obj.storage_volumes_rel[1]
         with self._mock_db_obj(first_disk, 'part_table', mock_table):
             with self._mock_db_obj(second_disk, 'part_table', mock_table):
-                mach = self._create_sm(self._child_cls, "rhel7.2",
-                                       "CPC3LP55/default_CPC3LP55", "RHEL7.2")
+                mach = self._create_sm(
+                    self._child_cls, "rhel7.2", "CPC3LP55/default_CPC3LP55",
+                    "rhel7-default")
                 with self.assertRaisesRegex(
                     ValueError, "multiple root disks defined"):
                     mach.start()
@@ -504,8 +514,9 @@ class TestSmBase(TestCase):
         }
         first_disk = profile_obj.storage_volumes_rel[0]
         with self._mock_db_obj(first_disk, 'part_table', mock_table):
-            mach = self._create_sm(self._child_cls, "rhel7.2",
-                                   "CPC3LP55/default_CPC3LP55", "RHEL7.2")
+            mach = self._create_sm(
+                self._child_cls, "rhel7.2", "CPC3LP55/default_CPC3LP55",
+                "rhel7-default")
             with self.assertRaisesRegex(ValueError, "no root disk defined"):
                 mach.start()
     # test_no_root()

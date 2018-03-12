@@ -143,9 +143,9 @@ tasks:
       - --initrd is required when --os was specified
     - - repo edit --name='SLES12.2' --os=sles12.2  --initrd='/boot/s390x/initrd'
       - --kernel is required when --os was specified
+    - - repo edit --name='SLES12.2' --os=wrong_os  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
+      - "request failed. Server answered: No associated item found with value 'wrong_os' for field 'os'"
     - - repo edit --name='SLES12.2' --os=sles12.2  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
-      - "request failed. Server answered: No associated item found with value 'sles12.2' for field 'os'"
-    - - repo edit --name='SLES12.2' --os=sles12.1  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
       - Item successfully updated.
     - - repo edit --name='SLES12.2' --owner=dev9
       - "request failed. Server answered: No associated item found with value 'dev9' for field 'Owner'"

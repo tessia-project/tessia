@@ -24,8 +24,6 @@ from time import time
 from time import sleep
 from urllib.parse import urlparse
 
-import crypt
-import jinja2
 import logging
 
 #
@@ -39,6 +37,9 @@ class SmDebianInstaller(SmBase):
     """
     State machine for DebianInstaller installer
     """
+    # the type of linux distribution supported
+    DISTRO_TYPE = 'debian'
+
     def __init__(self, os_entry, profile_entry, template_entry):
         """
         Constructor
@@ -65,28 +66,6 @@ class SmDebianInstaller(SmBase):
             "enc{}".format(ccwgroup[0].split('.')[2])
         )
     # _add_systemd_osname()
-
-    def _get_kargs(self):
-        """
-        Return the cmdline used for the os installer
-
-        Returns:
-            str: kernel cmdline string
-        """
-        hostname = self._profile.system_rel.hostname
-
-        template_cmdline = jinja2.Template(self._os.cmdline)
-
-        cmdline = template_cmdline.render(
-            repo=self._repo.url,
-            gw_iface=self._gw_iface,
-            hostname=hostname,
-            autofile=self._autofile_url,
-            config=self._info)
-        self._logger.debug('cmdline for booting live image is: %s', cmdline)
-
-        return cmdline
-    # _get_kargs()
 
     def _read_logfile(self, shell, logfile_path):
         """
@@ -189,12 +168,6 @@ class SmDebianInstaller(SmBase):
         # collect repos, volumes, ifaces
         super().collect_info()
 
-        # add our specific bits
-        self._info["credentials"] = self._profile.credentials
-        self._info["sha512rootpwd"] = crypt.crypt(
-            self._profile.credentials["passwd"])
-        self._info['hostname'] = self._system.hostname
-
         # Gather the device numbers of the disks and the paths
         # (denov, wwpn, lun).
         for svol in self._info["svols"]:
@@ -253,8 +226,6 @@ class SmDebianInstaller(SmBase):
                 self._info['root_disk'] = svol
 
         # Gather the device numbers of the OSA interfaces.
-        self._info['gw_iface'] = self._gw_iface
-
         for iface in self._info["ifaces"]:
             if iface["type"] == "OSA":
                 self._add_systemd_osname(iface)

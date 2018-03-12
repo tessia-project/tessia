@@ -277,7 +277,18 @@
             "type": "rhel",
             "major": "7",
             "minor": "0",
-            "desc": "RHEL 7.0 GA"
+            "pretty_name": "RHEL 7.0 GA",
+            "template": "rhel7-custom"
+        }
+    ],
+    "Template": [
+        {
+            "name": "rhel7-custom",
+            "content": "some_template_content",
+            "desc": "Custom template for RHEL7 installations",
+            "owner": "user_x_0@domain.com",
+            "project": "Department x",
+            "modifier": "user_x_0@domain.com"
         }
     ]
 }

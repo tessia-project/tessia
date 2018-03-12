@@ -128,7 +128,7 @@ class TestPlatKvm(TestCase):
     def test_get_vol_devpath_old_style(self):
         """
         Test the correct creation of the device paths for the volumes
-        when using operting systems that use udev version 228 or newer.
+        when using operting systems that use udev version 229 or newer.
         """
         self._os_entry.major = 8
         self.addCleanup(MANAGER.session.rollback)

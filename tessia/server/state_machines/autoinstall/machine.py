@@ -50,16 +50,16 @@ INSTALL_REQ_PARAMS_SCHEMA = {
         "system": {"type": "string"}
     },
     "required": [
-        "template",
+        "os",
         "system"
     ],
     "additionalProperties": False
 }
 
-SUPPORTED_DISTROS = {
-    'rhel': SmAnaconda,
-    'sles': SmAutoyast,
-    'ubuntu': SmDebianInstaller
+SUPPORTED_TYPES = {
+    SmAnaconda.DISTRO_TYPE: SmAnaconda,
+    SmAutoyast.DISTRO_TYPE: SmAutoyast,
+    SmDebianInstaller.DISTRO_TYPE: SmDebianInstaller,
 }
 
 #
@@ -102,44 +102,41 @@ class AutoInstallMachine(BaseMachine):
         Create the correct state machine based on the operating system being
         installed.
         """
-        # get template entry in db
-        template_entry = self._get_template(self._params['template'])
         # get the os entry in db
-        os_entry = self._get_os(template_entry, self._params.get('os'))
+        os_entry = self._get_os(self._params['os'])
+        # get template entry in db
+        template_entry = self._get_template(
+            os_entry, self._params.get('template'))
         # get the profile entry in db
         prof_entry = self._get_profile(
             self._params['system'], self._params.get("profile"))
 
-        if os_entry != template_entry.operating_system_rel:
-            self._logger.warning('warning: custom OS specified by user,'
-                                 ' template might not work properly.'
-                                 ' Use at your own RISK!')
-
         try:
-            sm_class = SUPPORTED_DISTROS[os_entry.type]
+            sm_class = SUPPORTED_TYPES[os_entry.type]
         except KeyError:
-            msg = 'OS {} is not supported by this install machine'.format(
-                os_entry.desc)
-            raise RuntimeError(msg)
+            raise ValueError("OS type '{}' is not supported for installation"
+                             .format(os_entry.type))
         return sm_class(os_entry, prof_entry, template_entry)
     # _create_machine()
 
     @staticmethod
-    def _get_os(template, os_name=None):
+    def _get_os(os_name):
         """
-        Return the OS type to be used for the installation
+        Return the OS version to be used for the installation
+
+        Args:
+            os_name (str): os identifier
+
+        Returns:
+            OperatingSystem: db entry
+
+        Raises:
+            ValueError: in case specified os does not exist
         """
-        # os not specified: use the default associated with the template
-        if os_name is None:
-            return template.operating_system_rel
-        # os specified by user: override one defined in database and issue a
-        # warning
         os_entry = OperatingSystem.query.filter_by(
             name=os_name).one_or_none()
         if os_entry is None:
-            raise ValueError('OS {} not found'.format(
-                os_name))
-
+            raise ValueError('OS {} not found'.format(os_name))
         return os_entry
     # _get_os()
 
@@ -188,10 +185,27 @@ class AutoInstallMachine(BaseMachine):
     # _get_profile()
 
     @staticmethod
-    def _get_template(template_name):
+    def _get_template(os_entry, template_name=None):
         """
         Get template entry in db
+
+        Args:
+            os_entry (OperatingSystem): db entry
+            template_name (str): template identifier
+
+        Returns:
+            Template: db entry
+
+        Raises:
+            ValueError: if template name does not exist
         """
+        # template not specified: use OS' default
+        if not template_name:
+            if os_entry.template_rel is None:
+                raise ValueError('OS {} has no default template defined'
+                                 .format(os_entry.name))
+            return os_entry.template_rel
+
         template_entry = Template.query.filter_by(
             name=template_name).one_or_none()
         if template_entry is None:
@@ -232,8 +246,12 @@ class AutoInstallMachine(BaseMachine):
         except Exception as exc:
             raise SyntaxError("Invalid request parameters") from exc
 
-        template_entry = cls._get_template(params['template'])
-        os_entry = cls._get_os(template_entry, params.get('os'))
+        os_entry = cls._get_os(params['os'])
+        cls._get_template(os_entry, params.get('template'))
+
+        if os_entry.type not in SUPPORTED_TYPES:
+            raise ValueError("OS type '{}' is not supported for installation"
+                             .format(os_entry.type))
 
         result = {
             'resources': {'shared': [], 'exclusive': []},

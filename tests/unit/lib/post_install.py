@@ -22,7 +22,7 @@ from tessia.server.db.models import System, SystemProfile, OperatingSystem
 from tessia.server.lib import post_install
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 import json
 import os
@@ -65,6 +65,13 @@ class TestPostInstallChecker(TestCase):
             post_install.subprocess, 'check_output', autospec=True)
         self._mock_check_output = patcher.start()
         self.addCleanup(patcher.stop)
+
+        # patch logger
+        patcher = patch.object(post_install, 'logging')
+        mock_logging = patcher.start()
+        mock_logging.getLogger.return_value = Mock(
+            spec=['warning', 'error', 'debug', 'info'])
+        self._mock_logger = mock_logging.getLogger.return_value
     # setUp()
 
     @staticmethod
@@ -106,9 +113,12 @@ class TestPostInstallChecker(TestCase):
         self.db.session.commit()
     # _mock_db_obj()
 
-    def _set_mocks_lpar_fcp(self):
+    def _set_mocks_lpar_fcp(self, prof_obj):
         """
         Prepare mocks to return content of a lpar with fcp disks installation.
+
+        Args:
+            prof_obj (SystemProfile): profile entry
         """
         facts_file = '{}/files/facts_fcp.output'.format(
             os.path.dirname(os.path.abspath(__file__)))
@@ -236,13 +246,26 @@ btrfs /home
 """
         )
 
+        os_release = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+NAME=xxxx
+VERSION=xxxx
+PRETTY_NAME="{}"
+ID=xxxxx
+""".format(prof_obj.operating_system_rel.pretty_name)
+        )
+
         self._mock_check_output.side_effect = [
-            facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, crash_size]
+            facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, crash_size,
+            os_release]
     # _set_mocks_lpar_fcp()
 
-    def _set_mocks_lpar_dasd(self):
+    def _set_mocks_lpar_dasd(self, prof_obj):
         """
         Prepare mocks to return content of a lpar with dasd disks installation.
+
+        Args:
+            prof_obj (SystemProfile): profile entry
         """
         facts_file = '{}/files/facts_dasd.output'.format(
             os.path.dirname(os.path.abspath(__file__)))
@@ -335,8 +358,18 @@ Error: No fcp devices found.
 """
         )
 
+        os_release = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+NAME=xxxx
+VERSION=xxxx
+PRETTY_NAME="{}"
+ID=xxxxx
+""".format(prof_obj.operating_system_rel.pretty_name)
+        )
+
         self._mock_check_output.side_effect = [
-            facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, crash_size]
+            facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, crash_size,
+            os_release]
     # _set_mocks_lpar_dasd()
 
     def test_facts_fail(self):
@@ -394,7 +427,7 @@ some_output
             checker.verify()
 
         # prepare valid output and turn them invalid
-        self._set_mocks_lpar_dasd()
+        self._set_mocks_lpar_dasd(profile_entry)
         orig_outputs = list(self._mock_check_output.side_effect)
 
         # simulate invalid facts content
@@ -420,9 +453,9 @@ some_output
         """
         Test verification of a LPAR with DASD based installation.
         """
-        self._set_mocks_lpar_dasd()
-
         profile_entry = self._get_profile('cpc3lp52', 'dasd1')
+        self._set_mocks_lpar_dasd(profile_entry)
+
         checker = post_install.PostInstallChecker(profile_entry)
         checker.verify()
     # test_lpar_dasd()
@@ -431,9 +464,9 @@ some_output
         """
         Test verification of a LPAR with FCP based installation.
         """
-        self._set_mocks_lpar_fcp()
-
         profile_entry = self._get_profile('cpc3lp52', 'fcp1')
+        self._set_mocks_lpar_fcp(profile_entry)
+
         checker = post_install.PostInstallChecker(profile_entry)
         checker.verify()
     # test_lpar_fcp()
@@ -447,7 +480,7 @@ some_output
         fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
 
         # cpu mismatch
-        self._set_mocks_lpar_fcp()
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
         with self._mock_db_obj(fcp_prof_entry, 'cpu', 99):
             error_msg = self._mismatch_msg.format('cpu quantity', 99, 2)
             checker = post_install.PostInstallChecker(fcp_prof_entry)
@@ -456,7 +489,7 @@ some_output
                 checker.verify(areas=['cpu'])
 
         # min memory mismatch
-        self._set_mocks_lpar_fcp()
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
         with self._mock_db_obj(fcp_prof_entry, 'memory', 5000):
             # actual is calculated by using ansible_total_mb + crash_size set
             # by mock
@@ -468,7 +501,7 @@ some_output
                 checker.verify(areas=['memory'])
 
         # max memory mismatch
-        self._set_mocks_lpar_fcp()
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
         with self._mock_db_obj(fcp_prof_entry, 'memory', 3000):
             # actual is calculated by using ansible_total_mb + crash_size set
             # by mock
@@ -479,30 +512,30 @@ some_output
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['memory'])
 
-        # os mismatch
-        self._set_mocks_lpar_fcp()
-        os_entry = fcp_prof_entry.operating_system_rel
-        with self._mock_db_obj(os_entry, 'minor', 8):
-            error_msg = self._mismatch_msg.format('OS version release', 8, 4)
-            checker = post_install.PostInstallChecker(fcp_prof_entry)
-            with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
-                checker.verify(areas=['os'])
-        # os mismatch - non numeric version
-        self._set_mocks_lpar_fcp()
+        # os mismatch (different pretty name)
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
         check_outputs = list(self._mock_check_output.side_effect)
-        check_outputs[0] = check_outputs[0].replace(
-            '"ansible_distribution_version": "16.04"',
-            '"ansible_distribution_version": "16.04a"')
+        wrong_os = 'SUSE Linux 12.2'
+        check_outputs[-1] = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+NAME=xxxx
+VERSION=xxxx
+PRETTY_NAME="{}"
+ID=xxxxx
+""".format(wrong_os)
+        )
+
         self._mock_check_output.side_effect = check_outputs
-        error_msg = self._mismatch_msg.format('OS version release', '4', '04a')
+        error_msg = self._mismatch_msg.format(
+            'OS name', fcp_prof_entry.operating_system_rel.pretty_name,
+            wrong_os)
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
             post_install.Misconfiguration, error_msg):
             checker.verify(areas=['os'])
 
         # network - gateway mismatch
-        self._set_mocks_lpar_fcp()
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
         check_outputs = list(self._mock_check_output.side_effect)
         # simulate missing gateway
         check_outputs[0] = check_outputs[0].replace(
@@ -525,7 +558,7 @@ some_output
             checker.verify(areas=['network'])
 
         # network - dns mismatch
-        self._set_mocks_lpar_fcp()
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
         subnet_entry = (fcp_prof_entry.system_ifaces_rel[0]
                         .ip_address_rel.subnet_rel)
         with self._mock_db_obj(subnet_entry, 'dns_2', '8.8.8.8'):
@@ -536,9 +569,10 @@ some_output
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['network'])
 
+        dasd_prof_entry = self._get_profile('cpc3lp52', 'dasd1')
         # storage - no fcp paths
         # use facts from a dasd-only config to simulate no fcp devices found
-        self._set_mocks_lpar_dasd()
+        self._set_mocks_lpar_dasd(dasd_prof_entry)
         error_msg = self._mismatch_msg.format(
             'fcp paths', 'fcp path for LUN 1022400000000000', '<not found>')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
@@ -546,9 +580,8 @@ some_output
             post_install.Misconfiguration, error_msg):
             checker.verify(areas=['storage'])
 
-        dasd_prof_entry = self._get_profile('cpc3lp52', 'dasd1')
         # storage - disk min size mismatch
-        self._set_mocks_lpar_dasd()
+        self._set_mocks_lpar_dasd(dasd_prof_entry)
         vol_entry = dasd_prof_entry.storage_volumes_rel[0]
         with self._mock_db_obj(vol_entry, 'size', 15000):
             dasd_devpath = '/dev/disk/by-path/ccw-0.0.3956'
@@ -560,7 +593,7 @@ some_output
                 checker.verify(areas=['storage'])
 
         # storage - part min size mismatch
-        self._set_mocks_lpar_dasd()
+        self._set_mocks_lpar_dasd(dasd_prof_entry)
         vol_entry = dasd_prof_entry.storage_volumes_rel[0]
         new_ptable = deepcopy(vol_entry.part_table)
         new_ptable['table'][0]['size'] = 50000
@@ -575,7 +608,7 @@ some_output
                 checker.verify(areas=['storage'])
 
         # kernel mismatch
-        self._set_mocks_lpar_dasd()
+        self._set_mocks_lpar_dasd(dasd_prof_entry)
         params_content = {
             'kernel_version': '3.11.0-327.el7.s390x'
         }
@@ -594,19 +627,13 @@ some_output
         """
         Force error when profile has missing information
         """
-        self._set_mocks_lpar_fcp()
+        profile_entry = self._get_profile('cpc3lp52', 'fcp1')
+        self._set_mocks_lpar_fcp(profile_entry)
 
         # simulate credentials missing
-        profile_entry = self._get_profile('cpc3lp52', 'fcp1')
         with self._mock_db_obj(profile_entry, 'credentials', None):
             with self.assertRaisesRegex(
                 ValueError, 'Credentials in profile are missing'):
-                post_install.PostInstallChecker(profile_entry)
-
-        # simulate os not specified
-        with self._mock_db_obj(profile_entry, 'operating_system_id', None):
-            with self.assertRaisesRegex(
-                ValueError, 'No operating system specified in profile'):
                 post_install.PostInstallChecker(profile_entry)
 
         # simulate specs missing for FCP volume
@@ -619,12 +646,26 @@ some_output
                 post_install.PostInstallChecker(profile_entry)
     # test_missing_profile_params()
 
+    def test_missing_os(self):
+        """
+        Exercise the case where no OS is specified in profile
+        """
+        profile_entry = self._get_profile('cpc3lp52', 'fcp1')
+        self._set_mocks_lpar_fcp(profile_entry)
+
+        # simulate os not specified - in this case a warning is logged
+        with self._mock_db_obj(profile_entry, 'operating_system_id', None):
+            post_install.PostInstallChecker(profile_entry)
+            self._mock_logger.warning.assert_called_with(
+                'System profile has no OS defined, skipping OS check')
+    # test_missing_os()
+
     def test_ipv6(self):
         """
         Test ipv6 address validation.
         """
-        self._set_mocks_lpar_fcp()
         profile_entry = self._get_profile('cpc3lp52', 'fcp1')
+        self._set_mocks_lpar_fcp(profile_entry)
 
         address_entry = profile_entry.system_ifaces_rel[0].ip_address_rel
         subnet_entry = (profile_entry.system_ifaces_rel[0]
@@ -643,8 +684,8 @@ some_output
         change when a json schema is defined for the parameters field in the
         system profile table for this reason we test it in a separate method.
         """
-        self._set_mocks_lpar_dasd()
         profile_entry = self._get_profile('cpc3lp52', 'dasd1')
+        self._set_mocks_lpar_dasd(profile_entry)
 
         params_content = {
             'kernel_version': '3.10.0-327.el7.s390x'
@@ -658,13 +699,14 @@ some_output
         """
         Exercise passing a specific Operating System object for verification
         """
-        self._set_mocks_lpar_fcp()
         profile_entry = self._get_profile('cpc3lp52', 'fcp1')
+        self._set_mocks_lpar_fcp(profile_entry)
         os_entry = OperatingSystem.query.filter_by(name='rhel7.2').one()
         checker = post_install.PostInstallChecker(profile_entry, os_entry)
-        with self.assertRaisesRegex(
-            post_install.Misconfiguration,
-            self._mismatch_msg.format('OS name', 'rhel', 'ubuntu')):
+        error_msg = self._mismatch_msg.format(
+            'OS name', os_entry.pretty_name,
+            profile_entry.operating_system_rel.pretty_name)
+        with self.assertRaises(post_install.Misconfiguration, msg=error_msg):
             checker.verify()
     # test_custom_os()
 # TestPostInstallChecker

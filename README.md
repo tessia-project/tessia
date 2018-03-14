@@ -35,9 +35,8 @@ See the documentation's [Users section](doc/index.md#users) for detailed informa
 Hypervisors supported:
 
 - zHMC (classic mode)
+- z/VM
 - KVM for IBM Z
-
-Support for z/VM guests is currently under development.
 
 Linux distributions supported:
 

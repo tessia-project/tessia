@@ -392,6 +392,99 @@ class TestSystemProfile(TestSecureResource):
         self.db.session.commit()
     # test_add_update_profile_without_hypervisor()
 
+    def test_add_update_zvm(self):
+        """
+        Test creation and update of profiles for a zVM guest
+        """
+        # create a new zvm system
+        system_obj = models.System(
+            name="vmguest01",
+            state="AVAILABLE",
+            modifier="user_user@domain.com",
+            type="zvm",
+            hostname="vmguest01.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner="user_user@domain.com",
+        )
+        self.db.session.add(system_obj)
+        self.db.session.commit()
+        # attributes must be stored before the object expires
+        system_id = system_obj.id
+        system_name = system_obj.name
+
+        # generate a new profile entry
+        data = next(self._get_next_entry)
+        data['system'] = system_name
+        user_login = '{}:a'.format('user_user@domain.com')
+
+        # try to create profile without zvm password, causes error
+        resp = self._do_request('create', user_login, data)
+        zvm_msg = 'For zVM guests the zVM password must be specified'
+        self._validate_resp(resp, zvm_msg, 422)
+
+        # add missing info and create profile correctly
+        data['credentials']['user'] = 'username'
+        data['credentials']['passwd'] = 'password'
+        data['credentials']['host_zvm'] = {
+            'passwd': 'vmpass',
+            'byuser': 'vmadmin'
+        }
+        resp = self._do_request('create', user_login, data)
+        created_id = int(resp.get_data(as_text=True))
+
+        # try to remove zvm password from credentials, causes error
+        data['id'] = created_id
+        data['credentials'].pop('host_zvm')
+        resp = self._do_request('update', user_login, data)
+        self._validate_resp(resp, zvm_msg, 422)
+
+        # clean up
+        created_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=created_id).one()
+        self.db.session.delete(created_entry)
+        models.System.query.filter_by(id=system_id).delete()
+        self.db.session.commit()
+    # test_add_update_zvm()
+
+    def test_add_update_error_no_zvm(self):
+        """
+        Verify that the API blocks usage of zVM parameters for non zVM guest
+        systems.
+        """
+        # generate a new profile entry
+        data = next(self._get_next_entry)
+        user_login = '{}:a'.format('user_user@domain.com')
+
+        # try to create profile with zvm password, causes error
+        data['credentials']['user'] = 'username'
+        data['credentials']['passwd'] = 'password'
+        data['credentials']['host_zvm'] = {
+            'passwd': 'vmpass',
+            'byuser': 'vmadmin'
+        }
+        resp = self._do_request('create', user_login, data)
+        zvm_msg = 'zVM credentials should be provided for zVM guests only'
+        self._validate_resp(resp, zvm_msg, 422)
+
+        # remove zvm info and create profile correctly
+        data['credentials'].pop('host_zvm')
+        resp = self._do_request('create', user_login, data)
+        created_id = int(resp.get_data(as_text=True))
+
+        # try to add zvm password to existing profile, causes error
+        data['id'] = created_id
+        data['credentials']['host_zvm'] = {'passwd': 'vmpass'}
+        resp = self._do_request('update', user_login, data)
+        self._validate_resp(resp, zvm_msg, 422)
+
+        # clean up
+        created_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=created_id).one()
+        self.db.session.delete(created_entry)
+        self.db.session.commit()
+    # test_add_update_zvm()
+
     def test_del_default_profile_multi_profiles(self):
         """
         Try to delete a default profile while others exist

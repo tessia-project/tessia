@@ -5,6 +5,7 @@ tasks_order:
   - base_add
   - system_help
   - system_command
+  - system_zvm
   - system_model
   - system_iface
   - system_prof
@@ -314,6 +315,43 @@ tasks:
       - system not found.
     - - system del --name=cpc3lp56
       - Item successfully deleted.
+  system_zvm: # zvm guest system and profile add/update
+    - - system add --name=vmguest01 --hyp=cpc3lp53 --type=ZVM --hostname=vmguest01.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
+      - Item added successfully.
+    - - system prof-add --name=default --system=vmguest01 --login=root:passwd
+      - 'Error: request failed. Server answered: For zVM guests the zVM password must be specified'
+    - - system prof-add --name=default --system=vmguest01 --login=root:passwd --zvm-by=admin
+      - 'Error: --zvm-by requires --zvm-pass to be specified'
+    - - system prof-add --name=default --system=vmguest01 --login=root:passwd --zvm-pass=vmpassword --zvm-by=vmadmin
+      - 'Item added successfully.'
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'host_zvm': {.*'passwd': 'vmpassword'"
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'host_zvm': {.*'byuser': 'vmadmin'"
+    - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword2 --zvm-by=
+      - 'Item successfully updated'
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'host_zvm': {'passwd': 'vmpassword2'}"
+    # second clearing of zvm-by when it's already cleared
+    - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword2 --zvm-by=
+      - 'Item successfully updated'
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'host_zvm': {'passwd': 'vmpassword2'}"
+    # set zvm-by again
+    - - system prof-edit --name=default --system=vmguest01 --zvm-by=vmadmin
+      - 'Item successfully updated'
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'host_zvm': {.*byuser': 'vmadmin'"
+    - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword3
+      - 'Item successfully updated'
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'host_zvm': {.*'passwd': 'vmpassword3'"
+    - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword4 --zvm-by=vmadmin2
+      - 'Item successfully updated'
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'host_zvm': {.*'passwd': 'vmpassword4'"
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'host_zvm': {.*'byuser': 'vmadmin2'"
   system_model:
     - - system model-list
       - 'Model name identifier    : ZGENERIC'
@@ -893,11 +931,11 @@ tasks:
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
       - Network interface detached successfully.
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
-      - "request failed. Server answered: No associated item found with value '2,1' for field 'profile_id,iface_id'"
+      - "request failed. Server answered: No associated item found with value '[0-9]+,[0-9]+' for field 'profile_id,iface_id'"
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa1'
       - Network interface detached successfully.
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa3'
-      - "request failed. Server answered: No associated item found with value '2,6' for field 'profile_id,iface_id'"
+      - "request failed. Server answered: No associated item found with value '[0-9]+,[0-9]+' for field 'profile_id,iface_id'"
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default macvtap4'
       - no network interface found.
     # 'system vol-attach' subcommand

@@ -23,10 +23,10 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.types import CustomIntRange
-from tessia.cli.types import LOGIN
-from tessia.cli.types import NAME
+from tessia.cli.types import LOGIN, NAME, TEXT
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
+from tessia.cli.utils import fetch_item
 from tessia.cli.utils import str_to_size
 from tessia.cli.utils import size_to_str
 
@@ -56,6 +56,10 @@ PROFILE_FIELDS = (
               help="hypervisor profile required for activation")
 @click.option('--login', required=True, type=LOGIN,
               help="user:passwd for admin access to operating system")
+@click.option('--zvm-pass', 'zvm_pass', type=TEXT,
+              help="password for access to zvm hypervisor (zVM guests only)")
+@click.option('--zvm-by', 'zvm_by', type=TEXT,
+              help="byuser for access to zvm hypervisor (zVM guests only)")
 def prof_add(**kwargs):
     """
     create a new system activation profile
@@ -80,6 +84,17 @@ def prof_add(**kwargs):
     except (AttributeError, ValueError):
         raise click.ClickException('invalid format specified for login')
     kwargs['credentials'] = {'user': user, 'passwd': passwd}
+
+    zvm_pass = kwargs.pop('zvm_pass')
+    zvm_by = kwargs.pop('zvm_by')
+    if zvm_pass:
+        kwargs['credentials']['host_zvm'] = {'passwd': zvm_pass}
+        if zvm_by:
+            kwargs['credentials']['host_zvm']['byuser'] = zvm_by
+    # zvm byuser specified without passwd: report error
+    elif zvm_by:
+        raise click.ClickException(
+            '--zvm-by requires --zvm-pass to be specified')
 
     item = client.SystemProfiles()
     for key, value in kwargs.items():
@@ -120,6 +135,10 @@ def prof_del(**kwargs):
               help="hypervisor profile required for activation")
 @click.option('--login', type=LOGIN,
               help="user:passwd for admin access to operating system")
+@click.option('--zvm-pass', 'zvm_pass', type=TEXT,
+              help="password for access to zvm hypervisor (zVM guests only)")
+@click.option('--zvm-by', 'zvm_by',
+              help="byuser for access to zvm hypervisor (zVM guests only)")
 def prof_edit(system, cur_name, **kwargs):
     """
     change properties of an existing system activation profile
@@ -135,25 +154,85 @@ def prof_edit(system, cur_name, **kwargs):
         raise click.ClickException(
             'invalid format for hypervisor profile, specify profile name only')
 
-    # login provided: parse it to json format expected by API
-    login = kwargs.pop('login')
-    if login is not None:
-        try:
-            user, passwd = login.split(':', 1)
-        except (AttributeError, ValueError):
-            raise click.ClickException('invalid format specified for login')
-        kwargs['credentials'] = {'user': user, 'passwd': passwd}
-    # default not provided: remove from dict otherwise it will force setting to
-    # false
-    if kwargs['default'] is False:
-        kwargs.pop('default')
+    # default not specified: set as none to remove from update request
+    if not kwargs['default']:
+        kwargs['default'] = None
 
     client = Client()
-    fetch_and_update(
+
+    login = kwargs.pop('login')
+    zvm_pass = kwargs.pop('zvm_pass')
+    zvm_by = kwargs.pop('zvm_by')
+    # no credentials updated: nothing more to check, perform update
+    if not login and not zvm_pass and zvm_by is None:
+        fetch_and_update(
+            client.SystemProfiles,
+            {'system': system, 'name': cur_name},
+            'system profile not found.',
+            kwargs)
+        click.echo('Item successfully updated.')
+        return
+
+    # to update the credentials field the existing data must be merged with
+    # new data
+    item = fetch_item(
         client.SystemProfiles,
         {'system': system, 'name': cur_name},
-        'system profile not found.',
-        kwargs)
+        'system profile not found.')
+    if item.credentials:
+        merged_creds = item.credentials.copy()
+    else:
+        merged_creds = {}
+
+    # login provided: parse it to json format expected by API
+    if login:
+        try:
+            merged_creds['user'], merged_creds['passwd'] = login.split(':', 1)
+        except (AttributeError, ValueError):
+            raise click.ClickException('invalid format specified for login')
+
+    # process the zvm specific credentials
+    host_zvm = merged_creds.get('host_zvm', {})
+    if zvm_pass:
+        host_zvm['passwd'] = zvm_pass
+    # empty value: unset byuser parameter
+    if zvm_by == '':
+        try:
+            host_zvm.pop('byuser')
+        except KeyError:
+            pass
+    # byuser specified: add to credentials
+    elif zvm_by:
+        host_zvm['byuser'] = zvm_by
+
+    # zvm byuser specified but passwd not present: invalid combination
+    if host_zvm.get('byuser') and not host_zvm.get('passwd'):
+        raise click.ClickException('--zvm-by requires a zvm password to '
+                                   'be set (use --zvm-pass)')
+
+    # zvm information was specified but os wasn't: invalid combination
+    if host_zvm and not merged_creds.get('user'):
+        raise click.ClickException('OS login is required when zvm credentials '
+                                   'are specified (use --login)')
+
+    if host_zvm:
+        merged_creds['host_zvm'] = host_zvm
+    kwargs['credentials'] = merged_creds
+
+    # remove fields not set before sending the update request
+    parsed_dict = {}
+    for key, value in kwargs.items():
+        if value is not None:
+            if value:
+                parsed_dict[key] = value
+            # allow unsetting parameter when value is an empty string
+            else:
+                parsed_dict[key] = None
+        # value not being updated: remove from object to prevent being part of
+        # request
+        elif hasattr(item, key):
+            del item[key]
+    item.update(parsed_dict)
     click.echo('Item successfully updated.')
 # prof_edit()
 

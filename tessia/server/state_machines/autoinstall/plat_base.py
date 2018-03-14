@@ -29,7 +29,8 @@ import logging
 #
 HYP_TYPES_BASELIB = {
     'lpar': 'hmc',
-    'kvm': 'kvm'
+    'kvm': 'kvm',
+    'zvm': 'zvm'
 }
 
 #

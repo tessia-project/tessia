@@ -259,6 +259,18 @@ class SystemProfileResource(SecureResource):
             # target profile to make it an atomic operation
             API_DB.db.session.add(def_profile)
 
+        # zvm guest missing hypervisor password: report as required
+        if (target_system.type == 'ZVM' and
+                'host_zvm' not in properties['credentials']):
+            raise BaseHttpError(
+                422, msg='For zVM guests the zVM password must be specified')
+        # not a zvm guest but zvm information entered: report as invalid
+        elif (target_system.type != 'ZVM' and
+              'host_zvm' in properties['credentials']):
+            raise BaseHttpError(
+                422,
+                msg='zVM credentials should be provided for zVM guests only')
+
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
             if target_system.hypervisor_id is None:
@@ -422,6 +434,20 @@ class SystemProfileResource(SecureResource):
         if 'system' in properties and properties['system'] != item.system:
             raise BaseHttpError(
                 422, msg='Profiles cannot change their associated system')
+
+        if 'credentials' in properties:
+            # zvm guest missing hypervisor password: report as required
+            if (item.system_rel.type == 'ZVM' and
+                    'host_zvm' not in properties['credentials']):
+                raise BaseHttpError(
+                    422, msg='For zVM guests the zVM password must be '
+                             'specified')
+            # not a zvm guest but zvm information entered: report as invalid
+            elif (item.system_rel.type != 'ZVM' and
+                  'host_zvm' in properties['credentials']):
+                raise BaseHttpError(
+                    422, msg='zVM credentials should be provided for zVM '
+                             'guests only')
 
         # profile set as default: unset the current one
         if properties.get('default'):

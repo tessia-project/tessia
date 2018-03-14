@@ -158,7 +158,8 @@ $ apt-get install --no-install-recommends \
     libssl-dev \
     libffi-dev python3-dev \
     libpq-dev \
-    libpq5
+    libpq5 \
+    s3270
 $ pip3 install -U pip setuptools
 ```
 

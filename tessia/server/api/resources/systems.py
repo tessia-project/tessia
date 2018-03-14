@@ -44,8 +44,8 @@ DESC = {
 }
 
 GUEST_HYP_MATCHES = {
-    'KVM': ['LPAR', 'KVM', 'ZVM'],
-    'ZVM': ['LPAR'],
+    'KVM': ['LPAR', 'KVM'],
+    'ZVM': ['LPAR', 'ZVM'],
     'LPAR': ['CPC'],
     'CPC': [],
 }

@@ -36,7 +36,7 @@
   <dasd>
     <devices config:type="list">
       {% for volume in config["svols"] %}
-        {% if config["system_type"] == "LPAR" and volume["type"] == "DASD" %}
+        {% if config["system_type"] != "KVM" and volume["type"] == "DASD" %}
           <listentry>
             <channel>0.0.{{ volume["volume_id"] }}</channel>
             <diag config:type="boolean">false</diag>
@@ -128,7 +128,7 @@
         <bootproto>static</bootproto>
         <device>{{ iface["osname"] }}</device>
         <ipaddr>{{ iface["ip"] }}</ipaddr>
-        {% if iface["attributes"]["layer2"] or config["system_type"] != "LPAR" %}
+        {% if iface["attributes"]["layer2"] or config["system_type"] == "KVM" %}
         <lladdr>{{ iface["mac_addr"] }}</lladdr>
         {% endif %}
         <netmask>{{ iface["mask"] }}</netmask>
@@ -144,7 +144,7 @@
       {% for iface in config["ifaces"] %}
       <rule>
         <name>{{iface["osname"]}}</name>
-        {% if config["system_type"] == "LPAR" %}
+        {% if config["system_type"] != "KVM" %}
         <rule>KERNELS</rule>
         <value>{{ iface["attributes"]["ccwgroup"].split(',')[0] }}</value>
         {% else %}
@@ -154,7 +154,7 @@
       </rule>
       {% endfor %}
     </net-udev>
-    {% if config["system_type"] == "LPAR" %}
+    {% if config["system_type"] != "KVM" %}
     <s390-devices config:type="list">
       {% for iface in config["ifaces"] %}
       <listentry>
@@ -264,7 +264,7 @@
   <zfcp>
     <devices config:type="list">
       {% for volume in config["svols"] %}
-        {% if config["system_type"] == "LPAR" and volume["type"] == "FCP" %}
+        {% if config["system_type"] != "KVM" and volume["type"] == "FCP" %}
           {% for adapter in volume["specs"]["adapters"] %}
             {% for wwpn in adapter["wwpns"] %}
               <listentry>

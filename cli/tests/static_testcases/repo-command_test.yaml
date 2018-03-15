@@ -123,7 +123,7 @@ tasks:
     - - repo edit --name='SLES12.2'
       - no update criteria provided.
     - - repo edit --name='SLES12.3' --desc='New SLES version'
-      - template not found.
+      - repository not found.
     - - repo edit --name='SLES12.2' --desc='New SLES version'
       - Item successfully updated.
       # Empty value

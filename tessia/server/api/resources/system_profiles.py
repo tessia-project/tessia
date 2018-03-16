@@ -111,10 +111,8 @@ class SystemProfileResource(SecureResource):
             description=DESC['hypervisor_profile'], nullable=True)
         system = fields.String(
             title=DESC['system'], description=DESC['system'])
-        # operating system is a read-only property; it's set by the server
-        # during installation operations
         operating_system = fields.String(
-            title=DESC['os'], description=DESC['os'], io='r')
+            title=DESC['os'], description=DESC['os'], nullable=True)
         storage_volumes = fields.List(
             # InlineModel is a way to use a different sa model in a field while
             # specifying which fields should be displayed.

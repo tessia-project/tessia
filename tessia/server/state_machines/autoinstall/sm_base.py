@@ -33,10 +33,12 @@ from time import time
 from urllib.parse import urlsplit
 
 import abc
+import crypt
 import jinja2
 import logging
 import os
 import random
+import string
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -48,6 +50,8 @@ PLATFORMS = {
     'kvm': PlatKvm,
     'zvm': PlatZvm,
 }
+# directory containing the kernel cmdline templates
+TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates/"
 
 #
 # CODE
@@ -134,15 +138,6 @@ class SmBase(metaclass=abc.ABCMeta):
         # set during collect_info state
         self._info = None
     # __init__()
-
-    @abc.abstractmethod
-    def _get_kargs(self):
-        """
-        This method should be implemented by children classes and return a
-        string containing the cmdline used for the os installer.
-        """
-        raise NotImplementedError()
-    # _get_kargs()
 
     def _get_ssh_conn(self):
         """
@@ -254,6 +249,17 @@ class SmBase(metaclass=abc.ABCMeta):
         return result
     # _parse_svol()
 
+    @property
+    @classmethod
+    @abc.abstractmethod
+    def DISTRO_TYPE(cls): # pylint: disable=invalid-name
+        """
+        Return the type of linux distribution supported. The entry should match
+        the column 'type' in the operating_systems table.
+        """
+        raise NotImplementedError()
+    # DISTRO_TYPE
+
     def init(self):
         """
         Initialization, clean the current OS in the SystemProfile.
@@ -306,11 +312,19 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         info = {
             'ifaces': [],
-            'repos': [],
             'svols': [],
+            'repos': [self._repo.url],
             'server_hostname': urlsplit(self._autofile_url).hostname,
-            'system_type': self._system.type
+            'system_type': self._system.type,
+            'credentials': self._profile.credentials,
+            'sha512rootpwd': crypt.crypt(self._profile.credentials["passwd"]),
+            'hostname': self._system.hostname,
+            'autofile': self._autofile_url,
+            'gw_iface': self._gw_iface,
         }
+        # generate pseudo-random password for vnc session
+        info['credentials']['vncpasswd'] = ''.join(
+            random.sample(string.ascii_letters + string.digits, 8))
 
         # iterate over all available volumes and ifaces and filter data for
         # template processing later
@@ -328,17 +342,6 @@ class SmBase(metaclass=abc.ABCMeta):
         for iface in self._profile.system_ifaces_rel:
             info['ifaces'].append(self._parse_iface(
                 iface, iface.osname == self._gw_iface['osname']))
-
-        info['repos'].append(self._repo.url)
-        info['credentials'] = self._profile.credentials
-
-        # generate pseudo-random password for vnc session
-        vncpasswd = ''.join(random.choice('abcdefghijklm'
-                                          'nopqrstuvwxyz'
-                                          'ABCDEFGHIJKLM'
-                                          'NOPQRSTUVWXYZ'
-                                          '0123456789') for _ in range(8))
-        info['credentials']['vncpasswd'] = vncpasswd
 
         self._info = info
     # collect_info()
@@ -378,7 +381,28 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Performs the boot of the target system to initiate the installation
         """
-        self._platform.boot(self._get_kargs())
+        # try to find a template specific to this OS version
+        template_filename = '{}.cmdline.jinja'.format(self._os.name)
+        try:
+            with open(TEMPLATES_DIR + template_filename, "r") as template_file:
+                template_content = template_file.read()
+        except FileNotFoundError:
+            # specific template does not exist: use the distro type template
+            self._logger.debug(
+                "No template found for OS '%s', using generic template for "
+                "type '%s'", self._os.name, self._os.type)
+            template_filename = '{}.cmdline.jinja'.format(self._os.type)
+            # generic template always exists, if for some reason it is not
+            # there it's a server installation error which must be fixed so let
+            # the exception go up
+            with open(TEMPLATES_DIR + template_filename, "r") as template_file:
+                template_content = template_file.read()
+
+        template_obj = jinja2.Template(template_content)
+        kargs = template_obj.render(config=self._info)
+        self._logger.info('kernel cmdline for installer is: %s', kargs)
+
+        self._platform.boot(kargs)
     # target_boot()
 
     def target_reboot(self):

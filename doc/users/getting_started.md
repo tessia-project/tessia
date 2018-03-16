@@ -532,7 +532,7 @@ tessia comes with a set of pre-defined templates for each supported Linux distro
 In this example we use the pre-defined auto template for Ubuntu 16.04 to perform the installation:
 
 ```
-$ tess system autoinstall --template=UBUNTU16.04.1 --system=cpc3lp25
+$ tess system autoinstall --os=ubuntu16.04.1 --system=cpc3lp25
 
 Request #7 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%

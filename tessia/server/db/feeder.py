@@ -26,8 +26,6 @@ from tessia.server.db import models
 # CONSTANTS AND DEFINITIONS
 #
 INSERT_ORDER = [
-    'OperatingSystem',
-    'Repository',
     'IfaceType',
     'Role',
     'RoleAction',
@@ -43,6 +41,8 @@ INSERT_ORDER = [
     'UserKey',
     'UserRole',
     'Template',
+    'OperatingSystem',
+    'Repository',
     'System',
     'NetZone',
     'Subnet',

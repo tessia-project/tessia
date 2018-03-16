@@ -90,6 +90,10 @@ class TestSmAnaconda(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = patch.object(sm_base, 'jinja2', autospec=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
         patcher = patch.object(sm_anaconda, 'sleep', autospec=True)
         self._mock_sleep_base = patcher.start()
         self.addCleanup(patcher.stop)
@@ -129,7 +133,7 @@ class TestSmAnaconda(TestCase):
         """
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
-        template_entry = utils.get_template("RHEL7.2")
+        template_entry = utils.get_template("rhel7-default")
         mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
         mock_shell.run.return_value = 0, "Thread Done: AnaConfigurationThread"
 
@@ -145,7 +149,7 @@ class TestSmAnaconda(TestCase):
         self._mock_ssh_client.return_value.login.side_effect = ConnectionError
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
-        template_entry = utils.get_template("RHEL7.2")
+        template_entry = utils.get_template("rhel7-default")
 
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
         with self.assertRaisesRegex(ConnectionError, "Timeout occurred"):
@@ -177,7 +181,7 @@ class TestSmAnaconda(TestCase):
 
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
-        template_entry = utils.get_template("RHEL7.2")
+        template_entry = utils.get_template("rhel7-default")
 
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
         with self.assertRaisesRegex(TimeoutError, "Installation Timeout"):
@@ -204,7 +208,7 @@ class TestSmAnaconda(TestCase):
 
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
-        template_entry = utils.get_template("RHEL7.2")
+        template_entry = utils.get_template("rhel7-default")
 
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
         with self.assertRaisesRegex(
@@ -219,7 +223,7 @@ class TestSmAnaconda(TestCase):
         """
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
-        template_entry = utils.get_template("RHEL7.2")
+        template_entry = utils.get_template("rhel7-default")
         mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
         mock_shell.run.side_effect = [

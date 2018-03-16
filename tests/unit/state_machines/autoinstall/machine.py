@@ -44,7 +44,7 @@ DEFAULT_CONFIG = {
 REQUEST_PARAMETERS = json.dumps({
     "system": "kvm054",
     "profile": "kvm_kvm054_install",
-    "template": "RHEL7.2"
+    "os": "rhel7.2"
 })
 
 #
@@ -78,11 +78,11 @@ class TestAutoInstallMachine(TestCase):
         self._mock_sm_autoyast = Mock(spec_set=machine.SmAutoyast)
 
         mocked_supported_distros = {
-            'rhel': self._mock_sm_anaconda,
-            'sles': self._mock_sm_autoyast
+            'redhat': self._mock_sm_anaconda,
+            'suse': self._mock_sm_autoyast
         }
 
-        patcher_dict = patch.dict(machine.SUPPORTED_DISTROS,
+        patcher_dict = patch.dict(machine.SUPPORTED_TYPES,
                                   values=mocked_supported_distros)
         self._mocked_supported_distros = patcher_dict.start()
         self.addCleanup(patcher_dict.stop)
@@ -132,7 +132,7 @@ class TestAutoInstallMachine(TestCase):
                 "system": "<system_name>",
                 "profile": "<name of the profile>"
             }
-            "profile" is optional.
+            "profile" and "template" are optional.
         """
         mach = machine.AutoInstallMachine(parameters)
         mach.start()
@@ -156,7 +156,7 @@ class TestAutoInstallMachine(TestCase):
         """
         request = json.dumps({
             "system": "kvm054",
-            "template": "RHEL7.2"
+            "os": "rhel7.2"
         })
 
         self._perform_test_init(request)
@@ -203,7 +203,7 @@ class TestAutoInstallMachine(TestCase):
         invalid_request_parameters1 = '{"profile": "kvm_kvm054_install"}'
         # Invalid request with additional parameter
         invalid_request_parameters2 = """{"profile": "kvm_kvm054_install",
-        "template": "RHEL7.2", "other_parameters": "value"}
+        "os": "rhel7.2", "other_parameters": "value"}
         """
         self.assertRaises(SyntaxError,
                           machine.AutoInstallMachine.parse,
@@ -220,7 +220,7 @@ class TestAutoInstallMachine(TestCase):
         """
         # Malformed json
         malformed_request_parameters = """{"profile": "kvm_kvm054_install",
-        "template":
+        "os":
         """
         with self.assertRaises(SyntaxError):
             machine.AutoInstallMachine.parse(malformed_request_parameters)
@@ -265,7 +265,7 @@ class TestAutoInstallMachine(TestCase):
         request = json.dumps({
             "system": "kvm054",
             "profile": "kvm_kvm054_install",
-            "template": "RHEL7.2",
+            "template": "rhel7-default",
             "os": "Nonono"
         })
 
@@ -280,7 +280,8 @@ class TestAutoInstallMachine(TestCase):
         request = json.dumps({
             "system": "kvm054",
             "profile": "kvm_kvm054_install",
-            "template": "Nonono"
+            "template": "Nonono",
+            "os": "rhel7.2"
         })
         with self.assertRaisesRegex(ValueError, "Template Nonono"):
             machine.AutoInstallMachine(request)
@@ -333,22 +334,22 @@ class TestAutoInstallMachine(TestCase):
         Test the case when a unsupported OS is used
         """
         # Add an unsupported OS to the database
-        unsupported_os = models.OperatingSystem(name="UnsupportedOS",
-                                                type="another",
-                                                major="1",
-                                                minor="0",
-                                                cmdline="foo",
-                                                desc="Unsupported OS for Test")
+        unsupported_os = models.OperatingSystem(
+            name="UnsupportedOS", type="another", major="1", minor="0",
+            pretty_name="Unsupported OS for Test")
 
         MANAGER.session.add(unsupported_os)
         MANAGER.session.commit()
         request = json.dumps({
             "system": "kvm054",
             "profile": "kvm_kvm054_install",
-            "template": "RHEL7.2",
+            "template": "rhel7-default",
             "os": "UnsupportedOS"
         })
-        with self.assertRaisesRegex(RuntimeError, "OS Unsupported"):
+        error_msg = "OS type 'another' is not supported for installation"
+        with self.assertRaisesRegex(ValueError, error_msg):
+            machine.AutoInstallMachine.parse(request)
+        with self.assertRaisesRegex(ValueError, error_msg):
             machine.AutoInstallMachine(request)
         MANAGER.session.delete(unsupported_os)
     # test_unsupported_os()

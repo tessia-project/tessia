@@ -23,8 +23,6 @@ from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from time import time
 from time import sleep
 
-import crypt
-import jinja2
 import logging
 import re
 
@@ -39,6 +37,9 @@ class SmAnaconda(SmBase):
     """
     State machine for Anaconda installer
     """
+    # the type of linux distribution supported
+    DISTRO_TYPE = 'redhat'
+
     def __init__(self, os_entry, profile_entry, template_entry):
         """
         Constructor
@@ -73,41 +74,13 @@ class SmAnaconda(SmBase):
         # collect repos, volumes, ifaces
         super().collect_info()
 
-        self._logger.info(
-            'auto-generated password for VNC is %s',
-            self._info['credentials']['vncpasswd'])
-
-        # add our specific bits
-        self._info["sha512rootpwd"] = crypt.crypt(
-            self._profile.credentials["passwd"])
-        self._info['hostname'] = self._system.hostname
+        self._logger.info('auto-generated password for VNC is %s',
+                          self._info['credentials']['vncpasswd'])
 
         for iface in self._info["ifaces"]:
             if iface["type"] == "OSA":
                 self._add_systemd_osname(iface)
-
     # collect_info()
-
-    def _get_kargs(self):
-        """
-        Return the cmdline used for the os installer
-
-        Returns:
-            str: kernel cmdline string
-        """
-        hostname = self._profile.system_rel.hostname
-
-        template_cmdline = jinja2.Template(self._os.cmdline)
-
-        cmdline = template_cmdline.render(
-            repo=self._repo.url,
-            gw_iface=self._gw_iface,
-            hostname=hostname,
-            autofile=self._autofile_url,
-            config=self._info)
-
-        return cmdline
-    # _get_kargs()
 
     def wait_install(self):
         """

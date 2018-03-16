@@ -42,9 +42,22 @@ IFACE_TYPES = [
 ]
 
 OPERATING_SYSTEMS = [
-    'rhel7.2,rhel,7,2,RHEL 7.2 GA',
-    'sles12.1,sles,12,1,SLES 12.1',
-    'ubuntu16.04.1,ubuntu,16,4,Ubuntu 16.04.1'
+    'cms,cms,0,0,z/VM Conversational Monitor System (CMS),,',
+    'rhel7.2,redhat,7,2,Red Hat Enterprise Linux Server 7.2 (Maipo),'
+    'rhel7-default',
+    'rhel7.3,redhat,7,3,Red Hat Enterprise Linux Server 7.3 (Maipo),'
+    'rhel7-default',
+    'rhel7.4,redhat,7,4,Red Hat Enterprise Linux Server 7.4 (Maipo),'
+    'rhel7-default',
+    'sles12.1,suse,12,1,SUSE Linux Enterprise Server 12 SP1,'
+    'sles12-default',
+    'sles12.2,suse,12,2,SUSE Linux Enterprise Server 12 SP2,'
+    'sles12-default',
+    'sles12.3,suse,12,3,SUSE Linux Enterprise Server 12 SP3,'
+    'sles12-default',
+    'ubuntu16.04.1,debian,1604,1,Ubuntu 16.04.1 LTS,ubuntu16-default',
+    'ubuntu16.04.2,debian,1604,2,Ubuntu 16.04.2 LTS,ubuntu16-default',
+    'ubuntu16.04.3,debian,1604,3,Ubuntu 16.04.3 LTS,ubuntu16-default',
 ]
 
 USERS = [
@@ -57,9 +70,10 @@ PROJECTS = [
 ]
 
 TEMPLATES = [
-    "RHEL7.2,Template for RHEL7.2,admin,Admins,rhel7.2",
-    "SLES12.1,Template for SLES12.1,admin,Admins,sles12.1",
-    "UBUNTU16.04.1,Template for Ubuntu 16.04.1,admin,Admins,ubuntu16.04.1"
+    "rhel7-default,Default template for RHEL7 installations,admin,Admins",
+    "sles12-default,Default template for SLES12 installations,admin,Admins",
+    "ubuntu16-default,Default template for Ubuntu16 installations"
+    ",admin,Admins"
 ]
 
 ROLES = [
@@ -203,18 +217,19 @@ def get_oses():
     """
     data = []
     for row in OPERATING_SYSTEMS:
-        row = row.split(',', 5)
-        template_filename = '{}_cmdline.jinja'.format(row[0])
-        with open(TEMPLATES_DIR + template_filename, "r") as template_file:
-            template_content = template_file.read()
+        row = row.split(',', 6)
+        if row[0] == 'cms':
+            template = None
+        else:
+            template = row[5]
         data.append(
             {
                 'name': row[0],
                 'type': row[1],
                 'major': row[2],
                 'minor': row[3],
-                'desc': row[4],
-                'cmdline': template_content
+                'pretty_name': row[4],
+                'template': template,
             }
         )
 
@@ -339,12 +354,12 @@ def get_system_states():
 
 def get_templates():
     """
-    Create the supported operating systems
+    Add the default auto install templates
     """
     data = []
     for row in TEMPLATES:
-        row = row.split(',', 5)
-        template_filename = '{}.jinja'.format(row[4])
+        row = row.split(',', 4)
+        template_filename = '{}.jinja'.format(row[0])
         with open(TEMPLATES_DIR + template_filename, "r") as template_file:
             template_content = template_file.read()
         data.append(
@@ -354,8 +369,7 @@ def get_templates():
                 'owner': row[2],
                 'modifier': row[2],
                 'project': row[3],
-                'operating_system': row[4],
-                'content': template_content
+                'content': template_content,
             }
         )
 
@@ -431,7 +445,7 @@ def create_all():
     data.update(get_users())
     data.update(get_token_users())
     data.update(get_projects())
-    data.update(get_oses())
     data.update(get_templates())
+    data.update(get_oses())
     db_insert(data)
 # create_all()

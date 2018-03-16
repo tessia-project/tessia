@@ -203,7 +203,6 @@ def print_hor_table(headers, rows):
                 # white spaces to align content
                 spaces = ' ' * (trunc_width+3)
                 output += '\n{}{}'.format(spaces, lines[i].strip())
-        output += '\n'
 
     click.echo(output)
 # print_hor_table()

@@ -118,7 +118,7 @@ def edit(cur_name, **kwargs):
     fetch_and_update(
         client.Repositories,
         {'name': cur_name},
-        'template not found.',
+        'repository not found.',
         kwargs)
     click.echo('Item successfully updated.')
 # edit()

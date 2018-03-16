@@ -30,6 +30,7 @@ import ipaddress
 import json
 import logging
 import os
+import re
 import subprocess
 
 #
@@ -248,6 +249,9 @@ class PostInstallChecker(object):
         params['kexec_crash_size'] = int(self._exec_ansible(
             'command', 'cat /sys/kernel/kexec_crash_size'))
 
+        # fetch pretty name from standard os-release file
+        params['os_name'] = self._fetch_os()
+
         self._facts = params
     # _fetch_facts()
 
@@ -270,6 +274,19 @@ class PostInstallChecker(object):
 
         return fcp_paths
     # _fetch_fcp()
+
+    def _fetch_os(self):
+        """
+        Extract pretty name from standard os-release file
+        """
+        file_content = self._exec_ansible('command', 'cat /etc/os-release')
+        for line in file_content.splitlines():
+            match = re.search('^PRETTY_NAME=(.*)', line)
+            if match:
+                return match.group(1).strip('"')
+
+        raise SystemError('Could not detect OS name')
+    # _fetch_os()
 
     @staticmethod
     def _pass_or_raise(param_name, expected_value, actual_value):
@@ -527,25 +544,6 @@ class PostInstallChecker(object):
         return iface
     # _parse_obj_iface()
 
-    @staticmethod
-    def _parse_obj_os(os_obj):
-        """
-        Parse the object into a string format recognized by this class'
-        methods.
-
-        Args:
-            os_obj (OperatingSystem): db's object
-
-        Returns:
-            str: os name in format {NAME}{MAJOR}.{MINOR}
-        """
-        os_dict = {
-            'name': os_obj.type.lower(),
-            'version': '{}.{}'.format(str(os_obj.major), str(os_obj.minor))
-        }
-        return os_dict
-    # _parse_obj_os()
-
     def _parse_obj_profile(self, profile_obj, os_obj=None):
         """
         Convert the system profile object to a dict in the form expected by the
@@ -555,9 +553,6 @@ class PostInstallChecker(object):
             profile_obj (SystemProfile): system activation profile object.
             os_obj (OperatingSystem): os object, if not specified use from
                                         system profile
-
-        Raises:
-            ValueError: in case expected os cannot be determined
 
         Returns:
             dict: a dictionary with the parsed parameters.
@@ -569,13 +564,15 @@ class PostInstallChecker(object):
             'memory': profile_obj.memory
         }
 
+        if os_obj:
+            params['os'] = os_obj.pretty_name
         # os not specified: use from system profile
-        if os_obj is None:
-            os_obj = profile_obj.operating_system_rel
-            if os_obj is None:
-                raise ValueError(
-                    'No operating system specified in profile')
-        params['os'] = self._parse_obj_os(os_obj)
+        elif profile_obj.operating_system_rel:
+            params['os'] = profile_obj.operating_system_rel.pretty_name
+        else:
+            self._logger.warning(
+                'System profile has no OS defined, skipping OS check')
+            params['os'] = None
 
         params['network'] = {
             'gateway': None,
@@ -697,36 +694,11 @@ class PostInstallChecker(object):
         """
         Check the OS name of the target instance.
         """
-        actual_osname = self._facts['ansible_distribution'].lower()
-        if actual_osname == 'redhat':
-            actual_osname = 'rhel'
+        if not self._expected_params['os']:
+            return
 
-        self._pass_or_raise(
-            'OS name', self._expected_params['os']['name'], actual_osname)
-
-        # break the version into elements
-        exp_version = self._expected_params['os']['version']
-        actual_version = self._facts['ansible_distribution_version']
-        exp_version_parts = exp_version.split('.')
-        actual_version_parts = actual_version.split('.')
-        # expected version is more specific than actual: report mismatch
-        if len(exp_version_parts) > len(actual_version_parts):
-            raise Misconfiguration('OS version', exp_version, actual_version)
-
-        # compare each part of the version string
-        for index, _ in enumerate(exp_version_parts):
-            # try first a numeric version comparison to eliminate differences
-            # like ubuntu 16.4 and 16.04
-            try:
-                exp_version_part = int(exp_version_parts[index])
-                actual_version_part = int(actual_version_parts[index])
-            # numeric not possible, compare strings directly
-            except ValueError:
-                exp_version_part = exp_version_parts[index]
-                actual_version_part = actual_version_parts[index]
-
-            self._pass_or_raise(
-                'OS version release', exp_version_part, actual_version_part)
+        self._pass_or_raise('OS name', self._expected_params['os'].strip(),
+                            self._facts['os_name'].strip())
     # _verify_os()
 
     def _verify_memory(self):

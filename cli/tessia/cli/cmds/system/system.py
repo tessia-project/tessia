@@ -97,7 +97,8 @@ def del_(name):
 
 @click.command(name='autoinstall')
 @click.pass_context
-@click.option('--template', required=True, help='autofile template')
+@click.option('--os', required=True, help='operating system to install')
+@click.option('--template', help='custom autotemplate')
 @click.option('--system', required=True, type=NAME,
               help='system to be installed')
 @click.option('--profile', type=NAME,
@@ -109,6 +110,8 @@ def autoinstall(ctx, **kwargs):
     request = {'action_type': 'SUBMIT', 'job_type': 'autoinstall'}
     if kwargs['profile'] is None:
         kwargs.pop('profile')
+    if kwargs['template'] is None:
+        kwargs.pop('template')
     request['parameters'] = json.dumps(kwargs)
     job_id = wait_scheduler(Client(), request)
     click.echo('Waiting for installation output (Ctrl+C to stop waiting)')

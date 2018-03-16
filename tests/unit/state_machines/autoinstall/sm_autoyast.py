@@ -39,7 +39,7 @@ class TestSmAutoyast(TestCase):
     def _instantiate_machine():
         os_entry = utils.get_os("sles12.1")
         profile_entry = utils.get_profile("CPC3LP54/lpar_cpc3lp54_install")
-        template_entry = utils.get_template("SLES12.1")
+        template_entry = utils.get_template("sles12-default")
 
         return sm_autoyast.SmAutoyast(os_entry, profile_entry, template_entry)
     # _instantiate_machine()
@@ -97,6 +97,10 @@ class TestSmAutoyast(TestCase):
 
         patcher = patch.object(sm_base, 'sleep', autospec=True)
         self._mock_sleep_base = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        patcher = patch.object(sm_base, 'jinja2', autospec=True)
+        patcher.start()
         self.addCleanup(patcher.stop)
 
         patcher = patch.object(sm_autoyast, 'time', autospec=True)

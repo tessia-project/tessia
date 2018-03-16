@@ -34,8 +34,7 @@ import click
 # CONSTANTS AND DEFINITIONS
 #
 MODEL_FIELDS = (
-    'name', 'operating_system', 'owner', 'project', 'modified', 'modifier',
-    'desc'
+    'name', 'owner', 'project', 'modified', 'modifier', 'desc'
 )
 
 #
@@ -53,7 +52,6 @@ def autotemplate():
               help="template's name identifier")
 @click.option('--content', required=True, type=AUTO_TEMPLATE,
               help="template content")
-@click.option('operating_system', '--os', required=True, help="supported OS")
 @click.option('--project', help="project owning template")
 @click.option('--desc', help="free form field describing template")
 def template_add(**kwargs):
@@ -93,7 +91,6 @@ def template_del(name):
 @click.option('--content', type=AUTO_TEMPLATE, help="template content")
 @click.option('--owner', help="template owner")
 @click.option('--project', help="project owning template")
-@click.option('operating_system', '--os', help="supported OS")
 @click.option('--desc', help="free form field describing model")
 def template_edit(cur_name, **kwargs):
     """

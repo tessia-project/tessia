@@ -1,0 +1,88 @@
+description: Test for the 'os' command
+base_user: admin
+tasks_order:
+  - add
+  - list
+  - edit
+  - del
+  - no_admin
+tasks:
+  add:
+    # switch to admin user
+    - - - conf key-gen
+        - admin
+        - password
+      - Key successfully created and added to client configuration.
+    - - os add
+      - 'Missing option "--name".'
+    - - os add --name=newos1.0
+      - 'Missing option "--type".'
+    - - os add --name=newos1.0 --type=newos
+      - 'Error: Invalid value for "--type": invalid choice: newos.'
+    - - os add --name=newos1.0 --type=cms
+      - 'Missing option "--major".'
+    - - os add --name=newos1.0 --type=cms --major=wrong
+      - 'Error: Invalid value for "--major": wrong is not a valid integer'
+    - - os add --name=newos1.0 --type=cms --major=10
+      - 'Missing option "--minor".'
+    - - os add --name=newos1.0 --type=cms --major=10 --minor=wrong
+      - 'Error: Invalid value for "--minor": wrong is not a valid integer'
+    - - os add --name=newos1.0 --type=cms --major=10 --minor=1
+      - 'Missing option "--pname".'
+    - - os add --name=newos1.0 --type=cms --major=10 --minor=1 --pname='New OS 1.0'
+      - 'Item added successfully.'
+    - - os add --name=newos1.0 --type=cms --major=10 --minor=1 --pname='New OS 1.0'
+      - 'Error: request failed. Server answered: An item with the provided value\(s\) already exists'
+    - - os add --name=anotheros2.0 --type=redhat --major=2 --minor=0 --pname='Another OS 2.0' --template='rhel7-default'
+      - 'Item added successfully.'
+    - - os add --name=yetanotheros3.0 --type=debian --major=3 --minor=2 --pname='Yet Another OS 3.2' --template='wrong-template'
+      - "Error: request failed. Server answered: No associated item found with value 'wrong-template' for field 'Default install template'"
+  list:
+    - - os list
+      - 'OS identifier *: newos1.0'
+    - - os list --name=anotheros2.0
+      - 'OS identifier *: anotheros2.0'
+    - - os list --type=redhat
+      - 'OS identifier *: rhel7.2'
+    - - os list --template=ubuntu16-default
+      - 'OS identifier *: ubuntu16.04.1'
+  edit:
+    - - os edit
+      - 'Error: Missing option "--name".'
+    - - os edit --name=newos1.0
+      - 'Error: no update criteria provided.'
+    - - os edit --name=newos1.0 --newname=newsuperos5.7
+      - 'Item successfully updated.'
+    - - os edit --name=newsuperos5.7 --major=5
+      - 'Item successfully updated.'
+    - - os edit --name=newsuperos5.7 --minor=7
+      - 'Item successfully updated.'
+    - - os edit --name=newsuperos5.7 --pname='New Super OS 5.7'
+      - 'Item successfully updated.'
+    - - os edit --name=newsuperos5.7 --template='wrong-template'
+      - "Error: request failed. Server answered: No associated item found with value 'wrong-template' for field 'Default install template'"
+    - - os edit --name=newsuperos5.7 --template='rhel7-default'
+      - 'Item successfully updated.'
+  del:
+    - - os del
+      - 'Error: Missing option "--name".'
+    - - os del --name='wrong-name'
+      - 'Error: OS not found.'
+    - - os del --name='newsuperos5.7'
+      - 'Item successfully deleted.'
+  no_admin:
+    # switch to non-admin user
+    - - perm user-add --login=os_non_admin@example.com --name='Non admin user' --title='Title of user'
+      - User added successfully.
+    - - - conf key-gen
+        - os_non_admin@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    - - os list --name=anotheros2.0
+      - 'OS identifier *: anotheros2.0'
+    - - os del --name=anotheros2.0
+      - 'Error: permission denied. Server answered: You need administrator privileges to perform this operation'
+    - - os edit --name=anotheros2.0 --newname='cantdoit1.0'
+      - 'Error: permission denied. Server answered: You need administrator privileges to perform this operation'
+    - - os add --name=cantdoit1.0 --type=cms --major=1 --minor=0 --pname='Cant do it 1.0'
+      - 'Error: permission denied. Server answered: You need administrator privileges to perform this operation'

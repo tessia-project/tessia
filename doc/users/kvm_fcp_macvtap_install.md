@@ -562,7 +562,7 @@ For more details about templates and about installing see [here](getting_started
 Let's perform a RHEL installation:
 
 ```
-$ tess system autoinstall --template=RHEL7.2 --system=kvm25 --profile=profile2
+$ tess system autoinstall --os=rhel7.2 --system=kvm25 --profile=profile2
 
 Request #64 submitted, waiting for scheduler to process it (Ctrl+C to stop waiting) ...
 processing job  [####################################]  100%

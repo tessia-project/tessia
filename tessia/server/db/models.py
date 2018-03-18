@@ -1227,7 +1227,7 @@ class SystemIfaceProfileAssociation(BASE):
     def iface(self, value):
         """Defines what to do when assigment occurs for the attribute"""
         try:
-            system_name, iface_name = value.split('/', 1)
+            system_name, iface_name = value.rsplit('/', 1)
         except ValueError:
             raise AssociationError(
                 self.__class__, 'iface', SystemIface, 'name', value)

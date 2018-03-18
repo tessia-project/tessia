@@ -31,6 +31,8 @@ from tessia.server.db.models import System
 from tessia.server.db.models import SystemIface
 from tessia.server.db.models import SystemProfile
 
+import ipaddress
+
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -124,6 +126,33 @@ class SystemIfaceResource(SecureResource):
             io='r'
         )
 
+    @staticmethod
+    def verify_address(properties):
+        """
+        Verifies the correctness of the subnet/ip_address combination.
+
+        Args:
+            properties (dict): field=value combination for the item to be
+                               verify
+
+        Raises:
+            BaseHttpError: if provided address is invalid
+
+        Returns:
+            bool: True
+        """
+        if properties.get('ip_address'):
+            # verify if ip address has a valid format
+            ip_addr = properties['ip_address'].rsplit('/', 1)[-1]
+            try:
+                ipaddress.ip_address(ip_addr)
+            except ValueError as exc:
+                msg = "The value '{}={}' is invalid: {}".format(
+                    'subnet/ip_address', properties['ip_address'], str(exc))
+                raise BaseHttpError(code=400, msg=msg)
+        return True
+    # verify_address()
+
     def do_create(self, properties):
         """
         Use the permissions on the system to allow access to the interfaces.
@@ -133,6 +162,7 @@ class SystemIfaceResource(SecureResource):
                                created
 
         Raises:
+            BaseHttpError: if provided address is invalid
             Forbidden: in case user has no permission to perform action
             ItemNotFoundError: in case hypervisor profile is specified but not
                                found
@@ -151,6 +181,8 @@ class SystemIfaceResource(SecureResource):
         # invalid permissions an exception will be raised.
         self._get_project_for_create(
             System.__tablename__, target_system.project_rel.name)
+
+        self.verify_address(properties)
 
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,
@@ -241,6 +273,8 @@ class SystemIfaceResource(SecureResource):
 
         # validate permission on the object - use the associated system
         self._assert_permission('UPDATE', item.system_rel, 'system')
+
+        self.verify_address(properties)
 
         # an iface cannot change its system so we only allow to set it on
         # creation

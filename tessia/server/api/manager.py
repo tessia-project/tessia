@@ -172,6 +172,34 @@ class ApiManager(SQLAlchemyManager):
         return query
     # instances()
 
+    def create(self, *args, **kwargs):
+        """
+        Fix the create method which is not catching sa's exception for error in
+        data format.
+
+        Args:
+            args (list): packed args for original create
+            kwargs (dict): packed keyword args for original create
+
+        Returns:
+            any: whatever parent's create returns
+
+        Raises:
+            ApiManager.DataError: in case a data error occurs (i.e. mac address
+                                  in wrong format)
+        """
+        try:
+            return super().create(*args, **kwargs)
+        except sa_exceptions.DataError as sa_exc:
+            session = self._get_session()
+            session.rollback()
+            raise ApiManager.DataError(sa_exc)
+        except sa_exceptions.IntegrityError:
+            session = self._get_session()
+            session.rollback()
+            raise potion_exceptions.BackendConflict()
+    # create()
+
     def delete(self, *args, **kwargs):
         """
         Fix the delete method which is not cleaning up the session after a

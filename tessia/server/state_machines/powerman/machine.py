@@ -20,6 +20,7 @@ Machine to perform power management of systems
 # IMPORTS
 #
 from jsonschema import validate
+from tessia.baselib.common.s3270.terminal import Terminal
 from tessia.baselib.guests import Guest
 from tessia.baselib.hypervisors import Hypervisor
 from tessia.server.config import CONF
@@ -160,6 +161,11 @@ class PowerManagerMachine(BaseMachine):
                 .format(profile_obj.name))
         # save reference to root volume for use in other stages
         profile_obj.root_vol = root_vol
+
+        if (profile_obj.system_rel.type.lower() == 'zvm' and
+                ('host_zvm' not in profile_obj.credentials)):
+            raise ValueError('z/VM guest {} has no z/VM credentials '
+                             'defined'.format(profile_obj.system_rel.name))
     # _check_profile()
 
     @staticmethod
@@ -292,18 +298,19 @@ class PowerManagerMachine(BaseMachine):
     # _get_resources()
 
     @staticmethod
-    def _get_start_params_lpar(guest_prof):
+    def _get_start_params_lpar(hyp_prof, guest_prof):
         """
         Define the parameters in baselib format to start a LPAR system
 
         Args:
+            hyp_prof (SystemProfile): hypervisor profile db object
             guest_prof (SystemProfile): guest profile db object
 
         Raises:
             ValueError: in case no root volume is defined
 
         Returns:
-            dict: parameters
+            tuple: containing init and start parameters
         """
         if not hasattr(guest_prof, 'root_vol'):
             raise ValueError(
@@ -325,22 +332,28 @@ class PowerManagerMachine(BaseMachine):
                 'devicenr': root_vol.volume_id
             }
 
-        return params
+        init_params = (
+            'hmc', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
+            hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
+        start_params = (guest_prof.system_rel.name, guest_prof.cpu,
+                        guest_prof.memory, params)
+        return (init_params, start_params)
     # _get_start_params_lpar()
 
     @staticmethod
-    def _get_start_params_kvm(guest_prof):
+    def _get_start_params_kvm(hyp_prof, guest_prof):
         """
         Define the parameters in baselib format to start a KVM guest system
 
         Args:
+            hyp_prof (SystemProfile): hypervisor profile db object
             guest_prof (SystemProfile): guest profile db object
 
         Raises:
             ValueError: in case libvirt definitions are missing
 
         Returns:
-            dict: parameters
+            tuple: containing init and start parameters
         """
         # prepare entries in the format expected by baselib
         svols = []
@@ -361,6 +374,7 @@ class PowerManagerMachine(BaseMachine):
             }
             svols.append(result)
 
+        # network interfaces
         ifaces = []
         for iface_obj in guest_prof.system_ifaces_rel:
             result = {
@@ -377,42 +391,143 @@ class PowerManagerMachine(BaseMachine):
                 'boot_method': 'disk'
             }
         }
-        return params
+        init_params = (
+            'kvm', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
+            hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
+        start_params = (guest_prof.system_rel.name, guest_prof.cpu,
+                        guest_prof.memory, params)
+        return (init_params, start_params)
     # _get_start_params_kvm()
 
     @staticmethod
-    def _is_system_up(system_prof):
+    def _get_start_params_zvm(hyp_prof, guest_prof):
+        """
+        Define the parameters in baselib format to start a zVM guest system
+
+        Args:
+            hyp_prof (SystemProfile): hypervisor profile db object
+            guest_prof (SystemProfile): guest profile db object
+
+        Returns:
+            tuple: containing init and start parameters
+
+        Raises:
+            ValueError: if zVM credentials are not defined
+        """
+        # prepare entries in the format expected by baselib
+        svols = []
+        for vol_obj in guest_prof.storage_volumes_rel:
+            result = {'type': vol_obj.type_rel.name.lower()}
+            if result['type'] != 'fcp':
+                result['devno'] = vol_obj.volume_id.split('.')[-1]
+            else:
+                result['devno'] = (
+                    vol_obj.specs['adapters'][0]['devno'].split('.')[-1])
+                result['wwpn'] = vol_obj.specs['adapters'][0]['wwpns'][0]
+                result['lun'] = vol_obj.volume_id
+            if guest_prof.root_vol is vol_obj:
+                result['boot_device'] = True
+            svols.append(result)
+
+        # network interfaces
+        ifaces = []
+        for iface_obj in guest_prof.system_ifaces_rel:
+            # use only the base address
+            ccw_base = []
+            for channel in iface_obj.attributes['ccwgroup'].split(','):
+                ccw_base.append(channel.split('.')[-1])
+            result = {
+                'id': ','.join(ccw_base),
+                'type': iface_obj.type.lower(),
+            }
+            ifaces.append(result)
+
+        # define args for the class constructor
+        # presence of 'host_zvm' was already validated by _check_profile
+        byuser = guest_prof.credentials['host_zvm'].get('byuser')
+        if byuser:
+            init_params = {'byuser': byuser}
+        else:
+            init_params = None
+
+        init_args = (
+            'zvm', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
+            guest_prof.system_rel.name,
+            guest_prof.credentials['host_zvm']['passwd'],
+            init_params)
+
+        # define args for the start call
+        start_params = {
+            'ifaces': ifaces,
+            'storage_volumes': svols,
+            'boot_method': 'disk',
+        }
+        start_args = (guest_prof.system_rel.name, guest_prof.cpu,
+                      guest_prof.memory, start_params)
+        return (init_args, start_args)
+    # _get_start_params_zvm()
+
+    @staticmethod
+    def _is_system_up(system_prof, guest_prof=None):
         """
         Verify if a given system is up by opening a connection to it.
 
         Args:
-            system_prof (SystemProfile): profile db object
+            system_prof (SystemProfile): profile object of system to check
+            guest_prof (SystemProfile): (used for zvm) profile db object of
+                guest containing zvm credentials for login
 
         Returns:
             bool: True if system is up, False otherwise
+
+        Raises:
+            ValueError: in case system_prof uses CMS but guest_prof is None
         """
         system_obj = system_prof.system_rel
 
         os_obj = system_prof.operating_system_rel
-        if os_obj and os_obj.type.lower() in ('cms', 'zcms'):
-            guest_type = 'cms'
-        else:
-            guest_type = 'linux'
+        # linux based systems: use normal guest class
+        if not os_obj or (os_obj.type.lower() not in ('cms', 'zcms')):
+            try:
+                guest_obj = Guest(
+                    'linux', system_obj.name, system_obj.hostname,
+                    system_prof.credentials['user'],
+                    system_prof.credentials['passwd'], None)
+                # small timeout, we don't want to wait for long if the system
+                # is down
+                guest_obj.login(timeout=15)
+                guest_obj.logoff()
+            except PermissionError:
+                return True
+            except Exception:
+                return False
+            return True
+
+        # system is a z/VM hypervisor: need credentials from guest to login
+        if not guest_prof:
+            raise ValueError(
+                'Cannot login to CMS on {}: no z/VM guest defined with '
+                'credentials'.format(system_obj.name))
+        if 'host_zvm' not in guest_prof.credentials:
+            raise ValueError('z/VM guest {} has no z/VM credentials '
+                             'defined'.format(guest_prof.system_rel.name))
+        term_obj = Terminal()
+        guest_params = {'here': True, 'noipl': True}
+        byuser = guest_prof.credentials['host_zvm'].get('byuser')
+        if byuser:
+            guest_params['byuser'] = byuser
         try:
-            guest_obj = Guest(
-                guest_type,
-                system_obj.name, system_obj.hostname,
-                system_prof.credentials['user'],
-                system_prof.credentials['passwd'], None)
-            # small timeout, we don't want to wait for long if the system
-            # is down
-            guest_obj.login(timeout=15)
-            guest_obj.logoff()
+            term_obj.login(
+                system_obj.hostname, guest_prof.system_rel.name,
+                guest_prof.credentials['host_zvm']['passwd'],
+                # small timeout, we don't want to wait for long if the
+                # system is down
+                guest_params, timeout=15)
+            term_obj.disconnect()
         except PermissionError:
             return True
         except Exception:
             return False
-
         return True
     # _is_system_up()
 
@@ -530,24 +645,35 @@ class PowerManagerMachine(BaseMachine):
                                       poweroff of the guest
             guests (list or SystemProfile): SystemProfile of the guest to be
                                           powered off
+        Raises:
+            ValueError: if system type is unknown
         """
         if not isinstance(guests, list):
             guests = [guests]
 
-        params = {}
         # determine the hypervisor type for baselib call
         hyp_type = hyp_prof.system_rel.type.lower()
-        if hyp_type == 'cpc':
-            hyp_type = 'hmc'
-        # hypervisor is an lpar: determine whether it's linux or cms
-        elif hyp_type == 'lpar':
-            os_obj = hyp_prof.operating_system_rel
-            if os_obj and os_obj.type.lower() in ('cms', 'zcms'):
-                hyp_type = 'zvm'
-            else:
-                hyp_type = 'kvm'
+        os_obj = hyp_prof.operating_system_rel
 
-        # call baselib to perform operation
+        # z/VM hypervisor: use specialized function
+        if (hyp_type != 'cpc' and os_obj and
+                os_obj.type.lower() in ('cms', 'zcms')):
+            for guest_prof in guests:
+                system_name = guest_prof.system_rel.name
+                self._logger.info('Powering off system %s', system_name)
+                self._poweroff_zvm(hyp_prof, guest_prof)
+                self._powered_off[system_name] = guest_prof
+                self._logger.info(
+                    'System %s successfully powered off', system_name)
+            return
+
+        # normalize names for baselib
+        try:
+            hyp_type = {'cpc': 'hmc', 'lpar': 'kvm'}[hyp_type]
+        except KeyError:
+            raise ValueError("Unknown type '{}' for system {}".format(
+                hyp_type, hyp_prof.system_rel.name))
+
         baselib_hyp = Hypervisor(
             hyp_type, hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
@@ -555,13 +681,36 @@ class PowerManagerMachine(BaseMachine):
         for guest_prof in guests:
             system_name = guest_prof.system_rel.name
             self._logger.info('Powering off system %s', system_name)
-            baselib_hyp.stop(system_name, params)
-            self._powered_off[guest_prof.system_rel.name] = guest_prof
+            baselib_hyp.stop(system_name, {})
+            self._powered_off[system_name] = guest_prof
             self._logger.info(
                 'System %s successfully powered off', system_name)
 
         baselib_hyp.logoff()
     # _poweroff()
+
+    @staticmethod
+    def _poweroff_zvm(hyp_prof, guest_prof):
+        """
+        Perform the poweroff operation on a list of zVM guests.
+        """
+        guest_name = guest_prof.system_rel.name
+
+        # presence of 'host_zvm' was already validated by _check_profile
+        byuser = guest_prof.credentials['host_zvm'].get('byuser')
+        init_params = {}
+        if byuser:
+            init_params['byuser'] = byuser
+
+        baselib_hyp = Hypervisor(
+            'zvm', hyp_prof.system_rel.name,
+            hyp_prof.system_rel.hostname,
+            guest_name,
+            guest_prof.credentials['host_zvm']['passwd'],
+            init_params)
+        baselib_hyp.login()
+        baselib_hyp.stop(guest_name, {})
+    # _poweroff_zvm()
 
     def _poweron(self, hyp_prof, guest_prof, overrides=None):
         """
@@ -595,22 +744,20 @@ class PowerManagerMachine(BaseMachine):
 
         system_type = guest_prof.system_rel.type.lower()
         if system_type == 'lpar':
-            hyp_type = 'hmc'
-            params = self._get_start_params_lpar(guest_prof)
+            method = self._get_start_params_lpar
         elif system_type == 'kvm':
-            hyp_type = 'kvm'
-            params = self._get_start_params_kvm(guest_prof)
+            method = self._get_start_params_kvm
+        elif system_type == 'zvm':
+            method = self._get_start_params_zvm
         else:
             raise ValueError(
                 'Unsupported system type {}'.format(system_type)
             )
 
-        baselib_hyp = Hypervisor(
-            hyp_type, hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
-            hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
+        init_args, start_args = method(hyp_prof, guest_prof)
+        baselib_hyp = Hypervisor(*init_args)
         baselib_hyp.login()
-        baselib_hyp.start(guest_prof.system_rel.name, guest_prof.cpu,
-                          guest_prof.memory, params)
+        baselib_hyp.start(*start_args)
         baselib_hyp.logoff()
 
         self._powered_on[guest_prof.system_rel.name] = guest_prof
@@ -654,10 +801,18 @@ class PowerManagerMachine(BaseMachine):
                 start_pos = 1
             for i in range(start_pos, len(system['hyp_chain_objs'])):
                 hyp_profile = system['hyp_chain_objs'][i]
-                # hypervisor not up: not possible to activate system
+                # retrieve also the guest profile in order to have login
+                # credentials for eventual z/VM hypervisors
+                try:
+                    guest_profile = system['hyp_chain_objs'][i+1]
+                # last entry: guest is the target system
+                except IndexError:
+                    guest_profile = profile_obj
+
                 self._logger.info('Checking if hypervisor %s is up',
                                   hyp_profile.system_rel.name)
-                if not self._is_system_up(hyp_profile):
+                # hypervisor not up: not possible to activate system
+                if not self._is_system_up(hyp_profile, guest_profile):
                     raise RuntimeError(
                         'Cannot poweron system {}, hypervisor {} is not up'
                         .format(system_obj.name, hyp_profile.system_rel.name)
@@ -783,6 +938,12 @@ class PowerManagerMachine(BaseMachine):
             self._logger.warning(
                 'Skipping check of system %s as KVM guests are currently '
                 'unsupported', system_name)
+            return True
+
+        prof_os = system_prof.operating_system_rel
+        if prof_os and prof_os.type.lower() in ('cms', 'zcms'):
+            self._logger.info('Skipping check of system %s as CMS is not '
+                              'supported', system_name)
             return True
 
         try:

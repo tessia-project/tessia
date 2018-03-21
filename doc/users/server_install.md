@@ -160,7 +160,7 @@ $ apt-get install --no-install-recommends \
     libpq-dev \
     libpq5 \
     s3270
-$ pip3 install -U pip setuptools
+$ pip3 install -U pip==9.0.1 setuptools
 ```
 
 Install the application files:

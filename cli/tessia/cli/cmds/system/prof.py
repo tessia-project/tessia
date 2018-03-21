@@ -56,6 +56,8 @@ PROFILE_FIELDS = (
               help="hypervisor profile required for activation")
 @click.option('--login', required=True, type=LOGIN,
               help="user:passwd for admin access to operating system")
+@click.option('operating_system', '--os', type=NAME,
+              help="operating system (if installed manually)")
 @click.option('--zvm-pass', 'zvm_pass', type=TEXT,
               help="password for access to zvm hypervisor (zVM guests only)")
 @click.option('--zvm-by', 'zvm_by', type=TEXT,
@@ -135,6 +137,8 @@ def prof_del(**kwargs):
               help="hypervisor profile required for activation")
 @click.option('--login', type=LOGIN,
               help="user:passwd for admin access to operating system")
+@click.option('operating_system', '--os',
+              help="operating system (if installed manually)")
 @click.option('--zvm-pass', 'zvm_pass', type=TEXT,
               help="password for access to zvm hypervisor (zVM guests only)")
 @click.option('--zvm-by', 'zvm_by',

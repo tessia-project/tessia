@@ -58,6 +58,7 @@ class TestSystemProfile(TestSecureResource):
                 'default': False,
                 'parameters': {},
                 'credentials': {},
+                'operating_system': 'rhel7.2'
             }
             index += 1
             yield data
@@ -178,6 +179,7 @@ class TestSystemProfile(TestSecureResource):
         """
         # the fields to be omitted and their expected values on response
         pop_fields = [('parameters', None)]
+        pop_fields = [('operating_system', None)]
         self._test_add_mandatory_fields('user_user@domain.com', pop_fields)
     # test_add_mandatory_fields()
 
@@ -288,6 +290,7 @@ class TestSystemProfile(TestSecureResource):
         """
         wrong_fields = [
             ('gateway', 'some_gateway'),
+            ('operating_system', 'wrong-os'),
         ]
         self._test_add_update_assoc_error(
             'user_user@domain.com', wrong_fields)
@@ -316,6 +319,8 @@ class TestSystemProfile(TestSecureResource):
             ('name', 5),
             ('name', False),
             ('name', None),
+            ('operating_system', 5),
+            ('operating_system', True),
             ('system', 5),
             ('system', True),
             ('hypervisor_profile', 5),
@@ -333,7 +338,6 @@ class TestSystemProfile(TestSecureResource):
             ('memory', 'some_memory'),
             ('memory', True),
             # read-only fields
-            ('operating_system', 'something'),
             ('storage_volumes', 'something'),
             ('system_ifaces', 'something'),
         ]

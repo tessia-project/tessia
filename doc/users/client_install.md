@@ -27,7 +27,7 @@ The client requires python >= 3.5, once you have it installed follow these steps
 ```
 # as the root user install the python packaging tools
 $ apt-get install python3-pip
-$ pip3 install -U pip setuptools
+$ pip3 install -U pip==9.0.1 setuptools
 
 # switch to target user (skip this step for a global installation)
 $ su - _target_user

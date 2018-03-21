@@ -9,6 +9,7 @@ tasks_order:
   - system_model
   - system_iface
   - system_prof
+  - set_os_manually
 tasks:
   base_add:
     # lab admin to create the lab resources
@@ -1089,3 +1090,23 @@ tasks:
       - 'Profile name                : DASD4'
     - - system prof-del --system=cpc3lp52 --name=DASD4
       - Item successfully deleted.
+  # use case setting os manually
+  set_os_manually:
+    - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=
+      - 'Error: Invalid value for "--os": value may not be empty'
+    - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=wrong-os
+      - "Error: request failed. Server answered: No associated item found with value 'wrong-os' for field 'Operating system'"
+    - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=rhel7.4
+      - "Item added successfully."
+    - - system prof-list --system=cpc3lp52 --name='Manual install'
+      - "Operating system *: rhel7.4"
+    - - system prof-edit --system=cpc3lp52 --name='Manual install' --os=wrong-os
+      - "Error: request failed. Server answered: No associated item found with value 'wrong-os' for field 'Operating system'"
+    - - system prof-edit --system=cpc3lp52 --name='Manual install' --os=
+      - "Item successfully updated."
+    - - system prof-list --system=cpc3lp52 --name='Manual install'
+      - "Operating system *: *\n"
+    - - system prof-edit --system=cpc3lp52 --name='Manual install' --os=cms
+      - "Item successfully updated."
+    - - system prof-list --system=cpc3lp52 --name='Manual install'
+      - "Operating system *: cms"

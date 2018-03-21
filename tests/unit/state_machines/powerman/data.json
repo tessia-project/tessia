@@ -15,6 +15,14 @@
             "owner": "admin",
             "project": "Admins",
             "subnet": "lab1-1801-cpc3"
+        },
+        {
+            "address": "192.168.161.224",
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
+            "subnet": "lab1-1801-cpc3"
         }
     ],
     "NetZone": [
@@ -166,7 +174,90 @@
             "system_attributes": {},
             "type": "FCP",
             "volume_id": "1022400000000000"
+        },
+        {
+            "desc": "Root disk for zvm033",
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+              "table": [
+                {
+                  "fs": "ext4",
+                  "mo": null,
+                  "mp": "/",
+                  "size": 9000,
+                  "type": "primary"
+                },
+                {
+                  "fs": "swap",
+                  "mo": null,
+                  "mp": null,
+                  "size": 1000,
+                  "type": "primary"
+                }
+              ],
+              "type": "msdos"
+            },
+            "pool": null,
+            "project": "Admins",
+            "server": "ds8k16",
+            "size": 10000,
+            "specs": {
+              "adapters": [
+                {
+                  "devno": "0.0.1800",
+                  "wwpns": [
+                    "100207630503c1ae",
+                    "100207630508c1ae",
+                    "100207630510c1ae",
+                    "100207630513c1ae"
+                  ]
+                },
+                {
+                  "devno": "0.0.1840",
+                  "wwpns": [
+                    "100207630503c1ae",
+                    "100207630508c1ae",
+                    "100207630510c1ae",
+                    "100207630513c1ae"
+                  ]
+                }
+              ],
+              "multipath": true,
+              "wwid": "11002076305aac1a0000000000002201"
+            },
+            "system": "zvm033",
+            "system_attributes": {},
+            "type": "FCP",
+            "volume_id": "1022400000000001"
+        },
+        {
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+              "table": [
+                {
+                  "fs": "ext4",
+                  "mo": null,
+                  "mp": "/",
+                  "size": 7000,
+                  "type": "primary"
+                }
+              ],
+              "type": "dasd"
+            },
+            "pool": null,
+            "project": "Admins",
+            "server": "ds8k16",
+            "size": 7000,
+            "specs": {},
+            "system": "zvm033",
+            "system_attributes": {},
+            "type": "DASD",
+            "volume_id": "3977"
         }
+
     ],
     "StorageVolumeProfileAssociation": [
         {
@@ -180,6 +271,14 @@
         {
             "profile": "kvm054/default",
             "volume": "ds8k16/3950"
+        },
+        {
+            "profile": "zvm033/default",
+            "volume": "ds8k16/1022400000000001"
+        },
+        {
+            "profile": "zvm033/dasd1",
+            "volume": "ds8k16/3977"
         }
     ],
     "System": [
@@ -242,8 +341,31 @@
             "project": "Admins",
             "state": "AVAILABLE",
             "type": "kvm"
+        },
+        {
+            "desc": "zVM hypervisor of zvm033",
+            "hostname": "cpc3lp55.domain.com",
+            "hypervisor": "cpc3",
+            "model": "ZEC12_H43",
+            "modifier": "admin",
+            "name": "cpc3lp55",
+            "owner": "admin",
+            "project": "Admins",
+            "state": "AVAILABLE",
+            "type": "LPAR"
+        },
+        {
+            "desc": "zvm guest",
+            "hostname": "zvm033.domain.com",
+            "hypervisor": "cpc3lp55",
+            "model": "ZEC12_H43",
+            "modifier": "admin",
+            "name": "zvm033",
+            "owner": "admin",
+            "project": "Admins",
+            "state": "AVAILABLE",
+            "type": "ZVM"
         }
-
     ],
     "SystemIface": [
         {
@@ -269,6 +391,19 @@
             "osname": "eth0",
             "system": "kvm054",
             "type": "MACVTAP"
+        },
+        {
+           "attributes": {
+              "ccwgroup": "0.0.f550,0.0.f551,0.0.f552",
+              "layer2": true
+            },
+            "desc": "gateway interface",
+            "ip_address": "lab1-1801-cpc3/192.168.161.224",
+            "mac_address": "02:57:52:00:76:33",
+            "name": "gb-extern",
+            "osname": "enccw0.0.f550",
+            "system": "zvm033",
+            "type": "OSA"
         }
     ],
     "SystemIfaceProfileAssociation": [
@@ -283,6 +418,14 @@
         {
             "iface": "kvm054/external macvtap",
             "profile": "kvm054/default"
+        },
+        {
+            "iface": "zvm033/gb-extern",
+            "profile": "zvm033/default"
+        },
+        {
+            "iface": "zvm033/gb-extern",
+            "profile": "zvm033/dasd1"
         }
     ],
     "SystemProfile": [
@@ -371,6 +514,58 @@
             "operating_system": "sles12.1",
             "parameters": null,
             "system": "kvm054"
+        },
+        {
+            "cpu": 15,
+            "credentials": {
+              "passwd": "zvm",
+              "user": "zvm"
+            },
+            "default": true,
+            "gateway": null,
+            "hypervisor_profile": null,
+            "memory": 4096,
+            "name": "default",
+            "operating_system": "cms",
+            "parameters": null,
+            "system": "cpc3lp55"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+              "passwd": "root",
+              "user": "mypasswd",
+              "host_zvm": {
+                  "passwd": "zvmpasswd",
+                  "byuser": "vmadmin"
+              }
+            },
+            "default": true,
+            "gateway": null,
+            "hypervisor_profile": null,
+            "memory": 1024,
+            "name": "default",
+            "operating_system": "sles12.1",
+            "parameters": null,
+            "system": "zvm033"
+        },
+        {
+            "cpu": 5,
+            "credentials": {
+              "passwd": "root",
+              "user": "mypasswd",
+              "host_zvm": {
+                  "passwd": "anotherzvmpasswd"
+              }
+            },
+            "default": false,
+            "gateway": null,
+            "hypervisor_profile": null,
+            "memory": 2048,
+            "name": "dasd1",
+            "operating_system": "rhel7.2",
+            "parameters": null,
+            "system": "zvm033"
         }
     ]
 }

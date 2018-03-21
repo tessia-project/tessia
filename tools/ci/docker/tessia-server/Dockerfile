@@ -42,7 +42,7 @@ RUN apt-get -q update > /dev/null && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     # set up python packaging tools
-    pip3 -q install -U setuptools pip && \
+    pip3 -q install -U setuptools pip==9.0.1 && \
     # web server for api service
     pip3 -q install -U uwsgi
 

@@ -114,8 +114,13 @@ def autoinstall(ctx, **kwargs):
         kwargs.pop('template')
     request['parameters'] = json.dumps(kwargs)
     job_id = wait_scheduler(Client(), request)
-    click.echo('Waiting for installation output (Ctrl+C to stop waiting)')
-    ctx.invoke(output, job_id=job_id)
+    try:
+        click.echo('Waiting for installation output (Ctrl+C to stop waiting)')
+        ctx.invoke(output, job_id=job_id)
+    except KeyboardInterrupt:
+        click.echo('\nwarning: make sure to cancel the running job if you '
+                   'want to attempt a new action for this system')
+        raise
 # autoinstall()
 
 @click.command(name='edit')
@@ -194,8 +199,14 @@ def poweroff(ctx, name):
     }
 
     job_id = wait_scheduler(client, request)
-    click.echo('Waiting for job output (Ctrl+C to stop waiting)')
-    ctx.invoke(output, job_id=job_id)
+    try:
+        click.echo('Waiting for job output (Ctrl+C to stop waiting)')
+        ctx.invoke(output, job_id=job_id)
+    except KeyboardInterrupt:
+        click.echo('\nwarning: make sure to cancel the running job if you '
+                   'want to attempt a new action for this system')
+        raise
+
 # poweroff()
 
 @click.command(name='poweron')
@@ -260,8 +271,13 @@ def poweron(ctx, name, **kwargs):
         'parameters': json.dumps(req_params)
     }
     job_id = wait_scheduler(client, request)
-    click.echo('Waiting for job output (Ctrl+C to stop waiting)')
-    ctx.invoke(output, job_id=job_id)
+    try:
+        click.echo('Waiting for job output (Ctrl+C to stop waiting)')
+        ctx.invoke(output, job_id=job_id)
+    except KeyboardInterrupt:
+        click.echo('\nwarning: make sure to cancel the running job if you '
+                   'want to attempt a new action for this system')
+        raise
 # poweron()
 
 @click.command(name='types')

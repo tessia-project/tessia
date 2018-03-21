@@ -17,6 +17,10 @@ limitations under the License.
 
 This tool aims to automate and simplify the installation/configuration/testing of Linux systems running on the IBM Z platform.
 
+# What's new
+
+Check the [Release notes](doc/releases.md).
+
 # Users
 
 Documentation explaining how to install and use the tool.

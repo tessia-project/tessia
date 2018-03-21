@@ -85,6 +85,10 @@ The tool is ready for use. To learn how to install your first system, visit [Get
 
 If you prefer a manual installation method (without docker), see [Manual method](doc/users/server_install.md#manual-method).
 
+# What's new
+
+Check the [Release notes](doc/releases.md).
+
 # Documentation
 
 User documentation is available at the [Users section](doc/index.md#users). For an introduction about the tool concepts, see [Resources model](doc/users/resources_model.md).
@@ -94,6 +98,10 @@ To learn how to use the command line client, see [Getting started](doc/users/get
 
 If you are interested in contributing to the project, read [How to contribute (development process)](doc/developers/contributing.md).
 Additional topics for developers are available at the [Developers section](doc/index.md#developers).
+
+# Contact
+
+You can join us on IRC at the `#tessia` channel on [OFTC](http://www.oftc.net)
 
 # License
 

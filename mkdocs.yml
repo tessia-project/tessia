@@ -10,9 +10,10 @@ markdown_extensions:
 theme: readthedocs
 site_name: tessia
 repo_url: https://gitlab.com/tessia-project/tessia
-copyright: Copyright IBM Corp. 2016, 2017
+copyright: Copyright IBM Corp. 2016, 2017, 2018
 pages:
 - Home: 'index.md'
+- Releases: 'releases.md'
 - Users:
     - Client installation: 'users/client_install.md'
     - Server installation: 'users/server_install.md'

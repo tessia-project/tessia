@@ -52,7 +52,9 @@ kexec-tools
 {% if config["system_type"] != "KVM" %}
 %post
 {% for iface in config["ifaces"] %}
+{% if iface["attributes"]["layer2"] %}
 echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
+{% endif %}
 {% if iface["osname"] != iface["systemd_osname"] %}
 sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
 mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}

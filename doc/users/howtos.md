@@ -19,5 +19,6 @@ This page indexes usage examples for specific tasks.
 
 # Installations
 
-- [Installing a kvm guest with fcp disk and macvtap interface](kvm_fcp_macvtap_install.md)
+- [Installing a KVM guest with FCP disk and MACVTAP interface](kvm_fcp_macvtap_install.md)
 
+- [Installing linux on zVM with DASD volumes and OSA interface](zvm_dasd_osa_install.md)

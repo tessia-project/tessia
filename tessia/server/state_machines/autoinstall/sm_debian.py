@@ -63,7 +63,7 @@ class SmDebianInstaller(SmBase):
         # https://www.freedesktop.org/wiki/Software/systemd/
         # PredictableNetworkInterfaceNames/)
         iface["systemd_osname"] = (
-            "enc{}".format(ccwgroup[0].split('.')[2])
+            "enc{}".format(ccwgroup[0].lstrip('.0'))
         )
     # _add_systemd_osname()
 

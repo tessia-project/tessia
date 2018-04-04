@@ -19,6 +19,7 @@ Unit test for the Anaconda-based state machine module.
 #
 # IMPORTS
 #
+from contextlib import contextmanager
 from tessia.server.state_machines.autoinstall import sm_anaconda, sm_base
 from tests.unit.state_machines.autoinstall import utils
 from unittest.mock import MagicMock, Mock, patch
@@ -40,8 +41,32 @@ class TestSmAnaconda(TestCase):
         """
         Called once for the setup of DbUnit.
         """
-        utils.setup_dbunit()
+        cls.db = utils.setup_dbunit()
     # setUpClass()
+
+    @contextmanager
+    def _mock_db_obj(self, target_obj, target_field, temp_value):
+        """
+        Act as a context manager to temporarily change a value in a db row and
+        restore it on exit.
+
+        Args:
+            target_obj (SAobject): sqlsa model object
+            target_field (str): name of field in object
+            temp_value (any): value to be temporarily assigned
+
+        Yields:
+            None: nothing is returned
+        """
+        orig_value = getattr(target_obj, target_field)
+        setattr(target_obj, target_field, temp_value)
+        self.db.session.add(target_obj)
+        self.db.session.commit()
+        yield
+        setattr(target_obj, target_field, orig_value)
+        self.db.session.add(target_obj)
+        self.db.session.commit()
+    # _mock_db_obj()
 
     def setUp(self):
         """
@@ -140,6 +165,25 @@ class TestSmAnaconda(TestCase):
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
         mach.start()
     # test_init()
+
+    def test_init_no_memory(self):
+        """
+        Test the correct execution of the install machine.
+        """
+        os_entry = utils.get_os("rhel7.2")
+        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        template_entry = utils.get_template("rhel7-default")
+
+        wrong_mem = sm_anaconda.MIN_MIB_MEM - 1
+        with self._mock_db_obj(profile_entry, 'memory', wrong_mem):
+            with self._mock_db_obj(os_entry, 'minor', 5):
+                msg = ("Installations of '{}' require at least {}MiB of memory"
+                       .format(os_entry.pretty_name,
+                               sm_anaconda.MIN_MIB_MEM))
+                with self.assertRaises(ValueError, msg=msg):
+                    sm_anaconda.SmAnaconda(
+                        os_entry, profile_entry, template_entry)
+    # test_init_no_memory()
 
     def test_wait_install_fails_ssh_timeout(self):
         """

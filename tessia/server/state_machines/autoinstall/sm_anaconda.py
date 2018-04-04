@@ -29,6 +29,11 @@ import re
 #
 # CONSTANTS AND DEFINITIONS
 #
+FEDORA_ID = 'Fedora '
+RHEL_ID = 'Red Hat Enterprise Linux'
+
+# min memory required for newer anaconda versions
+MIN_MIB_MEM = 1280
 
 #
 # CODE
@@ -44,12 +49,20 @@ class SmAnaconda(SmBase):
         """
         Constructor
         """
+        # make sure minimum ram is available
+        if ((os_entry.pretty_name.startswith(RHEL_ID) and os_entry.major <= 7
+             and os_entry.minor >= 5) or
+                os_entry.pretty_name.startswith(FEDORA_ID)
+           ) and profile_entry.memory < MIN_MIB_MEM:
+            raise ValueError(
+                "Installations of '{}' require at least {}MiB of memory"
+                .format(os_entry.pretty_name, MIN_MIB_MEM))
+
         super().__init__(os_entry, profile_entry, template_entry)
         self._logger = logging.getLogger(__name__)
     # __init__()
 
-    @staticmethod
-    def _add_systemd_osname(iface):
+    def _add_systemd_osname(self, iface):
         """
         Determine and add a key to the iface dict representing the kernel
         device name used by the installer for the given network interface
@@ -62,9 +75,12 @@ class SmAnaconda(SmBase):
         # device name for OSA network interfaces (for details see
         # https://www.freedesktop.org/wiki/Software/systemd/
         # PredictableNetworkInterfaceNames/)
-        iface["systemd_osname"] = (
-            "enccw{}".format(ccwgroup[0])
-        )
+        if self._os.pretty_name.startswith(RHEL_ID) and self._os.major <= 7:
+            iface["systemd_osname"] = "enccw{}".format(ccwgroup[0])
+        # with systemd/udev >= 238 newer naming scheme is used
+        else:
+            iface["systemd_osname"] = "enc{}".format(
+                ccwgroup[0].lstrip('.0'))
     # _add_systemd_osname()
 
     def collect_info(self):
@@ -77,7 +93,7 @@ class SmAnaconda(SmBase):
         self._logger.info('auto-generated password for VNC is %s',
                           self._info['credentials']['vncpasswd'])
 
-        for iface in self._info["ifaces"]:
+        for iface in self._info["ifaces"] + [self._gw_iface]:
             if iface["type"] == "OSA":
                 self._add_systemd_osname(iface)
     # collect_info()

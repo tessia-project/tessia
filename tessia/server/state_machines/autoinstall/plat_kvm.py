@@ -39,6 +39,8 @@ DISK_TEMPLATE = """
       {boot_tag}
     </disk> 
 """
+RHEL_ID = 'Red Hat Enterprise Linux'
+SLES_ID = 'SUSE Linux Enterprise Server'
 
 #
 # CODE
@@ -57,9 +59,10 @@ class PlatKvm(PlatBase):
 
         # determine the type of devpath prefix used for virtio devices, distros
         # with systemd/udev >= 229 use newer naming
-        if ((self._os.name.startswith('rhel') and self._os.major <= 7 and
-             self._os.minor <= 3) or
-                (self._os.name.startswith('sles') and self._os.major <= 12)):
+        if ((self._os.pretty_name.startswith(RHEL_ID)
+             and self._os.major <= 7 and self._os.minor <= 3) or
+                (self._os.pretty_name.startswith(SLES_ID)
+                 and self._os.major <= 12)):
             self._devpath_prefix = '/dev/disk/by-path/ccw-0.{}.{}'
         else:
             self._devpath_prefix = '/dev/disk/by-path/virtio-pci-0.{}.{}'

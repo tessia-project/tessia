@@ -257,6 +257,13 @@
       <pattern>base</pattern>
     </patterns>
   </software>
+  <users config:type="list">
+    <user>
+      <encrypted config:type="boolean">true</encrypted>
+      <user_password>{{config["sha512rootpwd"]}}</user_password>
+      <username>root</username>
+    </user>
+  </users>
   <timezone>
     <hwclock>UTC</hwclock>
     <timezone>Europe/Berlin</timezone>

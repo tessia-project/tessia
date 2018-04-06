@@ -438,8 +438,9 @@ class Manager(object):
             cmd,
             error_msg="Failed to determine project's version for tag creation")
 
-        # replace plus sign as it is not allowed by docker
-        return stdout.replace('+', '-').strip()
+        # replace plus sign by a meaningful identifier as it is not allowed
+        # by docker
+        return stdout.replace('+', '-commit').strip()
     # _create_tag()
 
     def _run(self):

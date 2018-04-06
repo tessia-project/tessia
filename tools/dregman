@@ -51,8 +51,9 @@ def _compare_version(image_1, image_2):
         int: 0 = image_1 == image-2, -1 = image_1 < image_2,
              1 = image_1 > image_2
     """
-    version_1 = image_1[0]
-    version_2 = image_2[0]
+    # convert versions to PEP440 compliant format
+    version_1 = image_1[0].replace('-commit', '+')
+    version_2 = image_2[0].replace('-commit', '+')
 
     # special case for docker rags
     if version_1 == 'latest' and version_2 == 'latest':

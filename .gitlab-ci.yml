@@ -53,7 +53,7 @@ clitests:
 release:
   stage: release
   script:
-    - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print(gen_version().replace("+", "-"))'`
+    - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print(gen_version().replace("+", "-commit"))'`
     - docker pull $REGISTRY_CLI_IMAGE_NAME
     - docker pull $REGISTRY_SERVER_IMAGE_NAME
     - docker tag $REGISTRY_CLI_IMAGE_NAME ${CI_REGISTRY_IMAGE}/tessia-cli:${TESSIA_IMAGE_TAG}

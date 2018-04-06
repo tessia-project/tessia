@@ -34,7 +34,7 @@ clitests:
 release:
   stage: release
   script:
-    - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print(gen_version().replace("+", "-"))'`
+    - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print(gen_version().replace("+", "-commit"))'`
     - docker tag tessia-cli:${CI_COMMIT_REF_SLUG} tessia-cli:${TESSIA_IMAGE_TAG}
     - docker tag tessia-server:${CI_COMMIT_REF_SLUG} tessia-server:${TESSIA_IMAGE_TAG}
     - tools/ci/orc push --tag=${TESSIA_IMAGE_TAG} --registry=${CI_REGISTRY}

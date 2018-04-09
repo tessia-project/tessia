@@ -20,6 +20,7 @@ Custom types for usage in command options
 # IMPORTS
 #
 import click
+import ipaddress
 import re
 
 #
@@ -166,6 +167,30 @@ class Hostname(click.ParamType):
 
 HOSTNAME = Hostname()
 
+class IPaddress(click.ParamType):
+    """
+    Represents ip address
+    """
+    name = 'ip_address'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+        try:
+            ipaddress.ip_address(value)
+        except ValueError:
+            self.fail(
+                '{} is not a valid ip address'.format(value), param, ctx)
+
+        return value
+    # convert()
+#IPaddress
+
+IPADDRESS = IPaddress()
+
 class JobType(click.ParamType):
     """
     Represents job types.
@@ -241,6 +266,30 @@ class Login(click.ParamType):
 
 LOGIN = Login()
 
+class MACaddress(click.ParamType):
+    """
+    Represents mac address
+    """
+    name = 'mac_address'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        ret = re.match(r"^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", value)
+        if ret is None:
+            msg = ("{} is not a valid mac address".format(value))
+            self.fail(msg, param, ctx)
+
+        return value
+    # convert()
+#MACaddress
+
+MACADDRESS = MACaddress()
+
 class Name(click.ParamType):
     """
     Represents the name of an entity
@@ -314,7 +363,7 @@ class ScsiWwid(click.ParamType):
 
     def convert(self, value, param, ctx):
         """
-        Make sure value is a non empty string.
+        Make sure it follows the pattern accepted by the server
         """
         orig_value = value
         value = value.lower()
@@ -326,6 +375,28 @@ class ScsiWwid(click.ParamType):
     # convert()
 # ScsiWwid
 SCSI_WWID = ScsiWwid()
+
+class Subnet(click.ParamType):
+    """
+    Represents a subnet
+    """
+    name = 'subnet'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        ret = re.match(r"^[a-zA-Z0-9_\-]+$", value)
+        if ret is None:
+            self.fail('{} is not a valid subnet'.format(value), param, ctx)
+
+        return value
+    # convert()
+# Subnet
+SUBNET = Subnet()
 
 class Text(click.ParamType):
     """

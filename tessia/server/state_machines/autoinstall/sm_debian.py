@@ -226,7 +226,7 @@ class SmDebianInstaller(SmBase):
                 self._info['root_disk'] = svol
 
         # Gather the device numbers of the OSA interfaces.
-        for iface in self._info["ifaces"]:
+        for iface in self._info["ifaces"] + [self._gw_iface]:
             if iface["type"] == "OSA":
                 self._add_systemd_osname(iface)
 

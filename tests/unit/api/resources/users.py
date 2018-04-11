@@ -19,9 +19,11 @@ Unit test for users resource module
 #
 # IMPORTS
 #
-from tests.unit.api.resources.secure_resource import TestSecureResource
 from tessia.server.api.resources.users import UserResource
 from tessia.server.db import models
+from tests.unit.api.resources.secure_resource import TestSecureResource
+from tests.unit.api.resources.secure_resource \
+    import DEFAULT_CONFIG
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -58,6 +60,18 @@ class TestUser(TestSecureResource):
             index += 1
             yield data
     # _entry_gen()
+
+    def _set_config(self, param_value):
+        """
+        Set config to switch on/off case sensitivity
+        """
+        conf = DEFAULT_CONFIG.copy()
+        conf['auth']['case_sensitive'] = param_value
+        self._env_config.update(conf)
+
+        # restore default config after test finishes
+        self.addCleanup(self._env_config.update, DEFAULT_CONFIG)
+    # _set_config()
 
     def test_add_all_fields_many_roles(self):
         """
@@ -239,4 +253,49 @@ class TestUser(TestSecureResource):
         self._test_update_no_role(
             'user_admin@domain.com', logins, update_fields)
     # test_update_no_role()
+
+    def test_login_update_case_on(self):
+        """
+        Exercise the update of existing login with new uppercase one and
+        case sensitivity is activated.
+        """
+        update_fields = {
+            'name': 'some_name',
+            'login': 'SOME_UPPERCASE_login',
+            'title': 'some_login',
+            'restricted': True,
+            'admin': True,
+        }
+        valid_roles = ['user_admin@domain.com']
+        self._set_config(True)
+
+        self._test_update_valid_fields(
+            'user_admin@domain.com', valid_roles, update_fields)
+    # test_login_update_case_on()
+
+    def test_login_update_case_off(self):
+        """
+        Exercise the update of existing login with new uppercase one and
+        case sensitivity is deactivated.
+        """
+        update_fields = {
+            'name': 'some_name',
+            'login': 'SOME_UPPERCASE_login',
+            'title': 'some_login',
+            'restricted': True,
+            'admin': True,
+        }
+        self._set_config(False)
+        # creation request
+        resp = self._do_request(
+            'create', '{}:a'.format('user_admin@domain.com'), update_fields)
+        self.assertEqual(200, resp.status_code, resp.data)
+        created_id = int(resp.get_data(as_text=True))
+        update_fields['id'] = created_id
+        # update request
+        resp = self._do_request(
+            'update', 'user_admin@domain.com:a', update_fields)
+        update_fields['login'] = 'some_uppercase_login'
+        self._assert_updated(resp, update_fields)
+    # test_login_update_case_off()
 # TestUser

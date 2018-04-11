@@ -22,6 +22,7 @@ Resource definition
 from flask_potion import fields
 from tessia.server.api.resources.secure_resource import NAME_PATTERN
 from tessia.server.api.resources.secure_resource import SecureResource
+from tessia.server.config import CONF
 from tessia.server.db.models import User
 
 #
@@ -73,4 +74,47 @@ class UserResource(SecureResource):
         admin = fields.Boolean(
             title=DESC['admin'], description=DESC['admin'])
     # Schema
+
+    @staticmethod
+    def _case_sensitive_perf(login):
+        """
+        Perform case sensitivity conversion according to server settings.
+
+        Args:
+            login (str): login value for conversion
+
+        Returns:
+            str: converted login value
+        """
+        # read flag from server config file
+        case_sensitive = CONF.get_config().get(
+            'auth', {}).get('case_sensitive', False)
+
+        if not case_sensitive:
+            # login should be case-insensitive
+            login = login.lower()
+
+        return login
+    # _case_sensitive_perf()
+
+    def do_create(self, properties):
+        """
+        Overridden method to perform case sensitivity on the login provided.
+        """
+        properties['login'] = self._case_sensitive_perf(properties['login'])
+
+        return super().do_create(properties)
+    # do_create()
+
+    def do_update(self, properties, id):
+        # pylint: disable=invalid-name,redefined-builtin
+        """
+        Overridden method to perform case sensitivity on the login provided.
+        """
+        if 'login' in properties:
+            properties['login'] =\
+                self._case_sensitive_perf(properties['login'])
+
+        return super().do_update(properties, id)
+    # do_update()
 # UserResource

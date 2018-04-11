@@ -252,6 +252,10 @@ class PostInstallChecker(object):
         # fetch pretty name from standard os-release file
         params['os_name'] = self._fetch_os()
 
+        # threads per core (smt enabled/disabled) - not provided by
+        # ansible on s390x
+        params['ansible_processor_threads_per_core'] = self._fetch_smt()
+
         self._facts = params
     # _fetch_facts()
 
@@ -287,6 +291,21 @@ class PostInstallChecker(object):
 
         raise SystemError('Could not detect OS name')
     # _fetch_os()
+
+    def _fetch_smt(self):
+        """
+        Extract the number of threads per core (smt enabled/disabled)
+        """
+        try:
+            lscpu_lines = self._exec_ansible('command', "lscpu")
+        except RuntimeError:
+            return 1
+        for line in lscpu_lines.splitlines():
+            if line.startswith('Thread(s) per core:'):
+                return int(line.split()[-1])
+        # information not found: assume smt disabled as default
+        return 1
+    # _fetch_smt()
 
     @staticmethod
     def _pass_or_raise(param_name, expected_value, actual_value):
@@ -671,7 +690,8 @@ class PostInstallChecker(object):
         """
         Check the cpu quantity of a target instance.
         """
-        expected_cpu = self._expected_params['cpu']
+        expected_cpu = (self._expected_params['cpu'] *
+                        self._facts['ansible_processor_threads_per_core'])
         actual_cpu = self._facts['ansible_processor_cores']
         self._pass_or_raise('cpu quantity', expected_cpu, actual_cpu)
     # _verify_cpu()

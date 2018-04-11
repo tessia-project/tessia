@@ -563,7 +563,7 @@ cpc3lp52.domain.com | SUCCESS => {
         "ansible_processor": [
             "IBM/S390"
         ],
-        "ansible_processor_cores": 2,
+        "ansible_processor_cores": 20,
         "ansible_product_name": "NA",
         "ansible_product_serial": "NA",
         "ansible_product_uuid": "NA",

@@ -23,4 +23,4 @@ jinja2>=2.8
 ansible>=2.5.0
 requests>=2.13.0
 # tessia-baselib and its dependencies
-https://gitlab.com/tessia-project/tessia-baselib.git@0.2.2#egg=tessia-baselib
+https://gitlab.com/tessia-project/tessia-baselib.git@1feb8879377#egg=tessia-baselib

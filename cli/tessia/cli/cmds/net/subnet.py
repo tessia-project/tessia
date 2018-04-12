@@ -22,7 +22,7 @@ Module for the subnet command
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
-from tessia.cli.types import NAME
+from tessia.cli.types import SUBNET
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 
@@ -42,7 +42,7 @@ FIELDS = (
 @click.command('subnet-add')
 # set the parameter name after the model's attribute name to save on typing
 @click.option('--zone', required=True, help='target network zone')
-@click.option('--name', required=True, type=NAME,
+@click.option('--name', required=True, type=SUBNET,
               help="name of subnet to create")
 @click.option('--address', required=True,
               help="subnet address (i.e. 192.168.0.0/24)")
@@ -69,7 +69,7 @@ def subnet_add(**kwargs):
 
 @click.command(name='subnet-del')
 @click.option('--zone', required=True, help='network zone containing subnet')
-@click.option('--name', required=True, type=NAME,
+@click.option('--name', required=True, type=SUBNET,
               help='name of subnet to delete')
 def subnet_del(**kwargs):
     """
@@ -84,9 +84,9 @@ def subnet_del(**kwargs):
 
 @click.command(name='subnet-edit')
 @click.option('--zone', required=True, help='network zone containing subnet')
-@click.option('cur_name', '--name', required=True,
+@click.option('cur_name', '--name', required=True, type=SUBNET,
               help='name of subnet to edit')
-@click.option('name', '--newname', type=NAME,
+@click.option('name', '--newname', type=SUBNET,
               help="new subnet name")
 @click.option('--address', help="subnet address (i.e. 192.168.0.0/24)")
 @click.option('gateway', '--gw', help="gateway address (i.e. 192.168.0.1)")
@@ -112,7 +112,7 @@ def subnet_edit(zone, cur_name, **kwargs):
 
 @click.command(name='subnet-list')
 @click.option('--zone', help='the network zone to list')
-@click.option('--name', type=NAME,
+@click.option('--name', type=SUBNET,
               help='filter by subnet name')
 @click.option('--address', help="filter by specified address")
 @click.option('--vlan', type=click.INT, help="filter by specified vlan")

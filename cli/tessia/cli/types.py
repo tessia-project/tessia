@@ -389,7 +389,7 @@ class Subnet(click.ParamType):
         if not value:
             self.fail('value may not be empty', param, ctx)
 
-        ret = re.match(r"^[a-zA-Z0-9_\-]+$", value)
+        ret = re.match(r"^\w+[\w\s\.\-]+$", value)
         if ret is None:
             self.fail('{} is not a valid subnet'.format(value), param, ctx)
 

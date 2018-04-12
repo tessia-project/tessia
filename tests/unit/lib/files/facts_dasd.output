@@ -19,7 +19,8 @@ cpc3lp52.domain.com | SUCCESS => {
             "crashkernel": "auto",
             "rd.dasd": "0.0.3957",
             "rd.znet": "qeth,0.0.f500,0.0.f501,0.0.f502,layer2=1,portno=0,portname=OSAPORT",
-            "root": "/dev/disk/by-path/ccw-0.0.3956-part1"
+            "root": "/dev/disk/by-path/ccw-0.0.3956-part1",
+            "nosmt": true
         },
         "ansible_date_time": {
             "date": "2017-08-22",
@@ -330,7 +331,7 @@ cpc3lp52.domain.com | SUCCESS => {
         "ansible_processor": [
             "IBM/S390"
         ],
-        "ansible_processor_cores": 2,
+        "ansible_processor_cores": 10,
         "ansible_product_name": "NA",
         "ansible_product_serial": "NA",
         "ansible_product_uuid": "NA",

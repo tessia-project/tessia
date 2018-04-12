@@ -255,9 +255,24 @@ ID=xxxxx
 """.format(prof_obj.operating_system_rel.pretty_name)
         )
 
+        lscpu_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Architecture:          s390x
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Big Endian
+CPU(s):                24
+On-line CPU(s) list:   0-19
+Off-line CPU(s) list:  20-23
+Thread(s) per core:    2
+Core(s) per socket:    10
+Socket(s) per book:    3
+NUMA node0 CPU(s):     0-255
+"""
+        )
+
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, crash_size,
-            os_release]
+            os_release, lscpu_output]
     # _set_mocks_lpar_fcp()
 
     def _set_mocks_lpar_dasd(self, prof_obj):
@@ -367,9 +382,23 @@ ID=xxxxx
 """.format(prof_obj.operating_system_rel.pretty_name)
         )
 
+        lscpu_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Architecture:          s390x
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Big Endian
+CPU(s):                10
+On-line CPU(s) list:   0-9
+Thread(s) per core:    1
+Core(s) per socket:    10
+Socket(s) per book:    3
+NUMA node0 CPU(s):     0-255
+"""
+        )
+
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, crash_size,
-            os_release]
+            os_release, lscpu_output]
     # _set_mocks_lpar_dasd()
 
     def test_facts_fail(self):
@@ -451,7 +480,7 @@ some_output
 
     def test_lpar_dasd(self):
         """
-        Test verification of a LPAR with DASD based installation.
+        Test verification of a LPAR with DASD based installation and no smt.
         """
         profile_entry = self._get_profile('cpc3lp52', 'dasd1')
         self._set_mocks_lpar_dasd(profile_entry)
@@ -460,9 +489,32 @@ some_output
         checker.verify()
     # test_lpar_dasd()
 
+    def test_lpar_dasd_no_lscpu(self):
+        """
+        Test verification of a LPAR with DASD based installation where 'lscpu'
+        is not available on the system.
+        """
+        profile_entry = self._get_profile('cpc3lp52', 'dasd1')
+        self._set_mocks_lpar_dasd(profile_entry)
+        # set mock to simulate lscpu not found
+        check_outputs = list(self._mock_check_output.side_effect)
+        check_outputs[-1] = subprocess.CalledProcessError(
+            returncode=2, cmd='lscpu')
+        check_outputs[-1].output = (
+            """cpc3lp52.domain.com | FAILED | rc=3 >>
+[Errno 2] No such file or directory
+"""
+        )
+        self._mock_check_output.side_effect = check_outputs
+
+        checker = post_install.PostInstallChecker(profile_entry)
+        checker.verify()
+    # test_lpar_dasd()
+
     def test_lpar_fcp(self):
         """
-        Test verification of a LPAR with FCP based installation.
+        Test verification of a LPAR with FCP based installation with smt
+        enabled.
         """
         profile_entry = self._get_profile('cpc3lp52', 'fcp1')
         self._set_mocks_lpar_fcp(profile_entry)
@@ -482,7 +534,7 @@ some_output
         # cpu mismatch
         self._set_mocks_lpar_fcp(fcp_prof_entry)
         with self._mock_db_obj(fcp_prof_entry, 'cpu', 99):
-            error_msg = self._mismatch_msg.format('cpu quantity', 99, 2)
+            error_msg = self._mismatch_msg.format('cpu quantity', 198, 20)
             checker = post_install.PostInstallChecker(fcp_prof_entry)
             with self.assertRaisesRegex(
                 post_install.Misconfiguration, error_msg):
@@ -516,7 +568,7 @@ some_output
         self._set_mocks_lpar_fcp(fcp_prof_entry)
         check_outputs = list(self._mock_check_output.side_effect)
         wrong_os = 'SUSE Linux 12.2'
-        check_outputs[-1] = (
+        check_outputs[-2] = (
             """cpc3lp52.domain.com | SUCCESS | rc=0 >>
 NAME=xxxx
 VERSION=xxxx

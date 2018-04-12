@@ -289,7 +289,7 @@
             "system": "cpc1"
         },
         {
-            "cpu": 2,
+            "cpu": 10,
             "credentials": {
               "passwd": "mypasswd",
               "user": "root"
@@ -304,7 +304,7 @@
             "system": "cpc3lp52"
         },
         {
-            "cpu": 2,
+            "cpu": 10,
             "credentials": {
               "passwd": "mypasswd",
               "user": "root"

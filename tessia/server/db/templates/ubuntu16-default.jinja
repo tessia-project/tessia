@@ -106,6 +106,22 @@
 {%- endif -%}
 {% endmacro %}
 
+{# replace internal mirror entries by the external ports repository #}
+{% macro configure_repos() -%}
+{% set repo_mirror = config['repo_protocol'] + "://" + config['repo_netloc'] + config['repo_path'] -%}
+{# make sure we don't cause a syntax error due to a double quote in the url #}
+{% set repo_mirror = repo_mirror | replace('"', '\"') -%}
+    in-target python -c "fd = open('/etc/apt/sources.list'); \
+lines = fd.read(); \
+fd.close(); \
+repo_mirror = r'''{{repo_mirror}}'''; \
+repo_ports = 'http://ports.ubuntu.com/ubuntu-ports'; \
+lines = lines.replace(repo_mirror, repo_ports); \
+fd = open('/etc/apt/sources.list', 'w'); \
+fd.write(lines); \
+fd.close()"; \
+{% endmacro %}
+
 {# Since only one disk and one network interface is supported during
 installation we create these auxiliary variables #}
 {% set root_svol = config['root_disk'] -%}
@@ -216,17 +232,17 @@ d-i partman/confirm boolean true
 d-i partman/confirm_nooverwrite boolean true
 
 # Use restricted software?
-apt-mirror-setup        apt-setup/restricted    boolean true
+d-i apt-setup/restricted    boolean true
 # Use software from the "universe" component?
-apt-mirror-setup        apt-setup/universe      boolean true
+d-i apt-setup/universe      boolean true
 # Use software from the "multiverse" component?
-apt-mirror-setup        apt-setup/multiverse    boolean true
+d-i apt-setup/multiverse    boolean true
 # Use backported software?
-apt-mirror-setup        apt-setup/backports     boolean true
+d-i apt-setup/backports     boolean false
 # Use software from the "partner" repository?
-apt-mirror-setup        apt-setup/partner       boolean false
+d-i apt-setup/partner       boolean false
 # Enable source repositories in APT?
-apt-setup-udeb  apt-setup/enable-source-repositories    boolean true
+d-i apt-setup/source        boolean true
 
 # Software selection
 d-i tasksel/first multiselect standard system utilities, OpenSSH server, Basic Ubuntu server
@@ -274,4 +290,5 @@ d-i preseed/late_command string \
 {% endfor -%}
     echo 'sclp_line0' >> /target/etc/securetty ; \
     sed -i 's/PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config ; \
+    {{configure_repos()}}
     rm -f /bin/nohup ; ln -s /target/usr/bin/nohup /bin/nohup; sync

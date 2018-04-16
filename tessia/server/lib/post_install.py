@@ -78,13 +78,16 @@ class PostInstallChecker(object):
     """
     Implementation of the post install checker
     """
-    def __init__(self, profile_obj, os_obj=None):
+    def __init__(self, profile_obj, os_obj=None, permissive=False):
         """
         Constructor.
 
         Args:
             profile_obj (SystemProfile): profile's db object.
             os_obj (OperatingSystem): operating system db's object.
+            permissive (bool): if True, misconfiguration findings will be
+                               logged as warnings, otherwise an exception will
+                               be raised.
 
         Raises:
             ValueError: in case connection information is missing
@@ -103,6 +106,10 @@ class PostInstallChecker(object):
             self._passwd = profile_obj.credentials['passwd']
         except (AttributeError, TypeError):
             raise ValueError('Credentials in profile are missing')
+
+        # whether misconfiguration findings should be only logged or cause an
+        # exception to be raised
+        self._permissive = permissive
 
         # fetched at verification time
         self._facts = None
@@ -307,8 +314,7 @@ class PostInstallChecker(object):
         return 1
     # _fetch_smt()
 
-    @staticmethod
-    def _pass_or_raise(param_name, expected_value, actual_value):
+    def _pass_or_report(self, param_name, expected_value, actual_value):
         """
         Helper method, compare required parameter with actual one and raise
         exception if they don't match.
@@ -322,10 +328,10 @@ class PostInstallChecker(object):
             Misconfiguration: if values don't match
         """
         if expected_value != actual_value:
-            raise Misconfiguration(param_name, expected_value, actual_value)
-    # _pass_or_raise()
+            self._report(param_name, expected_value, actual_value)
+    # _pass_or_report()
 
-    def _pass_or_raise_ipv4(self, iface_name, exp_addr, actual_iface):
+    def _pass_or_report_ipv4(self, iface_name, exp_addr, actual_iface):
         """
         Validate an ipv4 IP address and network range
 
@@ -341,11 +347,11 @@ class PostInstallChecker(object):
             actual_ip = actual_iface['ipv4']['address']
         # no ip assigned to the interface
         except KeyError:
-            raise Misconfiguration(
+            self._report(
                 'iface {} ip'.format(iface_name), exp_addr['address'], None)
 
         # validate address
-        self._pass_or_raise(
+        self._pass_or_report(
             'iface {} ip'.format(iface_name), exp_addr['address'], actual_ip)
 
         # validate network subnet
@@ -355,16 +361,16 @@ class PostInstallChecker(object):
             actual_net_obj = ipaddress.ip_network(actual_net_str)
         # an invalid address should never occur, ansible provides valid values
         except ValueError:
-            raise Misconfiguration('iface {} subnet'.format(iface_name),
-                                   exp_addr['network'], actual_net_str)
-        self._pass_or_raise(
+            self._report('iface {} subnet'.format(iface_name),
+                         exp_addr['network'], actual_net_str)
+        self._pass_or_report(
             'iface {} subnet'.format(iface_name),
             ipaddress.ip_network(exp_addr['network']).with_netmask,
             actual_net_obj.with_netmask
         )
-    # _pass_or_raise_ipv4()
+    # _pass_or_report_ipv4()
 
-    def _pass_or_raise_ipv6(self, iface_name, exp_addr, actual_iface):
+    def _pass_or_report_ipv6(self, iface_name, exp_addr, actual_iface):
         """
         Validate an ipv6 IP address and network range
 
@@ -380,7 +386,7 @@ class PostInstallChecker(object):
             actual_entry = actual_iface['ipv6'][0]
         # no ip assigned to the interface
         except IndexError:
-            raise Misconfiguration(
+            self._report(
                 'iface {} ip'.format(iface_name), exp_addr['address'], None)
 
         # validate address
@@ -389,11 +395,10 @@ class PostInstallChecker(object):
             actual_ip_obj = ipaddress.ip_address(actual_entry['address'])
         # an invalid address should never occur, ansible provides valid values
         except ValueError:
-            raise Misconfiguration(
-                'iface {} ip'.format(iface_name),
-                exp_addr['address'], actual_entry['address'])
-        self._pass_or_raise('iface {} ip'.format(iface_name),
-                            str(exp_ip_obj), str(actual_ip_obj))
+            self._report('iface {} ip'.format(iface_name),
+                         exp_addr['address'], actual_entry['address'])
+        self._pass_or_report('iface {} ip'.format(iface_name),
+                             str(exp_ip_obj), str(actual_ip_obj))
 
         # validate network subnet - for ipv6 checking the prefix is enough
         # as we have already checked the network as part of the address
@@ -402,14 +407,14 @@ class PostInstallChecker(object):
             actual_prefixlen = int(actual_entry['prefix'])
         # an invalid prefix should never occur, ansible provides valid values
         except ValueError:
-            raise Misconfiguration('iface {} ipv6 prefix'.format(iface_name),
-                                   exp_prefixlen, actual_entry['prefix'])
+            self._report('iface {} ipv6 prefix'.format(iface_name),
+                         exp_prefixlen, actual_entry['prefix'])
 
-        self._pass_or_raise('iface {} ipv6 prefix'.format(iface_name),
-                            exp_prefixlen, actual_prefixlen)
-    # _pass_or_raise_ipv6()
+        self._pass_or_report('iface {} ipv6 prefix'.format(iface_name),
+                             exp_prefixlen, actual_prefixlen)
+    # _pass_or_report_ipv6()
 
-    def _pass_or_raise_mo(self, devpath, part_num, expected, actual):
+    def _pass_or_report_mo(self, devpath, part_num, expected, actual):
         """
         Helper to validate if an expected list of mount options is included in
         the actual list.
@@ -436,9 +441,9 @@ class PostInstallChecker(object):
                 'can skip this difference, otherwise try to set these '
                 'parameters manually.',
                 part_num, devpath, exp_options)
-    # _pass_or_raise_mo()
+    # _pass_or_report_mo()
 
-    def _pass_or_raise_part(self, devpath, part_pos, exp_part, actual_part):
+    def _pass_or_report_part(self, devpath, part_pos, exp_part, actual_part):
         """
         Validate if a partition entry has its attributes as expected.
 
@@ -458,7 +463,7 @@ class PostInstallChecker(object):
         actual_size = int(actual_part['size'] / 1024 / 1024)
         # size smaller than expected: report mismatch
         if actual_size < min_size:
-            raise Misconfiguration(
+            self._report(
                 'min MiB size partnum {} disk {}'.format(part_pos, devpath),
                 min_size, actual_size)
         # some distros (ubuntu) maximize disk usage, so do not consider it an
@@ -475,7 +480,7 @@ class PostInstallChecker(object):
         # normalize swap
         if 'linux-swap' in actual_part['fstype']:
             actual_fs = 'swap'
-        self._pass_or_raise(
+        self._pass_or_report(
             'fstype partnum {} disk {}'.format(part_pos, devpath),
             exp_part['fs'], actual_fs)
 
@@ -485,7 +490,7 @@ class PostInstallChecker(object):
             # however from facts the partition might be of swap type and still
             # not be active, therefore we cross compare fs with mp here.
             if actual_part['mp'] != '[SWAP]':
-                raise Misconfiguration(
+                self._report(
                     'swap active partnum {} disk {}'.format(part_pos, devpath),
                     'true', 'false')
 
@@ -493,7 +498,7 @@ class PostInstallChecker(object):
             return
 
         # verify mount point
-        self._pass_or_raise(
+        self._pass_or_report(
             'mountpoint partnum {} disk {}'.format(part_pos, devpath),
             exp_part['mp'], actual_part['mp'])
 
@@ -508,16 +513,16 @@ class PostInstallChecker(object):
             # not the same mount point: skip entry
             if search_mount['mount'] != exp_part['mp']:
                 continue
-            self._pass_or_raise_mo(
+            self._pass_or_report_mo(
                 devpath, part_pos, exp_part['mo'], search_mount['options'])
             mo_missed = False
             break
         # mount option not found: report mismatch
         if mo_missed:
-            raise Misconfiguration(
+            self._report(
                 'mountoptions partnum {} disk {}'.format(part_pos, devpath),
                 exp_part['mp'], None)
-    # _pass_or_raise_part()
+    # _pass_or_report_part()
 
     @staticmethod
     def _parse_obj_iface(iface_obj):
@@ -686,6 +691,18 @@ class PostInstallChecker(object):
         return svol
     # _parse_obj_svol()
 
+    def _report(self, *args, **kwargs):
+        """
+        Log a misconfiguration warning if permissive is false, raise
+        the Misconfiguration exception if permissive is true.
+        """
+        misconf_exc = Misconfiguration(*args, **kwargs)
+        if self._permissive:
+            self._logger.warning(str(misconf_exc))
+            return
+        raise misconf_exc
+    # _report()
+
     def _verify_cpu(self):
         """
         Check the cpu quantity of a target instance.
@@ -693,7 +710,7 @@ class PostInstallChecker(object):
         expected_cpu = (self._expected_params['cpu'] *
                         self._facts['ansible_processor_threads_per_core'])
         actual_cpu = self._facts['ansible_processor_cores']
-        self._pass_or_raise('cpu quantity', expected_cpu, actual_cpu)
+        self._pass_or_report('cpu quantity', expected_cpu, actual_cpu)
     # _verify_cpu()
 
     def _verify_kernel(self):
@@ -707,7 +724,7 @@ class PostInstallChecker(object):
         if not expected_kernel:
             return
         actual_kernel = self._facts['ansible_kernel']
-        self._pass_or_raise('kernel version', expected_kernel, actual_kernel)
+        self._pass_or_report('kernel version', expected_kernel, actual_kernel)
     # _verify_kernel()
 
     def _verify_os(self):
@@ -717,8 +734,8 @@ class PostInstallChecker(object):
         if not self._expected_params['os']:
             return
 
-        self._pass_or_raise('OS name', self._expected_params['os'].strip(),
-                            self._facts['os_name'].strip())
+        self._pass_or_report('OS name', self._expected_params['os'].strip(),
+                             self._facts['os_name'].strip())
     # _verify_os()
 
     def _verify_memory(self):
@@ -732,10 +749,10 @@ class PostInstallChecker(object):
         min_mem = self._expected_params['memory'] - 128
         max_mem = self._expected_params['memory'] + 128
         if total_mem < min_mem:
-            raise Misconfiguration(
+            self._report(
                 'minimum MiB memory', min_mem, total_mem)
         if total_mem > max_mem:
-            raise Misconfiguration(
+            self._report(
                 'maximum MiB memory', max_mem, total_mem)
     # _verify_memory()
 
@@ -756,20 +773,20 @@ class PostInstallChecker(object):
                     self._facts[ansible_gw_key]['gateway'])
             # no gateway defined
             except KeyError:
-                raise Misconfiguration('gateway', expected_gw['address'], None)
+                self._report('gateway', expected_gw['address'], None)
             except ValueError:
-                raise Misconfiguration('gateway', expected_gw['address'],
-                                       self._facts[ansible_gw_key]['gateway'])
+                self._report('gateway', expected_gw['address'],
+                             self._facts[ansible_gw_key]['gateway'])
+            else:
+                # check gateway's address
+                self._pass_or_report(
+                    'gateway', str(gw_ip_obj), str(actual_gw_ip_obj))
 
-            # check gateway's address
-            self._pass_or_raise(
-                'gateway', str(gw_ip_obj), str(actual_gw_ip_obj))
-
-            # check gateway's iface name
-            self._pass_or_raise(
-                'gateway iface',
-                expected_gw['iface'],
-                self._facts[ansible_gw_key]['interface'])
+                # check gateway's iface name
+                self._pass_or_report(
+                    'gateway iface',
+                    expected_gw['iface'],
+                    self._facts[ansible_gw_key]['interface'])
 
         # validate that each expected interface is present
         for exp_iface in self._expected_params['network']['ifaces']:
@@ -778,14 +795,15 @@ class PostInstallChecker(object):
                     exp_iface['osname'])]
             # interface not present
             except KeyError:
-                raise Misconfiguration('iface', exp_iface['osname'], None)
+                self._report('iface', exp_iface['osname'], None)
+                continue
 
             # TODO: check interface type
 
             # iface is not an osa or an osa in layer2 mode: check mac address
             if (exp_iface['type'] != 'OSA' or
                     exp_iface['attributes'].get('layer2', False)):
-                self._pass_or_raise(
+                self._pass_or_report(
                     'iface {} mac'.format(exp_iface['osname']),
                     exp_iface['mac'],
                     actual_iface['macaddress'])
@@ -807,7 +825,7 @@ class PostInstallChecker(object):
                         break
                 # nameserver not found in list: report mismatch
                 if not found:
-                    self._pass_or_raise(
+                    self._pass_or_report(
                         'iface {} nameservers'.format(exp_iface['osname']),
                         name_server_obj, None)
 
@@ -821,10 +839,10 @@ class PostInstallChecker(object):
             # convert to an aware-object to detect its type
             exp_ip_obj = ipaddress.ip_address(exp_addr['address'])
             if isinstance(exp_ip_obj, ipaddress.IPv6Address):
-                self._pass_or_raise_ipv6(
+                self._pass_or_report_ipv6(
                     exp_iface['osname'], exp_addr, actual_iface)
             else:
-                self._pass_or_raise_ipv4(
+                self._pass_or_report_ipv4(
                     exp_iface['osname'], exp_addr, actual_iface)
     # _verify_network()
 
@@ -837,9 +855,10 @@ class PostInstallChecker(object):
             if svol['type'] == "FCP":
                 # no fcp configuration available on the host: report mismatch
                 if not self._facts['fcp_paths']:
-                    self._pass_or_raise(
+                    self._pass_or_report(
                         'fcp paths', 'fcp path for LUN {}'.format(svol['id']),
                         None)
+                    continue
 
                 # go over each fcp path combination and verify if it's there
                 for exp_adapter in svol['specs']['adapters']:
@@ -855,7 +874,7 @@ class PostInstallChecker(object):
                             self._facts['fcp_paths'][exp_path]
                         # fcp path not available on host
                         except KeyError:
-                            raise Misconfiguration('fcp path', exp_path, None)
+                            self._report('fcp path', exp_path, None)
 
             # verify partition table
             exp_table = svol['part_table']
@@ -869,8 +888,8 @@ class PostInstallChecker(object):
             max_size = svol['size'] + 200
             # size smaller than expected: report mismatch
             if actual_size < min_size:
-                raise Misconfiguration('min MiB size disk {}'.format(devpath),
-                                       min_size, actual_size)
+                self._report('min MiB size disk {}'.format(devpath),
+                             min_size, actual_size)
             # it's common that the user registers the size in the db a bit
             # smaller than the actual size so we give a hint so that this can
             # be fixed.
@@ -883,10 +902,12 @@ class PostInstallChecker(object):
             # expected table might be empty therefore we refer to the key
             # indirectly; past this point it's guaranteed to have a dict
             # and no indirect referencing is needed
-            self._pass_or_raise(
+            self._pass_or_report(
                 'parttable type disk {}'.format(devpath),
                 exp_table.get('type', '<empty>'),
                 actual_table['disk']['table'])
+            if not exp_table:
+                return
 
             # msdos type: filter out the extended partition
             if actual_table['disk']['table'] == 'msdos':
@@ -900,13 +921,13 @@ class PostInstallChecker(object):
 
             # number of partitions should be the same
             len_exp = len(exp_table['table'])
-            self._pass_or_raise(
+            self._pass_or_report(
                 'partition quantity disk {}'.format(devpath), len_exp,
                 len(actual_table['partitions']))
 
             # check each partition size and mount attributes
             for i in range(0, len_exp):
-                self._pass_or_raise_part(
+                self._pass_or_report_part(
                     devpath, i+1, exp_table['table'][i],
                     actual_table['partitions'][i])
     # _verify_storage()

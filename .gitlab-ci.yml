@@ -16,7 +16,7 @@ stages:
 before_script:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   - apk add --no-cache bash git python3
-  - pip3 install --user -U pip -rtools/ci/requirements.txt
+  - pip3 install -U pip -rtools/ci/requirements.txt
 
 build_cli:
   stage: build

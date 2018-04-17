@@ -105,6 +105,12 @@ tasks:
       - 'at least one of --zone or --name must be specified'
     - - net subnet-list --zone=GEO_1-NE
       - No results were found.
+    - - net subnet-add --zone=GEO_1-NE --name='GEO 1-NE-1822' --address=192.168.160.0/22
+      - Item added successfully.
+    - - net subnet-add --zone=GEO_1-NE --name='GEO/1-NE-1822' --address=192.168.160.0/22
+      - Invalid value for "--name"
+    - - net subnet-add --zone=GEO_1-NE --name='Geo_NE-1822' --address=192.168.160.0/22
+      - Item added successfully.
     - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1822' --address=192.168.160.0/22  --gw=192.168.160.1 --dns1=192.168.200.241 --vlan=1822 --project='GEO_1 labadmins' --desc='Shared zone vlan 1822'
       - Item added successfully.
     - - net subnet-list --zone=GEO_1-NE
@@ -173,6 +179,12 @@ tasks:
       - Missing option "--subnet".
     - - net ip-add --subnet='GEO_1-NE-1822'
       - Missing option "--ip".
+    - - net ip-add --subnet='GEO 1-NE-1822' --ip=192.168.161.222
+      - Item added successfully.
+    - - net ip-add --subnet='GEO/1-NE-1822' --ip=192.168.161.222
+      - Invalid value for "--subnet"
+    - - net ip-add --subnet='Geo_NE-1822' --ip=192.168.161.222
+      - Item added successfully.
     - - net ip-add --subnet='GEO_1-NE' --ip=192.168.161.222
       - "request failed. Server answered: No associated item found with value 'GEO_1-NE' for field 'Part of subnet'"
     - - net ip-add --subnet= --ip=192.168.161.222

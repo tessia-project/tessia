@@ -416,7 +416,7 @@ class TestPowerManagerMachine(TestCase):
 
         # validate stage verify
         self._assert_system_up_action(prof_obj, 1)
-        self._mock_post_cls.assert_called_with(prof_obj)
+        self._mock_post_cls.assert_called_with(prof_obj, permissive=False)
         self._mock_post_obj.verify.assert_called_with()
 
     # test_multiple_actions()
@@ -774,7 +774,7 @@ class TestPowerManagerMachine(TestCase):
         override_cpu = prof_obj.cpu + 2
         override_memory = prof_obj.memory + 1500
         # have the mock validate if the overrides are in the profile object
-        def mock_validate(check_prof_obj):
+        def mock_validate(check_prof_obj, *args, **kwargs):
             """validator for override values"""
             self.assertEqual(check_prof_obj.cpu, override_cpu)
             self.assertEqual(check_prof_obj.memory, override_memory)
@@ -815,7 +815,7 @@ class TestPowerManagerMachine(TestCase):
         self._assert_system_up_action(prof_obj, 1)
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(prof_obj))
+            call(prof_obj, permissive=False))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
 
@@ -881,7 +881,7 @@ class TestPowerManagerMachine(TestCase):
         # validate call to verify if hypervisor matches profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(hyp_prof))
+            call(hyp_prof, permissive=False))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
 
@@ -963,7 +963,8 @@ class TestPowerManagerMachine(TestCase):
         self._assert_system_up_action(prof_obj, 0)
         # validate call to verify if guest state matched profile
         self.assertEqual(
-            self._mock_post_cls.call_args_list[0], call(prof_obj))
+            self._mock_post_cls.call_args_list[0],
+            call(prof_obj, permissive=False))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
 
@@ -977,7 +978,8 @@ class TestPowerManagerMachine(TestCase):
         # currently kvm guests are unsupported
         # validate call to verify if guest state matched profile
         self.assertEqual(
-            self._mock_post_cls.call_args_list[1], call(prof_obj))
+            self._mock_post_cls.call_args_list[1],
+            call(prof_obj, permissive=False))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[1], call())
 
@@ -1081,7 +1083,7 @@ class TestPowerManagerMachine(TestCase):
         self._assert_system_up_action(hyp_prof, 0)
 
         # validate call to verify hypervisor profile
-        self._mock_post_cls.assert_called_with(hyp_prof)
+        self._mock_post_cls.assert_called_with(hyp_prof, permissive=False)
         self._mock_post_obj.verify.assert_called_with()
 
         # no call to power on system
@@ -1124,7 +1126,7 @@ class TestPowerManagerMachine(TestCase):
         self._assert_poweron_action('hmc', hyp_prof, prof_obj, 0)
 
         # validate stage verify
-        self._mock_post_cls.assert_called_with(prof_obj)
+        self._mock_post_cls.assert_called_with(prof_obj, permissive=False)
         self._mock_post_obj.verify.assert_called_with()
     # test_poweron_verify_fails()
 
@@ -1172,7 +1174,7 @@ class TestPowerManagerMachine(TestCase):
         # validate that post install was called to verify profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(prof_obj))
+            call(prof_obj, permissive=False))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
     # test_poweron_zvm_dasd()
@@ -1221,7 +1223,7 @@ class TestPowerManagerMachine(TestCase):
         # validate that post install was called to verify profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(prof_obj))
+            call(prof_obj, permissive=False))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
     # test_poweron_zvm()
@@ -1263,8 +1265,8 @@ class TestPowerManagerMachine(TestCase):
 
     def test_verify_off(self):
         """
-        Try a poweron while specifying custom profile parameters. This test
-        also covers the usage of the default profile when none was specified.
+        Try a poweron with verify flag off. This test also covers the usage
+        of the default profile when none was specified.
         """
         # collect necessary db objects
         test_system = 'cpc3lp52'
@@ -1303,7 +1305,8 @@ class TestPowerManagerMachine(TestCase):
         # validate stage verify
         self._assert_system_up_action(prof_obj, 1)
 
-        # post checker should never be called
-        self._mock_post_cls.assert_not_called()
+        # post checker should be called in permissive mode
+        self._mock_post_cls.assert_called_with(prof_obj, permissive=True)
+        self._mock_post_obj.verify.assert_called_with()
     # test_verify_off()
 # TestPowerManagerMachine

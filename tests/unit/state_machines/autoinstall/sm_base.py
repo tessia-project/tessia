@@ -307,7 +307,8 @@ class TestSmBase(TestCase):
         # Assert that the methods implemented in the child class were
         # called in the execution of the Install Machine.
         self._mock_wait_install.assert_called_with()
-        self._mock_checker.assert_called_with(profile_entry, os_entry)
+        self._mock_checker.assert_called_with(
+            profile_entry, os_entry, permissive=True)
 
         mock_hyper_class.return_value.boot.assert_called_with(mock.ANY)
         mock_hyper_class.return_value.reboot.assert_called_with(profile_entry)
@@ -374,7 +375,8 @@ class TestSmBase(TestCase):
         # Assert that the methods implemented in the child class were
         # called in the execution of the Install Machine.
         self._mock_wait_install.assert_called_with()
-        self._mock_checker.assert_called_with(profile_obj, os_obj)
+        self._mock_checker.assert_called_with(
+            profile_obj, os_obj, permissive=True)
 
         mock_hyper_class.return_value.boot.assert_called_with(mock.ANY)
         mock_hyper_class.return_value.reboot.assert_called_with(profile_obj)

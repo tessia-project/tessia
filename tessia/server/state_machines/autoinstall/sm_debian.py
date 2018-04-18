@@ -194,6 +194,9 @@ class SmDebianInstaller(SmBase):
 
             ref_size = 1
             part_index = 1
+            # ref_size starts at 1, last partition loses 1 at the end
+            if part_table['table']:
+                part_table['table'][-1]['size'] -= 1
 
             for part in part_table["table"]:
                 part['start'] = ref_size

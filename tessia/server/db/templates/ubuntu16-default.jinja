@@ -78,7 +78,7 @@
 {%- endmacro -%}
 
 {% macro iface_append_hwaddress(iface) -%}
-   {% if iface['attributes']['layer2'] -%}
+   {% if iface['mac_addr'] -%}
     sed -i '/iface {{iface['osname']}} inet static/a     hwaddress {{iface['mac_addr']}}' /target/etc/network/interfaces ; \
    {% endif -%}
 {%- endmacro -%}
@@ -129,13 +129,13 @@ installation we create these auxiliary variables #}
 {% set system_type = config['system_type'] -%}
 d-i debian-installer/locale string en_US
 d-i preseed/early_command string set -x; \
-    {% if gw_iface['type'] == "OSA" -%}
+    {% if gw_iface['type'] == "OSA" and gw_iface['mac_addr'] -%}
     {# s390-netdevice does not provide a way to set mac address in layer2 mode so
     we do it manually here #}
     ip link set addr {{gw_iface['mac_addr']}} dev enc{{gw_iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}} ; \
+    {% endif -%}
     {# in case server is in same subnet update its arp cache to avoid losing connectivity #}
     ping -c1 -w 90 {{config['server_hostname']}} ; \
-    {% endif -%}
     sed -i s,/bin/network-console,/bin/sh,g /etc/passwd; \
     cat /etc/shadow | sed 's/installer/root/' >> /etc/shadow ;
 

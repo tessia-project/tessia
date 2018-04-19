@@ -28,9 +28,9 @@ from werkzeug.http import parse_dict_header
 #
 
 # the current version of the api
-CURRENT_API_VERSION = 20160916
+CURRENT_API_VERSION = 20180426
 # the oldest version that is backwards compatible
-OLDEST_COMPAT_API_VERSION = 20160916
+OLDEST_COMPAT_API_VERSION = 20180426
 
 #
 # CODE

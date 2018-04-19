@@ -37,11 +37,6 @@ import logging
 # CONSTANTS AND DEFINITIONS
 #
 
-# the current version of the api
-CURRENT_API_VERSION = 20160916
-# the oldest version that is backwards compatible
-OLDEST_COMPAT_API_VERSION = 20160916
-
 #
 # CODE
 #

@@ -116,19 +116,12 @@ def iface_add(**kwargs):
             setattr(item, key, value)
 
     # sanity checks
-    if not kwargs['mac_address']:
-        # when layer2 is off no mac address is used, so specify a dummy value
-        if 'layer2' in item.attributes and item.attributes['layer2'] is False:
-            item.mac_address = 'ff:ff:ff:ff:ff:ff'
-        else:
-            raise click.ClickException(
-                'a mac address must be specified')
-
     if kwargs['type'] == 'OSA':
         try:
             item.attributes['ccwgroup']
         except KeyError:
             raise click.ClickException('--ccwgroup must be specified')
+    # KVM macvtap cards
     elif kwargs['type'] == 'MACVTAP':
         try:
             item.attributes['hostiface']
@@ -246,7 +239,7 @@ def iface_detach(system, profile, iface):
               help="interface type (see iface-types)")
 @click.option('--osname', type=NAME,
               help="interface name in operating system (i.e. en0)")
-@click.option('mac_address', '--mac', type=MACADDRESS, help="mac address")
+@click.option('mac_address', '--mac', help="mac address")
 @click.option('--subnet', type=SUBNET,
               help="subnet of ip address to be assigned")
 @click.option('--ip', help="ip address to be assigned to interface, "
@@ -303,6 +296,9 @@ def iface_edit(system, cur_name, **kwargs):
 
         # option was not specified: skip it
         if value is None:
+            # remove from object to prevent being part of request
+            if hasattr(item, key):
+                del item[key]
             continue
 
         # process attribute arg
@@ -318,10 +314,25 @@ def iface_edit(system, cur_name, **kwargs):
                 update_dict['attributes'].pop(key)
             else:
                 update_dict['attributes'][key] = value
+            continue
 
-        # normal arg: just add to the dict
-        else:
-            update_dict[key] = value
+        # empty string: unset parameter
+        if not value and value is not None:
+            update_dict[key] = None
+            continue
+
+        if key == 'mac_address':
+            cur_ctx = click.get_current_context()
+            param_obj = None
+            # we need the option object to pass in the convert call
+            for cmd_opt in cur_ctx.command.params:
+                if cmd_opt.name == key:
+                    param_obj = cmd_opt
+                    break
+            update_dict[key] = MACADDRESS.convert(value, param_obj, cur_ctx)
+
+        # normal arg: add to the dict
+        update_dict[key] = value
 
     if not update_dict:
         raise click.ClickException('no update criteria provided.')

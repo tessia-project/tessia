@@ -480,7 +480,7 @@ some_output
 
     def test_lpar_dasd(self):
         """
-        Test verification of a LPAR with DASD based installation and no smt.
+        Test verification of an LPAR with DASD based installation and no smt.
         """
         profile_entry = self._get_profile('cpc3lp52', 'dasd1')
         self._set_mocks_lpar_dasd(profile_entry)
@@ -488,6 +488,18 @@ some_output
         checker = post_install.PostInstallChecker(profile_entry)
         checker.verify()
     # test_lpar_dasd()
+
+    def test_lpar_dasd_no_mac(self):
+        """
+        Test verification without mac address defined.
+        """
+        profile_entry = self._get_profile('cpc3lp52', 'dasd1')
+        self._set_mocks_lpar_dasd(profile_entry)
+        profile_entry.system_ifaces_rel[0].mac_address = None
+
+        checker = post_install.PostInstallChecker(profile_entry)
+        checker.verify()
+    # test_lpar_dasd_no_mac()
 
     def test_lpar_dasd_no_lscpu(self):
         """

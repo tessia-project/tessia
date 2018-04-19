@@ -289,7 +289,7 @@ class SmBase(metaclass=abc.ABCMeta):
 
         self._logger.info(
             "Verifying if installed system match expected parameters")
-        checker = PostInstallChecker(self._profile, self._os)
+        checker = PostInstallChecker(self._profile, self._os, permissive=True)
         checker.verify()
     # check_installation()
 

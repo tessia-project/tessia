@@ -920,11 +920,6 @@ class PowerManagerMachine(BaseMachine):
         """
         system_name = system_prof.system_rel.name
 
-        if not self._params.get('verify', True):
-            self._logger.info('Skipping state verification of system %s '
-                              'because verify flag is off', system_name)
-            return True
-
         if hasattr(system_prof, 'overriden') and system_prof.overriden:
             self._logger.info(
                 'Verifying if current state of system %s matches expected '
@@ -946,8 +941,14 @@ class PowerManagerMachine(BaseMachine):
                               'supported', system_name)
             return True
 
+        verify_flag = self._params.get('verify', True)
+        if not verify_flag:
+            self._logger.info(
+                'Potential configuration mismatches will be reported as '
+                'warnings because verify flag is off')
         try:
-            checker = post_install.PostInstallChecker(system_prof)
+            checker = post_install.PostInstallChecker(
+                system_prof, permissive=not verify_flag)
             checker.verify()
         except Exception as exc:
             self._logger.warning('State verification of system %s failed: %s',

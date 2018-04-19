@@ -523,11 +523,9 @@ some_output
         checker.verify()
     # test_lpar_fcp()
 
-    def test_misconfiguration(self):
+    def test_misconfiguration_cpu(self):
         """
-        Test scenarios where actual config does not match expected from
-        profile. This test also exercises the areas= parameter of the verify()
-        method.
+        Exercise misconfiguration of cpu values.
         """
         fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
 
@@ -540,6 +538,21 @@ some_output
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['cpu'])
 
+        # permissive - only logging occurs
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        self._mock_logger.reset_mock()
+        with self._mock_db_obj(fcp_prof_entry, 'cpu', 99):
+            checker = post_install.PostInstallChecker(
+                fcp_prof_entry, permissive=True)
+            checker.verify(areas=['cpu'])
+            self._mock_logger.warning.assert_called_with(error_msg)
+    # test_misconfiguration_cpu()
+
+    def test_misconfiguration_memory(self):
+        """
+        Exercise misconfiguration of memory values.
+        """
+        fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
         # min memory mismatch
         self._set_mocks_lpar_fcp(fcp_prof_entry)
         with self._mock_db_obj(fcp_prof_entry, 'memory', 5000):
@@ -552,6 +565,14 @@ some_output
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['memory'])
 
+            # permissive - only logging occurs
+            self._set_mocks_lpar_fcp(fcp_prof_entry)
+            self._mock_logger.reset_mock()
+            checker = post_install.PostInstallChecker(
+                fcp_prof_entry, permissive=True)
+            checker.verify(areas=['memory'])
+            self._mock_logger.warning.assert_called_with(error_msg)
+
         # max memory mismatch
         self._set_mocks_lpar_fcp(fcp_prof_entry)
         with self._mock_db_obj(fcp_prof_entry, 'memory', 3000):
@@ -563,6 +584,21 @@ some_output
             with self.assertRaisesRegex(
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['memory'])
+
+            # permissive - only logging occurs
+            self._set_mocks_lpar_fcp(fcp_prof_entry)
+            self._mock_logger.reset_mock()
+            checker = post_install.PostInstallChecker(
+                fcp_prof_entry, permissive=True)
+            checker.verify(areas=['memory'])
+            self._mock_logger.warning.assert_called_with(error_msg)
+    # test_misconfiguration_memory()
+
+    def test_misconfiguration_os(self):
+        """
+        Exercise misconfiguration of the operating system.
+        """
+        fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
 
         # os mismatch (different pretty name)
         self._set_mocks_lpar_fcp(fcp_prof_entry)
@@ -586,6 +622,23 @@ ID=xxxxx
             post_install.Misconfiguration, error_msg):
             checker.verify(areas=['os'])
 
+        # permissive - only logging occurs
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        self._mock_check_output.side_effect = check_outputs
+        self._mock_logger.reset_mock()
+        checker = post_install.PostInstallChecker(
+            fcp_prof_entry, permissive=True)
+        checker.verify(areas=['os'])
+        self._mock_logger.warning.assert_called_with(error_msg)
+    # test_misconfiguration_os()
+
+    def test_misconfiguration_gw_missing(self):
+        """
+        Exercise a misconfiguration of the network subsystem where the expected
+        gateway is missing
+        """
+        fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
+
         # network - gateway mismatch
         self._set_mocks_lpar_fcp(fcp_prof_entry)
         check_outputs = list(self._mock_check_output.side_effect)
@@ -595,19 +648,58 @@ ID=xxxxx
         self._mock_check_output.side_effect = check_outputs
         error_msg = self._mismatch_msg.format(
             'gateway', '192.168.160.1', '<not found>')
+        checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
             post_install.Misconfiguration, error_msg):
             checker.verify(areas=['network'])
+
+        # permissive - only logging occurs
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        self._mock_check_output.side_effect = check_outputs
+        self._mock_logger.reset_mock()
+        checker = post_install.PostInstallChecker(
+            fcp_prof_entry, permissive=True)
+        checker.verify(areas=['network'])
+        self._mock_logger.warning.assert_called_with(error_msg)
+    # test_misconfiguration_gw_missing()
+
+    def test_misconfiguration_gw_invalid(self):
+        """
+        Exercise a misconfiguration of the network subsystem where the expected
+        gateway does not match the actual entry
+        """
+        fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
+
         # simulate invalid gateway
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        check_outputs = list(self._mock_check_output.side_effect)
         check_outputs[0] = check_outputs[0].replace(
-            '"hide_gateway": "192.168.160.1"',
+            '"gateway": "192.168.160.1"',
             '"gateway": "192.152.160.1"')
         self._mock_check_output.side_effect = check_outputs
         error_msg = self._mismatch_msg.format(
             'gateway', '192.168.160.1', '192.152.160.1')
+        checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
             post_install.Misconfiguration, error_msg):
             checker.verify(areas=['network'])
+
+        # permissive - only logging occurs
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        self._mock_check_output.side_effect = check_outputs
+        self._mock_logger.reset_mock()
+        checker = post_install.PostInstallChecker(
+            fcp_prof_entry, permissive=True)
+        checker.verify(areas=['network'])
+        self._mock_logger.warning.assert_called_with(error_msg)
+    # test_misconfiguration_gw_invalid()
+
+    def test_misconfiguration_dns(self):
+        """
+        Exercise a misconfiguration of the network subsystem where the expected
+        dns server is not found
+        """
+        fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
 
         # network - dns mismatch
         self._set_mocks_lpar_fcp(fcp_prof_entry)
@@ -621,7 +713,22 @@ ID=xxxxx
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['network'])
 
+            # permissive - only logging occurs
+            self._set_mocks_lpar_fcp(fcp_prof_entry)
+            checker = post_install.PostInstallChecker(
+                fcp_prof_entry, permissive=True)
+            checker.verify(areas=['network'])
+            self._mock_logger.warning.assert_called_with(error_msg)
+
+    # test_misconfiguration_dns()
+
+    def test_misconfiguration_storage(self):
+        """
+        Exercise misconfiguration of the storage subsystem.
+        """
         dasd_prof_entry = self._get_profile('cpc3lp52', 'dasd1')
+        fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
+
         # storage - no fcp paths
         # use facts from a dasd-only config to simulate no fcp devices found
         self._set_mocks_lpar_dasd(dasd_prof_entry)
@@ -631,6 +738,16 @@ ID=xxxxx
         with self.assertRaisesRegex(
             post_install.Misconfiguration, error_msg):
             checker.verify(areas=['storage'])
+
+        # permissive - only logging occurs
+        self._set_mocks_lpar_dasd(dasd_prof_entry)
+        self._mock_logger.reset_mock()
+        checker = post_install.PostInstallChecker(
+            fcp_prof_entry, permissive=True)
+        checker.verify(areas=['storage'])
+        error_msg = self._mismatch_msg.format(
+            'fcp paths', 'fcp path for LUN 1022400200000000', '<not found>')
+        self._mock_logger.warning.assert_called_with(error_msg)
 
         # storage - disk min size mismatch
         self._set_mocks_lpar_dasd(dasd_prof_entry)
@@ -643,6 +760,14 @@ ID=xxxxx
             with self.assertRaisesRegex(
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['storage'])
+
+            # permissive - only logging occurs
+            self._set_mocks_lpar_dasd(dasd_prof_entry)
+            self._mock_logger.reset_mock()
+            checker = post_install.PostInstallChecker(
+                dasd_prof_entry, permissive=True)
+            checker.verify(areas=['storage'])
+            self._mock_logger.warning.assert_called_with(error_msg)
 
         # storage - part min size mismatch
         self._set_mocks_lpar_dasd(dasd_prof_entry)
@@ -659,6 +784,20 @@ ID=xxxxx
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['storage'])
 
+            # permissive - only logging occurs
+            self._set_mocks_lpar_dasd(dasd_prof_entry)
+            self._mock_logger.reset_mock()
+            checker = post_install.PostInstallChecker(
+                dasd_prof_entry, permissive=True)
+            checker.verify(areas=['storage'])
+            self._mock_logger.warning.assert_called_with(error_msg)
+    # test_misconfiguration_storage()
+
+    def test_misconfiguration_kernel(self):
+        """
+        Exercise misconfiguration of the kernel running.
+        """
+        dasd_prof_entry = self._get_profile('cpc3lp52', 'dasd1')
         # kernel mismatch
         self._set_mocks_lpar_dasd(dasd_prof_entry)
         params_content = {
@@ -673,7 +812,14 @@ ID=xxxxx
                 post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['kernel'])
 
-    # test_misconfiguration()
+            # permissive - only logging occurs
+            self._set_mocks_lpar_dasd(dasd_prof_entry)
+            self._mock_logger.reset_mock()
+            checker = post_install.PostInstallChecker(
+                dasd_prof_entry, permissive=True)
+            checker.verify(areas=['kernel'])
+            self._mock_logger.warning.assert_called_with(error_msg)
+    # test_misconfiguration_kernel()
 
     def test_missing_profile_params(self):
         """
@@ -760,5 +906,15 @@ ID=xxxxx
             profile_entry.operating_system_rel.pretty_name)
         with self.assertRaises(post_install.Misconfiguration, msg=error_msg):
             checker.verify()
+
+        # permissive - only logging occurs
+        self._set_mocks_lpar_fcp(profile_entry)
+        self._mock_logger.reset_mock()
+        checker = post_install.PostInstallChecker(
+            profile_entry, os_entry, permissive=True)
+        checker.verify()
+        # disk warnings might occur thus we look for the os warning message in
+        # any order
+        self._mock_logger.warning.assert_any_call(error_msg)
     # test_custom_os()
 # TestPostInstallChecker

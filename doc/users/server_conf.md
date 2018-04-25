@@ -47,6 +47,13 @@ login after an admin user has registered them in the database.
 - Description: which method to use for authenticating users. If `ldap`, a LDAP server is used according to the configuration defined in the
 sub-section `auth.ldap`. If `free`, users can login with any password (useful for development/testing purposes).
 
+`case_sensitive`
+
+- Type: boolean
+- Default: false
+- Description: sets the case sensitivity mode for user creation and authentication. If `true`, the process uses the entered *login* data as is.
+If `false`, the entered registration *login* are converted in the lower case.
+
 ### Section `auth.ldap`
 
 Defines the configuration of the LDAP service for user authentication when `ldap` was set for the `login_method` parameter.

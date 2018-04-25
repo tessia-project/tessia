@@ -80,8 +80,11 @@ class _LoginManager(object):
         except Exception:
             raise BadRequest()
 
-        # logins should be case-insensitive
-        user = user.lower()
+        case_sensitive = CONF.get_config().get(
+            'auth', {}).get('case_sensitive', False)
+        if not case_sensitive:
+            # logins should be case-insensitive
+            user = user.lower()
 
         # user authentication with login provider failed: return unauthorized
         result = cls.get_login_manager().authenticate(user, passwd)
@@ -115,9 +118,12 @@ class _LoginManager(object):
 
         # create user in database
         new_user = User()
-        # important: always save login as lowercase to avoid duplicates or user
-        # having to worry about entering the right case
-        new_user.login = result['login'].lower()
+        if case_sensitive:
+            new_user.login = result['login']
+        else:
+            # save login as lowercase to avoid duplicates or user having to
+            # worry about entering the right case
+            new_user.login = result['login'].lower()
         new_user.name = result['fullname']
         # job title is optional
         new_user.title = result.get('title', None)

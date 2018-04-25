@@ -36,6 +36,7 @@ import json
 DEFAULT_CONFIG = {
     'auth': {
         'allow_user_auto_create': False,
+        'case_sensitive': False,
         'realm': 'Fake realm',
     }
 }
@@ -330,4 +331,110 @@ class TestAuth(TestCase):
             self.assertEqual(resp.status_code, 401)
     # test_scheme_wrong()
 
+    def test_case_sens_login_success(self):
+        """
+        Exercise the scenario where a basic authentication works and the user
+        is automatically created in the database when case sensitivity
+        is activated.
+        """
+        # set login manager to return the entry of the new case sensitive user
+        login_resp = {
+            'login': 'NEW_good_user@domain.com',
+            'fullname': 'John Doe',
+            'title': 'Job title of John Doe',
+        }
+        self._mock_login_man.authenticate.return_value = login_resp
+
+        # set config to switch on case sensitivity and to allow user
+        # auto creation
+        conf = DEFAULT_CONFIG.copy()
+        conf['auth']['case_sensitive'] = True
+        conf['auth']['allow_user_auto_create'] = True
+        self._env_config.update(conf)
+        # restore default config after test finishes
+        self.addCleanup(self._env_config.update, DEFAULT_CONFIG)
+
+        # perform request
+        auth_header = 'basic {}'.format(
+            b64encode(b'NEW_good_user@domain.com:a').decode('ascii'))
+        resp = self.app.get(
+            '/users',
+            headers={'Authorization': auth_header}
+        )
+        # validate a 200 ok response
+        self.assertEqual(200, resp.status_code)
+        # validate that the user was created in database
+        user = self.models.User.query.filter_by(
+            login=login_resp['login']).one()
+        self.assertEqual(user.name, login_resp['fullname'])
+        self.assertEqual(user.title, login_resp['title'])
+    # test_uppercase_login_success()
+
+    def test_non_case_sens_login(self):
+        """
+        Exercise the scenario where a basic authentication works and
+        the lowercase user is automatically created in the database when
+        case sensitivity is deactivated.
+        """
+        # set login manager to return the entry of the new
+        # non-case sensitive user
+        login_resp = {
+            'login': 'new_good_user@domain.com',
+            'fullname': 'John Doe',
+            'title': 'Job title of John Doe',
+        }
+        self._mock_login_man.authenticate.return_value = login_resp
+
+        # set config to switch off case sensitivity and to allow user
+        # auto creation
+        conf = DEFAULT_CONFIG.copy()
+        conf['auth']['case_sensitive'] = False
+        conf['auth']['allow_user_auto_create'] = True
+        self._env_config.update(conf)
+        # restore default config after test finishes
+        self.addCleanup(self._env_config.update, DEFAULT_CONFIG)
+
+        # perform request
+        auth_header = 'basic {}'.format(
+            b64encode(b'NEW_good_user@domain.com:a').decode('ascii'))
+        resp = self.app.get(
+            '/users',
+            headers={'Authorization': auth_header}
+        )
+        # validate a 200 ok response
+        self.assertEqual(200, resp.status_code)
+
+        # validate that the user was created in database but without
+        # case sensitivity
+        user = self.models.User.query.filter_by(
+            login=login_resp['login']).one()
+        self.assertEqual(user.name, login_resp['fullname'])
+        self.assertEqual(user.title, login_resp['title'])
+    # test_non_case_sens_login()
+
+    def test_case_sens_login_fail(self):
+        """
+        Exercise the scenario where a basic authentication fails when
+        the lowercase login exists in the database and case sensitivity
+        is activated.
+        """
+        # set config to switch on case sensitivity and don't allow user
+        # auto creation
+        conf = DEFAULT_CONFIG.copy()
+        conf['auth']['case_sensitive'] = True
+        conf['auth']['allow_user_auto_create'] = False
+        self._env_config.update(conf)
+        # restore default config after test finishes
+        self.addCleanup(self._env_config.update, DEFAULT_CONFIG)
+
+        # perform the request
+        auth_header = 'basic {}'.format(
+            b64encode(b'USER_x_0@domain.com:a').decode('ascii'))
+        resp = self.app.get(
+            '/users',
+            headers={'Authorization': auth_header}
+        )
+        # validate a 401 unauthorized was received
+        self.assertEqual(401, resp.status_code)
+    # test_case_sens_login_fail()
 # TestAuth

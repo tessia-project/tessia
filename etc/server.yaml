@@ -15,6 +15,7 @@ auto_install:
 # authentication subsystem
 auth:
   realm: authentication realm
+  case_sensitive: false
   # only ldap or free are supported at the moment
   login_method: ldap
   # whether to allow users to be automatically added to server's database

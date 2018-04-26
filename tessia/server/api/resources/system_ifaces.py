@@ -1,4 +1,4 @@
-# Copyright 2016, 2017 IBM Corp.
+# Copyright 2016, 2017, 2018 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ from tessia.server.api.resources.secure_resource import SecureResource
 from tessia.server.db.models import System
 from tessia.server.db.models import SystemIface
 from tessia.server.db.models import SystemProfile
+from werkzeug.exceptions import Forbidden
 
 import ipaddress
 
@@ -82,13 +83,14 @@ class SystemIfaceResource(SecureResource):
         name = fields.String(
             title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
         osname = fields.String(
-            title=DESC['osname'], description=DESC['osname'], nullable=True,
-            pattern=r'^[a-zA-Z0-9_\s\.\-]+$')
+            title=DESC['osname'], description=DESC['osname'],
+            pattern=r'^[a-zA-Z0-9_\.\-]+$')
         attributes = fields.Custom(
             schema=SystemIface.get_schema('attributes'),
             title=DESC['attributes'], description=DESC['attributes'])
         mac_address = fields.String(
-            title=DESC['mac_address'], description=DESC['mac_address'])
+            title=DESC['mac_address'], description=DESC['mac_address'],
+            nullable=True, pattern=r'^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$')
         desc = fields.String(
             title=DESC['desc'], description=DESC['desc'], nullable=True)
         # relations
@@ -127,7 +129,7 @@ class SystemIfaceResource(SecureResource):
         )
 
     @staticmethod
-    def verify_address(properties):
+    def _verify_ip(properties):
         """
         Verifies the correctness of the subnet/ip_address combination.
 
@@ -137,9 +139,6 @@ class SystemIfaceResource(SecureResource):
 
         Raises:
             BaseHttpError: if provided address is invalid
-
-        Returns:
-            bool: True
         """
         if properties.get('ip_address'):
             # verify if ip address has a valid format
@@ -150,8 +149,79 @@ class SystemIfaceResource(SecureResource):
                 msg = "The value '{}={}' is invalid: {}".format(
                     'subnet/ip_address', properties['ip_address'], str(exc))
                 raise BaseHttpError(code=400, msg=msg)
-        return True
-    # verify_address()
+    # _verify_ip()
+
+    @staticmethod
+    def _verify_mac(system_obj, properties, iface_obj):
+        """
+        Validate the mac address' value given the combination of network card
+        and system types
+
+        Args:
+            system_obj (System): System db object instance
+            properties (dict): field=value dict from create/update request
+            iface_obj (SystemIface): target SystemIface db object instance
+
+        Raises:
+            BaseHttpError: if combination is not allowed
+        """
+        iface_type = ''
+        iface_attr = {}
+        iface_mac = None
+        # for an update action there are existing values
+        if iface_obj:
+            iface_type = iface_obj.type
+            iface_attr = iface_obj.attributes
+            iface_mac = iface_obj.mac_address
+
+        # values from request
+        if 'type' in properties:
+            iface_type = properties['type']
+        if 'attributes' in properties:
+            iface_attr = properties['attributes']
+        if 'mac_address' in properties:
+            iface_mac = properties['mac_address']
+
+        # non osa cards: mac address is always required
+        if iface_type.lower() != 'osa':
+            if not iface_mac:
+                msg = 'A MAC address must be defined'
+                raise BaseHttpError(code=422, msg=msg)
+            # no more verifications, exit
+            return
+
+        # zvm guests: mac address should never be specified
+        if system_obj.type.lower() == 'zvm':
+            if iface_mac:
+                msg = ('Defining a MAC address for OSA cards on zVM guests '
+                       'is not allowed')
+                raise BaseHttpError(code=422, msg=msg)
+            # no more verifications, exit
+            return
+
+        # non-zvm with layer2 on: mac address is optional so nothing more to
+        # check
+        if iface_attr.get('layer2'):
+            return
+
+        # create action
+        if not iface_obj:
+            # layer2 off with mac specified: report mistake
+            if properties.get('mac_address'):
+                msg = 'When layer2 is off no MAC address should be defined'
+                raise BaseHttpError(code=422, msg=msg)
+            # no more verifications, exit
+            return
+
+        # update action with mac specified: report mistake
+        if properties.get('mac_address'):
+            msg = 'When layer2 is off no MAC address should be defined'
+            raise BaseHttpError(code=422, msg=msg)
+
+        # updating layer2 to off: make sure mac is not defined
+        if iface_obj.mac_address:
+            properties['mac_address'] = None
+    # _verify_mac()
 
     def do_create(self, properties):
         """
@@ -182,7 +252,8 @@ class SystemIfaceResource(SecureResource):
         self._get_project_for_create(
             System.__tablename__, target_system.project_rel.name)
 
-        self.verify_address(properties)
+        self._verify_mac(target_system, properties, None)
+        self._verify_ip(properties)
 
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,
@@ -237,7 +308,7 @@ class SystemIfaceResource(SecureResource):
                                                kwargs.get('sort')):
             # user is not the resource's owner or an administrator: verify if
             # they have a role in resource's project
-            if not self._is_owner_or_admin(instance):
+            if not self._is_owner_or_admin(instance.system_rel):
                 # no role in system's project: cannot list
                 if self._get_role_for_project(
                         instance.system_rel.project_id) is None:
@@ -248,6 +319,41 @@ class SystemIfaceResource(SecureResource):
         return Pagination.from_list(
             allowed_instances, kwargs['page'], kwargs['per_page'])
     # do_list()
+
+    def do_read(self, id):
+        """
+        Custom implementation of iface reading. Use permissions from the
+        associated system to validate access.
+
+        Args:
+            id (any): id of the item, usually an integer corresponding to the
+                      id field in the table's database
+
+        Raises:
+            Forbidden: in case user has no rights to read iface
+
+        Returns:
+            json: json representation of item
+        """
+        # pylint: disable=redefined-builtin
+
+        item = self.manager.read(id)
+
+        # non restricted user: regular resource reading is allowed
+        if not flask_global.auth_user.restricted:
+            return item
+
+        # validate permission on the object - use the associated system
+        # user is not the system's owner or an administrator: verify if
+        # they have a role in system's project
+        if not self._is_owner_or_admin(item.system_rel):
+            # no role in system's project: access forbidden
+            if self._get_role_for_project(item.system_rel.project_id) is None:
+                msg = 'User has no READ permission for the specified resource'
+                raise Forbidden(description=msg)
+
+        return item
+    # do_read()
 
     def do_update(self, properties, id):
         """
@@ -274,13 +380,14 @@ class SystemIfaceResource(SecureResource):
         # validate permission on the object - use the associated system
         self._assert_permission('UPDATE', item.system_rel, 'system')
 
-        self.verify_address(properties)
+        self._verify_mac(item.system_rel, properties, item)
+        self._verify_ip(properties)
 
         # an iface cannot change its system so we only allow to set it on
         # creation
         if 'system' in properties and properties['system'] != item.system:
             raise BaseHttpError(
-                400, msg='Interfaces cannot change their associated system')
+                422, msg='Interfaces cannot change their associated system')
 
         updated_item = self.manager.update(item, properties)
 

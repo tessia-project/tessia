@@ -1270,7 +1270,7 @@ class SystemIface(CommonMixin, SchemaMixin, BASE):
 
     type_id = Column(Integer, ForeignKey('iface_types.id'), nullable=False)
     attributes = Column(postgresql.JSONB, nullable=False)
-    mac_address = Column(postgresql.MACADDR, nullable=False)
+    mac_address = Column(postgresql.MACADDR)
     desc = Column(String)
 
     @declared_attr

@@ -800,9 +800,8 @@ class PostInstallChecker(object):
 
             # TODO: check interface type
 
-            # iface is not an osa or an osa in layer2 mode: check mac address
-            if (exp_iface['type'] != 'OSA' or
-                    exp_iface['attributes'].get('layer2', False)):
+            # iface has mac address defined: verify it
+            if exp_iface['mac']:
                 self._pass_or_report(
                     'iface {} mac'.format(exp_iface['osname']),
                     exp_iface['mac'],

@@ -388,8 +388,6 @@ tasks:
       - Missing option "--type".
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA
       - Missing option "--osname".
-    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA --osname=en0
-      - 'a mac address must be specified'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00
       - '--ccwgroup must be specified'
     - - system iface-add --system= --name='osa iface' --type=OSA --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
@@ -399,7 +397,7 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name= --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - 'Invalid value for "--name": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name=dummy --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
-      - Item added successfully.
+      - 'Error: request failed. Server answered: When layer2 is off no MAC address should be defined'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type= --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - 'Invalid value for "--type": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type= --osname=en0 --mac=02:57:52:00:70:00
@@ -420,23 +418,21 @@ tasks:
       - 'Invalid value for "--ccwgroup": f500,f501 is not a valid qeth ccwgroup'
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=500,501,502
       - 'Invalid value for "--ccwgroup": 500 is not a valid devno'
-    - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
+    - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --osname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502 --layer2=true
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
       - Item added successfully.
-    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet= --ip=192.168.161.222
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet= --ip=192.168.161.222
       - 'Invalid value for "--subnet": value may not be empty'
-    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.22222
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.22222
       - 'Invalid value for "--ip": 192.168.161.22222 is not a valid ip address'
-    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=tru --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
-      - 'Invalid value for "--layer2": tru is not a valid boolean'
-    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
+    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
       - Item added successfully.
-    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=
+    - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=
       - 'Invalid value for "--ip": value may not be empty'
-    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --hostiface=enccw0.0.f500
+    - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --hostiface=enccw0.0.f500
       - invalid attribute for this iface type
-    - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --libvirt='kvm-guest.xml'
+    - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --libvirt='kvm-guest.xml'
       - invalid attribute for this iface type
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portname=OSAE1
       - Item added successfully.
@@ -495,13 +491,13 @@ tasks:
     - - system iface-list --system=cpc3lp52 --type=
       - 'Invalid value for "--type": value may not be empty'
     - - system iface-list --system=cpc3lp52 --osname=en0
-      - 'Interface name             : osa iface'
+      - 'Interface name             : osa iface2'
     - - system iface-list --system=cpc3lp52 --osname=en10
       - No results were found.
     - - system iface-list --system=cpc3lp52 --osname=
       - 'Invalid value for "--osname": value may not be empty'
     - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:00
-      - 'Interface name             : osa iface'
+      - 'Interface name             : osa iface2'
     - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:05
       - No results were found.
     - - system iface-list --system=cpc3lp52 --mac=
@@ -533,10 +529,8 @@ tasks:
       - 'Invalid value for "--system": value may not be empty'
     - - system iface-edit --system=cpc3lp52 --name= --newname='default osa2'
       - 'Invalid value for "--name": value may not be empty'
-    - - system iface-edit --system=cpc3lp52 --name=dummy --newname='default osa2'
+    - - system iface-edit --system=cpc3lp52 --name='osa iface2' --newname='default osa2'
       - Item successfully updated.
-    - - system iface-edit --system=cpc3lp55 --name='default osa22' --newname='default osa2'
-      - network interface not found.
     - - system iface-edit --system=cpc3lp52 --name='default osa23' --newname='default osa2'
       - network interface not found.
     - - system iface-edit --system=cpc3lp52 --name='default osa22' --newname='default osa2'
@@ -554,11 +548,11 @@ tasks:
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --osname=en0
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=
-      - 'Invalid value for "--mac": value may not be empty'
+      - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=0257:52:00:76:00
       - 'Invalid value for "--mac": 0257:52:00:76:00 is not a valid mac address'
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=02:57:52:00:76:00
-      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=0 --mac=02:57:52:00:76:00
+      - 'request failed. Server answered: When layer2 is off no MAC address should be defined'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet=
       - 'Invalid value for "--subnet": value may not be empty'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ip=192.168.161.222

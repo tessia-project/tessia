@@ -238,11 +238,11 @@ Options:
 ```
 
 To see the supported interface types you may use the `system iface-types` command.
-We will use OSA card interface type (the name `OSA`) with layer2 mode enabled, so mac address should also be specified.
+We will use OSA card interface type (the name `OSA`) with layer2 mode enabled and mac address unspecified (mac will be managed by the operating system).
 The provided IP address may be assigned to the interface at once. Don't forget to specify a subnet also, otherwise you will get an error. Let's create the interface:
 
 ```
-$ tess system iface-add --system=vm70002 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=aa:bb:cc:dd:ee:11 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --subnet='CPC50 shared' --ip=192.168.0.30 --desc='default gateway interface'
+$ tess system iface-add --system=vm70002 --name='default osa' --type=OSA --osname=enccw0.0.f500 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --subnet='CPC50 shared' --ip=192.168.0.30 --desc='default gateway interface'
 Item added successfully.
 $ tess system iface-list --system=vm70002
 
@@ -251,7 +251,7 @@ Operating system name      : enccw0.0.f500
 System                     : vm70002
 Interface type             : OSA
 IP address                 : CPC50 shared/192.168.0.30
-MAC address                : aa:bb:cc:dd:ee:11
+MAC address                :
 Attributes                 : {'layer2': True, 'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'}
 Associated system profiles :
 Description                : default gateway interface
@@ -481,7 +481,7 @@ Operating system name      : enccw0.0.f500
 System                     : vm70002
 Interface type             : OSA
 IP address                 : CPC50 shared/192.168.0.30
-MAC address                : aa:bb:cc:dd:ee:11
+MAC address                :
 Attributes                 : {'layer2': True, 'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'}
 Associated system profiles : [vm_profile]
 Description                : default gateway interface

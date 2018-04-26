@@ -128,7 +128,7 @@
         <bootproto>static</bootproto>
         <device>{{ iface["osname"] }}</device>
         <ipaddr>{{ iface["ip"] }}</ipaddr>
-        {% if iface["attributes"]["layer2"] or config["system_type"] == "KVM" %}
+        {% if iface["mac_addr"] %}
         <lladdr>{{ iface["mac_addr"] }}</lladdr>
         {% endif %}
         <netmask>{{ iface["mask"] }}</netmask>

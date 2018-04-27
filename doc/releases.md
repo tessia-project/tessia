@@ -15,6 +15,28 @@ limitations under the License.
 -->
 # Release notes
 
+## 18.04 (2018-04-27)
+
+### Fixes
+
+- specify root user in autoinst template
+- cli: improve verification of input values for network commands ([#1](https://gitlab.com/tessia-project/tessia/issues/1))
+- api: verify input values for ip addresses ([#3](https://gitlab.com/tessia-project/tessia/issues/3))
+- debian: specify OSA iface to use when multiple ifaces are present
+- debian: fix last partition's size math
+
+### Improvements
+
+- post_install: use threads per core when verifying number of cpus (SMT systems)
+- ubuntu: set external repositories on installed system
+- post_install: issue warning instead of raising error when a mismatch is detected
+- zvm: add howto example of how to install a zvm guest
+- allow null mac addresses for OSA cards
+
+### Features
+
+- support for enabling/disabling case sensitive in logins
+
 ## 18.03 (2018-03-18)
 
 ### New features

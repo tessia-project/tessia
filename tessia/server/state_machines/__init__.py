@@ -19,7 +19,7 @@ Package containing the machines used to execute jobs
 #
 # IMPORTS
 #
-from importlib.machinery import SourceFileLoader
+from importlib import util
 import os
 
 #
@@ -83,8 +83,9 @@ class _MachineManager(object):
                 self._my_dir, machine_name)
 
             # syntax error could occur here
-            package = SourceFileLoader(
-                machine_name, package_path).load_module()
+            spec = util.spec_from_file_location(machine_name, package_path)
+            package = util.module_from_spec(spec)
+            spec.loader.exec_module(package)
 
             self._classes[machine_name] = package.MACHINE
     # _load_classes()

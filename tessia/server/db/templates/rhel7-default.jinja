@@ -2,9 +2,7 @@
 auth --enableshadow --passalgo=sha512
 sshpw --username=root {{config["credentials"]["passwd"]}} --plaintext
 # Use network installation
-url --url="{{config["repos"][0]}}"
-repo --name="Server-HighAvailability" --baseurl={{config["repos"][0]}}/addons/HighAvailability
-repo --name="Server-ResilientStorage" --baseurl={{config["repos"][0]}}/addons/ResilientStorage
+url --url="{{config["repos"][0]['url']}}"
 # Use graphical install
 graphical
 # Run the Setup Agent on first boot
@@ -80,4 +78,18 @@ mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconf
 cio_ignore -r {{volume['volume_id']}} && chccwdev -e {{volume['volume_id']}}
 {% endif -%}
 {% endfor -%}
+%end
+
+%post
+#!/bin/bash
+{% for repo in config["repos"] %}
+cat <<EOF > /etc/yum.repos.d/{{repo['name']}}.repo
+[{{repo['name']}}]
+name={{repo['desc']}}
+baseurl={{repo['url']}}
+enabled=1
+gpgcheck=0
+skip_if_unavailable=False
+EOF
+{% endfor %}
 %end

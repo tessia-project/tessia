@@ -313,7 +313,7 @@ class SmBase(metaclass=abc.ABCMeta):
         info = {
             'ifaces': [],
             'svols': [],
-            'repos': [self._repo.url],
+            'repos': [],
             'server_hostname': urlsplit(self._autofile_url).hostname,
             'system_type': self._system.type,
             'credentials': self._profile.credentials,
@@ -322,6 +322,13 @@ class SmBase(metaclass=abc.ABCMeta):
             'autofile': self._autofile_url,
             'gw_iface': self._gw_iface,
         }
+        # add repo entries - as of today only one repo is supported
+        repo = {'url': self._repo.url, 'desc': self._repo.desc,
+                'name': self._repo.name.replace(' ', '_')}
+        if not repo['desc']:
+            repo['desc'] = repo['name']
+        info['repos'].append(repo)
+
         # generate pseudo-random password for vnc session
         info['credentials']['vncpasswd'] = ''.join(
             random.sample(string.ascii_letters + string.digits, 8))

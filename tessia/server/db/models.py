@@ -605,7 +605,7 @@ class IpAddress(CommonMixin, ResourceMixin, BASE):
     def system(self):
         """Defines the attribute as a system_name"""
         item = SystemIface.query.filter_by(
-            ip_address_id=self.id).one_or_none()
+            ip_address_id=self.id).first()
         if item is None:
             return None
         return item.system

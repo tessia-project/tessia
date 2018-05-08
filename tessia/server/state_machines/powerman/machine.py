@@ -951,9 +951,10 @@ class PowerManagerMachine(BaseMachine):
                 system_prof, permissive=not verify_flag)
             checker.verify()
         except Exception as exc:
-            self._logger.warning('State verification of system %s failed: %s',
-                                 system_name, str(exc))
-            return False
+            if verify_flag:
+                self._logger.warning('State verification of system %s '
+                                     'failed: %s', system_name, str(exc))
+                return False
 
         return True
     # _state_match()

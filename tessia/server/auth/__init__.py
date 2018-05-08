@@ -19,7 +19,7 @@ Dynamically load the authentication modules contained in this package
 #
 # IMPORTS
 #
-from importlib.machinery import SourceFileLoader
+from importlib import util
 from tessia.server.config import CONF
 
 import os
@@ -73,7 +73,9 @@ class Loader(object):
         module_name = '{}.{}'.format(__name__, login_method)
 
         # syntax error could occur here
-        module = SourceFileLoader(module_name, module_path).load_module()
+        spec = util.spec_from_file_location(module_name, module_path)
+        module = util.module_from_spec(spec)
+        spec.loader.exec_module(module)
 
         cls.MANAGER = module.MANAGER()
         return cls.MANAGER

@@ -57,6 +57,8 @@ DESC = {
     'gateway': 'Gateway interface',
 }
 
+MARKER_HIDDEN_CRED = '[NOT DISPLAYED]'
+
 #
 # CODE
 #
@@ -344,22 +346,21 @@ class SystemProfileResource(SecureResource):
             list: list of items retrieved, can be an empty in case no items are
                   found or a restricted user has no permission to see them
         """
-        # non restricted user: regular resource listing is allowed
-        if not flask_global.auth_user.restricted:
-            return self.manager.paginated_instances(**kwargs)
-
-        # for restricted users, filter the list by the projects they have
-        # access or if they own the resource
         allowed_instances = []
         for instance in self.manager.instances(kwargs.get('where'),
                                                kwargs.get('sort')):
-            # user is not the resource's owner or an administrator: verify if
-            # they have a role in resource's project
+            # user is not the resource's owner or an administrator: verify
+            # if they have a role in resource's project
             if not self._is_owner_or_admin(instance.system_rel):
-                # no role in system's project: cannot list
+                # no role in system's project
                 if self._get_role_for_project(
                         instance.system_rel.project_id) is None:
-                    continue
+                    # restricted users: cannot list
+                    if flask_global.auth_user.restricted:
+                        continue
+                    # non-restricted users can list but credentials must be
+                    # hidden
+                    instance.credentials = MARKER_HIDDEN_CRED
 
             allowed_instances.append(instance)
 
@@ -386,18 +387,20 @@ class SystemProfileResource(SecureResource):
 
         item = self.manager.read(id)
 
-        # non restricted user: regular resource reading is allowed
-        if not flask_global.auth_user.restricted:
-            return item
-
         # validate permission on the object - use the associated system
         # user is not the system's owner or an administrator: verify if
         # they have a role in system's project
         if not self._is_owner_or_admin(item.system_rel):
             # no role in system's project: access forbidden
             if self._get_role_for_project(item.system_rel.project_id) is None:
-                msg = 'User has no READ permission for the specified resource'
-                raise Forbidden(description=msg)
+                # restricted users: cannot read
+                if flask_global.auth_user.restricted:
+                    msg = ('Restricted user has no permission to access the '
+                           'specified resource')
+                    raise Forbidden(description=msg)
+                # non-restricted users can list but credentials must be
+                # hidden
+                item.credentials = MARKER_HIDDEN_CRED
 
         return item
     # do_read()

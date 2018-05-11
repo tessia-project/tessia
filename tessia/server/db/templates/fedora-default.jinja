@@ -51,12 +51,12 @@ part {% if entry["fs"] == "swap" %}swap{% else %}{{entry["mp"]}}{% endif %} --fs
 {% endfor %}
 {% endfor %}
 %packages
-@^minimal
+@^minimal-environment
 @core
 kexec-tools
 %end
 
-%addon com_redhat_kdump --enable --reserve-mb='auto'
+%addon com_redhat_kdump --enable
 
 %end
 
@@ -78,8 +78,16 @@ mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconf
 %pre
 #!/bin/bash
 {% for volume in config["svols"] %}
-{% if volume['type'] == 'DASD' -%}
-cio_ignore -r {{volume['volume_id']}} && chccwdev -e {{volume['volume_id']}}
+{%- if volume['type'] == 'DASD' -%}
+chzdev -e dasd {{volume['volume_id']}}
+{% endif -%}
+{% if volume['type'] == 'FCP' -%}
+{% for adapter in volume['specs']['adapters'] -%}
+chzdev -e {{adapter['devno']}}
+{% for wwpn in adapter['wwpns'] -%}
+chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}}
+{% endfor -%}
+{% endfor -%}
 {% endif -%}
 {% endfor -%}
 %end
@@ -97,4 +105,18 @@ gpgcheck=0
 skip_if_unavailable=False
 EOF
 {% endfor %}
+
+{% if config["system_type"] != "KVM" %}
+{% for volume in config["svols"] %}
+{% if volume['type'] == 'FCP' -%}
+{% for adapter in volume['specs']['adapters'] -%}
+chzdev -e {{adapter['devno']}}
+{% for wwpn in adapter['wwpns'] -%}
+chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}}
+{% endfor -%}
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+{% endif -%}
+
 %end

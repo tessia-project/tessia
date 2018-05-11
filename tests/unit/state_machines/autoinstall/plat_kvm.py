@@ -125,12 +125,12 @@ class TestPlatKvm(TestCase):
             self.assertEqual(plat.get_vol_devpath(vol), devpath)
     # test_get_vol_devpath()
 
-    def test_get_vol_devpath_old_style(self):
+    def test_get_vol_devpath_new_style(self):
         """
         Test the correct creation of the device paths for the volumes
-        when using operting systems that use udev version 229 or newer.
+        when using operting systems that use newer udev naming.
         """
-        self._os_entry.major = 8
+        self._os_entry.pretty_name = plat_kvm.UBUNTU_ID
         self.addCleanup(MANAGER.session.rollback)
 
         volumes = self._profile_entry.storage_volumes_rel
@@ -150,7 +150,7 @@ class TestPlatKvm(TestCase):
 
         for vol, devpath in zip(volumes, devpaths):
             self.assertEqual(plat.get_vol_devpath(vol), devpath)
-    # test_get_vol_devpath()
+    # test_get_vol_devpath_new_style()
 
     def test_invalid_libvirt_xml(self):
         """

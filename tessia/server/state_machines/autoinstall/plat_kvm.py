@@ -39,8 +39,7 @@ DISK_TEMPLATE = """
       {boot_tag}
     </disk> 
 """
-RHEL_ID = 'Red Hat Enterprise Linux'
-SLES_ID = 'SUSE Linux Enterprise Server'
+UBUNTU_ID = 'Ubuntu '
 
 #
 # CODE
@@ -57,15 +56,12 @@ class PlatKvm(PlatBase):
         # create our own logger so that the right module name is in output
         self._logger = logging.getLogger(__name__)
 
-        # determine the type of devpath prefix used for virtio devices, distros
-        # with systemd/udev >= 229 use newer naming
-        if ((self._os.pretty_name.startswith(RHEL_ID)
-             and self._os.major <= 7 and self._os.minor <= 3) or
-                (self._os.pretty_name.startswith(SLES_ID)
-                 and self._os.major <= 12)):
-            self._devpath_prefix = '/dev/disk/by-path/ccw-0.{}.{}'
-        else:
+        # determine the type of devpath prefix used for virtio devices,
+        # certain distros use newer naming
+        if self._os.pretty_name.startswith(UBUNTU_ID):
             self._devpath_prefix = '/dev/disk/by-path/virtio-pci-0.{}.{}'
+        else:
+            self._devpath_prefix = '/dev/disk/by-path/ccw-0.{}.{}'
 
         # define a mapping of volumes and their stable device paths
         self._devpath_by_vol = {}

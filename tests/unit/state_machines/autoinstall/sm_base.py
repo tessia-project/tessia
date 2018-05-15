@@ -436,6 +436,25 @@ class TestSmBase(TestCase):
             mach.start()
     # test_check_install_error()
 
+    def test_check_install_timeout(self):
+        """
+        Exercise time out when the post install library tries to connect to the
+        target system.
+        """
+        # mock shell command in check_installation
+        mock_client = self._mock_ssh_client.return_value
+        mock_client.open_shell.return_value.run.return_value = 0, ""
+
+        # mock post install failure to connect
+        post_install_obj = self._mock_checker.return_value
+        post_install_obj.verify.side_effect = ConnectionError()
+        mach = self._create_sm(self._child_cls, "rhel7.2",
+                               "CPC3LP55/default_CPC3LP55", "rhel7-default")
+        error_msg = 'Timeout occurred while trying to connect to target system'
+        with self.assertRaisesRegex(ConnectionError, error_msg):
+            mach.start()
+    # test_check_install_timeout()
+
     def test_no_ssh_connection_after_installation(self):
         """
         Check the case that there is no ssh connection after the target system

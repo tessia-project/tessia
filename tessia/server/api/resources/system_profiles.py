@@ -188,7 +188,7 @@ class SystemProfileResource(SecureResource):
             raise ItemNotFoundError(item_id_key, item_id, None)
         # make sure user has update permission on the item
         if hasattr(item, 'project'):
-            self._assert_permission('UPDATE', item, item_desc)
+            self._perman.can('UPDATE', flask_global.auth_user, item, item_desc)
 
         # retrieve the system row for permission verification
         # first we need the profile object
@@ -201,7 +201,7 @@ class SystemProfileResource(SecureResource):
         if system is None:
             raise ItemNotFoundError('profile_id', prof_id, None)
         # make sure user has update permission on the system
-        self._assert_permission('UPDATE', system, 'system')
+        self._perman.can('UPDATE', flask_global.auth_user, system, 'system')
 
         return item, system
     # _fetch_and_assert_item()
@@ -229,10 +229,8 @@ class SystemProfileResource(SecureResource):
             raise ItemNotFoundError(
                 'system', properties['system'], self)
 
-        # we don't need the actual project, only the verification. In case of
-        # invalid permissions an exception will be raised.
-        self._get_project_for_create(
-            System.__tablename__, target_system.project_rel.name)
+        # in case of no permissions an exception will be raised
+        self._perman.can('UPDATE', flask_global.auth_user, target_system)
 
         # cpc system: handle it differently
         if target_system.type == 'CPC':
@@ -315,8 +313,10 @@ class SystemProfileResource(SecureResource):
         """
         entry = self.manager.read(id)
 
-        # validate user permission on object
-        self._assert_permission('DELETE', entry.system_rel, 'system')
+        # validate user permission on object - in this case we look for the
+        # permission to update the system
+        self._perman.can(
+            'UPDATE', flask_global.auth_user, entry.system_rel, 'system')
 
         # profile is default: can only be deleted if it's the last one
         if entry.default:
@@ -349,18 +349,22 @@ class SystemProfileResource(SecureResource):
         allowed_instances = []
         for instance in self.manager.instances(kwargs.get('where'),
                                                kwargs.get('sort')):
+            if self._perman.is_owner_or_admin(flask_global.auth_user,
+                                              instance.system_rel):
+                allowed_instances.append(instance)
+                continue
+
             # user is not the resource's owner or an administrator: verify
             # if they have a role in resource's project
-            if not self._is_owner_or_admin(instance.system_rel):
-                # no role in system's project
-                if self._get_role_for_project(
-                        instance.system_rel.project_id) is None:
-                    # restricted users: cannot list
-                    if flask_global.auth_user.restricted:
-                        continue
-                    # non-restricted users can list but credentials must be
-                    # hidden
-                    instance.credentials = MARKER_HIDDEN_CRED
+            try:
+                self._perman.can('UPDATE', flask_global.auth_user,
+                                 instance.system_rel, 'system')
+            except PermissionError:
+                if flask_global.auth_user.restricted:
+                    continue
+                # non-restricted users can list but credentials must be
+                # hidden
+                instance.credentials = MARKER_HIDDEN_CRED
 
             allowed_instances.append(instance)
 
@@ -390,9 +394,13 @@ class SystemProfileResource(SecureResource):
         # validate permission on the object - use the associated system
         # user is not the system's owner or an administrator: verify if
         # they have a role in system's project
-        if not self._is_owner_or_admin(item.system_rel):
+        if not self._perman.is_owner_or_admin(flask_global.auth_user,
+                                              item.system_rel):
             # no role in system's project: access forbidden
-            if self._get_role_for_project(item.system_rel.project_id) is None:
+            try:
+                self._perman.can('UPDATE', flask_global.auth_user,
+                                 item.system_rel, 'system')
+            except PermissionError:
                 # restricted users: cannot read
                 if flask_global.auth_user.restricted:
                     msg = ('Restricted user has no permission to access the '
@@ -428,7 +436,8 @@ class SystemProfileResource(SecureResource):
         item = self.manager.read(id)
 
         # validate permission on the object - use the associated system
-        self._assert_permission('UPDATE', item.system_rel, 'system')
+        self._perman.can(
+            'UPDATE', flask_global.auth_user, item.system_rel, 'system')
 
         # a profile cannot change its system, it's only allowed to set it on
         # creation

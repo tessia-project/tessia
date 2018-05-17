@@ -240,12 +240,6 @@ btrfs /home
 """
         )
 
-        crash_size = (
-            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
-205520896
-"""
-        )
-
         os_release = (
             """cpc3lp52.domain.com | SUCCESS | rc=0 >>
 NAME=xxxx
@@ -270,9 +264,23 @@ NUMA node0 CPU(s):     0-255
 """
         )
 
+        # new format (lsmem's C port)
+        lsmem_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+RANGE                                  SIZE  STATE REMOVABLE BLOCK
+0x0000000000000000-0x000000006fffffff  1.8G online       yes   0-6
+0x0000000070000000-0x000000007fffffff  256M online        no     7
+0x0000000080000000-0x00000000bfffffff    1G online       yes  8-11
+0x00000000c0000000-0x00000000ffffffff    1G online        no 12-15
+
+Memory block size:       256M
+Total online memory:       4G
+Total offline memory:      0B
+"""
+        )
         self._mock_check_output.side_effect = [
-            facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, crash_size,
-            os_release, lscpu_output]
+            facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
+            lscpu_output, lsmem_output]
     # _set_mocks_lpar_fcp()
 
     def _set_mocks_lpar_dasd(self, prof_obj):
@@ -367,12 +375,6 @@ Error: No fcp devices found.
         )
         lszfcp.output = lszfcp_output
 
-        crash_size = (
-            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
-168820736
-"""
-        )
-
         os_release = (
             """cpc3lp52.domain.com | SUCCESS | rc=0 >>
 NAME=xxxx
@@ -396,9 +398,23 @@ NUMA node0 CPU(s):     0-255
 """
         )
 
+        # old format (lsmem's perl script)
+        lsmem_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Address Range                          Size (MB)  State    Removable  Device
+===============================================================================
+0x0000000000000000-0x00000000fffffffe       4096  online   no         0-4095
+
+Memory device size  : 1 MB
+Memory block size   : 256 MB
+Total online memory : 4096 MB
+Total offline memory: 0 MB
+"""
+        )
+
         self._mock_check_output.side_effect = [
-            facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, crash_size,
-            os_release, lscpu_output]
+            facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
+            lscpu_output, lsmem_output]
     # _set_mocks_lpar_dasd()
 
     def test_facts_fail(self):
@@ -468,6 +484,16 @@ some_output
             SystemError, 'Could not parse output from ansible facts: '):
             checker.verify()
 
+        # simulate invalid lsmem output
+        test_outputs = orig_outputs[:]
+        test_outputs[-1] = test_outputs[-1].replace(
+            'Total online memory : 4096 MB',
+            'Total online memory:       unknown')
+        self._mock_check_output.side_effect = test_outputs
+        with self.assertRaisesRegex(
+            RuntimeError, 'Failed to parse lsmem output'):
+            checker.verify()
+
         # simulate invalid parted content
         test_outputs = orig_outputs[:]
         test_outputs[1] += '}'
@@ -510,9 +536,9 @@ some_output
         self._set_mocks_lpar_dasd(profile_entry)
         # set mock to simulate lscpu not found
         check_outputs = list(self._mock_check_output.side_effect)
-        check_outputs[-1] = subprocess.CalledProcessError(
+        check_outputs[-2] = subprocess.CalledProcessError(
             returncode=2, cmd='lscpu')
-        check_outputs[-1].output = (
+        check_outputs[-2].output = (
             """cpc3lp52.domain.com | FAILED | rc=3 >>
 [Errno 2] No such file or directory
 """
@@ -567,11 +593,9 @@ some_output
         fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
         # min memory mismatch
         self._set_mocks_lpar_fcp(fcp_prof_entry)
-        with self._mock_db_obj(fcp_prof_entry, 'memory', 5000):
-            # actual is calculated by using ansible_total_mb + crash_size set
-            # by mock
+        with self._mock_db_obj(fcp_prof_entry, 'memory', 6000):
             error_msg = self._mismatch_msg.format(
-                'minimum MiB memory', 4872, 4011)
+                'minimum MiB memory', 5872, 4096)
             checker = post_install.PostInstallChecker(fcp_prof_entry)
             with self.assertRaisesRegex(
                 post_install.Misconfiguration, error_msg):
@@ -591,7 +615,7 @@ some_output
             # actual is calculated by using ansible_total_mb + crash_size set
             # by mock
             error_msg = self._mismatch_msg.format(
-                'maximum MiB memory', 3128, 4011)
+                'maximum MiB memory', 3128, 4096)
             checker = post_install.PostInstallChecker(fcp_prof_entry)
             with self.assertRaisesRegex(
                 post_install.Misconfiguration, error_msg):
@@ -616,7 +640,7 @@ some_output
         self._set_mocks_lpar_fcp(fcp_prof_entry)
         check_outputs = list(self._mock_check_output.side_effect)
         wrong_os = 'SUSE Linux 12.2'
-        check_outputs[-2] = (
+        check_outputs[-3] = (
             """cpc3lp52.domain.com | SUCCESS | rc=0 >>
 NAME=xxxx
 VERSION=xxxx
@@ -745,7 +769,7 @@ ID=xxxxx
         # use facts from a dasd-only config to simulate no fcp devices found
         self._set_mocks_lpar_dasd(dasd_prof_entry)
         error_msg = self._mismatch_msg.format(
-            'fcp paths', 'fcp path for LUN 1022400000000000', '<not found>')
+            'fcp paths', 'fcp paths for LUN 1022400000000000', '<not found>')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
             post_install.Misconfiguration, error_msg):
@@ -758,8 +782,34 @@ ID=xxxxx
             fcp_prof_entry, permissive=True)
         checker.verify(areas=['storage'])
         error_msg = self._mismatch_msg.format(
-            'fcp paths', 'fcp path for LUN 1022400200000000', '<not found>')
+            'fcp paths', 'fcp paths for LUN 1022400200000000', '<not found>')
         self._mock_logger.warning.assert_called_with(error_msg)
+
+        # simulate disk not available
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        test_outputs = list(self._mock_check_output.side_effect)
+        test_outputs[1] = RuntimeError(
+            'Command failed, output: cpc3lp52.domain.com | FAILED!')
+        # lsblk won't get called for this disk so remove the mock entry
+        test_outputs.pop(2)
+        self._mock_check_output.side_effect = test_outputs
+        error_msg = self._mismatch_msg.format(
+            'volume 1022400000000000',
+            'disk /dev/disk/by-id/dm-uuid-mpath-'
+            '11002076305aac1a0000000000002200 present',
+            '<not found>')
+        checker = post_install.PostInstallChecker(fcp_prof_entry)
+        with self.assertRaisesRegex(post_install.Misconfiguration, error_msg):
+            checker.verify(areas=['storage'])
+
+        # permissive - only logging occurs
+        self._set_mocks_lpar_dasd(dasd_prof_entry)
+        self._mock_check_output.side_effect = test_outputs
+        self._mock_logger.reset_mock()
+        checker = post_install.PostInstallChecker(
+            fcp_prof_entry, permissive=True)
+        checker.verify(areas=['storage'])
+        self._mock_logger.warning.assert_any_call(error_msg)
 
         # storage - disk min size mismatch
         self._set_mocks_lpar_dasd(dasd_prof_entry)

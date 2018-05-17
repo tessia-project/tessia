@@ -289,8 +289,21 @@ class SmBase(metaclass=abc.ABCMeta):
 
         self._logger.info(
             "Verifying if installed system match expected parameters")
-        checker = PostInstallChecker(self._profile, self._os, permissive=True)
-        checker.verify()
+        # with certain distros the connection comes up and down during the
+        # boot process so we perform multiple tries until we get a connection
+        conn_timeout = time() + CONNECTION_TIMEOUT
+        while True:
+            try:
+                checker = PostInstallChecker(
+                    self._profile, self._os, permissive=True)
+                checker.verify()
+            except ConnectionError:
+                if time() > conn_timeout:
+                    raise ConnectionError('Timeout occurred while trying to '
+                                          'connect to target system')
+                sleep(5)
+                continue
+            break
     # check_installation()
 
     def cleanup(self):

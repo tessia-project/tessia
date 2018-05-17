@@ -36,6 +36,14 @@ import subprocess
 #
 # CONSTANTS AND DEFINITIONS
 #
+# convenience table for quick conversion between memory units
+UNIT_TABLE = {
+    'b': lambda size: int(size / 1024 / 1024),
+    'k': lambda size: int(size / 1024),
+    'm': lambda size: size,
+    'g': lambda size: int(size * 1024),
+    't': lambda size: int(size * 1024 * 1024),
+}
 
 #
 # CODE
@@ -207,9 +215,13 @@ class PostInstallChecker(object):
         # additional entries with the necessary information.
         for svol in self._expected_params['storage']:
             devpath = svol['devpath']
-            # call might fail if disk is not available
-            parted_output = self._exec_ansible(
-                'parted', 'device={} unit=B state=info'.format(devpath))
+            try:
+                parted_output = self._exec_ansible(
+                    'parted', 'device={} unit=B state=info'.format(devpath))
+            except RuntimeError:
+                self._logger.debug('Failed to fetch info for disk %s:',
+                                   devpath, exc_info=True)
+                continue
             try:
                 parted_json = json.loads(parted_output)
             # should not happen as ansible output is stable
@@ -252,16 +264,15 @@ class PostInstallChecker(object):
         # FCP paths - not provided by ansible
         params['fcp_paths'] = self._fetch_fcp()
 
-        # allocated crash kernel memory - not provided by ansible
-        params['kexec_crash_size'] = int(self._exec_ansible(
-            'command', 'cat /sys/kernel/kexec_crash_size'))
-
         # fetch pretty name from standard os-release file
         params['os_name'] = self._fetch_os()
 
         # threads per core (smt enabled/disabled) - not provided by
         # ansible on s390x
         params['ansible_processor_threads_per_core'] = self._fetch_smt()
+
+        # extract total memory information
+        params['total_memory'] = self._fetch_memory()
 
         self._facts = params
     # _fetch_facts()
@@ -285,6 +296,31 @@ class PostInstallChecker(object):
 
         return fcp_paths
     # _fetch_fcp()
+
+    def _fetch_memory(self):
+        """
+        Extract information about system's total memory
+
+        Returns:
+            int: total memory reported by lsmem (in mib)
+
+        Raises:
+            RuntimeError: in case lsmem can't be executed/parsed
+        """
+        # use lsmem to fetch memory info as /proc/meminfo coming from ansible
+        # is not accurate
+        output = self._exec_ansible('command', 'lsmem')
+        self._logger.debug('lsmem output:\n %s', output)
+
+        match = re.search(r'Total online memory\s*:\s*(\d+)\s*(B|K|M|G|T)',
+                          output, re.IGNORECASE)
+        if not match:
+            raise RuntimeError('Failed to parse lsmem output')
+        memory = UNIT_TABLE[match.group(2).lower()](
+            int(match.group(1)))
+
+        return memory
+    # _fetch_memory()
 
     def _fetch_os(self):
         """
@@ -743,17 +779,14 @@ class PostInstallChecker(object):
         Check memory size of a target instance.
         """
         # sizes are in binary unit (MiB)
-        total_mem = int(self._facts['ansible_memtotal_mb'] +
-                        (self._facts['kexec_crash_size'] / 1024 / 1024))
-
         min_mem = self._expected_params['memory'] - 128
         max_mem = self._expected_params['memory'] + 128
-        if total_mem < min_mem:
+        if self._facts['total_memory'] < min_mem:
             self._report(
-                'minimum MiB memory', min_mem, total_mem)
-        if total_mem > max_mem:
+                'minimum MiB memory', min_mem, self._facts['total_memory'])
+        if self._facts['total_memory'] > max_mem:
             self._report(
-                'maximum MiB memory', max_mem, total_mem)
+                'maximum MiB memory', max_mem, self._facts['total_memory'])
     # _verify_memory()
 
     def _verify_network(self):
@@ -855,7 +888,7 @@ class PostInstallChecker(object):
                 # no fcp configuration available on the host: report mismatch
                 if not self._facts['fcp_paths']:
                     self._pass_or_report(
-                        'fcp paths', 'fcp path for LUN {}'.format(svol['id']),
+                        'fcp paths', 'fcp paths for LUN {}'.format(svol['id']),
                         None)
                     continue
 
@@ -875,14 +908,17 @@ class PostInstallChecker(object):
                         except KeyError:
                             self._report('fcp path', exp_path, None)
 
-            # verify partition table
-            exp_table = svol['part_table']
-
-            devpath = svol['devpath']
-            actual_table = deepcopy(self._facts['ansible_devices'][devpath])
-
             # verify disk size
-            actual_size = int(actual_table['disk']['size'] / 1024 / 1024)
+            devpath = svol['devpath']
+            try:
+                actual_disk = deepcopy(self._facts['ansible_devices'][devpath])
+            # disk is not present: report mismatch
+            except KeyError:
+                self._report('volume {}'.format(svol['id']),
+                             'disk {} present'.format(devpath), None)
+                continue
+
+            actual_size = int(actual_disk['disk']['size'] / 1024 / 1024)
             min_size = svol['size'] - 200
             max_size = svol['size'] + 200
             # size smaller than expected: report mismatch
@@ -898,37 +934,39 @@ class PostInstallChecker(object):
                     '%s. You might want to adjust the volume size in the db '
                     'entry.', devpath, max_size, actual_size)
 
+            # verify partition table
+            exp_table = svol['part_table']
             # expected table might be empty therefore we refer to the key
             # indirectly; past this point it's guaranteed to have a dict
             # and no indirect referencing is needed
             self._pass_or_report(
                 'parttable type disk {}'.format(devpath),
                 exp_table.get('type', '<empty>'),
-                actual_table['disk']['table'])
+                actual_disk['disk']['table'])
             if not exp_table:
                 return
 
             # msdos type: filter out the extended partition
-            if actual_table['disk']['table'] == 'msdos':
+            if actual_disk['disk']['table'] == 'msdos':
                 index = None
-                for i in range(0, len(actual_table['partitions'])):
-                    if actual_table['partitions'][i]['num'] == 5:
+                for i in range(0, len(actual_disk['partitions'])):
+                    if actual_disk['partitions'][i]['num'] == 5:
                         index = i - 1
                         break
                 if index is not None:
-                    actual_table['partitions'].pop(index)
+                    actual_disk['partitions'].pop(index)
 
             # number of partitions should be the same
             len_exp = len(exp_table['table'])
             self._pass_or_report(
                 'partition quantity disk {}'.format(devpath), len_exp,
-                len(actual_table['partitions']))
+                len(actual_disk['partitions']))
 
             # check each partition size and mount attributes
             for i in range(0, len_exp):
                 self._pass_or_report_part(
                     devpath, i+1, exp_table['table'][i],
-                    actual_table['partitions'][i])
+                    actual_disk['partitions'][i])
     # _verify_storage()
 
     def verify(self, areas=None):

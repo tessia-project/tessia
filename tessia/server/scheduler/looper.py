@@ -24,8 +24,8 @@ from jsonschema import validate
 from tessia.server.state_machines import MACHINES
 from tessia.server.config import CONF
 from tessia.server.db.connection import MANAGER
-from tessia.server.db.models import SchedulerRequest
-from tessia.server.db.models import SchedulerJob
+from tessia.server.db.models import SchedulerJob, SchedulerRequest, System
+from tessia.server.lib.perm_manager import PermManager
 from tessia.server.scheduler import resources_manager
 from tessia.server.scheduler import spawner
 from tessia.server.scheduler import wrapper
@@ -82,6 +82,8 @@ class Looper(object):
             raise RuntimeError('No scheduler job directory configured')
 
         self._logger = logging.getLogger(__name__)
+        # manager to validate user permissions on resources allocated to jobs
+        self._perman = PermManager()
         # resources manager keeps track of resource allocation to determine
         # which job can execute next
         self._resources_man = resources_manager.ResourcesManager()
@@ -310,6 +312,23 @@ class Looper(object):
                 'Invalid resources. A resource appears twice.')
             self._session.commit()
             return
+
+        # as of today only systems are allocated as resources, if that
+        # changes in future the resources list should contain the db
+        # objects themselves instead of strings
+        for resource in resources['exclusive']:
+            # validate that requester can perform updates on the systems
+            try:
+                system_obj = System.query.filter_by(name=resource).one()
+                self._perman.can(
+                    'UPDATE', request.requester_rel, system_obj, 'system')
+            except Exception as exc:
+                request.state = SchedulerRequest.STATE_FAILED
+                request.result = (
+                    'Permission validation for resource {} failed: {}'
+                    .format(resource, str(exc)))
+                self._session.commit()
+                return
 
         # create job object
         new_job = SchedulerJob(

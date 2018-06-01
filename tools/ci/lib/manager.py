@@ -33,7 +33,6 @@ import yaml
 #
 # CONSTANTS AND DEFINITIONS
 #
-COMPOSE_PROJECT_NAME = 'tessia'
 MY_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_DIR = os.path.abspath('{}/../../..'.format(MY_DIR))
 
@@ -62,7 +61,7 @@ class Manager(object):
                            for stages build, push, unittest
             registry_url (str): a docker registry url to where images should
                                 be pushed, if None then push stage is skipped
-            field_tests (str): a path on the builder containing additional
+            field_tests (str): a path on the builder containing custom
                                tests for the client, as recognized by the
                                cli test runner
             img_passwd_file (str): path to file containing the root password
@@ -136,7 +135,7 @@ class Manager(object):
         self._logger.info('[init] tag for images is %s', self._tag)
 
         # create the image objects
-        self._images = []
+        self._images = {}
         # no image specified: use all
         if not images:
             images = build_image_map().keys()
@@ -144,7 +143,7 @@ class Manager(object):
             # each image object gets it's own session so that parallel builds
             # can happen if threading is used
             session = Shell(verbose)
-            self._images.append(self._new_image(name, self._tag, session))
+            self._images[name] = self._new_image(name, self._tag, session)
 
         # set signal handlers to assure cleanup before quitting
         for catch_signal in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP):
@@ -155,18 +154,16 @@ class Manager(object):
         """
         Execute the client based tests
         """
-        # clear any coverage data and get the list of tests to execute
+        client_id = self._images['tessia-cli'].container_name
+        # clear any previous existing coverage data
         ret_code, output = self._session.run(
-            "docker exec --user admin tessia_cli_1 "
-            "bash -c '/home/admin/cli/tests/runner erase && "
-            "/home/admin/cli/tests/runner list --terse'")
+            "docker exec --user admin {} "
+            "bash -c '/home/admin/cli/tests/runner erase'".format(client_id))
         if ret_code != 0:
             raise RuntimeError(
-                'failed to retrieve the list of tests')
-        test_list = [(name, None) for name in output.split()]
-        # call auxiliar method to run each test
-        self._clitest_loop(test_list)
+                'failed to clear coverage data')
 
+        test_list = []
         # field tests section (uses real resources)
         if self._field_tests:
             ret_code, _ = self._session.run(
@@ -179,8 +176,9 @@ class Manager(object):
             # copy the tests from builder to cli container
             target_test_dir = '/home/admin/field_tests'
             ret_code, output = self._session.run(
-                "docker cp {} tessia_cli_1:{}"
-                .format(self._field_tests, target_test_dir))
+                "docker cp {0} {1}:{2} && "
+                "docker exec {1} bash -c 'chown admin. -R {2}'"
+                .format(self._field_tests, client_id, target_test_dir))
             if ret_code != 0:
                 raise RuntimeError(
                     'failed to copy field tests to container: {}'.format(
@@ -188,21 +186,34 @@ class Manager(object):
 
             # get the list of tests and execute them
             ret_code, output = self._session.run(
-                "docker exec --user admin tessia_cli_1 "
+                "docker exec --user admin {} "
                 "bash -c '/home/admin/cli/tests/runner list --src={} --terse'"
-                .format(target_test_dir))
+                .format(client_id, target_test_dir))
             if ret_code != 0:
                 raise RuntimeError(
                     'failed to retrieve the list of field tests: {}'.format(
                         output))
             test_list = [(name, target_test_dir) for name in output.split()]
-            # call auxiliar method to run each test
-            self._clitest_loop(test_list)
+        # static client tests
+        else:
+            # get the list of tests to execute
+            ret_code, output = self._session.run(
+                "docker exec --user admin {} "
+                "bash -c '/home/admin/cli/tests/runner list --terse'"
+                .format(client_id))
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to retrieve the list of tests')
+            test_list = [(name, None) for name in output.split()]
+
+        # call auxiliar method to run each test
+        self._clitest_loop(test_list)
 
         # report coverage level
         self._session.run(
-            'docker exec --user admin tessia_cli_1 '
-            '/home/admin/cli/tests/runner report', stdout=True)
+            'docker exec --user admin {} '
+            '/home/admin/cli/tests/runner report'.format(client_id),
+            stdout=True)
     # _clitest_exec()
 
     def _clitest_loop(self, test_list):
@@ -216,6 +227,8 @@ class Manager(object):
         Raises:
             RuntimeError: in case any operation fails
         """
+        client_id = self._images['tessia-cli'].container_name
+        server_id = self._images['tessia-server'].container_name
         # execute each test by calling the cli test runner
         for test, src_dir in test_list:
             test_param = '--name={}'.format(test)
@@ -227,10 +240,10 @@ class Manager(object):
             # cumulative) and do not display report (it will be displayed after
             # all tests have finished)
             ret_code, _ = self._session.run(
-                'docker exec --user admin tessia_cli_1 '
+                'docker exec --user admin {} '
                 '/home/admin/cli/tests/runner exec --cov-erase=no '
                 '--cov-report=no --api-url=https://{}:5000 {}'
-                .format(self._fqdn, test_param)
+                .format(client_id, self._fqdn, test_param)
             )
             # test failed: stop testing
             if ret_code != 0:
@@ -240,12 +253,9 @@ class Manager(object):
             # clear the database in preparation for next test
             self._logger.info('[clitest] cleaning db for next test')
             ret_code, output = self._session.run(
-                'docker-compose stop && '
-                'docker-compose rm -vf db && '
-                'docker volume rm tessia_db-data && '
-                # no-recreate is important to keep previous coverage results in
-                # cli container
-                'docker-compose up --no-recreate -d'
+                'docker exec {} bash -c "supervisorctl stop all && '
+                'tess-dbmanage reset -y && tess-dbmanage init && '
+                'supervisorctl start all"'.format(server_id)
             )
             if ret_code != 0:
                 raise RuntimeError(
@@ -301,6 +311,10 @@ class Manager(object):
                 compose_cfg['services']['cli']['volumes'] = [
                     '{}/cli:/home/admin/cli:ro'.format(REPO_DIR)]
 
+        # static tests: do not expose ports unnecessarily
+        if cli_test and not self._field_tests:
+            compose_cfg['services']['server'].pop('ports')
+
         if self._img_passwd:
             (compose_cfg['services']['server']['environment']
              ['TESSIA_LIVE_IMG_PASSWD']) = self._img_passwd
@@ -312,23 +326,42 @@ class Manager(object):
         with open('.env', 'w') as file_fd:
             file_fd.write(
                 "COMPOSE_FILE=.docker-compose.yaml\n"
-                "COMPOSE_PROJECT_NAME={}\n"
+                "COMPOSE_PROJECT_NAME=tessia\n"
                 "TESSIA_DOCKER_TAG={}\n"
                 "TESSIA_SERVER_FQDN={}\n"
-                .format(COMPOSE_PROJECT_NAME, self._tag, self._fqdn)
+                .format(self._tag, self._fqdn)
             )
-        ret_code, output = self._session.run('docker-compose up -d')
+        ret_code, output = self._session.run(
+            'docker-compose down -v && docker-compose up -d')
         if ret_code != 0:
             raise RuntimeError(
                 'failed to start services: {}'.format(output))
+
+        # store the id of each started container
+        for service in ['server', 'cli']:
+            image_obj = self._images['tessia-{}'.format(service)]
+            ret_code, output = self._session.run(
+                'docker-compose ps -q {}'.format(service))
+            if ret_code != 0:
+                raise RuntimeError(
+                    'failed to get container name for service {}: {}'.format(
+                        service, output))
+            if len(output.strip().splitlines()) > 1:
+                raise RuntimeError(
+                    'Multiple containers found for service {}. Use '
+                    'COMPOSE_PROJECT_NAME if you want to run parallel '
+                    'instances.'.format(service))
+            image_obj.container_name = output.strip()
+        server_id = self._images['tessia-server'].container_name
+        client_id = self._images['tessia-cli'].container_name
 
         # user-provided hostname for http install server: use it in place of
         # fqdn (for cases where fqdn is not reachable)
         if self._install_server_hostname:
             ret_code, output = self._session.run(
-                'docker exec tessia_server_1 yamlman update '
+                'docker exec {} yamlman update '
                 '/etc/tessia/server.yaml auto_install.url http://{}/static'
-                .format(self._install_server_hostname)
+                .format(server_id, self._install_server_hostname)
             )
             if ret_code != 0:
                 raise RuntimeError(
@@ -348,9 +381,9 @@ class Manager(object):
         self._logger.info('waiting for api to come up (60 secs)')
         while ret_code != 0 and time.time() < timeout:
             ret_code, _ = self._session.run(
-                "docker exec tessia_cli_1 bash -c '"
+                "docker exec {} bash -c '"
                 "openssl s_client -connect {}:5000 "
-                "< /dev/null &>/dev/null'".format(self._fqdn)
+                "< /dev/null &>/dev/null'".format(client_id, self._fqdn)
             )
             time.sleep(5)
         if ret_code != 0:
@@ -358,11 +391,11 @@ class Manager(object):
 
         # download ssl certificate to client
         cmd = (
-            'docker exec tessia_cli_1 bash -c \''
+            'docker exec {} bash -c \''
             'openssl s_client -showcerts -connect {}:5000 '
             '< /dev/null 2>/dev/null | '
             'sed -ne "/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p" '
-            '> /etc/tessia-cli/ca.crt\''.format(self._fqdn)
+            '> /etc/tessia-cli/ca.crt\''.format(client_id, self._fqdn)
         )
         ret_code, output = self._session.run(cmd)
         if ret_code != 0:
@@ -372,9 +405,10 @@ class Manager(object):
         # dev/test mode: set the free authenticator in api
         if dev_mode or cli_test:
             ret_code, output = self._session.run(
-                'docker exec tessia_server_1 yamlman update '
+                'docker exec {0} yamlman update '
                 '/etc/tessia/server.yaml auth.login_method free && '
-                'docker exec tessia_server_1 supervisorctl restart tessia-api')
+                'docker exec {0} supervisorctl restart tessia-api'
+                .format(server_id))
             if ret_code != 0:
                 raise RuntimeError(
                     'failed to set authenticator config: {}'.format(output))
@@ -382,8 +416,8 @@ class Manager(object):
         # add auth token to admin user in client to make it ready for use
         # better hide token from logs
         ret_code, output = self._session.run(
-            'docker exec tessia_server_1 tess-dbmanage get-token 2>/dev/null',
-            stdout=False)
+            'docker exec {} tess-dbmanage get-token 2>/dev/null'
+            .format(server_id), stdout=False)
         if ret_code != 0:
             raise RuntimeError(
                 "failed to fetch admin's authorization token: {}'"
@@ -391,9 +425,9 @@ class Manager(object):
         cmd_env = os.environ.copy()
         cmd_env['db_token'] = output.strip()
         ret_code, output = self._session.run(
-            'docker exec tessia_cli_1 bash -c "mkdir {0} &>/dev/null; '
-            'echo $db_token > {0}/auth.key && chown -R admin. {0}"'
-            .format('/home/admin/.tessia-cli'), env=cmd_env
+            'docker exec {0} bash -c "mkdir {1} &>/dev/null; '
+            'echo $db_token > {1}/auth.key && chown -R admin. {1}"'
+            .format(client_id, '/home/admin/.tessia-cli'), env=cmd_env
         )
         if ret_code != 0:
             raise RuntimeError(
@@ -407,13 +441,8 @@ class Manager(object):
         etc.)
         """
         ret_code, output = self._session.run(
-            'test -e .env && docker-compose stop && '
-            'docker-compose rm -vf && '
-            'rm -f .env .docker-compose.yaml && '
-            'docker volume rm {proj_name}_db-data '
-            '{proj_name}_server-etc {proj_name}_server-jobs && '
-            'docker network rm {proj_name}_cli_net '
-            '{proj_name}_db_net'.format(proj_name=COMPOSE_PROJECT_NAME)
+            'test -e .env && docker-compose down -v && '
+            'rm -f .env .docker-compose.yaml'
         )
         if ret_code != 0:
             self._logger.warning(
@@ -448,7 +477,7 @@ class Manager(object):
         Start all the containers and keep them running until manually
         stopped.
         """
-        for image_obj in self._images:
+        for image_obj in self._images.values():
             if image_obj.is_avail():
                 continue
             raise RuntimeError(
@@ -506,7 +535,7 @@ class Manager(object):
 
         with tempfile.TemporaryDirectory() as work_dir:
             # tell each image object to perform build
-            for image_obj in self._images:
+            for image_obj in self._images.values():
                 image_obj.build(work_dir)
     # _stage_build()
 
@@ -539,7 +568,7 @@ class Manager(object):
                         output)
 
         # tell each image to remove its associated image and containers
-        for image_obj in self._images:
+        for image_obj in self._images.values():
             image_obj.cleanup()
     # _stage_cleanup
 
@@ -572,7 +601,7 @@ class Manager(object):
                 '[push] registry url not specified; skipping')
             return
 
-        for image in self._images:
+        for image in self._images.values():
             image.push(self._registry_url)
     # _stage_push()
 
@@ -581,7 +610,7 @@ class Manager(object):
         Tell each image object to execute unit tests.
         """
         self._logger.info('new stage: unittest')
-        for image in self._images:
+        for image in self._images.values():
             image.unit_test()
     # _stage_unittest()
 

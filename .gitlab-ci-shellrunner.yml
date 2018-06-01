@@ -1,7 +1,7 @@
 stages:
   - build
-  - unittests
-  - clitests
+  - tests
+  - full-fieldtests
   - release
   - cleanup
 
@@ -13,23 +13,83 @@ build_cli:
   stage: build
   script:
     - tools/ci/orc build --tag=$CI_COMMIT_REF_SLUG --image=tessia-cli
+  except:
+    - schedules
 
 build_server:
   stage: build
   script:
     - tools/ci/orc build --tag=$CI_COMMIT_REF_SLUG --image=tessia-server
+  except:
+    - schedules
 
 unittests_server:
   coverage: '/^TOTAL.*\s+(\d+\%)$/'
-  stage: unittests
+  stage: tests
   script:
     - tools/ci/orc unittest --tag=$CI_COMMIT_REF_SLUG --image=tessia-server
+  except:
+    - schedules
 
 clitests:
-  stage: clitests
+  stage: tests
   script:
-    # additional supported parameters are set by runner
-    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG ${TESSIA_CLITEST_PARAMS}
+    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG
+  except:
+    - schedules
+
+fieldtests_lite:
+  stage: tests
+  before_script:
+    # variables are set in runner config
+    - "[ -z $TESSIA_FTESTS_LITE_DIR ] && { echo error: variable not defined; exit 1; }"
+    - "[ -z $TESSIA_IMG_PASSWD_FILE ] && { echo error: variable not defined; exit 1; }"
+  script:
+    # use a different project name to avoid conflict with clitests job
+    - COMPOSE_PROJECT_NAME=tessiafieldtest tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_LITE_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
+  except:
+    - schedules
+  tags:
+    - install-runner-lite
+
+# full set installations will run on schedules since they take a long time
+fieldtests_full_schedule:
+  stage: full-fieldtests
+  before_script:
+    # variables are set in runner config
+    - "[ -z $TESSIA_FTESTS_FULL_DIR ] && { echo error: variable not defined; exit 1; }"
+    - "[ -z $TESSIA_IMG_PASSWD_FILE ] && { echo error: variable not defined; exit 1; }"
+    # make sure the deps from orc are met and up-to-date
+    - pip3 install --user -U pip -rtools/ci/requirements.txt
+    - tools/ci/orc build --tag=$CI_COMMIT_REF_SLUG
+  script:
+    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_FULL_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
+  after_script:
+    - tools/ci/orc cleanup --tag=${TESSIA_IMAGE_TAG}
+  only:
+    - schedules
+  tags:
+    - install-runner-full
+
+# this job entry allows full set installations to be triggered manually
+fieldtests_full_manual:
+  stage: full-fieldtests
+  before_script:
+    # variables are set in runner config
+    - "[ -z $TESSIA_FTESTS_FULL_DIR ] && { echo error: variable not defined; exit 1; }"
+    - "[ -z $TESSIA_IMG_PASSWD_FILE ] && { echo error: variable not defined; exit 1; }"
+    # make sure the deps from orc are met and up-to-date
+    - pip3 install --user -U pip -rtools/ci/requirements.txt
+    - tools/ci/orc build --tag=$CI_COMMIT_REF_SLUG
+  script:
+    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_FULL_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
+  after_script:
+    - tools/ci/orc cleanup --tag=${TESSIA_IMAGE_TAG}
+  when: manual
+  except:
+    - schedules
+  tags:
+    - install-runner-full
 
 release:
   stage: release
@@ -45,9 +105,13 @@ release:
   only:
     - master
     - tags
+  except:
+    - schedules
 
 cleanup:
   stage: cleanup
   script:
     - tools/ci/orc cleanup --tag=$CI_COMMIT_REF_SLUG
   when: always
+  except:
+    - schedules

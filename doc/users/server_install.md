@@ -28,6 +28,8 @@ You will need docker 1.12.0+ and docker-compose 1.9.0+ installed on your system.
 ```
 # install pip for python3
 $ apt-get install python3-pip
+# we recommend to remove pip from distro to avoid conflicts
+$ apt-get -y remove python3-pip && hash -r
 
 # clone repo and install the deploy tool requirements
 $ git clone https://gitlab.com/tessia-project/tessia.git
@@ -160,7 +162,7 @@ $ apt-get install --no-install-recommends \
     libpq-dev \
     libpq5 \
     s3270
-$ pip3 install -U pip==9.0.1 setuptools
+$ pip3 install -U pip setuptools
 ```
 
 Install the application files:

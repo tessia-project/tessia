@@ -27,6 +27,8 @@ RUN apt-get -q update > /dev/null && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     # set up python packaging tools
     pip3 -q install -U setuptools pip && \
+    # remove pip from distro to avoid conflicts
+    apt-get -y remove python3-pip && hash -r && \
     # add the admin user for administrative work
     useradd -ms /bin/bash admin
 
@@ -41,6 +43,7 @@ RUN cd /assets && \
     # call pip through the wrapper so that versioning works
     ./pip-install -U -r dev-requirements.txt . && \
     # remove unneeded dependencies used only for building
+    apt-mark hold python3 && \
     apt-get -yq purge --auto-remove \
     build-essential \
     python3-dev > /dev/null && \

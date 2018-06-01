@@ -267,15 +267,15 @@ NUMA node0 CPU(s):     0-255
         # new format (lsmem's C port)
         lsmem_output = (
             """cpc3lp52.domain.com | SUCCESS | rc=0 >>
-RANGE                                  SIZE  STATE REMOVABLE BLOCK
-0x0000000000000000-0x000000006fffffff  1.8G online       yes   0-6
-0x0000000070000000-0x000000007fffffff  256M online        no     7
-0x0000000080000000-0x00000000bfffffff    1G online       yes  8-11
-0x00000000c0000000-0x00000000ffffffff    1G online        no 12-15
+RANGE                                        SIZE  STATE REMOVABLE BLOCK
+0x0000000000000000-0x000000006fffffff  2147483648 online       yes   0-7
+0x0000000070000000-0x000000007fffffff   268435456 online        no     8
+0x0000000080000000-0x00000000bfffffff  1073741824 online       yes  9-12
+0x00000000c0000000-0x00000000ffffffff  1073741824 online       yes 13-16
 
-Memory block size:       256M
-Total online memory:       4G
-Total offline memory:      0B
+Memory block size:        268435456
+Total online memory:     4294967296
+Total offline memory:            0
 """
         )
         self._mock_check_output.side_effect = [
@@ -414,7 +414,7 @@ Total offline memory: 0 MB
 
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
-            lscpu_output, lsmem_output]
+            lscpu_output, RuntimeError(), lsmem_output]
     # _set_mocks_lpar_dasd()
 
     def test_facts_fail(self):

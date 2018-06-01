@@ -309,15 +309,25 @@ class PostInstallChecker(object):
         """
         # use lsmem to fetch memory info as /proc/meminfo coming from ansible
         # is not accurate
-        output = self._exec_ansible('command', 'lsmem')
+
+        # try first the newer lsmem version which can provide size in bytes
+        try:
+            output = self._exec_ansible('command', 'lsmem -b')
+            regex = r'Total online memory\s*:\s*(\d+)'
+        except RuntimeError:
+            output = self._exec_ansible('command', 'lsmem')
+            regex = r'Total online memory\s*:\s*(\d+)\s*(B|K|M|G|T)'
+
         self._logger.debug('lsmem output:\n %s', output)
 
-        match = re.search(r'Total online memory\s*:\s*(\d+)\s*(B|K|M|G|T)',
-                          output, re.IGNORECASE)
+        match = re.search(regex, output, re.IGNORECASE)
         if not match:
             raise RuntimeError('Failed to parse lsmem output')
-        memory = UNIT_TABLE[match.group(2).lower()](
-            int(match.group(1)))
+        if len(match.groups()) == 1:
+            unit = 'b'
+        else:
+            unit = match.group(2).lower()
+        memory = UNIT_TABLE[unit](int(match.group(1)))
 
         return memory
     # _fetch_memory()

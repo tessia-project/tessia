@@ -19,6 +19,7 @@ Unit test for system_profiles resource module
 #
 # IMPORTS
 #
+from tessia.server.api.resources.system_profiles import MARKER_HIDDEN_CRED
 from tessia.server.api.resources.system_profiles import SystemProfileResource
 from tessia.server.db import models
 from tests.unit.api.resources.secure_resource import TestSecureResource
@@ -42,6 +43,8 @@ class TestSystemProfile(TestSecureResource):
     RESOURCE_MODEL = models.SystemProfile
     # api object associated with the resource
     RESOURCE_API = SystemProfileResource
+    # target lpar for creating profiles
+    _target_lpar = 'lpar0'
 
     @classmethod
     def _entry_gen(cls):
@@ -52,12 +55,12 @@ class TestSystemProfile(TestSecureResource):
         while True:
             data = {
                 'name': 'Profile name {}'.format(index),
-                'system': "lpar0",
+                'system': cls._target_lpar,
                 'memory': 1024,
                 'cpu': 2,
                 'default': False,
                 'parameters': {},
-                'credentials': {},
+                'credentials': {'user': 'root', 'passwd': 'mypasswd'},
                 'operating_system': 'rhel7.2'
             }
             index += 1
@@ -555,24 +558,27 @@ class TestSystemProfile(TestSecureResource):
         """
         Exercise to remove entries with different roles
         """
-        # keep in mind that profiles use permissions from systems - which means
-        # the first field (login add) refers to the profile creation but when
-        # deleting it's the system's owner and project that count for
-        # permission validation
+        # keep in mind that profiles use permissions from systems and for
+        # deleting it's the UPDATE_SYSTEM permission that counts
         combos = [
             ('user_user@domain.com', 'user_user@domain.com'),
+            ('user_user@domain.com', 'user_privileged@domain.com'),
             ('user_user@domain.com', 'user_project_admin@domain.com'),
             ('user_user@domain.com', 'user_admin@domain.com'),
             ('user_user@domain.com', 'user_hw_admin@domain.com'),
+            ('user_privileged@domain.com', 'user_privileged@domain.com'),
             ('user_privileged@domain.com', 'user_project_admin@domain.com'),
             ('user_privileged@domain.com', 'user_admin@domain.com'),
             ('user_privileged@domain.com', 'user_hw_admin@domain.com'),
+            ('user_project_admin@domain.com', 'user_privileged@domain.com'),
             ('user_project_admin@domain.com', 'user_project_admin@domain.com'),
             ('user_project_admin@domain.com', 'user_hw_admin@domain.com'),
             ('user_project_admin@domain.com', 'user_admin@domain.com'),
+            ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_hw_admin@domain.com', 'user_project_admin@domain.com'),
             ('user_hw_admin@domain.com', 'user_hw_admin@domain.com'),
             ('user_hw_admin@domain.com', 'user_admin@domain.com'),
+            ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_admin@domain.com'),
             ('user_admin@domain.com', 'user_hw_admin@domain.com'),
         ]
@@ -591,17 +597,37 @@ class TestSystemProfile(TestSecureResource):
         """
         Try to remove an entry without permissions
         """
-        combos = [
-            # privileged can add and update but not delete
-            ('user_user@domain.com', 'user_privileged@domain.com'),
-            ('user_project_admin@domain.com', 'user_privileged@domain.com'),
-            ('user_project_admin@domain.com', 'user_restricted@domain.com'),
-            ('user_hw_admin@domain.com', 'user_privileged@domain.com'),
-            ('user_hw_admin@domain.com', 'user_restricted@domain.com'),
-            ('user_admin@domain.com', 'user_privileged@domain.com'),
-            ('user_admin@domain.com', 'user_restricted@domain.com'),
-        ]
-        self._test_del_no_role(combos)
+        # profiles use permissions from systems so when deleting it's the
+        # system's owner and project that count for permission validation,
+        # therefore we change the owner here so that user_user won't have
+        # permission to update the system
+        system_obj = models.System.query.filter_by(
+            name=self._target_lpar).one()
+        orig_owner = system_obj.owner
+        system_obj.owner = 'user_privileged@domain.com'
+        self.db.session.add(system_obj)
+        self.db.session.commit()
+
+        try:
+            combos = [
+                ('user_privileged@domain.com', 'user_restricted@domain.com'),
+                ('user_privileged@domain.com', 'user_user@domain.com'),
+                ('user_project_admin@domain.com',
+                 'user_restricted@domain.com'),
+                ('user_project_admin@domain.com', 'user_user@domain.com'),
+                ('user_hw_admin@domain.com', 'user_restricted@domain.com'),
+                ('user_hw_admin@domain.com', 'user_user@domain.com'),
+                ('user_admin@domain.com', 'user_restricted@domain.com'),
+                ('user_admin@domain.com', 'user_user@domain.com'),
+            ]
+            self._test_del_no_role(combos)
+        # restore system's owner
+        finally:
+            system_obj = models.System.query.filter_by(
+                name=self._target_lpar).one()
+            system_obj.owner = orig_owner
+            self.db.session.add(system_obj)
+            self.db.session.commit()
     # test_del_no_role()
 
     def test_list_and_read(self):
@@ -618,6 +644,53 @@ class TestSystemProfile(TestSecureResource):
 
         self._test_list_and_read('user_user@domain.com', logins)
     # test_list_and_read()
+
+    def test_list_and_read_hidden_credentials(self):
+        """
+        Make sure users without role in a project can't see systems'
+        credentials.
+        """
+        login_add = 'user_user@domain.com'
+        login_list = 'user_no_role@domain.com'
+
+        user_obj = models.User(
+            name='User with no role',
+            login=login_list,
+            admin=False,
+            restricted=False,
+            title='User title'
+        )
+        self.db.session.add(user_obj)
+        self.db.session.commit()
+
+        # store the existing entries and add them to the new ones for
+        # later validation
+        resp = self._do_request(
+            'list', '{}:a'.format(login_add), None)
+        entries = json.loads(resp.get_data(as_text=True))
+        # adjust id field to make the http response look like the same as the
+        # dict from the _create_many_entries return
+        for entry in entries:
+            entry['id'] = entry.pop('$uri').split('/')[-1]
+
+        # create some more entries to work with
+        new_entries, time_range = self._create_many_entries(login_add, 5)
+        entries += new_entries
+
+        # set the expected value of hidden
+        for entry in entries:
+            entry['credentials'] = MARKER_HIDDEN_CRED
+
+        # retrieve list
+        resp = self._do_request('list', '{}:a'.format(login_list), None)
+        self._assert_listed_or_read(resp, entries, time_range)
+
+        # perform a read
+        resp = self._do_request(
+            'get', '{}:a'.format(login_list), entries[0]['id'])
+        self._assert_listed_or_read(
+            resp, [entries[0]], time_range, read=True)
+    # test_list_and_read_hidden_credentials()
 
     def test_list_and_read_restricted_no_role(self):
         """

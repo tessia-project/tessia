@@ -456,6 +456,8 @@ class ResourceMixin(object):
     @hybrid_property
     def project(self):
         """Defines the project attribute pointing to project's name"""
+        if self.project_rel is None:
+            return None
         return self.project_rel.name
 
     @project.setter

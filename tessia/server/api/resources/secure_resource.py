@@ -27,12 +27,9 @@ from flask_potion.instances import Instances
 from flask_potion.instances import Pagination
 from flask_potion.routes import Route
 from tessia.server.api import exceptions as api_exceptions
+from tessia.server.lib.perm_manager import PermManager
 from tessia.server.db import exceptions as db_exceptions
-from tessia.server.db.models import Project
 from tessia.server.db.models import ResourceMixin
-from tessia.server.db.models import Role
-from tessia.server.db.models import RoleAction
-from tessia.server.db.models import UserRole
 from werkzeug.exceptions import Forbidden
 
 #
@@ -52,6 +49,14 @@ class SecureResource(ModelResource):
     capabilities. The method are not in alphabetical order because the
     decorators have dependencies between them.
     """
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor, creates permission manager instance.
+        """
+        super().__init__(*args, **kwargs)
+        self._perman = PermManager()
+    # __init__()
+
     # routes section, we reimplement the routes defined in ModelResource
     # to add the error handling and permission verification bits.
     # this is done in such a way that a family of do_{operation} methods are
@@ -84,8 +89,15 @@ class SecureResource(ModelResource):
 
         Returns:
             json: json response as defined by response_schema property
+
+        Raises:
+            Forbidden: in case user has no rights
         """
-        return self.do_read(id)
+        try:
+            item = self.do_read(id)
+        except PermissionError as exc:
+            raise Forbidden(description=str(exc))
+        return item
     # read()
     read.request_schema = None
     read.response_schema = Inline('self')
@@ -102,6 +114,9 @@ class SecureResource(ModelResource):
 
         Returns:
             json: json response as defined by response_schema property
+
+        Raises:
+            Forbidden: in case user has no rights
         """
         # set the property so that the field always reflects last user to
         # modify the item
@@ -114,6 +129,8 @@ class SecureResource(ModelResource):
         except db_exceptions.AssociationError as exc:
             raise api_exceptions.ItemNotFoundError(
                 exc.column, exc.value, self)
+        except PermissionError as exc:
+            raise Forbidden(description=str(exc))
 
         return item
     # create()
@@ -134,6 +151,9 @@ class SecureResource(ModelResource):
 
         Returns:
             json: json response as defined by response_schema property
+
+        Raises:
+            Forbidden: in case user has no rights
         """
         # set the property so that the field always reflects last user to
         # modify the item
@@ -146,6 +166,8 @@ class SecureResource(ModelResource):
         except db_exceptions.AssociationError as exc:
             raise api_exceptions.ItemNotFoundError(
                 exc.column, exc.value, self)
+        except PermissionError as exc:
+            raise Forbidden(description=str(exc))
 
         return item
     # update()
@@ -164,6 +186,9 @@ class SecureResource(ModelResource):
 
         Returns:
             any: the return value of do_delete
+
+        Raises:
+            Forbidden: in case user has no rights
         """
         try:
             ret = self.do_delete(id)
@@ -171,161 +196,11 @@ class SecureResource(ModelResource):
             # here we infer it's a integrity problem due to the lack of a
             # specific exception in potion exception hierarchy
             raise api_exceptions.IntegrityError(exc, self)
+        except PermissionError as exc:
+            raise Forbidden(description=str(exc))
         return ret
     # destroy()
     # end of routes section
-
-    def _assert_permission(self, action, target_obj, target_type):
-        """
-        Helper function, asserts if the logged user has the necessary
-        permissions to perform the specified action upon the target.
-
-        Args:
-            action (str): one of CREATE, UPDATE, DELETE
-            target_obj (ResourceMixin): sa's object
-            target_type (str): type of the target to report in case of error
-
-        Raises:
-            Forbidden: in case user has no permission
-        """
-        # user is owner or an administrator: permission is granted
-        if self._is_owner_or_admin(target_obj):
-            return
-
-        match = self._get_project_for_action(
-            action, target_obj.__tablename__, target_obj.project_id)
-        # no permission in target's project: report error
-        if match is None:
-            msg = ('User has no {} permission for the specified '
-                   '{}'.format(action, target_type))
-            raise Forbidden(description=msg)
-    # _assert_permission()
-
-    @staticmethod
-    def _get_project_for_action(action_name, resource_type, project_id=None):
-        """
-        Query the database and return the name of the project which allows
-        the user to perform the specified operation, or None if no such
-        permission exists.
-
-        Args:
-            action_name (str): the action to be performed (i.e. CREATE)
-            resource_type (string): tablename of target's resource
-            project_id (int): id of the target project, if None means
-                              to find a suitable project
-
-        Returns:
-            str: project name, or None if not found
-        """
-        query = Project.query.join(
-            UserRole, UserRole.project_id == Project.id
-        ).filter(
-            UserRole.user_id == flask_global.auth_user.id
-        ).filter(
-            RoleAction.role_id == UserRole.role_id
-        ).filter(
-            RoleAction.resource == resource_type.upper()
-        ).filter(
-            RoleAction.action == action_name
-        )
-        # no project specified: find one that allows the specified action
-        if project_id is None:
-            query = query.filter(UserRole.project_id == Project.id)
-        # project specified: verify if there is a permission for the user to
-        # perform the specified action on that project
-        else:
-            query = query.filter(UserRole.project_id == project_id)
-
-        project = query.first()
-        if project is not None:
-            project = project.name
-
-        return project
-    # _get_project_for_action()
-
-    def _get_project_for_create(self, resource_type, project):
-        """
-        If a project was specified, verify if the user has create permission on
-        it, otherwise the method tries to find a project where user has create
-        permission. In case both fail a forbidden exception is raised.
-        """
-        if project is None:
-            project_id = None
-        else:
-            try:
-                project_id = Project.query.filter_by(name=project).first().id
-            except AttributeError:
-                raise api_exceptions.ItemNotFoundError(
-                    'project', project, self)
-
-        # project specified by an admin user: no permission verification needed
-        if project_id is not None and flask_global.auth_user.admin:
-            return project
-
-        # perform the db query
-        project_match = self._get_project_for_action(
-            'CREATE', resource_type, project_id)
-
-        # permission was found or validated: return corresponding project
-        if project_match is not None:
-            return project_match
-
-        # user had not specified project: report no project with permission
-        # was found
-        if project is None:
-            msg = ('No create permission found for the user in any '
-                   'project')
-        # project was specified: report that user has no permission on it
-        else:
-            msg = ('User has no create permission for the specified '
-                   'project')
-        # send the forbidden response with the appropriate explanation
-        raise Forbidden(description=msg)
-    # _get_project_for_create()
-
-    @staticmethod
-    def _get_role_for_project(project_id):
-        """
-        Query the db for any role associated with the authenticated user on
-        the passed project.
-
-        Args:
-            project_id (int): id of the target project
-
-        Returns:
-            UserRole: a role associated with user or None if not found
-        """
-        query = UserRole.query.join(
-            'project_rel'
-        ).join(
-            'user_rel'
-        ).join(
-            'role_rel'
-        ).filter(
-            UserRole.user_id == flask_global.auth_user.id
-        ).filter(
-            Role.id == UserRole.role_id
-        ).filter(
-            UserRole.project_id == project_id
-        )
-        return query.first()
-    # _get_role_for_project()
-
-    @staticmethod
-    def _is_owner_or_admin(target_obj):
-        """
-        Return whether the logged user is the owner of the target object or an
-        administrator.
-
-        Args:
-            target_obj (ResourceMixin): sa's object
-
-        Returns:
-            bool: True if logged user is administrator or owner of the target
-        """
-        return (target_obj.owner_id == flask_global.auth_user.id or
-                flask_global.auth_user.admin)
-    # _is_owner_or_admin()
 
     def do_create(self, properties):
         """
@@ -343,21 +218,18 @@ class SecureResource(ModelResource):
         Returns:
             int: id of created item
         """
-        # model is a special resource: only admins can handle it
-        if not issubclass(self.meta.model, ResourceMixin):
-            # user is admin: the operation is allowed
-            if flask_global.auth_user.admin:
-                return self.manager.create(properties).id
+        new_item = self.meta.model()
+        # no project specified: find a role in a project while validating
+        # permissions
+        if properties.get('project') is None:
+            properties['project'] = self._perman.can(
+                'CREATE', flask_global.auth_user, new_item)
+        else:
+            # this can raise AssociationError which gets caught by create()
+            new_item.project = properties['project']
+            self._perman.can(
+                'CREATE', flask_global.auth_user, new_item)
 
-            # for non admins, action is prohibited
-            raise Forbidden(
-                'You need administrator privileges to perform this '
-                'operation')
-
-        project = self._get_project_for_create(
-            self.meta.model.__tablename__, properties.get('project', None))
-
-        properties['project'] = project
         # if not defined create the item beloging to the user requesting it
         properties['owner'] = properties.get('owner') or \
             flask_global.auth_user.login
@@ -385,22 +257,9 @@ class SecureResource(ModelResource):
         Returns:
             bool: True
         """
-        # model is a special resource: only admins can handle it
-        if not issubclass(self.meta.model, ResourceMixin):
-            # user is admin: the operation is allowed
-            if flask_global.auth_user.admin:
-                self.manager.delete_by_id(id)
-                return True
-
-            # for non admins, action is prohibited
-            raise Forbidden(
-                'You need administrator privileges to perform this '
-                'operation')
-
         entry = self.manager.read(id)
 
-        # validate user permission on object
-        self._assert_permission('DELETE', entry, 'resource')
+        self._perman.can('DELETE', flask_global.auth_user, entry)
 
         self.manager.delete_by_id(id)
         return True
@@ -428,16 +287,15 @@ class SecureResource(ModelResource):
             return self.manager.paginated_instances(**kwargs)
 
         # for restricted users, filter the list by the projects they have
-        # access or if they own the resource
+        # access or the resources they own
         allowed_instances = []
         for instance in self.manager.instances(kwargs.get('where'),
                                                kwargs.get('sort')):
-            # user is not the resource's owner or an administrator: verify if
-            # they have a role in resource's project
-            if not self._is_owner_or_admin(instance):
-                # no role in resource's project: cannot list
-                if self._get_role_for_project(instance.project_id) is None:
-                    continue
+            try:
+                self._perman.can(
+                    'READ', flask_global.auth_user, instance)
+            except PermissionError:
+                continue
 
             allowed_instances.append(instance)
 
@@ -464,20 +322,7 @@ class SecureResource(ModelResource):
         """
         item = self.manager.read(id)
 
-        # model is a special resource: reading is allowed for all
-        if not issubclass(self.meta.model, ResourceMixin):
-            return item
-        # non restricted user: regular resource reading is allowed
-        elif not flask_global.auth_user.restricted:
-            return item
-
-        # user is not the resource's owner or an administrator: verify if
-        # they have a role in resource's project
-        if not self._is_owner_or_admin(item):
-            # no role in resource's project: access forbidden
-            if self._get_role_for_project(item.project_id) is None:
-                msg = 'User has no READ permission for the specified resource'
-                raise Forbidden(description=msg)
+        self._perman.can('READ', flask_global.auth_user, item)
 
         return item
     # do_read()
@@ -501,23 +346,10 @@ class SecureResource(ModelResource):
             int: id of updated item
 
         """
-        # model is a special resource: only admins can handle it
-        if not issubclass(self.meta.model, ResourceMixin):
-            # not an admin user: action is prohibited
-            if not flask_global.auth_user.admin:
-                raise Forbidden(
-                    'You need administrator privileges to perform this '
-                    'operation')
-
-            # user is admin: the operation is allowed
-            item = self.manager.read(id)
-            updated_item = self.manager.update(item, properties)
-            return updated_item.id
-
         item = self.manager.read(id)
 
         # validate permission on the object
-        self._assert_permission('UPDATE', item, 'resource')
+        self._perman.can('UPDATE', flask_global.auth_user, item)
 
         updated_item = self.manager.update(item, properties)
 

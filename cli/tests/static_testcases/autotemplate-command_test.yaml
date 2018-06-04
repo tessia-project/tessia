@@ -78,7 +78,7 @@ tasks:
     - - autotemplate add --name=RHEL7.3 --content='rhel7.3_template'
       - 'The client encountered an unexpected problem, the error is:'
     - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --desc='Template for Ubuntu 16.04'
-      - 'permission denied. Server answered: No create permission found for the user in any project'
+      - 'permission denied. Server answered: Could not detect which project to use, specify one'
     - - autotemplate add --name=UBUNTU16.04 --content='ubuntu16.04_template' --desc='Template for Ubuntu 16.04' --project='GEO_1 developers'
       - Item added successfully.
     - - autotemplate edit

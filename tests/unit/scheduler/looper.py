@@ -286,9 +286,9 @@ class TestLooper(TestCase):
             SchedulerJob: model's instance
         """
         if res_exc is None:
-            res_exc = ['A']
+            res_exc = ['lpar0']
         if res_shared is None:
-            res_shared = ['B']
+            res_shared = ['cpc0']
 
         request = self._make_request(
             self._make_resources(res_exc, res_shared),
@@ -492,7 +492,7 @@ class TestLooper(TestCase):
         state whose process is still alive
         """
         # job with exclusive and shared resources allocated
-        job = self._make_alive_job(['A'], ['B'])
+        job = self._make_alive_job(['lpar0'], ['cpc0'])
         self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
 
@@ -501,7 +501,7 @@ class TestLooper(TestCase):
             job.id)
 
         # job with only exclusive resource allocated
-        job = self._make_alive_job(['A'], [])
+        job = self._make_alive_job(['lpar0'], [])
         self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
 
@@ -510,7 +510,7 @@ class TestLooper(TestCase):
             job.id)
 
         # job with only shared resource allocated
-        job = self._make_alive_job([], ['B'])
+        job = self._make_alive_job([], ['cpc0'])
         self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
 
@@ -553,8 +553,8 @@ class TestLooper(TestCase):
 
         # create two jobs with resources and one without and add them to the db
         jobs_with_resources = [
-            self._make_job([], ['B'], self._requester),
-            self._make_job(['A'], ['B'], self._requester)
+            self._make_job([], ['cpc0'], self._requester),
+            self._make_job(['lpar0'], ['cpc0'], self._requester)
         ]
         job_no_res = self._make_job([], [], self._requester)
         all_jobs = jobs_with_resources + [job_no_res]
@@ -722,7 +722,7 @@ class TestLooper(TestCase):
         are not available.
         """
         request = self._make_request(
-            self._make_resources(['A'], []),
+            self._make_resources(['lpar0'], []),
             self._requester,
             commit=True)
 
@@ -750,7 +750,7 @@ class TestLooper(TestCase):
         to start its process.
         """
         request = self._make_request(
-            self._make_resources(['A'], []),
+            self._make_resources(['lpar0'], []),
             self._requester,
             commit=True)
 
@@ -780,12 +780,12 @@ class TestLooper(TestCase):
         # invalid action type
         with self.assertRaises(ValueError):
             self._make_request(
-                self._make_resources(['A'], []),
+                self._make_resources(['lpar0'], []),
                 self._requester, action_type="#", commit=True)
 
         # request with invalid job type
         request = self._make_request(
-            self._make_resources(['A'], []),
+            self._make_resources(['lpar0'], []),
             self._requester, job_type="#", commit=True)
         self._looper.loop()
 
@@ -803,7 +803,7 @@ class TestLooper(TestCase):
             side_effect=RuntimeError)
 
         request = self._make_request(
-            self._make_resources(['A'], []), self._requester, commit=True)
+            self._make_resources(['lpar0'], []), self._requester, commit=True)
 
         # run loop and restore original echo machine
         self._looper.loop()
@@ -822,7 +822,7 @@ class TestLooper(TestCase):
         """
         # submit a new job request
         request = self._make_request(
-            self._make_resources(['A'], []),
+            self._make_resources(['lpar0'], []),
             self._requester,
             commit=True)
 
@@ -859,7 +859,7 @@ class TestLooper(TestCase):
         Submit a request to cancel a job that is running state.
         """
         # create a running job
-        job = self._make_alive_job(['A'], ['B'])
+        job = self._make_alive_job(['lpar0'], ['cpc0'])
 
         # create the cancel request
         request = self._make_request(
@@ -896,7 +896,7 @@ class TestLooper(TestCase):
         Exercise submitting a cancel request while job is in clean up phase.
         """
         # create a running job
-        job = self._make_alive_job(['A'], ['B'])
+        job = self._make_alive_job(['lpar0'], ['cpc0'])
 
         # create the cancel request
         request = self._make_request(
@@ -941,7 +941,7 @@ class TestLooper(TestCase):
         Submit a request to cancel a job that died in the meantime.
         """
         # create a running job
-        job = self._make_alive_job(['A'], ['B'])
+        job = self._make_alive_job(['lpar0'], ['cpc0'])
 
         # create the cancel request
         request = self._make_request(
@@ -983,7 +983,7 @@ class TestLooper(TestCase):
         Submit a request to cancel a job whose state is unknown
         """
         # create a running job
-        job = self._make_alive_job(['A'], ['B'])
+        job = self._make_alive_job(['lpar0'], ['cpc0'])
 
         # create the cancel request
         request = self._make_request(
@@ -1009,7 +1009,7 @@ class TestLooper(TestCase):
         """
         Submit a request to cancel a job that has already finished
         """
-        job = self._make_job(['A'], [], self._requester,
+        job = self._make_job(['lpar0'], [], self._requester,
                              state=SchedulerJob.STATE_COMPLETED)
         self._session.add(job)
         self._session.flush()
@@ -1041,7 +1041,7 @@ class TestLooper(TestCase):
         self._mock_resources_man.validate_resources.return_value = False
 
         request = self._make_request(
-            self._make_resources(['A'], []),
+            self._make_resources(['lpar0'], []),
             self._requester,
             commit=True)
 
@@ -1057,7 +1057,7 @@ class TestLooper(TestCase):
         self._mock_resources_man.can_enqueue.return_value = False
 
         request = self._make_request(
-            self._make_resources(['A'], []),
+            self._make_resources(['lpar0'], []),
             self._requester,
             commit=True)
 
@@ -1085,6 +1085,36 @@ class TestLooper(TestCase):
 
         self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
         self.assertRegex(request.result.lower(), 'parser not found')
+
+    def test_submit_no_permission(self):
+        """
+        Submit a job with a user without permission to update a system
+        """
+        requester = User()
+        requester.login = 'no_permission@domain.com'
+        requester.name = 'User without permission'
+        requester.restricted = False
+        requester.admin = False
+        self._session.add(requester)
+        self._session.commit()
+
+        error_msg = (
+            'Permission validation for resource lpar0 failed: User has no '
+            'UPDATE permission for the specified system')
+        try:
+            request = self._make_request(
+                self._make_resources(['lpar0'], ['cpc0']),
+                requester,
+                commit=True)
+            self._looper.loop()
+        finally:
+            self._session.delete(request)
+            self._session.delete(requester)
+            self._session.commit()
+
+        self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
+        self.assertRegex(request.result, error_msg)
+    # test_submit_no_permission()
 
     def test_signal_handler(self):
         """

@@ -46,7 +46,7 @@ except ImportError:
 @click.option(
     'field_tests', '--fieldtests',
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
-    help='dir path with field tests to execute')
+    help='dir path with custom field tests to execute')
 @click.option(
     'img_passwd_file', '--img-passwd-file',
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
@@ -121,7 +121,7 @@ def cleanup(tag):
 @click.option(
     'field_tests', '--fieldtests',
     type=click.Path(exists=True, file_okay=False, resolve_path=True),
-    help='dir path with additional field tests to execute')
+    help='dir path with custom field tests to execute')
 @click.option(
     'img_passwd_file', '--img-passwd-file',
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),

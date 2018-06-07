@@ -53,6 +53,9 @@ class DockerImage(object):
         self._tag = image_tag
         # full image name
         self._fullname = '{}:{}'.format(self._name, self._tag)
+        # container name - can be updated by manager when using compose
+        self.container_name = '{}-{}'.format(self._name, self._tag)
+
         # open session to the build machine
         self._session = session
     # __init__()
@@ -74,8 +77,6 @@ class DockerImage(object):
             RuntimeError: in case of missing parameters
         """
         docker_cmd = ''
-        container_name = '{name}-{tag}'.format(
-            name=self._name, tag=self._tag)
         if action == 'build':
             if context_dir is None:
                 raise RuntimeError(
@@ -99,7 +100,7 @@ class DockerImage(object):
                 '--entrypoint {cmd} {image_name} {cmd_args}'
             )
             docker_cmd = docker_run.format(
-                container_name=container_name,
+                container_name=self.container_name,
                 image_name=self._fullname,
                 args=args,
                 cmd=cmd_args[0],
@@ -108,12 +109,12 @@ class DockerImage(object):
         elif action == 'exec':
             docker_cmd = (
                 'docker exec {args} {container_name} {cmd}'.format(
-                    container_name=container_name, args=args, cmd=cmd)
+                    container_name=self.container_name, args=args, cmd=cmd)
             )
         elif action == 'rm':
             docker_cmd = (
                 'docker rm {args} {container_name}'.format(
-                    args=args, container_name=container_name)
+                    args=args, container_name=self.container_name)
             )
 
         return docker_cmd

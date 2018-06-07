@@ -91,6 +91,10 @@ REQUEST_SCHEMA = {
             # at lest one system must be specified
             'minItems': 1,
         },
+        "verbosity": {
+            "type": "string",
+            "enum": list(BaseMachine._LOG_LEVELS),
+        },
         'verify': {
             'type': 'boolean'
         },
@@ -123,11 +127,14 @@ class PowerManagerMachine(BaseMachine):
         # connecting to db
         MANAGER.connect()
 
-        CONF.log_config()
-        self._logger = logging.getLogger(__name__)
-
         # process params and fetch necessary data
         self._params = self._load_data(params)
+
+        # user specified custom log level: apply it to log config
+        if 'verbosity' in self._params:
+            CONF.log_config(conf=self._LOG_CONFIG,
+                            log_level=self._params['verbosity'])
+        self._logger = logging.getLogger(__name__)
 
         # keep track of systems which already incurred in the operation to
         # avoid double work

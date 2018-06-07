@@ -45,7 +45,8 @@ def main():
     # parser error can occur here to inform user of wrong options provided
     parsed_args = parser.parse_args()
 
-    CONF.log_config(debug=parsed_args.debug)
+    log_level = {True: 'DEBUG', False: None}[parsed_args.debug]
+    CONF.log_config(log_level=log_level)
 
     # import the app late to make sure all logging is configured first
     from tessia.server.scheduler.looper import Looper

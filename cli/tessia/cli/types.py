@@ -440,6 +440,22 @@ class Url(click.ParamType):
 
 URL = Url()
 
+class VerbosityLevel(click.Choice):
+    """
+    Represents verbosity levels for jobs.
+    """
+    ALLOWED_LEVELS = ("critical", "error", "warning", "info", "debug")
+
+    def convert(self, value, param, ctx):
+        """
+        Convert values to uppercase
+        """
+        return (super().convert(value, param, ctx)).upper()
+    # convert
+# VerbosityLevel
+
+VERBOSITY_LEVEL = VerbosityLevel(VerbosityLevel.ALLOWED_LEVELS)
+
 class VolumeId(click.ParamType):
     """
     Represents the id of a storage volume

@@ -20,7 +20,6 @@ Machine to enable the usage of ansible playbooks
 # IMPORTS
 #
 from jsonschema import validate
-from tessia.server.config import CONF
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import System
 from tessia.server.db.models import SystemProfile
@@ -134,7 +133,6 @@ class AnsibleMachine(BaseMachine):
         # connecting to db
         MANAGER.connect()
 
-        CONF.log_config()
         self._logger = logging.getLogger(__name__)
 
         # validate params and store them

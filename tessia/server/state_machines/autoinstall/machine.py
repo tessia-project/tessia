@@ -47,7 +47,8 @@ INSTALL_REQ_PARAMS_SCHEMA = {
         "os": {"type": "string"},
         "profile": {"type": "string"},
         "template": {"type": "string"},
-        "system": {"type": "string"}
+        "system": {"type": "string"},
+        "verbosity": {"type": "string", "enum": list(BaseMachine._LOG_LEVELS)}
     },
     "required": [
         "os",
@@ -85,14 +86,17 @@ class AutoInstallMachine(BaseMachine):
         """
         super(AutoInstallMachine, self).__init__(params)
 
-        # Create the first connection
+        # open the db connection
         MANAGER.connect()
 
-        CONF.log_config()
+        self._params = self.parse(params)['params']
+
+        # user specified custom log level: apply it to log config
+        if 'verbosity' in self._params:
+            CONF.log_config(conf=self._LOG_CONFIG,
+                            log_level=self._params['verbosity'])
+
         self._logger = logging.getLogger(__name__)
-        # The content of the request is validated in the parse method.
-        # so it is not checked here.
-        self._params = json.loads(params)
 
         self._machine = self._create_machine()
     # __init__()
@@ -255,7 +259,8 @@ class AutoInstallMachine(BaseMachine):
 
         result = {
             'resources': {'shared': [], 'exclusive': []},
-            'description': MACHINE_DESCRIPTION.format(os_entry.name)
+            'description': MACHINE_DESCRIPTION.format(os_entry.name),
+            'params': params
         }
 
         # check which format the profile parameter is using

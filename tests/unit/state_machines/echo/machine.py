@@ -50,12 +50,17 @@ class TestEcho(TestCase):
         self._mock_sleep = patcher.start()
         self.addCleanup(patcher.stop)
 
+        patcher = patch.object(machine, 'CONF', autospec=True)
+        self._mock_conf = patcher.start()
+        self.addCleanup(patcher.stop)
+
     def test_good_content(self):
         """
         Test the methods with valid content.
         """
         # create a valid content
         lines = (
+            'VERBOSITY DEBUG',
             'USE EXCLUSIVE guest01 guest03',
             'USE SHARED lpar01 # our lpar',
             '# an entire line of comment',
@@ -92,6 +97,10 @@ class TestEcho(TestCase):
             call('Testing a more long message to see if it works...')
         ])
         self._mock_sleep.assert_has_calls([call(20)])
+        # check that verbosity was properly set
+        self._mock_conf.log_config.assert_called_with(
+            conf=machine.EchoMachine._LOG_CONFIG,
+            log_level='DEBUG')
 
     # test_good_content()
 
@@ -247,6 +256,27 @@ class TestEcho(TestCase):
         with self.assertRaisesRegex(SyntaxError,
                                     'RETURN argument must be a number'):
             machine.EchoMachine.parse(content)
+
+        # VERBOSITY not in first line
+        lines = (
+            'SLEEP 2',
+            'VERBOSITY INFO'
+        )
+        content = '\n'.join(lines)
+        with self.assertRaisesRegex(
+            SyntaxError, 'VERBOSITY statement must come in first line'):
+            machine.EchoMachine.parse(content)
+
+        # VERBOSITY with wrong value
+        lines = (
+            'VERBOSITY WRONGVALUE',
+            'SLEEP 2'
+        )
+        content = '\n'.join(lines)
+        with self.assertRaisesRegex(
+            ValueError, "Verbosity 'WRONGVALUE' is invalid"):
+            machine.EchoMachine.parse(content)
+    # test_parse_errors()
 
     def test_invalid_command(self):
         """

@@ -46,7 +46,8 @@ def setup():
     # parser error can occur here to inform user of wrong options provided
     parsed_args = parser.parse_args()
 
-    CONF.log_config(debug=parsed_args.debug)
+    log_level = {True: 'DEBUG', False: None}[parsed_args.debug]
+    CONF.log_config(log_level=log_level)
 
     # the log configuration is correctly applied after the module was imported
     # because the api itself is only created upon first attribute access

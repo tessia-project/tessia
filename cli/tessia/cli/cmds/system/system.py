@@ -23,10 +23,8 @@ from tessia.cli.client import Client
 from tessia.cli.cmds.job.job import output
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
-from tessia.cli.types import CONSTANT
-from tessia.cli.types import CustomIntRange
-from tessia.cli.types import HOSTNAME
-from tessia.cli.types import NAME
+from tessia.cli.types import CONSTANT, CustomIntRange, HOSTNAME, \
+    VERBOSITY_LEVEL, NAME
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 from tessia.cli.utils import fetch_item
@@ -103,15 +101,16 @@ def del_(name):
               help='system to be installed')
 @click.option('--profile', type=NAME,
               help='activation profile; if not specified default is used')
+@click.option('--verbosity', type=VERBOSITY_LEVEL,
+              help='output verbosity level')
 def autoinstall(ctx, **kwargs):
     """
     install a system using an autofile template
     """
     request = {'action_type': 'SUBMIT', 'job_type': 'autoinstall'}
-    if kwargs['profile'] is None:
-        kwargs.pop('profile')
-    if kwargs['template'] is None:
-        kwargs.pop('template')
+    for key in ('profile', 'template', 'verbosity'):
+        if kwargs[key] is None:
+            kwargs.pop(key)
     request['parameters'] = json.dumps(kwargs)
     job_id = wait_scheduler(Client(), request)
     try:
@@ -178,7 +177,9 @@ def list_(**kwargs):
 @click.command(name='poweroff')
 @click.pass_context
 @click.option('--name', required=True, type=NAME, help="system name")
-def poweroff(ctx, name):
+@click.option('--verbosity', type=VERBOSITY_LEVEL,
+              help='output verbosity level')
+def poweroff(ctx, name, verbosity):
     """
     poweroff (deactivate) a system
     """
@@ -189,13 +190,13 @@ def poweroff(ctx, name):
                'system {} not found.'.format(name))
 
     # system exists, therefore we can submit our job request
-    req_params = json.dumps(
-        {'systems': [{'action': 'poweroff', 'name': name}]}
-    )
+    req_params = {'systems': [{'action': 'poweroff', 'name': name}]}
+    if verbosity:
+        req_params['verbosity'] = verbosity
     request = {
         'action_type': 'SUBMIT',
         'job_type': 'powerman',
-        'parameters': req_params
+        'parameters': json.dumps(req_params)
     }
 
     job_id = wait_scheduler(client, request)
@@ -225,6 +226,8 @@ def poweroff(ctx, name):
 @click.option(
     '--exclusive', is_flag=True,
     help="stop ALL other systems under same hypervisor, USE WITH CARE!")
+@click.option('--verbosity', type=VERBOSITY_LEVEL,
+              help='output verbosity level')
 def poweron(ctx, name, **kwargs):
     """
     poweron (activate) a system
@@ -263,6 +266,8 @@ def poweron(ctx, name, **kwargs):
     if kwargs['memory']:
         req_params['systems'][0]['profile_override']['memory'] = (
             kwargs['memory'])
+    if kwargs['verbosity']:
+        req_params['verbosity'] = kwargs['verbosity']
 
     # system exists, we can submit our job request
     request = {

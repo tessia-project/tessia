@@ -187,7 +187,8 @@ class SmDebianInstaller(SmBase):
                                 'type': 'extended',
                                 "size": (svol['size'] - size),
                                 'fs': "",
-                                'mo': None
+                                'mo': None,
+                                'mp': None
                             })
                         break
                     size += part['size']

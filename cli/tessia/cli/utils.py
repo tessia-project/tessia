@@ -21,6 +21,7 @@ Miscellaneous utilities that can be consumed by different modules
 #
 from potion_client.exceptions import ItemNotFound
 from tessia.cli.config import CONF
+from time import sleep
 
 import click
 import time
@@ -284,10 +285,36 @@ def version_verify(logger, response):
 
 # version_verify()
 
+def wait_job_exec(client, job_id):
+    """
+    Wait until job starts to execute.
+
+    Args:
+        client (Client): Potion client to submit requests
+        job_id (int): job id to wait for
+    """
+    click.echo('Waiting for job #{} to start...'.format(job_id))
+    while True:
+        item = fetch_item(
+            client.Jobs,
+            {'job_id': job_id},
+            'job not found.')
+        if item.state != 'WAITING':
+            break
+        sleep(0.5)
+# wait_job_exec()
+
 def wait_scheduler(client, arg_dict):
     """
     Helper function to submit a request and give user feedback while waiting
     for it to be processed by the scheduler.
+
+    Args:
+        client (Client): Potion client to submit requests
+        arg_dict (dict): job request
+
+    Returns:
+        int: job id
     """
     item = client.JobRequests()
     for key, value in arg_dict.items():
@@ -323,7 +350,8 @@ def wait_scheduler(client, arg_dict):
         if arg_dict['action_type'] == 'SUBMIT':
             click.echo('Request accepted; job id is #{}'.format(item.job_id))
         else:
-            click.echo('Request accepted; job canceled.')
+            click.echo(
+                'Request accepted; job #{} canceled.'.format(item.job_id))
     elif item.state == 'FAILED':
         raise click.ClickException('request failed, reason is: {}'.format(
             item.result))

@@ -319,7 +319,7 @@ tasks:
     - - job submit --type=echo --parmfile='test_parmfile_2'
       - 'Request accepted; job id is'
     - - job cancel --id=5
-      - 'Request accepted; job canceled.'
+      - 'Request accepted; job #\d+ canceled'
     - - job list --id=5
       - 'Job ID         : 5'
     - - job submit --type=echo --parmfile='test_parmfile_2' --timeout=1

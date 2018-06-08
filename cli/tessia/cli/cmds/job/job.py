@@ -121,6 +121,7 @@ def output(job_id):
     # something to the user as soon as possible
     offset = 0
     qty = 100
+    click.echo('Waiting for job output (Ctrl+C to stop waiting)')
     while True:
         output_buf = item.output({'offset': offset, 'qty': qty})
         # no output: set the line counter to 0
@@ -140,8 +141,8 @@ def output(job_id):
                 client.Jobs,
                 {'job_id': job_id},
                 'job not found.')
-            # job's not active: nothing more to do
-            if item.state not in ('RUNNING', 'CLEANINGUP'):
+            # job has finished: nothing more to do
+            if item.state not in ('RUNNING', 'CLEANINGUP', 'WAITING'):
                 return
 
             # job still active: sleep a bit and try to fetch more lines

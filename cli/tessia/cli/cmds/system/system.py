@@ -20,7 +20,7 @@ Module for the system commands
 # IMPORTS
 #
 from tessia.cli.client import Client
-from tessia.cli.cmds.job.job import output
+from tessia.cli.cmds.job.job import cancel, output
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.types import CONSTANT, CustomIntRange, HOSTNAME, \
@@ -29,7 +29,7 @@ from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 from tessia.cli.utils import fetch_item
 from tessia.cli.utils import str_to_size
-from tessia.cli.utils import wait_scheduler
+from tessia.cli.utils import wait_scheduler, wait_job_exec
 
 import click
 import json
@@ -112,14 +112,18 @@ def autoinstall(ctx, **kwargs):
         if kwargs[key] is None:
             kwargs.pop(key)
     request['parameters'] = json.dumps(kwargs)
-    job_id = wait_scheduler(Client(), request)
+    client = Client()
+    job_id = wait_scheduler(client, request)
     try:
-        click.echo('Waiting for installation output (Ctrl+C to stop waiting)')
+        wait_job_exec(client, job_id)
         ctx.invoke(output, job_id=job_id)
     except KeyboardInterrupt:
-        click.echo('\nwarning: make sure to cancel the running job if you '
-                   'want to attempt a new action for this system')
-        raise
+        cancel_job = click.confirm('\nDo you want to cancel the job?')
+        if not cancel_job:
+            click.echo('warning: job is still running, remember to cancel it '
+                       'if you want to submit a new action for this system')
+            raise
+        ctx.invoke(cancel, job_id=job_id)
 # autoinstall()
 
 @click.command(name='edit')
@@ -201,13 +205,15 @@ def poweroff(ctx, name, verbosity):
 
     job_id = wait_scheduler(client, request)
     try:
-        click.echo('Waiting for job output (Ctrl+C to stop waiting)')
+        wait_job_exec(client, job_id)
         ctx.invoke(output, job_id=job_id)
     except KeyboardInterrupt:
-        click.echo('\nwarning: make sure to cancel the running job if you '
-                   'want to attempt a new action for this system')
-        raise
-
+        cancel_job = click.confirm('\nDo you want to cancel the job?')
+        if not cancel_job:
+            click.echo('warning: job is still running, remember to cancel it '
+                       'if you want to submit a new action for this system')
+            raise
+        ctx.invoke(cancel, job_id=job_id)
 # poweroff()
 
 @click.command(name='poweron')
@@ -277,12 +283,15 @@ def poweron(ctx, name, **kwargs):
     }
     job_id = wait_scheduler(client, request)
     try:
-        click.echo('Waiting for job output (Ctrl+C to stop waiting)')
+        wait_job_exec(client, job_id)
         ctx.invoke(output, job_id=job_id)
     except KeyboardInterrupt:
-        click.echo('\nwarning: make sure to cancel the running job if you '
-                   'want to attempt a new action for this system')
-        raise
+        cancel_job = click.confirm('\nDo you want to cancel the job?')
+        if not cancel_job:
+            click.echo('warning: job is still running, remember to cancel it '
+                       'if you want to submit a new action for this system')
+            raise
+        ctx.invoke(cancel, job_id=job_id)
 # poweron()
 
 @click.command(name='types')

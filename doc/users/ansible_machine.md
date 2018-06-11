@@ -195,3 +195,24 @@ test
 ```
 
 Works as expected :)
+
+Also it is possible to define a particular git revision (both a branch and a commit). Format of entry for such case:
+```yaml
+source: https://github.com/ansible/ansible-examples.git@branch_name:commit_name
+... 
+```
+
+There are several options for shortened entries:
+```yaml
+source: https://github.com/ansible/ansible-examples.git@branch_name
+... 
+```
+In this case `tessia` will take `HEAD` commit by default.
+
+And we can skip `master` branch name as well:
+```yaml
+source: https://github.com/ansible/ansible-examples.git@:commit_name
+...
+```
+
+Note: because of the specifics git cloning and potentially limited server resources, it is possible to define a commit not older than 10 per a branch.

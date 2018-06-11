@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017, 2018 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,6 +46,8 @@ INVENTORY_FILE_NAME = 'tessia-hosts'
 MACHINE_DESCRIPTION = 'Execute playbook {} from {}'
 # max allowed size for source repositories
 MAX_REPO_MB_SIZE = 100
+# max number of commits for cloning
+MAX_GIT_CLONE_DEPTH = '10'
 # Schema to validate the job request
 REQUEST_SCHEMA = {
     'type': 'object',
@@ -164,7 +166,8 @@ class AnsibleMachine(BaseMachine):
 
         if parsed_url.scheme == 'git' or (
                 parsed_url.scheme in http_protocols and
-                parsed_url.path.endswith('.git')):
+                (parsed_url.path.endswith('.git') or
+                 '.git@' in parsed_url.path)):
             return 'git'
 
         elif parsed_url.scheme in http_protocols:
@@ -174,9 +177,12 @@ class AnsibleMachine(BaseMachine):
     # _get_url_type()
 
     @classmethod
-    def _assert_source(cls, source_url):
+    def _parse_source(cls, source_url):
         """
-        Validate the passed ansible repository url.
+        Parse and validate the passed ansible repository url.
+
+        Returns:
+            dict: a dictionary containing the parsed information
 
         Args:
             source_url (str): repository network url
@@ -186,14 +192,38 @@ class AnsibleMachine(BaseMachine):
         """
         # TODO: sanitize source_url
 
+        repo = {
+            'url': source_url,
+            'git_branch': 'master',
+            'git_commit': 'HEAD',
+        }
+
         # git source: use git command to verify it
         url_type = cls._get_url_type(source_url)
+
+        # parse url into components
+        parsed_url = urlsplit(source_url)
+
         if url_type == 'git':
+            # parse git revision info (branch, commit/tag)
+            try:
+                _, git_rev = parsed_url.path.rsplit('@', 1)
+                repo['url'] = parsed_url.geturl().replace('@' + git_rev, '')
+                repo['git_branch'], repo['git_commit'] = git_rev.rsplit(':', 1)
+            except ValueError:
+                # user did not specify additional git revision info,
+                # use default values
+                pass
+            else:
+                # user specified empty branch: set default value
+                if not repo['git_branch']:
+                    repo['git_branch'] = 'master'
+
             process_env = os.environ.copy()
             process_env['GIT_SSL_NO_VERIFY'] = 'true'
             try:
                 subprocess.run(
-                    ['git', 'ls-remote', source_url],
+                    ['git', 'ls-remote', repo['url']],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.PIPE,
                     env=process_env,
@@ -226,11 +256,14 @@ class AnsibleMachine(BaseMachine):
                 raise ValueError(
                     "Source url is not accessible: {} {}".format(
                         exc.response.status_code, exc.response.reason))
+            repo['url'] = file_name
 
         else:
             raise ValueError('Unsupported source url specified')
 
-    # _assert_source()
+        return repo
+
+    # _parse_source()
 
     def _download_git(self):
         """
@@ -239,28 +272,59 @@ class AnsibleMachine(BaseMachine):
         self._logger.info(
             'cloning git repo from %s', self._params['source'])
 
+        repo = self._parse_source(self._params['source'])
+
+        # Since git doesn't allow to clone specific commit and for
+        # optimal resources usage, we set the depth of cloning.
+        # So by default we take only the last commit. But if an user specifies
+        # a target commit, then we set the predefined depth value.
+        if repo['git_commit'] == 'HEAD':
+            depth = '1'
+        else:
+            depth = MAX_GIT_CLONE_DEPTH
+
         try:
             subprocess.run(
-                ['git', 'clone', '--depth=1', self._params['source'],
-                 self._repo_dir],
+                ['git', 'clone', '-n', '--depth', depth, '--single-branch',
+                 '-b', repo['git_branch'], repo['url'], self._repo_dir],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 env={'GIT_SSL_NO_VERIFY': 'true'},
                 check=True,
             )
         except subprocess.CalledProcessError as exc:
-            raise ValueError('Source url is not accessible: {}'.format(
+            raise ValueError('Failed to git clone: {}'.format(
                 exc.stderr.decode('utf8')))
         except OSError as exc:
             raise RuntimeError('Failed to execute git: {}'.format(
                 str(exc)))
+        try:
+            subprocess.run(
+                ['git', '-C', self._repo_dir, 'reset', '--hard',
+                 repo['git_commit']],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                check=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            raise ValueError(
+                'Failed to checkout to {}, make sure it is not older than {} '
+                'commits. Received error: {}'.format(
+                    repo['git_commit'],
+                    MAX_GIT_CLONE_DEPTH,
+                    exc.stderr.decode('utf8')
+                )
+            )
+        except OSError as exc:
+            raise RuntimeError('Failed to execute git: {}'.format(str(exc)))
+
     # _download_git()
 
     def _download_web(self):
         """
         Download a repository from a web url
         """
-        file_name = os.path.basename(urlsplit(self._params['source']).path)
+        file_name = self._parse_source(self._params['source'])['url']
 
         # determine how to extract the source file
         tar_flags = ''
@@ -564,7 +628,7 @@ class AnsibleMachine(BaseMachine):
         used_resources = cls._get_resources(obj_params['systems'])
 
         # validate the source specified
-        cls._assert_source(obj_params['source'])
+        cls._parse_source(obj_params['source'])
 
         result = {
             'resources': used_resources,

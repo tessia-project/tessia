@@ -24,6 +24,7 @@ from tessia.server.state_machines import MACHINES
 from tessia.server.scheduler import exceptions
 
 import builtins
+import logging
 import os
 import pickle
 import signal
@@ -78,6 +79,7 @@ class MachineWrapper(object):
         """
         Constructor, only initializes internal variables
         """
+        self._logger = logging.getLogger(__name__)
         # instance of state machine
         self._machine = None
         # we switch to this directory after forking
@@ -144,6 +146,7 @@ class MachineWrapper(object):
             WrapperCanceled
         """
 
+        self._logger.error('Caught cancel signal, cleaning up and aborting...')
         # Don't let cancel signals arrive after this one is handled.
         self._supress_signals()
 
@@ -159,6 +162,8 @@ class MachineWrapper(object):
         Raises:
             WrapperTimeout, when not supressed
         """
+        self._logger.error(
+            'Caught timeout signal, cleaning up and aborting...')
         if self._mask_timeouts:
             # Ignore delayed alarms.
             return
@@ -179,6 +184,7 @@ class MachineWrapper(object):
         Raises:
             WrapperTimeout, when not supressed
         """
+        self._logger.error('Caught timeout signal while cleaning up')
         if self._mask_timeouts:
             return
 

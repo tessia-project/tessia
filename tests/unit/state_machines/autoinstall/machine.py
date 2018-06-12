@@ -162,6 +162,28 @@ class TestAutoInstallMachine(TestCase):
         self._perform_test_init(request)
     # test_init_default_profile()
 
+    def test_init_with_verbosity(self):
+        """
+        Test the correct initialization of the AutoInstallMachine when output
+        verbosity is specified.
+        """
+        patcher = patch.object(machine, 'CONF', autospec=True)
+        mock_conf = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        request = {
+            "system": "kvm054",
+            "os": "rhel7.2",
+            "verbosity": "DEBUG",
+        }
+
+        self._perform_test_init(json.dumps(request))
+
+        mock_conf.log_config.assert_called_with(
+            conf=machine.AutoInstallMachine._LOG_CONFIG,
+            log_level=request['verbosity'])
+    # test_init_default_profile()
+
     def test_invalid_fcp_parameters(self):
         """
         Test the case when a required FCP parameter is missing

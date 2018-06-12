@@ -19,6 +19,7 @@ Simple state machine which echoes the messages specified.
 #
 # IMPORTS
 #
+from tessia.server.config import CONF
 from tessia.server.state_machines.base import BaseMachine
 from time import sleep
 
@@ -67,12 +68,13 @@ class EchoMachine(BaseMachine):
         return 0
     # cleanup()
 
-    @staticmethod
-    def parse(content):
+    @classmethod
+    def parse(cls, content):
         """
         Parse an echo-format content. The syntax is one statement per line,
         which can be a system allocation, a message to be echoed, or a sleep.
         Example:
+        VERBOSITY DEBUG
         USE SHARED lpar01
         USE EXCLUSIVE guest01 guest02
         ECHO Hello world!
@@ -92,6 +94,7 @@ class EchoMachine(BaseMachine):
 
         Raises:
             SyntaxError: if content is in wrong format
+            ValueError: if wrong verbosity level is specified
         """
 
         ret = {
@@ -115,6 +118,7 @@ class EchoMachine(BaseMachine):
             if fields[0].lower() == 'cleanup':
                 cleanup = True
                 commands = ret['cleanup_commands']
+
             elif fields[0].lower() == 'use':
 
                 if cleanup:
@@ -157,6 +161,7 @@ class EchoMachine(BaseMachine):
                         .format(index+1))
 
                 commands.append(['sleep', seconds])
+
             elif fields[0].lower() == 'return':
                 if len(fields) != 2:
                     raise SyntaxError(
@@ -171,8 +176,22 @@ class EchoMachine(BaseMachine):
                         .format(index+1))
 
                 commands.append(['return', ret_value])
+
             elif fields[0].lower() == 'raise':
                 commands.append(['raise'])
+
+            elif fields[0].lower() == 'verbosity':
+                if index != 0:
+                    raise SyntaxError(
+                        'VERBOSITY statement must come in first line.')
+
+                if fields[1] not in cls._LOG_LEVELS:
+                    raise ValueError(
+                        "Verbosity '{}' is invalid, choose from {}".format(
+                            fields[1], ', '.join(cls._LOG_LEVELS)))
+
+                CONF.log_config(conf=cls._LOG_CONFIG, log_level=fields[1])
+
             else:
                 raise SyntaxError('Invalid command {} at line {}'.format(
                     fields[0], index+1))

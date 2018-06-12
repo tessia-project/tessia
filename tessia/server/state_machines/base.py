@@ -19,11 +19,13 @@ Abstract state machine class
 #
 # IMPORTS
 #
+from tessia.server.config import CONF
 import abc
 
 #
 # CONSTANTS AND DEFINITIONS
 #
+
 
 #
 # CODE
@@ -33,14 +35,48 @@ class BaseMachine(metaclass=abc.ABCMeta):
     Abstract state machine class which defines the mininum interface that any
     state machine class needs to implement.
     """
+    # allowed log levels
+    _LOG_LEVELS = ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG")
+    # default log config used by state machines
+    _LOG_CONFIG = {
+        'version': 1,
+        'formatters': {
+            'default': {
+                'format': '%(asctime)s | %(levelname)s | %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S',
+            },
+            'debugger': {
+                'format': '%(asctime)s | %(levelname)s | '
+                          '%(filename)s(%(lineno)s) | %(message)s',
+                'datefmt': '%Y-%m-%d %H:%M:%S',
+            },
+        },
+        'handlers': {
+            'console': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'default',
+                'level': 'INFO',
+                'stream': 'ext://sys.stdout'
+            }
+        },
+        'loggers': {
+            'tessia': {
+                'handlers': ['console'],
+                'level': 'INFO',
+            }
+        }
+    }
+
     @abc.abstractmethod
     def __init__(self, params):
         """
-        Receives the same parameters as the one provided to parse method so in
+        Receives the same parameters as those provided to parse method so in
         most cases it makes sense to call parse() to validate and convert the
         parameters here.
         """
         self.cleaning_up = False
+
+        CONF.log_config(conf=self._LOG_CONFIG)
     # __init__()
 
     @staticmethod

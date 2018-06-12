@@ -55,63 +55,27 @@ auth:
 # uses a hierarchy of loggers according to python recommended usage.
 log:
   version: 1
-  disable_existing_loggers: false
   formatters:
     default:
       format: '%(asctime)s | %(levelname)s | %(message)s'
       datefmt: '%Y-%m-%d %H:%M:%S'
     debugger:
-      format: '%(asctime)s|%(levelname)s|%(filename)s(%(lineno)s)|%(message)s'
+      format: '%(asctime)s | %(levelname)s | %(filename)s(%(lineno)s) | %(message)s'
+      datefmt: '%Y-%m-%d %H:%M:%S'
   handlers:
     console:
       class: logging.StreamHandler
       formatter: default
       level: INFO
-      stream: ext://sys.stderr
-    file_api:
-      class: tessia.server.log.CreateDirRotatingFileHandler
-      formatter: default
-      level: INFO
-      filename: log/tessia/api.log
-      maxBytes: 70000000
-      backupCount: 3
-    file_common:
-      class: tessia.server.log.CreateDirRotatingFileHandler
-      formatter: default
-      level: INFO
-      filename: log/tessia/common.log
-      maxBytes: 70000000
-      backupCount: 3
+      stream: ext://sys.stdout
   loggers:
     # uncomment this logger if you need to debug db related issues
     #sqlalchemy:
     #  handlers: [console]
     #  level: DEBUG
-    tessia.server:
-      handlers: [console, file_common]
-      level: DEBUG
-    tessia.server.api:
-      handlers: [console, file_api]
-      level: DEBUG
-      propagate: false
-    # the scheduler runs as a standalone process therefore we don't
-    # define a file based handler for it here.
-    tessia.server.scheduler:
+    tessia:
       handlers: [console]
-      level: DEBUG
-      propagate: false
-    # state machines are executed as jobs and have their own log file,
-    # therefore we don't define a file based handler for them in this
-    # configuration.
-    tessia.server.state_machines:
-      handlers: [console]
-      level: DEBUG
-      propagate: false
-    # baselib is used by the state machines in jobs so we don't
-    # define a file based handler either.
-    tessia.baselib:
-      handlers: [console]
-      level: DEBUG
+      level: INFO
 
 scheduler:
   jobs_dir: var/tessia/jobs

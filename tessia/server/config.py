@@ -19,6 +19,7 @@ Module to handle configuration file parsing
 #
 # IMPORTS
 #
+from copy import deepcopy
 from logging.config import dictConfig
 
 import os
@@ -28,6 +29,12 @@ import yaml
 #
 # CONSTANTS AND DEFINITIONS
 #
+# 'debugger' formatter to use when not defined in config file
+DEBUGGER_FORMATTER = {
+    'datefmt': '%Y-%m-%d %H:%M:%S',
+    'format': '%(asctime)s | %(levelname)s | %(filename)s(%(lineno)s) '
+              '| %(message)s'
+}
 
 #
 # CODE
@@ -74,7 +81,7 @@ class Config(object):
         Raises:
             IOError: if config file cannot be read
             OSError: if config file cannot be read
-            RuntimeError: if file content evaluates to invalid content
+            ValueError: if file content evaluates to invalid content
         """
         def _read_file(file_path):
             """Auxiliar method to read the content of a file"""
@@ -119,7 +126,7 @@ class Config(object):
                 (isinstance(config_dict, str) and not config_dict.strip())):
             config_dict = {}
         elif not isinstance(config_dict, dict):
-            raise RuntimeError('Invalid configuration file content')
+            raise ValueError('Invalid configuration file content')
 
         return config_dict
     # _parse_config()
@@ -147,32 +154,56 @@ class Config(object):
     # get_config()
 
     @classmethod
-    def log_config(cls, debug=False):
+    def log_config(cls, conf=None, log_level=None):
         """
         Apply logging configuration from config file.
 
         Args:
-            debug (bool): in case debug level should be enabled for all
-                          handlers
+            conf (dict): log configuration to be applied; if not specified
+                         use from config file
+            log_level (str): custom log level to apply to all loggers and
+                             handlers
 
         Raises:
-            RuntimeError: if log configuration is missing or invalid
+            ValueError: if log configuration is missing or invalid
         """
-        try:
-            conf = cls.get_config()['log']
-            handlers = conf['handlers']
-        except (TypeError, KeyError):
-            raise RuntimeError(
-                'Missing or corrupt log handlers configuration section')
+        if not conf:
+            try:
+                conf = cls.get_config()['log']
+            except (TypeError, KeyError) as exc:
+                raise ValueError(
+                    'Missing or corrupt log configuration section')
 
-        # debug mode: set debug level for all handlers
-        if debug:
-            for _, attrs in handlers.items():
-                attrs['level'] = 'DEBUG'
+        if not isinstance(conf, dict):
+            raise ValueError('Invalid format for log configuration section')
+        conf = deepcopy(conf)
+
+        try:
+            handlers = conf['handlers']
+            loggers = conf['loggers']
+        except KeyError as exc:
+            raise ValueError(
+                "Missing log configuration section '{}'".format(exc.args[0]))
+
+        # custom log level: apply it for all loggers and handlers
+        if log_level:
+            # debug level: use special formatter
+            if log_level == 'DEBUG':
+                formatters = conf.setdefault('formatters', {})
+                try:
+                    formatters['debugger']
+                except KeyError:
+                    formatters['debugger'] = DEBUGGER_FORMATTER
+
+            for handler in handlers.values():
+                handler['level'] = log_level
+                if log_level == 'DEBUG':
+                    handler['formatter'] = 'debugger'
+            for logger in loggers.values():
+                logger['level'] = log_level
 
         dictConfig(conf)
     # log_config()
-
 # Config
 
 # expose the class as a constant variable for access by consumer modules

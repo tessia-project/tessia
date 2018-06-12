@@ -130,18 +130,20 @@ class TestConfig(TestCase):
             content = """
 log:
   version: 1
-  disable_existing_loggers: false
   formatters:
-    default: {format: '%(asctime)s|%(levelname)s|%(filename)s(%(lineno)s)|%(message)s'}
+    default:
+      format: '%(asctime)s | %(levelname)s | %(message)s'
+      datefmt: '%Y-%m-%d %H:%M:%S'
   handlers:
     console:
       class: logging.StreamHandler
       formatter: default
       level: INFO
-      stream: ext://sys.stderr
+      stream: ext://sys.stdout
   loggers:
-    tessia.server:
+    tessia:
       handlers: [console]
+      level: INFO
 """
         elif option == 'log_bad':
             content = """
@@ -211,7 +213,7 @@ log:
 
         # perform the action and validate result
         with self.assertRaisesRegex(
-            RuntimeError, 'Invalid configuration file content'):
+            ValueError, 'Invalid configuration file content'):
             config.CONF.get_config()
 
         # set the mock to return a list
@@ -219,7 +221,7 @@ log:
 
         # perform the action and validate result
         with self.assertRaisesRegex(
-            RuntimeError, 'Invalid configuration file content'):
+            ValueError, 'Invalid configuration file content'):
             config.CONF.get_config()
 
     # test_bad_content()
@@ -234,13 +236,29 @@ log:
         Raises:
             AssertionError: if any of the assertion calls fails
         """
-        # set the mock to return invalid log config content
+        # log key missing from config
+        self._set_open_mock('wrong_key_instead_of_log:')
+
+        # perform the action
+        with self.assertRaisesRegex(
+            ValueError, 'Missing or corrupt log configuration section'):
+            config.CONF.log_config()
+
+        # log key present but in wrong format (a list)
         self._set_open_mock('log_bad')
 
         # perform the action
-        with self.assertRaises(RuntimeError):
+        with self.assertRaisesRegex(
+            ValueError, 'Invalid format for log configuration section'):
             config.CONF.log_config()
 
+        # log key present but 'handlers' key missing
+        self._set_open_mock('log:\n  loggers:')
+
+        # perform the action
+        with self.assertRaisesRegex(
+            ValueError, "Missing log configuration section 'handlers'"):
+            config.CONF.log_config()
     # test_bad_log_content()
 
     def test_bad_default_paths(self):
@@ -473,17 +491,26 @@ log:
         # perform the action - we don't use a mock to exercise the call to the
         # log library
         config.CONF.log_config()
-        config.CONF.log_config(True)
+        config.CONF.log_config(log_level='DEBUG')
 
-        # now use a mock to make sure debug was enabled
+        # now use a mock to validate behavior
         patcher = patch.object(config, 'dictConfig')
-        mock_config = patcher.start()
+        mock_dict_config = patcher.start()
         self.addCleanup(patcher.stop)
-        config.CONF.log_config(True)
+        config.CONF.log_config()
 
-        conf = mock_config.call_args[0][0]
-        for _, attr in conf['handlers'].items():
-            self.assertEqual(attr['level'], 'DEBUG')
+        conf = mock_dict_config.call_args[0][0]
+        for key in ('handlers', 'loggers'):
+            for item in conf[key].values():
+                self.assertEqual(item['level'], 'INFO')
+
+        # custom log level - make sure it was applied
+        mock_dict_config.reset()
+        config.CONF.log_config(log_level='DEBUG')
+
+        conf = mock_dict_config.call_args[0][0]
+        for key in ('handlers', 'loggers'):
+            for item in conf[key].values():
+                self.assertEqual(item['level'], 'DEBUG')
     # test_good_log_content()
-
 # TestConfig

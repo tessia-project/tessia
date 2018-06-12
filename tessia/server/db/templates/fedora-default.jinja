@@ -43,7 +43,7 @@ clearpart --all --initlabel
 {% for volume in config["svols"] %}
 {% if volume["is_root"] %}
 # System bootloader configuration
-bootloader --append=" crashkernel=auto" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
+bootloader --append=" zfcp.allow_lun_scan=0" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
 {% endif %}
 # Disk partitioning information
 {% for entry in volume["part_table"]["table"] %}

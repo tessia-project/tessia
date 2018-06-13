@@ -1,0 +1,125 @@
+# System authorization information
+auth --enableshadow --passalgo=sha512
+sshpw --username=root {{config["credentials"]["passwd"]}} --plaintext
+# Use network installation
+url --url="{{config["repos"][0]['url']}}"
+# Use graphical install
+graphical
+# Run the Setup Agent on first boot
+firstboot --enable
+
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+
+# Network information
+{% for iface in config["ifaces"] %}
+network  --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["systemd_osname"]}} --ip={{iface["ip"]}} --netmask={{iface["mask"]}} --noipv6 --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}}{% endif %}
+{% endfor %}
+network  --hostname={{config["hostname"]}}
+
+# Root password
+rootpw --iscrypted {{config["sha512rootpwd"]}}
+# System timezone
+timezone Europe/Berlin
+
+# Activate fcp paths before partitioning section
+{% if config["system_type"] != "KVM" %}
+{% for volume in config["svols"] %}
+{% if volume['type'] == 'FCP' -%}
+{% for adapter in volume['specs']['adapters'] -%}
+{% for wwpn in adapter['wwpns'] -%}
+zfcp --devnum={{adapter['devno'].replace('0.0.', '')}} --wwpn={{wwpn}} --fcplun={{volume['volume_id']}}
+{% endfor -%}
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+{% endif -%}
+
+# Partition clearing information
+ignoredisk --only-use={{(config["svols"]|map(attribute="system_attributes")|map(attribute="device")|join(",")).replace('/dev/', '')}}
+clearpart --all --initlabel
+{% for volume in config["svols"] %}
+{% if volume["is_root"] %}
+# System bootloader configuration
+bootloader --append=" crashkernel=auto" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
+{% endif %}
+# Disk partitioning information
+{% for entry in volume["part_table"]["table"] %}
+part {% if entry["fs"] == "swap" %}swap{% else %}{{entry["mp"]}}{% endif %} --fstype="{{entry["fs"]}}" --ondisk={{volume["system_attributes"]["device"]}} --size={{entry["size"]}} {% if entry.get("mo") %} --fsoptions="{{entry["mo"]}}" {% endif %}
+{% endfor %}
+{% endfor %}
+%packages
+@^minimal-environment
+@core
+@virtualization
+kexec-tools
+%end
+
+%addon com_redhat_kdump --enable
+
+%end
+
+{% if config["system_type"] != "KVM" %}
+%post
+{% for iface in config["ifaces"] %}
+{% if iface["mac_addr"] %}
+echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
+{% endif %}
+{% if iface["osname"] != iface["systemd_osname"] %}
+sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
+mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
+{% endif %}
+%end
+{% endfor %}
+{% endif %}
+
+{% if config["system_type"] != "KVM" %}
+%pre
+#!/bin/bash
+{% for volume in config["svols"] %}
+{%- if volume['type'] == 'DASD' -%}
+chzdev -e dasd {{volume['volume_id']}}
+{% endif -%}
+{% if volume['type'] == 'FCP' -%}
+{% for adapter in volume['specs']['adapters'] -%}
+chzdev -e {{adapter['devno']}}
+{% for wwpn in adapter['wwpns'] -%}
+chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}}
+{% endfor -%}
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+%end
+{% endif -%}
+
+%post
+#!/bin/bash
+{% for repo in config["repos"] %}
+cat <<EOF > /etc/yum.repos.d/{{repo['name']}}.repo
+[{{repo['name']}}]
+name={{repo['desc']}}
+baseurl={{repo['url']}}
+enabled=1
+gpgcheck=0
+skip_if_unavailable=False
+EOF
+{% endfor %}
+
+{% if config["system_type"] != "KVM" %}
+{% for volume in config["svols"] %}
+{% if volume['type'] == 'FCP' -%}
+{% for adapter in volume['specs']['adapters'] -%}
+chzdev -e {{adapter['devno']}}
+{% for wwpn in adapter['wwpns'] -%}
+chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}}
+{% endfor -%}
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+{% endif -%}
+
+echo kvm > /etc/modules-load.d/kvm.conf
+ln -s /usr/bin/qemu-system-s390x /usr/bin/qemu-kvm
+%end

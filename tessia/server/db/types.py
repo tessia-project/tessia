@@ -71,10 +71,12 @@ PROJECTS = [
 
 TEMPLATES = [
     "fedora-default,Default template for Fedora installations,admin,Admins",
+    "fedora-kvmhost,Fedora KVM hypervisor profile,admin,Admins",
     "rhel7-default,Default template for RHEL7 installations,admin,Admins",
     "sles12-default,Default template for SLES12 installations,admin,Admins",
     "ubuntu16-default,Default template for Ubuntu16 installations"
-    ",admin,Admins"
+    ",admin,Admins",
+    "ubuntu16-kvmhost,Ubuntu16 KVM hypervisor profile,admin,Admins",
 ]
 
 ROLES = [

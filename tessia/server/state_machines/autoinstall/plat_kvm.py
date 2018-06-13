@@ -39,6 +39,7 @@ DISK_TEMPLATE = """
       {boot_tag}
     </disk> 
 """
+RHEL_ID = 'Red Hat Enterprise Linux'
 UBUNTU_ID = 'Ubuntu '
 
 #
@@ -56,9 +57,12 @@ class PlatKvm(PlatBase):
         # create our own logger so that the right module name is in output
         self._logger = logging.getLogger(__name__)
 
-        # determine the type of devpath prefix used for virtio devices,
-        # certain distros use newer naming
-        if self._os.pretty_name.startswith(UBUNTU_ID):
+        # determine the type of devpath prefix used for devices, certain
+        # distros use virtio-pci-* naming
+        p_name = self._os.pretty_name
+        if p_name.startswith(UBUNTU_ID) or (
+                p_name.startswith(RHEL_ID) and self._os.major == 7
+                and self._os.minor == 4):
             self._devpath_prefix = '/dev/disk/by-path/virtio-pci-0.{}.{}'
         else:
             self._devpath_prefix = '/dev/disk/by-path/ccw-0.{}.{}'

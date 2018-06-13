@@ -19,6 +19,7 @@ Machine to enable the usage of ansible playbooks
 #
 # IMPORTS
 #
+from copy import deepcopy
 from jsonschema import validate
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import System
@@ -410,7 +411,7 @@ class AnsibleMachine(BaseMachine):
 
             # auto-installation requested: use its machine for validation
             if system.get('autoinstall'):
-                autoinstall_params = system.get('autoinstall').copy()
+                autoinstall_params = deepcopy(system['autoinstall'])
                 autoinstall_params['system'] = system['name']
                 if 'profile' in system:
                     autoinstall_params['profile'] = system['profile']

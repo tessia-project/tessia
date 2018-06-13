@@ -125,32 +125,39 @@ class TestPlatKvm(TestCase):
             self.assertEqual(plat.get_vol_devpath(vol), devpath)
     # test_get_vol_devpath()
 
-    def test_get_vol_devpath_new_style(self):
+    def test_get_vol_devpath_virtio_style(self):
         """
-        Test the correct creation of the device paths for the volumes
-        when using operting systems that use newer udev naming.
+        Test the correct creation of the device paths for volumes on operating
+        systems that use virtio-pci-* prefixing.
         """
-        self._os_entry.pretty_name = plat_kvm.UBUNTU_ID
-        self.addCleanup(MANAGER.session.rollback)
-
-        volumes = self._profile_entry.storage_volumes_rel
-        # To test the other branch, we remove all libvirt definitions
-        for vol in volumes:
-            vol.system_attributes = {}
-
-        plat = self._create_plat_kvm()
-        # Here we used specifc test cases, since we know the content
-        # ot the database.
-        devpaths = [
-            "/dev/disk/by-path/virtio-pci-0.0.0001",
-            "/dev/disk/by-path/virtio-pci-0.0.0002",
-            "/dev/disk/by-path/virtio-pci-0.0.0003",
-            "/dev/disk/by-path/virtio-pci-0.0.0004",
+        special_distros = [
+            {'pname': plat_kvm.UBUNTU_ID, 'major': 0, 'minor': 0},
+            {'pname': plat_kvm.RHEL_ID, 'major': 7, 'minor': 4},
         ]
 
-        for vol, devpath in zip(volumes, devpaths):
-            self.assertEqual(plat.get_vol_devpath(vol), devpath)
-    # test_get_vol_devpath_new_style()
+        self.addCleanup(MANAGER.session.rollback)
+        for distro in special_distros:
+            self._os_entry.pretty_name = distro['pname']
+            self._os_entry.major = distro['major']
+            self._os_entry.minor = distro['minor']
+
+            volumes = self._profile_entry.storage_volumes_rel
+            # To test the other branch, we remove all libvirt definitions
+            for vol in volumes:
+                vol.system_attributes = {}
+
+            plat = self._create_plat_kvm()
+            # define paths according to the content in the database
+            devpaths = [
+                "/dev/disk/by-path/virtio-pci-0.0.0001",
+                "/dev/disk/by-path/virtio-pci-0.0.0002",
+                "/dev/disk/by-path/virtio-pci-0.0.0003",
+                "/dev/disk/by-path/virtio-pci-0.0.0004",
+            ]
+
+            for vol, devpath in zip(volumes, devpaths):
+                self.assertEqual(plat.get_vol_devpath(vol), devpath)
+    # test_get_vol_devpath_virtio_style()
 
     def test_invalid_libvirt_xml(self):
         """

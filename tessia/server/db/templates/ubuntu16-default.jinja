@@ -16,7 +16,7 @@
 {% endmacro -%}
 
 {%- macro format_partitions(svol) -%}
-  {%- set FS_TO_MKFS = {'ext2': 'mkfs.ext2 -q ', 'ext3': 'mkfs.ext3 -q ', 'ext4': 'mkfs.ext4 -q ', 'swap': 'mkswap ', 'reiserfs': 'mkfs.reiserfs -q ', 'btrfs': 'mkfs.btrfs -qf ', 'xfs': 'mkfs.xfs -q '} -%}
+  {%- set FS_TO_MKFS = {'ext2': 'mkfs.ext2 -q ', 'ext3': 'mkfs.ext3 -q ', 'ext4': 'mkfs.ext4 -q ', 'swap': 'mkswap ', 'reiserfs': 'mkfs.reiserfs -q ', 'btrfs': 'mkfs.btrfs -qf ', 'xfs': 'mkfs.xfs -qf '} -%}
   {%- for part in svol['part_table']['table'] -%}
   {%- if part['type'] != 'extended' -%}
     while [ ! -e {{part['device']}} ]; do sleep 1; done ; \

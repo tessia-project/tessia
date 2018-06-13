@@ -19,6 +19,7 @@ Base state machine for auto installation of operating systems
 #
 # IMPORTS
 #
+from copy import deepcopy
 from tessia.baselib.common.ssh.client import SshClient
 from socket import inet_ntoa
 from tessia.server.config import Config
@@ -226,15 +227,15 @@ class SmBase(metaclass=abc.ABCMeta):
         Returns:
             dict: a dictionary with all the parsed information.
         """
+        # make a copy of the dicts to avoid changing the db object
         result = {}
         result["type"] = storage_vol.type_rel.name
         result["volume_id"] = storage_vol.volume_id
         result["server"] = storage_vol.server
-        result["system_attributes"] = storage_vol.system_attributes.copy()
-        result["specs"] = storage_vol.specs.copy()
+        result["system_attributes"] = deepcopy(storage_vol.system_attributes)
+        result["specs"] = deepcopy(storage_vol.specs)
         result["size"] = storage_vol.size
-
-        result["part_table"] = storage_vol.part_table
+        result["part_table"] = deepcopy(storage_vol.part_table)
         result["is_root"] = False
         for entry in result["part_table"]["table"]:
             if entry["mp"] == "/":

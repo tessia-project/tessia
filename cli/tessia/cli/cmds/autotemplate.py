@@ -109,7 +109,6 @@ def template_edit(cur_name, **kwargs):
 @click.option('--name', type=NAME, help="filter by template name")
 @click.option('--owner', help="filter by owner")
 @click.option('--project', help="filter by project")
-@click.option('operating_system', '--os', help="filter by supported OS")
 def template_list(**kwargs):
     """
     list the available templates

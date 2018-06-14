@@ -208,6 +208,7 @@ class AnsibleMachine(BaseMachine):
             try:
                 _, git_rev = parsed_url.path.rsplit('@', 1)
                 repo['url'] = parsed_url.geturl().replace('@' + git_rev, '')
+                repo['git_branch'] = git_rev
                 repo['git_branch'], repo['git_commit'] = git_rev.rsplit(':', 1)
             except ValueError:
                 # user did not specify additional git revision info,

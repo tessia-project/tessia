@@ -897,8 +897,11 @@ class TestPowerManagerMachine(TestCase):
 
         # validate stage verify
         self._assert_system_up_action(prof_obj, 2)
-        # currently kvm guests are unsupported
-        self.assertEqual(len(self._mock_post_cls.call_args_list), 1)
+        self.assertEqual(
+            self._mock_post_cls.call_args_list[1],
+            call(prof_obj, permissive=False))
+        self.assertEqual(
+            self._mock_post_obj.verify.call_args_list[1], call())
     # test_poweron_force()
 
     def test_poweron_already_up(self):
@@ -975,7 +978,6 @@ class TestPowerManagerMachine(TestCase):
         # validate call to poweron
         self._assert_poweron_action('hmc', hyp_prof, prof_obj, 1)
 
-        # currently kvm guests are unsupported
         # validate call to verify if guest state matched profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[1],

@@ -102,6 +102,8 @@ class PostInstallChecker(object):
         """
         self._logger = logging.getLogger(__name__)
 
+        self._sys_type = profile_obj.system_rel.type
+
         # convert the attributes from the sqlalchemy objects to an internal
         # dictionary format
         self._expected_params = self._parse_obj_profile(
@@ -892,6 +894,12 @@ class PostInstallChecker(object):
         """
         Check storage volumes (disks) configuration of a target instance.
         """
+
+        if self._sys_type == 'KVM':
+            self._logger.info('Skipping storage volumes check as KVM guests '
+                              'are currently unsupported')
+            return
+
         for svol in self._expected_params['storage']:
             # verify FCP paths
             if svol['type'] == "FCP":

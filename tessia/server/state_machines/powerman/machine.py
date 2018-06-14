@@ -936,12 +936,6 @@ class PowerManagerMachine(BaseMachine):
                 "Verifying if current state of system %s matches profile '%s'",
                 system_name, system_prof.name)
 
-        if system_prof.system_rel.type.lower() == 'kvm':
-            self._logger.warning(
-                'Skipping check of system %s as KVM guests are currently '
-                'unsupported', system_name)
-            return True
-
         prof_os = system_prof.operating_system_rel
         if prof_os and prof_os.type.lower() in ('cms', 'zcms'):
             self._logger.info('Skipping check of system %s as CMS is not '

@@ -283,11 +283,6 @@ class SmBase(metaclass=abc.ABCMeta):
         shell.close()
         ssh_client.logoff()
 
-        if self._system.type == 'KVM':
-            self._logger.info('Skipping installation check as KVM guests are '
-                              'currently unsupported')
-            return
-
         self._logger.info(
             "Verifying if installed system match expected parameters")
         # with certain distros the connection comes up and down during the

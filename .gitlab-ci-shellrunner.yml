@@ -34,7 +34,7 @@ unittests_server:
 clitests:
   stage: tests
   script:
-    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG
+    - COMPOSE_PROJECT_NAME=clitests-${CI_COMMIT_REF_SLUG} tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG
   except:
     - schedules
 
@@ -46,7 +46,7 @@ fieldtests_lite:
     - "[ -z $TESSIA_IMG_PASSWD_FILE ] && { echo error: variable not defined; exit 1; }"
   script:
     # use a different project name to avoid conflict with clitests job
-    - COMPOSE_PROJECT_NAME=tessiafieldtest tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_LITE_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
+    - COMPOSE_PROJECT_NAME=fieldtests-${CI_COMMIT_REF_SLUG} tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_LITE_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
   except:
     - schedules
   tags:
@@ -65,7 +65,7 @@ fieldtests_full_schedule:
   script:
     - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_FULL_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
   after_script:
-    - tools/ci/orc cleanup --tag=${TESSIA_IMAGE_TAG}
+    - tools/ci/orc cleanup --tag=$CI_COMMIT_REF_SLUG
   only:
     - schedules
   tags:
@@ -84,7 +84,7 @@ fieldtests_full_manual:
   script:
     - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_FULL_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
   after_script:
-    - tools/ci/orc cleanup --tag=${TESSIA_IMAGE_TAG}
+    - tools/ci/orc cleanup --tag=$CI_COMMIT_REF_SLUG
   when: manual
   except:
     - schedules

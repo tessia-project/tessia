@@ -15,6 +15,47 @@ limitations under the License.
 -->
 # Release notes
 
+## 18.06 (2018-06-12)
+
+Attention: if you are upgrading from a previous version, this release includes changes to the following installation templates:
+
+- fedora-default
+- ubuntu16-default
+- rhel7-default
+
+And adds two new templates:
+
+- fedora-kvmhost
+- ubuntu16-kvmhost
+
+Make sure to update existing templates in your database with the `tess autotemplate edit ` command and add new ones with `tess autotemplate add` command.
+
+### Fixes
+
+- power management: do not report error if --noverify is specified
+- rhel7 template update: eliminate number of disks contraint by using kickstart's %pre section to activate disks instead of kernel cmdline parameters
+- post-installation memory check: use 'lsmem' instead of /proc/meminfo for more accurate information
+- pick up baselib 0.2.4 fixes
+- client: remove wrong parameter `--os` from autotemplate edit command
+
+### Improvements
+
+- rhel7 template update: add package repository config in %post section
+- add kickstart template for fedora installations
+- autoinstall: improve connection handling during reboot after installation
+- enforce the need for 'UPDATE' permission to run jobs on systems, this means any installation/power management action requires the requester to have update permission to the target system.
+- client: improve job handling
+    - user can choose to cancel a job upon keyboard interrupt
+    - client will wait for job to start before fetching output
+- jobs: report in job output when cancel and timeout signals are received
+- minor fixes to ubuntu and redhat installations
+
+### Features
+
+- two new installation templates for deployment of KVM hypervisor on Fedora or Ubuntu16.04
+- allow user to specify a branch/commit/tag for ansible jobs
+- add support to set output verbosity of jobs
+
 ## 18.04 (2018-04-27)
 
 ### Fixes

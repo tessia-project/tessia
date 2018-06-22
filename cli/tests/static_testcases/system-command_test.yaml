@@ -771,11 +771,11 @@ tasks:
     - - system prof-list --system=cpc3lp52 --memory=1024mb
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=1024mib
-      - No results were found.
-    - - system prof-list --system=cpc3lp52 --memory=1gb
       - 'Profile name                : DASD10'
-    - - system prof-list --system=cpc3lp52 --memory=1gib
+    - - system prof-list --system=cpc3lp52 --memory=1gb
       - No results were found.
+    - - system prof-list --system=cpc3lp52 --memory=1gib
+      - 'Profile name                : DASD10'
       # expecting DASD11 as it was the last to be set as default
     - - system prof-list --system=cpc3lp52 --default
       - 'Profile name                : DASD11'

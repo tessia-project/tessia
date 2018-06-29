@@ -270,7 +270,7 @@ d-i preseed/late_command string \
     /target/sbin/partprobe ; multipath -r ; \
     mount -o bind /dev /target/dev ; \
     mount sysfs /target/sys -t sysfs -o rw,nosuid,nodev,noexec,relatime ; \
-{% for sv in config['svols'] -%}
+{% for sv in config['svols'] if sv['part_table']['table'] -%}
  {%- if not sv['is_root'] -%}
     {{partition_disk(sv)}} {{format_partitions(sv)}} {{populate_fstab(sv)}}
  {%- endif -%}

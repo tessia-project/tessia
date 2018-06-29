@@ -171,6 +171,11 @@ class SmDebianInstaller(SmBase):
         # Gather the device numbers of the disks and the paths
         # (denov, wwpn, lun).
         for svol in self._info["svols"]:
+            try:
+                svol["part_table"]["type"]
+            except (TypeError, KeyError):
+                continue
+
             part_table = svol['part_table']
 
             if part_table["type"] == "msdos":

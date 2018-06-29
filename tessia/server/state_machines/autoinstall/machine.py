@@ -278,12 +278,6 @@ class AutoInstallMachine(BaseMachine):
                     raise ValueError(
                         'failed to validate FCP parameters {} of volume {}: '
                         '{}'.format(vol.specs, vol.volume_id, exc.message))
-            try:
-                vol.part_table['table']
-            except (TypeError, KeyError):
-                raise ValueError(
-                    'volume {} has no partition table defined'.format(
-                        vol.volume_id))
 
         # make sure we have a valid network interface to perform installation
         gw_iface = profile.gateway_rel

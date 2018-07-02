@@ -126,6 +126,20 @@ tasks:
       - 'request failed, reason is: Parsing of parameters failed with: Profile DASD1 not found'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52
       - 'Failed to establish a new connection'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity
+      - '--verbosity option requires an argument'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity Critical
+      - 'Failed to establish a new connection'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity ERROR
+      - 'Failed to establish a new connection'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity warning
+      - 'Failed to establish a new connection'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity info
+      - 'Failed to establish a new connection'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity debug
+      - 'Failed to establish a new connection'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity warn
+      - Invalid value for "--verbosity"
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --profile='DASD root1'
       - 'Failed to establish a new connection'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --vol=3957
@@ -179,9 +193,9 @@ tasks:
     - - job submit --type=autoinst --parmfile='test_parmfile'
       - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
     - - job submit --type=echo --parmfile='test_parmfile'
-      - 'Request accepted; job id is #3'
-    - - job output --id=3
-      - ''
+      - 'Request accepted; job id is'
+    - - job output --id=8
+      - Waiting for job output
     - - job submit --type=autoinstall --parmfile='test'
       - 'Invalid value for "--parmfile": Could not open file: test: No such file or directory'
     - - job submit --type=autoinstall --parmfile='test_parmfile' --timeout
@@ -255,21 +269,21 @@ tasks:
       # cover stmt 148 in job.py
     - - job submit --type=echo --parmfile='test_parmfile_2'
       - 'Request accepted; job id is'
-    - - job output --id=4
+    - - job output --id=9
       - 'Hello, world!'
     # job req-list
     - - job req-list
       - 'request_id | action_type |   job_type  |     submit_date'
     - - job req-list --id
       - '--id option requires an argument'
-    - - job req-list --id=2
-      - 'Request ID           : 2'
     - - job req-list --id=7
       - 'Request ID           : 7'
-      # cover stmts 204-205 in output.py
     - - job req-list --id=12
       - 'Request ID           : 12'
-    - - job req-list --id=22
+      # cover stmts 204-205 in output.py
+    - - job req-list --id=17
+      - 'Request ID           : 17'
+    - - job req-list --id=27
       - request not found.
     - - job req-list --action
       - --action option requires an argument
@@ -280,7 +294,7 @@ tasks:
     - - job req-list --action=
       - 'Invalid value for "--action": value may not be empty'
     - - job req-list --action=xxxx
-      - 'Invalid value for "--action": action type must be one of: CANCEL, SUBMIT'
+      - 'Invalid value for "--action": action type must be one of: cancel, submit'
     - - job req-list --type
       - '--type option requires an argument'
     - - job req-list --type=lpar
@@ -314,19 +328,19 @@ tasks:
       - '--id option requires an argument'
     - - job cancel --id=2
       - 'request failed, reason is: Cannot cancel job because it already ended'
-    - - job cancel --id=22
+    - - job cancel --id=27
       - 'request failed. Server answered: Job id provided does not exist'
     - - job submit --type=echo --parmfile='test_parmfile_2'
       - 'Request accepted; job id is'
-    - - job cancel --id=5
+    - - job cancel --id=10
       - 'Request accepted; job #\d+ canceled'
-    - - job list --id=5
-      - 'Job ID         : 5'
+    - - job list --id=10
+      - 'Job ID         : 10'
     - - job submit --type=echo --parmfile='test_parmfile_2' --timeout=1
       - 'Request accepted; job id is'
     - - job list
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
-    - - job list --id=6
-      - 'Job ID         : 6'
+    - - job list --id=11
+      - 'Job ID         : 11'
 
 

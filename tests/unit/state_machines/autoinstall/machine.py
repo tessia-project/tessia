@@ -266,14 +266,7 @@ class TestAutoInstallMachine(TestCase):
         test_vol.part_table.pop('table')
         MANAGER.session.add(test_vol)
         MANAGER.session.commit()
-        error_re = (
-            'volume {} has no partition table defined'.format(
-                test_vol.volume_id))
-        self.assertRaisesRegex(
-            ValueError,
-            error_re,
-            machine.AutoInstallMachine.parse,
-            REQUEST_PARAMETERS)
+        self._perform_test_init(REQUEST_PARAMETERS)
 
         test_vol.part_table = orig_table
         MANAGER.session.add(test_vol)

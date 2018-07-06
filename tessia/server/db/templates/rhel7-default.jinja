@@ -1,3 +1,13 @@
+{%- macro list_devs_with_ptable(vols) -%}
+{% set dev_list = [] -%}
+{% for vol in vols -%}
+  {%- if vol["part_table"]["table"] -%}
+    {% set _ = dev_list.append(vol["system_attributes"]["device"].replace('/dev/', '')) -%}
+  {% endif -%}
+{% endfor -%}
+{{ dev_list | join(',') }}
+{% endmacro -%}
+
 # System authorization information
 auth --enableshadow --passalgo=sha512
 sshpw --username=root {{config["credentials"]["passwd"]}} --plaintext
@@ -39,7 +49,7 @@ zfcp --devnum={{adapter['devno'].replace('0.0.', '')}} --wwpn={{wwpn}} --fcplun=
 
 # Partition clearing information
 ignoredisk --only-use={{(config["svols"]|map(attribute="system_attributes")|map(attribute="device")|join(",")).replace('/dev/', '')}}
-clearpart --all --initlabel
+clearpart --initlabel --all --drives={{list_devs_with_ptable(config["svols"])}}
 {% for volume in config["svols"] %}
 {% if volume["is_root"] %}
 # System bootloader configuration

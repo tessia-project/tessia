@@ -237,10 +237,15 @@ class SmBase(metaclass=abc.ABCMeta):
         result["size"] = storage_vol.size
         result["part_table"] = deepcopy(storage_vol.part_table)
         result["is_root"] = False
-        for entry in result["part_table"]["table"]:
-            if entry["mp"] == "/":
-                result["is_root"] = True
-                break
+        try:
+            result["part_table"]["table"]
+        except (TypeError, KeyError):
+            pass
+        else:
+            for entry in result["part_table"]["table"]:
+                if entry["mp"] == "/":
+                    result["is_root"] = True
+                    break
 
         # device path not user-defined: determine it based on the platform
         if "device" not in result["system_attributes"]:

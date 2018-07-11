@@ -20,6 +20,7 @@ Test executor of yaml based testcase files
 # IMPORTS
 #
 from click.testing import CliRunner
+from io import BytesIO
 from tessia.cli import main
 
 import jsonschema
@@ -60,7 +61,9 @@ STATIC_SCHEMA = {
                         {
                             'type': 'string'
                         },
-                        # a list with [command_or_inputlist, output_regex]
+                        # a list with [command_or_inputlist, output_regex] or
+                        # [[command, input_1, input_2],
+                        #  [output_regex1, # output_regex2]]
                         {
                             'type': 'array',
                             'items': [
@@ -83,7 +86,20 @@ STATIC_SCHEMA = {
                                 },
                                 # the expected output regex
                                 {
-                                    'type': 'string'
+                                    'anyOf': [
+                                        # single regex
+                                        {
+                                            'type': 'string'
+                                        },
+                                        # list of regexes, all must match
+                                        {
+                                            'type': 'array',
+                                            'items': {
+                                                'type': 'string'
+                                            },
+                                            'minItems': 2,
+                                        }
+                                    ],
                                 }
                             ],
                             # in order to assure exactly 2 items are specified
@@ -119,6 +135,27 @@ class StaticExecutor(object):
     This class provides functionality to parse a yaml file (known as static
     testcase) and execute its content.
     """
+    class _StreamWrapper(BytesIO):
+        """
+        Force an EOF when the input has finished but the test keep
+        looking for output. Without this tests will loop forever as
+        the read() call will keep returning indefinitely.
+        """
+        @staticmethod
+        def _raise_or_return(content, size=-1):
+            if size != 0 and not content:
+                raise EOFError('End of file')
+            return content
+        def readlines(self):
+            return self._raise_or_return(super().readlines())
+        def readline(self, n=-1):
+            return self._raise_or_return(super().readline(n), n)
+        def read(self, n=-1):
+            return self._raise_or_return(super().read(n), n)
+        def read1(self, n=-1):
+            return self._raise_or_return(super().read1(n), n)
+    # _StreamWrapper
+
     def __init__(self, testcase, server_url):
         """
         Initialization, load yaml file and perform initial client configuration
@@ -174,20 +211,22 @@ class StaticExecutor(object):
         # statement has output regex specified: use it
         if isinstance(statement, list):
             # exception will not happen as input was validated by schema
-            cmd, output_re = statement
+            cmd, assert_res = statement
         else:
             cmd = statement
-            output_re = None
+            assert_res = None
 
         # cmd has input specified: use it
-        if isinstance(cmd, list):
-            cmd_str = cmd[0]
-            cmd_input = '\n'.join(cmd[1:])
-        else:
+        if not isinstance(cmd, list):
             cmd_str = cmd
             cmd_input = None
+        else:
+            cmd_str = cmd[0]
+            cmd_input = self._StreamWrapper(
+                ('\n'.join(cmd[1:]) + '\n').encode('utf-8'))
+
         self.invoke(
-            cmd_str, output_re, check=False, input=cmd_input)
+            cmd_str, assert_res, check=False, input=cmd_input)
     # exec_statement()
 
     @staticmethod
@@ -225,14 +264,14 @@ class StaticExecutor(object):
         return testcase
     # load_testcase()
 
-    def invoke(self, cmd_str, assert_msg=None, check=True, **extra):
+    def invoke(self, cmd_str, assert_res=None, check=True, **extra):
         """
         Convenient method to call and validate if a result from client
         invocation was as expected.
 
         Args:
             cmd_str (str): command to execute
-            assert_msg (str): when specified, regex to validate output
+            assert_res (str or list): single regex or list to validate output
             check (bool): whether to check the exit code
             extra (dict): parameters to be passed directly to command function
 
@@ -267,9 +306,17 @@ class StaticExecutor(object):
         elif (result.exception is not None and not
               isinstance(result.exception, SystemExit)):
             raise result.exception
-        if assert_msg is not None:
-            assert re.search(assert_msg, result.output) is not None, \
-                    'output does not match assertion regex'
+        # no regexes specified: nothing more to do
+        if not assert_res:
+            return
+
+        if isinstance(assert_res, str):
+            assert_res = [assert_res]
+        for assert_re in assert_res:
+            if re.search(assert_re, result.output):
+                continue
+            raise AssertionError("output does not match assertion regex: '{}'"
+                                 .format(assert_re))
     # invoke()
 
     def run(self):

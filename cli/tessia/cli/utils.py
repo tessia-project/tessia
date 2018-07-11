@@ -21,9 +21,9 @@ Miscellaneous utilities that can be consumed by different modules
 #
 from potion_client.exceptions import ItemNotFound
 from tessia.cli.config import CONF
-from time import sleep
 
 import click
+import json
 import time
 
 #
@@ -149,6 +149,43 @@ def log_exc_info(logger, msg, req_exc):
 
     logger.warning(msg, exc_info=req_exc)
 # log_exc_info()
+
+def parse_error_resp(response):
+    """
+    Parse the content of the error response for more friendly messages
+    """
+    raw_answer = response.text.strip()
+    try:
+        answer = json.loads(raw_answer)
+    # not a json content: just return the raw content
+    except Exception:
+        # empty body: as a last resource, return the status code and
+        # description
+        if not raw_answer:
+            raw_answer = '{} {}'.format(response.status_code, response.reason)
+        return raw_answer
+
+    msg = ''
+    try:
+        parsed_errors = []
+        for error in answer['errors']:
+            path = ''.join(error['path'])
+            validation_of = list(error['validationOf'].keys())[0]
+            validation_value = error['validationOf'][validation_of]
+            friendly_error = "{} must be {}={}".format(
+                path, validation_of, validation_value)
+            parsed_errors.append(friendly_error)
+        msg = ', '.join(parsed_errors)
+    except Exception:
+        # error messages other than 400 bad request have a different format
+        try:
+            msg = answer['message']
+        # not a json content: just return the raw content
+        except KeyError:
+            msg = answer
+
+    return msg
+# parse_error_resp()
 
 def size_to_str(size):
     """
@@ -301,7 +338,7 @@ def wait_job_exec(client, job_id):
             'job not found.')
         if item.state != 'WAITING':
             break
-        sleep(0.5)
+        time.sleep(0.5)
 # wait_job_exec()
 
 def wait_scheduler(client, arg_dict):

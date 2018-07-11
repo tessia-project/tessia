@@ -21,10 +21,9 @@ Module containing entry point for client execution
 #
 from tessia.cli.config import CONF
 from tessia.cli.cmds import root
-from tessia.cli.utils import log_exc_info
+from tessia.cli.utils import log_exc_info, parse_error_resp
 
 import click
-import json
 import logging
 import os
 import requests
@@ -37,43 +36,6 @@ import sys
 #
 # CODE
 #
-def _parse_resp_error(response):
-    """
-    Parse the content of the error response for more friendly messages
-    """
-    raw_answer = response.text.strip()
-    try:
-        answer = json.loads(raw_answer)
-    # not a json content: just return the raw content
-    except Exception:
-        # empty body: as a last resource, return the status code and
-        # description
-        if not raw_answer:
-            raw_answer = '{} {}'.format(response.status_code, response.reason)
-        return raw_answer
-
-    msg = ''
-    try:
-        parsed_errors = []
-        for error in answer['errors']:
-            path = ''.join(error['path'])
-            validation_of = list(error['validationOf'].keys())[0]
-            validation_value = error['validationOf'][validation_of]
-            friendly_error = "{} must be {}={}".format(
-                path, validation_of, validation_value)
-            parsed_errors.append(friendly_error)
-        msg = ', '.join(parsed_errors)
-    except Exception:
-        # error messages other than 400 bad request have a different format
-        try:
-            msg = answer['message']
-        # not a json content: just return the raw content
-        except KeyError:
-            msg = answer
-
-    return msg
-# _parse_resp_error()
-
 def main(*args, **kwargs):
     """
     Entry point for client execution
@@ -96,7 +58,7 @@ def main(*args, **kwargs):
         log_exc_info(logger, 'An error occurred during a request', exc)
 
         if exc.response.status_code == 400:
-            msg = _parse_resp_error(exc.response)
+            msg = parse_error_resp(exc.response)
             click.echo(
                 'The server did not accept our request. '
                 'The response is: {}'.format(msg), err=True)
@@ -107,13 +69,13 @@ def main(*args, **kwargs):
                 err=True
             )
         elif exc.response.status_code == 403:
-            msg = _parse_resp_error(exc.response)
+            msg = parse_error_resp(exc.response)
             click.echo(
                 "Error: permission denied. Server answered: {}".format(msg),
                 err=True
             )
         elif exc.response.status_code > 403 and exc.response.status_code < 500:
-            msg = _parse_resp_error(exc.response)
+            msg = parse_error_resp(exc.response)
             click.echo(
                 "Error: request failed. Server answered: {}".format(msg),
                 err=True

@@ -1,0 +1,98 @@
+{
+    "System": [
+        {
+            "desc": null,
+            "hostname": "cpc3.domain.com",
+            "hypervisor": null,
+            "model": "ZEC12_H43",
+            "modifier": "admin",
+            "name": "cpc3",
+            "owner": "admin",
+            "project": "Admins",
+            "state": "AVAILABLE",
+            "type": "CPC"
+        },
+        {
+            "desc": null,
+            "hostname": "cpc3lp52.domain.com",
+            "hypervisor": "cpc3",
+            "model": "ZEC12_H43",
+            "modifier": "admin",
+            "name": "cpc3lp52",
+            "owner": "admin",
+            "project": "Admins",
+            "state": "AVAILABLE",
+            "type": "LPAR"
+        },
+        {
+            "desc": "KVM Guest",
+            "hostname": "kvm054.domain.com",
+            "hypervisor": "cpc3lp52",
+            "model": "ZEC12_H43",
+            "modifier": "admin",
+            "name": "kvm054",
+            "owner": "admin",
+            "project": "Admins",
+            "state": "AVAILABLE",
+            "type": "kvm"
+        }
+    ],
+    "SystemProfile": [
+        {
+            "cpu": 32,
+            "credentials": {
+                "passwd": "passwd",
+                "user": "user"
+            },
+            "default": true,
+            "memory": 1136000,
+            "name": "default",
+            "system": "cpc3"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+              "passwd": "mypasswd",
+              "user": "root"
+            },
+            "default": true,
+            "gateway": null,
+            "hypervisor_profile": "cpc3/default",
+            "memory": 4096,
+            "name": "fcp1",
+            "operating_system": "ubuntu16.04.1",
+            "parameters": null,
+            "system": "cpc3lp52"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+              "passwd": "mypasswd",
+              "user": "root"
+            },
+            "default": false,
+            "gateway": null,
+            "hypervisor_profile": "cpc3/default",
+            "memory": 4096,
+            "name": "dasd1",
+            "operating_system": "rhel7.2",
+            "parameters": null,
+            "system": "cpc3lp52"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+              "passwd": "kvmpasswd",
+              "user": "root"
+            },
+            "default": true,
+            "gateway": null,
+            "hypervisor_profile": null,
+            "memory": 1024,
+            "name": "default",
+            "operating_system": "sles12.1",
+            "parameters": null,
+            "system": "kvm054"
+        }
+    ]
+}

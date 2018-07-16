@@ -19,6 +19,7 @@ Custom types for usage in command options
 #
 # IMPORTS
 #
+from tessia.cli.utils import str_to_size
 import click
 import ipaddress
 import re
@@ -277,6 +278,9 @@ class MACaddress(click.ParamType):
         Make sure it follows the pattern accepted by the server
         """
         if not value:
+            # value is empty and context allows it: just return
+            if ctx.meta.get('MACaddress.allow_empty'):
+                return value
             self.fail('value may not be empty', param, ctx)
 
         ret = re.match(r"^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", value)
@@ -286,9 +290,55 @@ class MACaddress(click.ParamType):
 
         return value
     # convert()
-#MACaddress
-
+# MACaddress
 MACADDRESS = MACaddress()
+
+class MibSize(click.ParamType):
+    """
+    A representation of a size in mebibytes
+    """
+    name = 'size'
+
+    def convert(self, value, param, ctx):
+        """
+        Receives a human size (i.e. 10GB) and converts to an integer size in
+        mebibytes.
+        """
+        try:
+            int_value = str_to_size(value)
+        except ValueError:
+            self.fail('{} is not a valid size'.format(value), param, ctx)
+
+        return int_value
+    # convert()
+# MibSize
+MIB_SIZE = MibSize()
+
+class MountPoint(click.ParamType):
+    """
+    A mount point for a partition
+    """
+    name = 'mount_point'
+
+    def convert(self, value, param, ctx):
+        """
+        Validates that the value is a valid mount point.
+        """
+        if not value:
+            # value is empty and context allows it: just return
+            if ctx.meta.get('MountPoint.allow_empty'):
+                return value
+            self.fail('value may not be empty', param, ctx)
+
+        ret = re.match(r"^/[a-z0-9A-Z/\-\._]*$", value)
+        if ret is None:
+            self.fail(
+                '{} is not a valid mount point'.format(value), param, ctx)
+
+        return value
+    # convert()
+# MountPoint
+MOUNT_POINT = MountPoint()
 
 class Name(click.ParamType):
     """
@@ -306,8 +356,8 @@ class Name(click.ParamType):
         ret = re.match(r'^\w+[\w\s\.\-]+$', value)
         if ret is None:
             msg = ("'{}' is not a valid name, it must start with a letter or "
-                   "number and may only contain of letters, numbers, blanks, "
-                   "'.', and '-'".format(value))
+                   "number, have at least 2 characters and may only contain "
+                   "letters, numbers, blanks, '.', and '-'".format(value))
             self.fail(msg, param, ctx)
 
         return value
@@ -409,6 +459,9 @@ class Text(click.ParamType):
         Make sure the value accepted by the server
         """
         if not value:
+            # value is empty and context allows it: just return
+            if ctx.meta.get('Text.allow_empty'):
+                return value
             self.fail('value may not be empty', param, ctx)
 
         return value

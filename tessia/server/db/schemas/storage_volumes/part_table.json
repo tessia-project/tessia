@@ -1,57 +1,4 @@
 {
-    "definitions": {
-        "partition": {
-            "required": [
-                "mp",
-                "size",
-                "fs",
-                "type",
-                "mo"
-            ],
-            "type": "object",
-            "properties": {
-                "mp": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "pattern": "^/[a-f0-9A-Z/]*$"
-                },
-                "size": {
-                    "type": "number"
-                },
-                "fs": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "enum": [
-                        "ext2",
-                        "ext3",
-                        "ext4",
-                        "btrfs",
-                        "reiserfs",
-                        "xfs",
-                        "swap"
-                    ]
-                },
-                "type": {
-                    "type": "string",
-                    "enum": [
-                        "primary",
-                        "extended",
-                        "logical"
-                    ]
-                },
-                "mo": {
-                    "type": [
-                        "string",
-                        "null"
-                    ]
-                }
-            }
-        }
-    },
     "properties": {
         "type": {
             "type": "string",
@@ -78,7 +25,7 @@
                             "string",
                             "null"
                         ],
-                        "pattern": "^/[a-zf0-9A-Z/]*$"
+                        "pattern": "^/[a-z0-9A-Z/\\-\\._]*$"
                     },
                     "size": {
                         "type": "number"

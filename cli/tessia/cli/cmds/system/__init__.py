@@ -24,13 +24,15 @@ from tessia.cli.cmds.system.model import CMDS as model_cmds
 from tessia.cli.cmds.system.prof import CMDS as prof_cmds
 from tessia.cli.cmds.system.system import CMDS as system_cmds
 from tessia.cli.cmds.system.vol import CMDS as vol_cmds
+from tessia.cli.cmds.system.wizard import CMDS as wizard_cmds
 
 import click
 
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMDS = iface_cmds + model_cmds + prof_cmds + system_cmds + vol_cmds
+CMDS = (iface_cmds + model_cmds + prof_cmds + system_cmds + vol_cmds +
+        wizard_cmds)
 
 #
 # CODE

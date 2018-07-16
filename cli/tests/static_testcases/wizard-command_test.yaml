@@ -1,0 +1,530 @@
+description: Test many variants for the 'system wizard' command
+base_user: admin
+tasks_order:
+  - base_data
+  - lpar
+  - zvm
+  - kvm
+tasks:
+  base_data:
+    # base group and role
+    - - perm project-add --name='lab-admins' --desc='Lab admins'
+      - Item added successfully.
+    - - perm role-grant --login=admin --name='ADMIN_LAB' --project='lab-admins'
+      - User role added successfully.
+    # base CPC to allow creation of LPARs
+    - - system add --name=cpc1 --type=CPC --hostname=cpc1.example._com --project=lab-admins
+      - Item added successfully.
+    - - system add --name=cpc2 --type=CPC --hostname=cpc2.example._com --project=lab-admins
+      - Item added successfully.
+    # storage config
+    - - storage server-add --name=ds8k10 --model=DS8000 --type=DASD-FCP --project='lab-admins' --desc='DS8K10 storage for test'
+      - Item added successfully.
+    - - storage server-add --name=ds8k15 --model=DS8000 --type=DASD-FCP --project='lab-admins' --desc='DS8K15 storage for staging'
+      - Item added successfully.
+    # base network config
+    - - net zone-add --name=zone-a --project='lab-admins' --desc='Zone A'
+      - Item added successfully.
+    - - net subnet-add --zone=zone-a --name='zone-a-s1920' --address=192.168.0.0/24  --gw=192.168.0.1 --dns1=192.168.200.241 --vlan=1822 --project='lab-admins' --desc='Subnet 192.168.0.x in zone A'
+      - Item added successfully.
+    - - net zone-add --name=zone-b --project='lab-admins' --desc='Zone B'
+      - Item added successfully.
+    - - net subnet-add --zone=zone-b --name='zone-b-s1920' --address=192.168.0.0/24  --gw=192.168.0.1 --dns1=192.168.200.241 --vlan=1900 --project='lab-admins' --desc='Subnet 192.168.0.x in zone B'
+      - Item added successfully.
+    # zvm guest related entries
+    - - storage vol-add --type=DASD --server=ds8k10 --id=0123 --size=7gib --desc='To exercise reusing already existing volume'
+      - Item added successfully.
+    - - storage part-init --server=ds8k10 --id=0123 --label=dasd
+      - Partition table successfully initialized.
+    - - storage part-add --server=ds8k10 --id=0123 --fs=ext4 --mp=/ --size=7gib
+      - Partition successfully added.
+    - - system add --name=cp1lp01 --type=LPAR --hyp=cpc1 --hostname=cpc1lp01.example._com --project=lab-admins --desc='zvm hypervisor'
+      - Item added successfully.
+    - - system add --name=zvm01 --type=ZVM --hyp=cp1lp01 --hostname=zvm01.example._com --project=lab-admins --desc='zvm guest'
+      - Item added successfully.
+    - - system prof-add --name=default --system=zvm01 --login=root:mypasswd --zvm-pass=zvmpasswd
+      - Item added successfully.
+    - - net ip-add --subnet='zone-a-s1920' --ip=192.168.0.11 --desc='For use by system zvm01'
+      - Item added successfully.
+    - - system iface-add --name=zvm-gw-iface --system=zvm01 --type=osa --ccwgroup=f400,f401,f402 --osname=encf400 --desc='gateway interface' --ip=192.168.0.11 --subnet='zone-a-s1920'
+      - Item added successfully.
+    # kvm guest related entries
+    - - system add --name=cp1lp02 --type=LPAR --hyp=cpc1 --hostname=cpc1lp02.example._com --project=lab-admins --desc='kvm hypervisor'
+      - Item added successfully.
+    - - system iface-add --name=kvmhost-gw-iface --system=cp1lp02 --type=osa --ccwgroup=f500,f501,f502 --osname=encf500 --desc='gateway interface'
+      - Item added successfully.
+    - - system iface-add --name=internal-iface --system=cp1lp02 --type=osa --ccwgroup=f300,f301,f302 --osname=encf300 --desc='internal interface'
+      - Item added successfully.
+    - - storage vol-add --type=DASD --server=ds8k15 --id=abcd --size=7gib --desc='To exercise reusing already existing volume'
+      - Item added successfully.
+  lpar:
+    - - - system wizard
+        # system name
+        - cp1lp10
+        # system type
+        - lpar
+        # hypervisor name
+        - cpc1
+        # system's hostname
+        - cp1lp10.example._com
+        # system's description
+        - a system to perform testing
+        # profile section, profile name, accept suggestion
+        - ""
+        # cpu qty
+        - "2"
+        # memory
+        - 2gib
+        # password
+        - mypasswd
+        # confirm password
+        - mypasswd
+        # storage section
+        - 0abc
+        # not found, want to create?
+        - y
+        # volume type, 1- DASD
+        - "1"
+        # which storage server to use?
+        - "2"
+        # volume size?
+        - 10gib
+        # volume description
+        - root disk for system cp1lp10
+        # partition section: choose fs
+        - "3"
+        # partition size
+        - 5gib
+        # mount point
+        - /
+        # show partition table
+        - "8"
+        # unpause it
+        - ""
+        # partition 2: choose swap
+        - "6"
+        # partition size
+        - 5gib
+        # quit partitioning
+        - "10"
+        # add more disks?
+        - y
+        # let's add a scsi-fcp now
+        - 123456789abcdef
+        # not found, want to create? exercise no
+        - n
+        # enter volume id again
+        - 123456789abcdef
+        # not found, want to create? this time yes
+        - y
+        # volume type, 2- FCP-SCSI
+        - "2"
+        # which storage server to use?
+        - "1"
+        # volume size? test default in mib
+        - "15360"
+        # fcp path 1
+        - 1900,5000000000000000
+        # add more? exercise reset
+        - r
+        # add fcp path 1 again
+        - 1900,5000000000000000
+        # add more?
+        - y
+        # fcp path 2
+        - 1900,6000000000000000
+        # end
+        - n
+        # disk's wwid
+        - "1111111111111111111"
+        # enable multipath?
+        - y
+        # volume description - exercise empty
+        - ""
+        # partition section: choose fs, 1 - btrfs
+        - "1"
+        # partition size
+        - 15gib
+        # mount point
+        - /var/log
+        # only for 'msdos' ptable - partition type
+        - "1"
+        # quit partitioning
+        - "10"
+        # add more disks?
+        - n
+        # interface section: enter name
+        - gw-iface
+        # create new iface?
+        - y
+        # iface type, 1 = OSA
+        - "1"
+        # os name
+        - encf500
+        # layer2
+        - y
+        # ccwgroup
+        - f500,f501,f502
+        # require portno 1?
+        - n
+        # mac address
+        - aa:bb:cc:dd:ee:ff
+        # iface description
+        - external osa interface
+        # assign ip?
+        - y
+        # ip address
+        - 192.168.0.10
+        # not found, create new?
+        - y
+        # choose subnet
+        - "2"
+        # ip description
+        - ip beloging to external iface of system cp1lp10
+        # add more ifaces?
+        - n
+        # install now?
+        - y
+        # choose OS
+        - "1"
+      - No repository available for the specified OS
+      # verification section - make sure all resources were correctly created
+    - - system list --name=cp1lp10
+      - - 'Hostname *: cp1lp10\.example\._com'
+        - 'Hypervisor name *: cpc1'
+        - 'Type *: LPAR'
+        - 'Description *: a system to perform testing'
+    - - system prof-list --system=cp1lp10
+      - - 'Profile name *: wizard-profile1'
+        - 'CPU\(s\) *: 2'
+        - 'Memory *: 2.0 GiB'
+        - 'Default *: True'
+        - 'Credentials *: .*mypasswd'
+        - 'Storage volumes *: .*ds8k15/0abc'
+        - 'Storage volumes *: .*ds8k10/123456789abcdef'
+        - 'Network interfaces *: .*gw-iface/192\.168\.0\.10'
+    - - storage vol-list --server=ds8k15 --id=0abc
+      - - 'Volume size *: 10.0 GiB'
+        - 'Volume type *: DASD'
+        - 'Description *: root disk for system cp1lp10'
+    - - storage part-list --server=ds8k15 --id=0abc
+      - - '\n *1 *\| *5\.0 GiB *\| *primary *\| *ext3 *\| */ *\| *\n'
+        - '\n *2 *\| *5\.0 GiB *\| *primary *\| *swap *\| *\| *\n'
+    - - storage vol-list --server=ds8k10 --id=123456789abcdef
+      - - 'Volume size *: 15.0 GiB'
+        - 'Volume type *: FCP'
+        - "Volume specifications *: .*'devno': '0\\.0\\.1900'"
+        - "Volume specifications *: .*5000000000000000"
+        - "Volume specifications *: .*6000000000000000"
+        - "Volume specifications *: .*'wwid': '1111111111111111111'"
+        - "Volume specifications *: .*'multipath': True"
+        - 'Description *: *\n'
+    - - storage part-list --server=ds8k10 --id=123456789abcdef
+      - '\n *1 *\| *15\.0 GiB *\| *primary *\| *btrfs *\| */var/log *\| *\n'
+    - - system iface-list --system=cp1lp10 --name=gw-iface
+      - - 'Operating system name *: encf500'
+        - 'Interface type *: OSA'
+        - "Attributes *: .*'layer2': True"
+        - "Attributes *: .*'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'"
+        - 'MAC address *: aa:bb:cc:dd:ee:ff'
+        - 'Description *: external osa interface'
+    - - net ip-list --ip=192.168.0.10 --subnet=zone-b-s1920
+      - 'Description *: ip beloging to external iface of system cp1lp10'
+    # create another profile reusing stuff
+    - - - system wizard
+        # system name
+        - cp1lp10
+        # already exists, use it? exercise no
+        - n
+        # system name, accepts name previsouly entered
+        - ""
+        # already exists, use it?
+        - y
+        # profile section, profile name, accepts suggestion
+        - ""
+        # already exists, enter another name, accepts suggestion
+        - ""
+        # cpu qty
+        - "1"
+        # memory
+        - "1024"
+        # should be set as default?
+        - "n"
+        # password
+        - somepasswdthatissomehowlong
+        # confirm password
+        - somepasswdthatissomehowlong
+        # storage section
+        - 0abc
+        # already exists, exercise not picking anything
+        - ""
+        # enter volume again
+        - 0abc
+        # this time we choose volume found from list
+        - "1"
+        # reset partition table?
+        - "n"
+        # add more disks?
+        - n
+        # interface section: enter name
+        - vlan100-iface
+        # create new iface?
+        - y
+        # iface type, 1 = OSA
+        - "1"
+        # os name
+        - encf600
+        # layer2
+        - y
+        # ccwgroup
+        - "0xf600,0xf601,0xf602"
+        # require portno 1?
+        - n
+        # mac address - exercise dynamically generated
+        - ""
+        # iface description
+        - interface to vlan 100
+        # assign ip?
+        - n
+        # add more ifaces?
+        - n
+        # install now?
+        - n
+      - Wizard finished
+      # verification section
+    - - system prof-list --system=cp1lp10 --name=wizard-profile2
+      - - 'Profile name *: wizard-profile2'
+        - 'CPU\(s\) *: 1'
+        - 'Memory *: 1.0 GiB'
+        - 'Default *: False'
+        - 'Credentials *: .*somepasswdthatissomehowlong'
+        - 'Storage volumes *: .*\[ds8k15/0abc\]'
+        - 'Network interfaces *: .*\[vlan100-iface\]'
+    - - system iface-list --system=cp1lp10 --name=vlan100-iface
+      - - 'Operating system name *: encf600'
+        - 'Interface type *: OSA'
+        - "Attributes *: .*'layer2': True"
+        - "Attributes *: .*'ccwgroup': '0.0.f600,0.0.f601,0.0.f602'"
+        - 'MAC address *: *\n'
+        - 'Description *: interface to vlan 100'
+  zvm:
+    - - - system wizard
+        # system name, test using existing system
+        - zvm01
+        # already exists, want to use it?
+        - y
+        # profile section, accept profile name suggestion
+        - ""
+        # cpu qty
+        - "3"
+        # memory
+        - "2048"
+        # should be set as default?
+        - y
+        # password
+        - somepasswd
+        # confirm password
+        - somepasswd
+        # need logon by? no
+        - ""
+        # zvm password
+        - zvmpasswd
+        # confirm password
+        - zvmpasswd
+        # storage section - exercise reusing already existing volume
+        - "0123"
+        # exercise wrong option
+        - "55"
+        # enter volume id again
+        - "0123"
+        # choose volume found from list
+        - "1"
+        # want to re-create partition table?
+        - y
+        # partition section: choose fs
+        - "4"
+        # partition size, exercise entering size bigger than disk
+        - 100gib
+        # partition size, correct now
+        - 7gib
+        # mount point
+        - /
+        # quit partitioning
+        - "10"
+        # add more disks?
+        - n
+        # interface section: enter name
+        - zvm-gw-iface
+        # already exist, use it? exercise no and enter again
+        - n
+        # interface section: enter name
+        - zvm-gw-iface
+        # already exist, use it? now we reuse it
+        - y
+        # create more ifaces?
+        - y
+        # iface name
+        - internal-iface
+        # create as new?
+        - y
+        # interface type, try an invalid input
+        - "50"
+        # interface type, 1 = OSA
+        - "1"
+        # os name
+        - osa01
+        # layer2
+        - y
+        # ccwgroup
+        - f500,f501,f502
+        # require portno 1?
+        - y
+        # iface description
+        - internal osa interface
+        # assign ip?
+        - y
+        # ip address
+        - 192.168.0.12
+        # register as new? exercise no
+        - n
+        # enter ip address again
+        - 192.168.0.12
+        # register as new? yes
+        - y
+        # choose subnet
+        - "1"
+        # ip description - exercise empty description
+        - ""
+        # add more ifaces?
+        - n
+        # install now?
+        - n
+      - Wizard finished
+      # verification section
+    - - system prof-list --system=zvm01 --name=wizard-profile1
+      - - 'Profile name *: wizard-profile1'
+        - 'CPU\(s\) *: 3'
+        - 'Memory *: 2.0 GiB'
+        - 'Default *: True'
+        - 'Credentials *: .*somepasswd'
+        - 'Credentials *: .*zvmpasswd'
+        - 'Storage volumes *: .*ds8k10/0123'
+        - 'Network interfaces *: .*\[zvm-gw-iface/192\.168\.0\.11\]'
+        - 'Network interfaces *: .*\[internal-iface/192\.168\.0\.12\]'
+    - - storage part-list --server=ds8k10 --id=0123
+      - '\n *1 *\| *7\.0 GiB *\| *primary *\| *ext4 *\| */ *\| *\n'
+    - - system iface-list --system=zvm01 --name=internal-iface
+      - - 'Operating system name *: osa01'
+        - 'Interface type *: OSA'
+        - "Attributes *: .*'layer2': True"
+        - "Attributes *: .*'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'"
+        - 'MAC address *: *\n'
+        - 'Description *: internal osa interface'
+    - - net ip-list --ip=192.168.0.12 --subnet=zone-a-s1920
+      - 'Description *: *\n'
+  kvm:
+    - - - system wizard
+        # system name
+        - kvm01
+        # system type
+        - kvm
+        # hypervisor name, exercise invalid entry
+        - some_wrong_system_name
+        # hypervisor name, correct now
+        - cp1lp02
+        # system's hostname
+        - kvm01.example._com
+        # system's description - exercise empty
+        - ""
+        # profile section
+        - kvm-profile1
+        # cpu qty
+        - "5"
+        # memory
+        - "3gib"
+        # password
+        - "my_password"
+        # confirm password
+        - "my_password"
+        # storage section - exercise trying to use volume which belongs to another system
+        - "0123"
+        # choose volume found from list
+        - "1"
+        # failed, back to enter volume identifier
+        - abcd
+        # choose volume found from list
+        - "1"
+        # partition section: choose fs
+        - "3"
+        # partition size
+        - 5gib
+        # mount point
+        - /
+        # exercise reset partition table
+        - "9"
+        # enter root partition again
+        # partition section: choose fs
+        - "3"
+        # partition size
+        - 5gib
+        # mount point
+        - /
+        # partition 2, 7 - xfs
+        - "7"
+        # partition size
+        - 2gib
+        # exercise no mount point
+        - ""
+        # quit partitioning
+        - "10"
+        # add more disks?
+        - n
+        # interface section: enter name
+        - macvtap-iface
+        # create as new? exercise no
+        - n
+        # interface section: enter name
+        - macvtap-iface
+        # create as new? this time yes
+        - y
+        # interface type, 2 = macvtap
+        - "2"
+        # os name
+        - en0
+        # host iface, pick from list
+        - "1"
+        # mac address - try to leave blank, shouldn't work
+        - ""
+        # mac address - enter valid
+        - aa:bb:cc:ee:dd:ff
+        # iface description
+        - kvm macvtap interface
+        # assign ip?
+        - n
+        # add more ifaces?
+        - n
+        # install now?
+        - n
+      - Wizard finished
+    - - system list --name=kvm01
+      - - 'Hostname *: kvm01\.example\._com'
+        - 'Hypervisor name *: cp1lp02'
+        - 'Type *: KVM'
+        - 'Description *: *\n'
+    - - system prof-list --system=kvm01 --name=kvm-profile1
+      - - 'Profile name *: kvm-profile1'
+        - 'CPU\(s\) *: 5'
+        - 'Memory *: 3.0 GiB'
+        - 'Default *: True'
+        - 'Credentials *: .*my_password'
+        - 'Storage volumes *: .*ds8k15/abcd'
+        - 'Network interfaces *: .*\[macvtap-iface\] *\n'
+    - - storage part-list --server=ds8k15 --id=abcd
+      - - '\n *1 *\| *5\.0 GiB *\| *primary *\| *ext3 *\| */ *\| *\n'
+        - '\n *2 *\| *2\.0 GiB *\| *primary *\| *xfs *\| *\| *\n'
+    - - system iface-list --system=kvm01 --name=macvtap-iface
+      - - 'Operating system name *: en0 *\n'
+        - 'Interface type *: MACVTAP'
+        - "Attributes *: .*'hostiface': 'encf300'"
+        - 'MAC address *: *aa:bb:cc:ee:dd:ff *\n'
+        - 'Description *: kvm macvtap interface'

@@ -26,8 +26,7 @@ from tessia.server.db.models import System
 from tessia.server.db.models import SystemProfile
 from tessia.server.state_machines.base import BaseMachine
 from tessia.server.state_machines.autoinstall.machine import AutoInstallMachine
-from urllib.parse import urlsplit
-from urllib.parse import urlunsplit
+from urllib.parse import urlsplit, urlunsplit
 
 import logging
 import os
@@ -140,8 +139,9 @@ class AnsibleMachine(BaseMachine):
         self._logger = logging.getLogger(__name__)
 
         # validate params and store them
-        self.parse(params)
-        self._params = yaml.safe_load(params)
+        parsed_params = self.parse(params)
+        self._params = parsed_params['params']
+        self._params['repo_info'] = parsed_params['repo_info']
 
         # work directory (to be created in download stage)
         self._temp_dir = None
@@ -150,19 +150,17 @@ class AnsibleMachine(BaseMachine):
     # __init__()
 
     @staticmethod
-    def _get_url_type(source_url):
+    def _get_url_type(parsed_url):
         """
         Return a string representing the type of the url provided.
 
         Args:
-            source_url (str): repository network url
+            parsed_url (urllib.parse.SplitResult): result of urlsplit
 
         Returns:
             str: web, git or unknown
         """
         http_protocols = ['http', 'https']
-
-        parsed_url = urlsplit(source_url)
 
         if parsed_url.scheme == 'git' or (
                 parsed_url.scheme in http_protocols and
@@ -181,30 +179,31 @@ class AnsibleMachine(BaseMachine):
         """
         Parse and validate the passed ansible repository url.
 
-        Returns:
-            dict: a dictionary containing the parsed information
-
         Args:
             source_url (str): repository network url
 
         Raises:
             ValueError: if validation of parameters fails
+
+        Returns:
+            dict: a dictionary containing the parsed information
         """
-        # TODO: sanitize source_url
+        # parse url into components
+        parsed_url = urlsplit(source_url)
+        if not parsed_url.netloc:
+            raise ValueError("Invalid URL '{}'".format(source_url))
 
         repo = {
             'url': source_url,
             'git_branch': 'master',
             'git_commit': 'HEAD',
+            'type': cls._get_url_type(parsed_url),
+            'url_obs': cls._url_obfuscate(parsed_url),
+            'url_parsed': parsed_url,
         }
 
         # git source: use git command to verify it
-        url_type = cls._get_url_type(source_url)
-
-        # parse url into components
-        parsed_url = urlsplit(source_url)
-
-        if url_type == 'git':
+        if repo['type'] == 'git':
             # parse git revision info (branch, commit/tag)
             try:
                 _, git_rev = parsed_url.path.rsplit('@', 1)
@@ -231,17 +230,15 @@ class AnsibleMachine(BaseMachine):
                     check=True,
                 )
             except subprocess.CalledProcessError as exc:
-                raise ValueError(
-                    'Source url is not accessible: {}'.format(
-                        exc.stderr.decode('utf8').replace(
-                            source_url,
-                            cls._obfuscation(source_url))))
+                raise ValueError('Source url is not accessible: {}'.format(
+                    exc.stderr.decode('utf8').replace(
+                        source_url, repo['url_obs'])))
             except OSError as exc:
                 raise ValueError('Failed to execute git: {}'.format(str(exc)))
 
         # http source: use the requests lib to verify it
-        elif url_type == 'web':
-            file_name = os.path.basename(urlsplit(source_url).path)
+        elif repo['type'] == 'web':
+            file_name = os.path.basename(parsed_url.path)
             # file to download is not in supported format: report error
             if not (file_name.endswith('tgz') or file_name.endswith('.tar.gz')
                     or file_name.endswith('.tar.bz2')):
@@ -260,24 +257,19 @@ class AnsibleMachine(BaseMachine):
                 raise ValueError(
                     "Source url is not accessible: {} {}".format(
                         exc.response.status_code, exc.response.reason))
-            repo['url'] = file_name
 
         else:
             raise ValueError('Unsupported source url specified')
 
         return repo
-
     # _parse_source()
 
     def _download_git(self):
         """
         Download a repository from a git url
         """
-        repo = self._parse_source(self._params['source'])
-
-        self._logger.info(
-            'cloning git repo from %s',
-            self._obfuscation(self._params['source']))
+        repo = self._params['repo_info']
+        self._logger.info('cloning git repo from %s', repo['url_obs'])
 
         # Since git doesn't allow to clone specific commit and for
         # optimal resources usage, we set the depth of cloning.
@@ -300,8 +292,7 @@ class AnsibleMachine(BaseMachine):
         except subprocess.CalledProcessError as exc:
             raise ValueError('Failed to git clone: {}'.format(
                 exc.stderr.decode('utf8').replace(
-                    self._params['source'],
-                    self._obfuscation(self._params['source']))))
+                    repo['url'], repo['url_obs'])))
         except OSError as exc:
             raise RuntimeError('Failed to execute git: {}'.format(
                 str(exc)))
@@ -320,8 +311,7 @@ class AnsibleMachine(BaseMachine):
                     repo['git_commit'],
                     MAX_GIT_CLONE_DEPTH,
                     exc.stderr.decode('utf8').replace(
-                        self._params['source'],
-                        self._obfuscation(self._params['source']))))
+                        repo['url'], repo['url_obs'])))
         except OSError as exc:
             raise RuntimeError('Failed to execute git: {}'.format(str(exc)))
 
@@ -331,7 +321,8 @@ class AnsibleMachine(BaseMachine):
         """
         Download a repository from a web url
         """
-        file_name = self._parse_source(self._params['source'])['url']
+        repo = self._params['repo_info']
+        file_name = repo['url_parsed'].path.split('/')[-1]
 
         # determine how to extract the source file
         tar_flags = ''
@@ -344,8 +335,7 @@ class AnsibleMachine(BaseMachine):
             raise RuntimeError('Unsupported source file format')
 
         self._logger.info(
-            'downloading compressed file from %s',
-            self._obfuscation(self._params['source']))
+            'downloading compressed file from %s', repo['url_obs'])
 
         try:
             resp = requests.get(
@@ -538,14 +528,10 @@ class AnsibleMachine(BaseMachine):
         self._temp_dir = tempfile.TemporaryDirectory()
         self._repo_dir = '{}/src'.format(self._temp_dir.name)
 
-        url_type = self._get_url_type(self._params['source'])
-
-        if url_type == 'git':
+        if self._params['repo_info']['type'] == 'git':
             self._download_git()
-
-        elif url_type == 'web':
+        elif self._params['repo_info']['type'] == 'web':
             self._download_web()
-
         # should never happen as it was validated by parse before
         else:
             raise RuntimeError('Unsupported source url')
@@ -598,32 +584,26 @@ class AnsibleMachine(BaseMachine):
     # _stage_exec_playbook()
 
     @staticmethod
-    def _obfuscation(url):
+    def _url_obfuscate(parsed_url):
         """
-        Blacking-out of sensitive information.
+        Obfuscate sensitive information (i.e. user and password) from the
+        repository URL.
+
+        Args:
+            parsed_url (urllib.parse.SplitResult): result of urlsplit
 
         Returns:
-            str: url with obfuscated password and login
+            str: url with obfuscated user credentials
         """
-        sensitive = None
-        parsed_url = urlsplit(url)
-        if not parsed_url.netloc:
-            parsed_url['netloc'], parsed_url['path'] = parsed_url['path'], ''
-
         try:
-            sensitive, host_name = parsed_url.netloc.rsplit('@', 1)
+            _, host_name = parsed_url.netloc.rsplit('@', 1)
         except ValueError:
-            host_name = parsed_url.netloc
+            return parsed_url.geturl()
+        repo_parts = [*parsed_url]
+        repo_parts[1] = '{}@{}'.format('****', host_name)
 
-        if sensitive:
-            obfus_url = urlunsplit(
-                parsed_url._replace(
-                    netloc='{0}{1}'.format("***", "@" + host_name)))
-        else:
-            obfus_url = url
-
-        return obfus_url
-    # _obfuscation()
+        return urlunsplit(repo_parts)
+    # _url_obfuscate()
 
     def cleanup(self):
         """
@@ -664,12 +644,15 @@ class AnsibleMachine(BaseMachine):
         used_resources = cls._get_resources(obj_params['systems'])
 
         # validate the source specified
-        cls._parse_source(obj_params['source'])
+        repo_info = cls._parse_source(obj_params['source'])
 
         result = {
             'resources': used_resources,
             'description': MACHINE_DESCRIPTION.format(
-                obj_params['playbook'], obj_params['source'])
+                obj_params['playbook'], repo_info['url_obs']),
+            # not for scheduler, useful for machine inner workings
+            'params': obj_params,
+            'repo_info': repo_info,
         }
         return result
     # parse()

@@ -27,6 +27,7 @@ from tessia.server.db.models import SystemProfile
 from tessia.server.state_machines.base import BaseMachine
 from tessia.server.state_machines.autoinstall.machine import AutoInstallMachine
 from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 
 import logging
 import os
@@ -230,8 +231,11 @@ class AnsibleMachine(BaseMachine):
                     check=True,
                 )
             except subprocess.CalledProcessError as exc:
-                raise ValueError('Source url is not accessible: {}'.format(
-                    exc.stderr.decode('utf8')))
+                raise ValueError(
+                    'Source url is not accessible: {}'.format(
+                        exc.stderr.decode('utf8').replace(
+                            source_url,
+                            cls._obfuscation(source_url))))
             except OSError as exc:
                 raise ValueError('Failed to execute git: {}'.format(str(exc)))
 
@@ -269,10 +273,11 @@ class AnsibleMachine(BaseMachine):
         """
         Download a repository from a git url
         """
-        self._logger.info(
-            'cloning git repo from %s', self._params['source'])
-
         repo = self._parse_source(self._params['source'])
+
+        self._logger.info(
+            'cloning git repo from %s',
+            self._obfuscation(self._params['source']))
 
         # Since git doesn't allow to clone specific commit and for
         # optimal resources usage, we set the depth of cloning.
@@ -294,7 +299,9 @@ class AnsibleMachine(BaseMachine):
             )
         except subprocess.CalledProcessError as exc:
             raise ValueError('Failed to git clone: {}'.format(
-                exc.stderr.decode('utf8')))
+                exc.stderr.decode('utf8').replace(
+                    self._params['source'],
+                    self._obfuscation(self._params['source']))))
         except OSError as exc:
             raise RuntimeError('Failed to execute git: {}'.format(
                 str(exc)))
@@ -312,9 +319,9 @@ class AnsibleMachine(BaseMachine):
                 'commits. Received error: {}'.format(
                     repo['git_commit'],
                     MAX_GIT_CLONE_DEPTH,
-                    exc.stderr.decode('utf8')
-                )
-            )
+                    exc.stderr.decode('utf8').replace(
+                        self._params['source'],
+                        self._obfuscation(self._params['source']))))
         except OSError as exc:
             raise RuntimeError('Failed to execute git: {}'.format(str(exc)))
 
@@ -337,7 +344,8 @@ class AnsibleMachine(BaseMachine):
             raise RuntimeError('Unsupported source file format')
 
         self._logger.info(
-            'downloading compressed file from %s', self._params['source'])
+            'downloading compressed file from %s',
+            self._obfuscation(self._params['source']))
 
         try:
             resp = requests.get(
@@ -588,6 +596,34 @@ class AnsibleMachine(BaseMachine):
         if proc.returncode != 0:
             raise RuntimeError('playbook execution failed')
     # _stage_exec_playbook()
+
+    @staticmethod
+    def _obfuscation(url):
+        """
+        Blacking-out of sensitive information.
+
+        Returns:
+            str: url with obfuscated password and login
+        """
+        sensitive = None
+        parsed_url = urlsplit(url)
+        if not parsed_url.netloc:
+            parsed_url['netloc'], parsed_url['path'] = parsed_url['path'], ''
+
+        try:
+            sensitive, host_name = parsed_url.netloc.rsplit('@', 1)
+        except ValueError:
+            host_name = parsed_url.netloc
+
+        if sensitive:
+            obfus_url = urlunsplit(
+                parsed_url._replace(
+                    netloc='{0}{1}'.format("***", "@" + host_name)))
+        else:
+            obfus_url = url
+
+        return obfus_url
+    # _obfuscation()
 
     def cleanup(self):
         """

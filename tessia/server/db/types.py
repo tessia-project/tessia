@@ -55,6 +55,7 @@ OPERATING_SYSTEMS = [
     'sles12-default',
     'sles12.3,suse,12,3,SUSE Linux Enterprise Server 12 SP3,'
     'sles12-default',
+    'sles15,suse,15,0,SUSE Linux Enterprise Server 15,sles15-default',
     'ubuntu16.04.1,debian,1604,1,Ubuntu 16.04.1 LTS,ubuntu16-default',
     'ubuntu16.04.2,debian,1604,2,Ubuntu 16.04.2 LTS,ubuntu16-default',
     'ubuntu16.04.3,debian,1604,3,Ubuntu 16.04.3 LTS,ubuntu16-default',
@@ -74,6 +75,7 @@ TEMPLATES = [
     "fedora-kvmhost,Fedora KVM hypervisor profile,admin,Admins",
     "rhel7-default,Default template for RHEL7 installations,admin,Admins",
     "sles12-default,Default template for SLES12 installations,admin,Admins",
+    "sles15-default,Default template for SLES15 installations,admin,Admins",
     "ubuntu16-default,Default template for Ubuntu16 installations"
     ",admin,Admins",
     "ubuntu16-kvmhost,Ubuntu16 KVM hypervisor profile,admin,Admins",

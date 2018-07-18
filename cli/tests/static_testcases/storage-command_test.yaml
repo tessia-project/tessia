@@ -36,6 +36,8 @@ tasks:
       - 'Usage: tess storage'
     - - storage part-add -h
       - 'Usage: tess storage part-add'
+    - - storage part-clear -h
+      - 'Usage: tess storage part-clear'
     - - storage part-del -h
       - 'Usage: tess storage part-del'
     - - storage part-edit -h
@@ -435,6 +437,15 @@ tasks:
     - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=ext4 --size=7gb --mp=/
       - 'partition table undefined; initialize it with the part-init command.'
     - - storage part-del --server=DS8K16 --id=3955 --num=1
+      - 'partition table undefined; initialize it with the part-init command.'
+    # 'storage part-clear' subcommand
+    - - storage part-init --server=DS8K16 --id=3955 --label=dasd
+      - Partition table successfully initialized.
+    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7gb --mp=/
+      - Partition successfully added.
+    - - storage part-clear --server=DS8K16 --id=3955
+      - 'partition table cleared; to initialize it, use the part-init command.'
+    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7gb --mp=/
       - 'partition table undefined; initialize it with the part-init command.'
     # 'storage part-init' subcommand
     - - storage part-init

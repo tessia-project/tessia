@@ -217,6 +217,19 @@ class PostInstallChecker(object):
         # additional entries with the necessary information.
         for svol in self._expected_params['storage']:
             devpath = svol['devpath']
+
+            # no partition table defined: just verify disk presence
+            if not svol['part_table']:
+                try:
+                    self._exec_ansible(
+                        'command', '[ -e {} ]'.format(devpath))
+                except RuntimeError:
+                    self._logger.debug('Failed to check presence of disk %s:',
+                                       devpath, exc_info=True)
+                else:
+                    params['ansible_devices'][devpath] = {}
+                continue
+
             try:
                 parted_output = self._exec_ansible(
                     'parted', 'device={} unit=B state=info'.format(devpath))
@@ -224,6 +237,7 @@ class PostInstallChecker(object):
                 self._logger.debug('Failed to fetch info for disk %s:',
                                    devpath, exc_info=True)
                 continue
+
             try:
                 parted_json = json.loads(parted_output)
             # should not happen as ansible output is stable
@@ -935,6 +949,11 @@ class PostInstallChecker(object):
                 self._report('volume {}'.format(svol['id']),
                              'disk {} present'.format(devpath), None)
                 continue
+            if not svol['part_table']:
+                self._logger.info(
+                    'Skipping partitions check on disk %s as no expected '
+                    'partition table was defined', devpath)
+                continue
 
             actual_size = int(actual_disk['disk']['size'] / 1024 / 1024)
             min_size = svol['size'] - 200
@@ -954,12 +973,9 @@ class PostInstallChecker(object):
 
             # verify partition table
             exp_table = svol['part_table']
-            # expected table might be empty therefore we refer to the key
-            # indirectly; past this point it's guaranteed to have a dict
-            # and no indirect referencing is needed
             self._pass_or_report(
                 'parttable type disk {}'.format(devpath),
-                exp_table.get('type', '<empty>'),
+                exp_table['type'],
                 actual_disk['disk']['table'])
             if not exp_table:
                 return

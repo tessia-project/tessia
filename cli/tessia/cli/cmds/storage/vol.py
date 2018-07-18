@@ -135,6 +135,27 @@ def part_add(server, volume_id, **kwargs):
     click.echo('Partition successfully added.')
 # part_add()
 
+@click.command(name='part-clear')
+@click.option('--server', required=True,
+              help='storage server containing volume')
+@click.option('volume_id', '--id', required=True, type=VOLUME_ID,
+              help="volume id")
+def part_clear(server, volume_id):
+    """
+    clear (remove) a volume's partition table
+    """
+    client = Client()
+    item = fetch_item(
+        client.StorageVolumes,
+        {'volume_id': volume_id, 'server': server},
+        'volume not found.')
+
+    item.update({'part_table': None})
+
+    click.echo('partition table cleared; to initialize it, use the part-init '
+               'command.')
+# part_clear()
+
 @click.command(
     name='part-del',
     # short help is needed to avoid truncation
@@ -568,6 +589,6 @@ def vol_types():
 # vol_types()
 
 CMDS = [
-    vol_add, vol_del, vol_edit, vol_list, vol_types, part_add, part_del,
-    part_edit, part_init, part_list
+    vol_add, vol_del, vol_edit, vol_list, vol_types, part_add, part_clear,
+    part_del, part_edit, part_init, part_list
 ]

@@ -1,4 +1,4 @@
-# Copyright 2016, 2017 IBM Corp.
+# Copyright 2016, 2017, 2018 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.types import SUBNET
+from tessia.cli.types import TEXT
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 
@@ -33,7 +34,7 @@ import click
 #
 FIELDS = (
     'name', 'zone', 'address', 'gateway', 'dns_1', 'dns_2', 'vlan',
-    'owner', 'project', 'modified', 'modifier', 'desc'
+    'search_list', 'owner', 'project', 'modified', 'modifier', 'desc'
 )
 
 #
@@ -51,6 +52,8 @@ FIELDS = (
 @click.option('dns_2', '--dns2',
               help="secondary dns address (i.e. 192.168.0.6)")
 @click.option('--vlan', type=click.INT, help="vlan identifier")
+@click.option('search_list', '--search', type=TEXT,
+              help="search hostname list")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning subnet")
 @click.option('--desc', help="free form field describing subnet")
@@ -63,6 +66,7 @@ def subnet_add(**kwargs):
     item = client.Subnets()
     for key, value in kwargs.items():
         setattr(item, key, value)
+
     item.save()
     click.echo('Item added successfully.')
 # subnet_add()
@@ -94,6 +98,8 @@ def subnet_del(**kwargs):
 @click.option('dns_2', '--dns2',
               help="secondary dns address (i.e. 192.168.0.6)")
 @click.option('--vlan', type=click.INT, help="vlan identifier")
+@click.option('search_list', '--search', type=TEXT,
+              help="search hostname list")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning subnet")
 @click.option('--desc', help="free form field describing subnet")

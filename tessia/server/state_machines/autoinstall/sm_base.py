@@ -1,4 +1,4 @@
-# Copyright 2016, 2017 IBM Corp.
+# Copyright 2016, 2017, 2018 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -200,6 +200,7 @@ class SmBase(metaclass=abc.ABCMeta):
                 ((0xffffffff << (32 - int(result["mask_bits"])))
                  & 0xffffffff).to_bytes(4, byteorder="big")
             )
+            result["search_list"] = iface.ip_address_rel.subnet_rel.search_list
         result["osname"] = iface.osname
         result["is_gateway"] = gateway_iface
         if gateway_iface:

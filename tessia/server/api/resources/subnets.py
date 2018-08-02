@@ -1,4 +1,4 @@
-# Copyright 2016, 2017 IBM Corp.
+# Copyright 2016, 2017, 2018 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ DESC = {
     'dns_1': 'DNS server 1',
     'dns_2': 'DNS server 2',
     'vlan': 'VLAN',
+    'search_list': 'Search list',
     'modified': 'Last modified',
     'desc': 'Description',
     'modifier': 'Modified by',
@@ -85,6 +86,9 @@ class SubnetResource(SecureResource):
             title=DESC['dns_2'], description=DESC['dns_2'], nullable=True)
         vlan = fields.PositiveInteger(
             title=DESC['vlan'], description=DESC['vlan'], nullable=True)
+        search_list = fields.String(
+            title=DESC['search_list'], description=DESC['search_list'],
+            nullable=True)
         modified = fields.DateTime(
             title=DESC['modified'], description=DESC['modified'], io='r')
         desc = fields.String(

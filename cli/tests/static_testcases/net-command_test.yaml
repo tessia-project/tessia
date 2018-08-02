@@ -87,13 +87,13 @@ tasks:
     - - net zone-edit --name=GEO_3 --owner=dev3@example.com
       - "request failed. Server answered: No associated item found with value 'dev3@example.com' for field 'Owner'"
     - - net zone-list
-      - 'Zone name     : GEO_3'
+      - 'Zone name *: GEO_3'
     - - net zone-list --name=GEO_2
-      - 'Zone name     : GEO_2'
+      - 'Zone name *: GEO_2'
     - - net zone-list --owner=dev1@example.com
-      - 'Zone name     : GEO_3'
+      - 'Zone name *: GEO_3'
     - - net zone-list --project='GEO_1 labadmins'
-      - 'Zone name     : GEO_3'
+      - 'Zone name *: GEO_3'
     - - net zone-del --name=GEO_2-NE
       - network zone not found.
     - - net zone-del --name=GEO_2
@@ -114,21 +114,21 @@ tasks:
     - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1822' --address=192.168.160.0/22  --gw=192.168.160.1 --dns1=192.168.200.241 --vlan=1822 --project='GEO_1 labadmins' --desc='Shared zone vlan 1822'
       - Item added successfully.
     - - net subnet-list --zone=GEO_1-NE
-      - 'Subnet name     : GEO_1-NE-1822'
+      - 'Subnet name *: GEO_1-NE-1822'
     - - net subnet-add --name='GEO_1-NE-1820' --address=192.168.160.0/22
       - Missing option "--zone".
     - - net subnet-add  --zone=GEO_1-NE --name='GEO_1-NE-1820'
       - Missing option "--address".
     - - net subnet-add  --zone=GEO_1 --name='GEO_1-NE-1820' --address=192.168.160.0/22
       - "request failed. Server answered: No associated item found with value 'GEO_1' for field 'Network zone'"
-    - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1820' --address=192.168.160.0/22  --gw=192.168.160.1 --dns1=192.168.200.241 --vlan=1820 --project='GEO_1 labadmins' --desc='Shared zone vlan 1820'
+    - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1820' --address=192.168.160.0/22  --gw=192.168.160.1 --dns1=192.168.200.241 --vlan=1820 --search='test_example.com' --project='GEO_1 labadmins' --desc='Shared zone vlan 1820'
       - Item added successfully.
     - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1820' --address=192.168.160.0/22 --desc='Shared zone vlan 1823'
       - 'request failed. Server answered: An item with the provided value'
       # Empty name
     - - net subnet-add --zone=GEO_1-NE --name= --address=192.168.160.0/22
       - 'Invalid value for "--name": value may not be empty'
-    - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1820' --desc='Shared zone vlan 1823'
+    - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1820' --search='new_test_example.com' --desc='Shared zone vlan 1823'
       - Item successfully updated.
     - - net subnet-edit --zone=GEO_1 --name='GEO_1-NE-1820' --newname='GEO_1-NE-1823'
       - subnet not found.
@@ -149,17 +149,17 @@ tasks:
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1823' --dns2=192.168.200.241
       - Item successfully updated.
     - - net subnet-list --zone=GEO_1-NE
-      - 'Subnet name     : GEO_1-NE-1823' 
+      - 'Subnet name *: GEO_1-NE-1823'
     - - net subnet-list --name='GEO_1-NE-1823'
-      - 'Subnet name     : GEO_1-NE-1823'
+      - 'Subnet name *: GEO_1-NE-1823'
     - - net subnet-list --zone=GEO_1-NE --address=192.168.160.0/22
-      - 'Subnet name     : GEO_1-NE-1822'
+      - 'Subnet name *: GEO_1-NE-1822'
     - - net subnet-list --zone=GEO_1-NE --vlan=1820
-      - 'Subnet name     : GEO_1-NE-1823'
+      - 'Subnet name *: GEO_1-NE-1823'
     - - net subnet-list --zone=GEO_1-NE --owner=dev1@example.com
-      - 'Subnet name     : GEO_1-NE-1823'
+      - 'Subnet name *: GEO_1-NE-1823'
     - - net subnet-list --zone=GEO_1-NE --project='GEO_1 labadmins'
-      - 'Subnet name     : GEO_1-NE-1823'
+      - 'Subnet name *: GEO_1-NE-1823'
     - - net subnet-list --name='GEO_1-NE-1822' --vlan=1820
       - No results were found.
     - - net subnet-del --zone=GEO_1-NE
@@ -212,19 +212,19 @@ tasks:
     - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.221  --newip=9152.161.221
       - 'Invalid value for "--newip": 9152.161.221 is not a valid ip address'
     - - net ip-list --subnet='GEO_1-NE-1822'
-      - 'IP address        : 192.168.161.221'
+      - 'IP address *: 192.168.161.221'
     - - net ip-list --subnet='GEO_1-NE-1823'
       - No results were found.
     - - net ip-list --ip=192.168.161.222
-      - 'IP address        : 192.168.161.222'
+      - 'IP address *: 192.168.161.222'
     - - net ip-list --ip=192.168.161.223
       - No results were found.
     - - net ip-list --subnet='GEO_1-NE-1822' --project='GEO_1 developers'
-      - 'IP address        : 192.168.161.221'
+      - 'IP address *: 192.168.161.221'
     - - net ip-list --subnet='GEO_1-NE-1822' --owner=dev1@example.com
-      - 'IP address        : 192.168.161.221'
+      - 'IP address *: 192.168.161.221'
     - - net ip-list --subnet='GEO_1-NE-1822' --owner=lab_admin@example.com
-      - 'IP address        : 192.168.161.222'
+      - 'IP address *: 192.168.161.222'
     - - net ip-list --subnet='GEO_1-NE-1822' --owner=dev2@example.com
       - No results were found.
     - - net ip-del --ip=192.168.161.221

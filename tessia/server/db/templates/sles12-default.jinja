@@ -117,6 +117,13 @@
         <nameservers config:type="list">
           <nameserver>{{ iface["dns_1"] }}</nameserver>
         </nameservers>
+        {% if iface["search_list"] -%}
+          <searchlist config:type="list">
+            {% for search_entry in iface["search_list"].split() -%}
+              <search>{{ search_entry }}</search>
+            {% endfor -%}
+          </searchlist>
+        {% endif -%}
         {% endif %}
       {% endfor %}
       <resolv_conf_policy>auto</resolv_conf_policy>

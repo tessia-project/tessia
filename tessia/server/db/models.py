@@ -1,4 +1,4 @@
-# Copyright 2016, 2017 IBM Corp.
+# Copyright 2016, 2017, 2018 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -502,6 +502,7 @@ class Subnet(CommonMixin, ResourceMixin, BASE):
     dns_1 = Column(postgresql.INET)
     dns_2 = Column(postgresql.INET)
     vlan = Column(Integer)
+    search_list = Column(String)
 
     # relationships
     zone_rel = relationship(

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2016, 2017 IBM Corp.
+# Copyright 2016, 2017, 2018 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -202,6 +202,7 @@ def create_network(data):
             subnet['dns_1'] = '10.{}.0.2'.format(subnet_index)
             subnet['dns_2'] = '10.{}.0.3'.format(subnet_index)
             subnet['vlan'] = 1800 + subnet_index
+            subnet['search_list'] = None
             subnet['desc'] = 'Shared subnet of {}'.format(system['name'])
 
             # store subnet information indexed by system to be used for
@@ -223,6 +224,7 @@ def create_network(data):
             subnet['dns_1'] = '192.168.0.2'
             subnet['dns_2'] = '192.168.0.3'
             subnet['vlan'] = None
+            subnet['search_list'] = None
             subnet['desc'] = 'Private subnet of {}'.format(system['name'])
 
             # store subnet information indexed by system to be used for

@@ -1015,6 +1015,20 @@ tasks:
       - 'invalid memory size specified.'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2gb
       - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity
+      - '--verbosity option requires an argument'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity critical
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity error
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity WARNING
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity Info
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity debug
+      - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity warn
+      - Invalid value for "--verbosity"
     - - system poweron --name=cpc3lp52 --force=true
       - '--force option does not take a value'
     - - system poweron --name=cpc3lp52 --forc
@@ -1044,6 +1058,20 @@ tasks:
       - system cpc3lp55 not found.
     - - system poweroff --name=cpc3lp52
       - 'Failed to establish a new connection'
+    - - system poweroff --name=cpc3lp52 --verbosity
+      - '--verbosity option requires an argument'
+    - - system poweroff --name=cpc3lp52 --verbosity critical
+      - 'Failed to establish a new connection'
+    - - system poweroff --name=cpc3lp52 --verbosity error
+      - 'Failed to establish a new connection'
+    - - system poweroff --name=cpc3lp52 --verbosity warning
+      - 'Failed to establish a new connection'
+    - - system poweroff --name=cpc3lp52 --verbosity INFO
+      - 'Failed to establish a new connection'
+    - - system poweroff --name=cpc3lp52 --verbosity Debug
+      - 'Failed to establish a new connection'
+    - - system poweroff --name=cpc3lp52 --verbosity warn
+      - Invalid value for "--verbosity"
     # 'system vol-detach' subcommand
     - - system vol-detach
       - Missing option "--system".

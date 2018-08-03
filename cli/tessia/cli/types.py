@@ -35,7 +35,7 @@ class ActionType(click.ParamType):
     """
     Represents action types for job requests.
     """
-    ALLOWED_TYPES = ('CANCEL', 'SUBMIT')
+    ALLOWED_TYPES = ('cancel', 'submit')
     name = 'action_type'
 
     def convert(self, value, param, ctx):
@@ -45,13 +45,16 @@ class ActionType(click.ParamType):
         if not value:
             self.fail('value may not be empty', param, ctx)
 
-        value = value.upper()
-        if value not in self.ALLOWED_TYPES:
+        if value.lower() not in self.ALLOWED_TYPES:
             self.fail('action type must be one of: {}'.format(
                 ', '.join(self.ALLOWED_TYPES)), param, ctx)
 
-        return value
+        return value.upper()
     # convert()
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[{}]'.format('|'.join(self.ALLOWED_TYPES))
 # ActionType
 
 ACTION_TYPE = ActionType()
@@ -196,8 +199,8 @@ class JobType(click.ParamType):
     """
     Represents job types.
     """
-    name = 'job_type'
     ALLOWED_TYPES = ('ansible', 'autoinstall', 'echo', 'powerman')
+    name = 'job_type'
 
     def convert(self, value, param, ctx):
         """
@@ -213,6 +216,10 @@ class JobType(click.ParamType):
 
         return value
     # convert()
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[{}]'.format('|'.join(self.ALLOWED_TYPES))
 # JobType
 
 JOB_TYPE = JobType()
@@ -493,21 +500,34 @@ class Url(click.ParamType):
 
 URL = Url()
 
-class VerbosityLevel(click.Choice):
+class VerbosityLevel(click.ParamType):
     """
     Represents verbosity levels for jobs.
     """
     ALLOWED_LEVELS = ("critical", "error", "warning", "info", "debug")
+    name = 'verbosity_level'
 
     def convert(self, value, param, ctx):
         """
         Convert values to uppercase
         """
-        return (super().convert(value, param, ctx)).upper()
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        if value.lower() not in self.ALLOWED_LEVELS:
+            self.fail('verbosity level must be one of: {}'.format(
+                ', '.join(self.ALLOWED_LEVELS)), param, ctx)
+
+        return value.upper()
     # convert
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[{}]'.format('|'.join(self.ALLOWED_LEVELS))
+
 # VerbosityLevel
 
-VERBOSITY_LEVEL = VerbosityLevel(VerbosityLevel.ALLOWED_LEVELS)
+VERBOSITY_LEVEL = VerbosityLevel()
 
 class VolumeId(click.ParamType):
     """

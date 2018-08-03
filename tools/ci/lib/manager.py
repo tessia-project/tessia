@@ -120,7 +120,7 @@ class Manager(object):
                                  'provided for auxiliar live-image')
 
         # determine builder's fqdn
-        ret_code, output = self._session.run('hostname --fqdn')
+        ret_code, output = self._session.run('hostname -f')
         if ret_code != 0:
             raise RuntimeError(
                 "failed to determine system's FQDN: {}".format(output))

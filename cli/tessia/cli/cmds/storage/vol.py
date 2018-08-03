@@ -24,7 +24,7 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
-from tessia.cli.types import CustomIntRange, FCP_PATH, NAME, \
+from tessia.cli.types import CustomIntRange, FCP_PATH, MIB_SIZE, NAME, \
     SCSI_WWID, VOLUME_ID
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_item
@@ -102,7 +102,7 @@ def _process_fcp_path(prop_dict, value):
 @click.option('--server', required=True, help='target storage server')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
-@click.option('--size', required=True, help="size (i.e. 500mb)")
+@click.option('--size', type=MIB_SIZE, help="size (i.e. 500mib)")
 @click.option('--fs', required=True, help="filesystem type")
 @click.option('--mo', default=None, help="mount options")
 @click.option('--mp', default=None, help="mount point")
@@ -113,11 +113,6 @@ def part_add(server, volume_id, **kwargs):
     """
     add a partition to volume's partition table
     """
-    try:
-        kwargs['size'] = str_to_size(kwargs['size'])
-    except ValueError:
-        raise click.ClickException('invalid size specified.')
-
     client = Client()
     item = fetch_item(
         client.StorageVolumes,
@@ -127,9 +122,21 @@ def part_add(server, volume_id, **kwargs):
     if (not isinstance(part_table, dict) or not
             isinstance(part_table.get('table'), list)):
         raise click.ClickException(EMPTY_PART_MSG)
-    else:
-        part_table['table'] = part_table.get('table', [])
-        part_table['table'].append(kwargs.copy())
+
+    free_size = item.size - sum([part['size'] for part in part_table['table']])
+    # size not specified: use available free space if available
+    if not kwargs['size']:
+        if free_size < 1:
+            raise click.ClickException(
+                'no available free size to create the partition')
+        kwargs['size'] = free_size
+    # size specified bigger than available free space: report error
+    elif kwargs['size'] > free_size:
+        raise click.ClickException(
+            'size specified is bigger than available free space {}MiB'
+            .format(free_size))
+
+    part_table['table'].append(kwargs.copy())
 
     item.update({'part_table': part_table})
     click.echo('Partition successfully added.')
@@ -174,7 +181,7 @@ def part_del(server, volume_id, num):
               help="volume id")
 @click.option('--num', type=CustomIntRange(min=1), required=True,
               help="partition's number to edit")
-@click.option('--size', help="size (i.e. 500mb)")
+@click.option('--size', type=MIB_SIZE, help="size (i.e. 500mib)")
 @click.option('--fs', help="filesystem")
 @click.option('--mo', help="mount options")
 @click.option('--mp', help="mount point")
@@ -185,11 +192,6 @@ def part_edit(server, volume_id, num, **kwargs):
     """
     edit partition properties
     """
-    try:
-        kwargs['size'] = str_to_size(kwargs['size'])
-    except ValueError:
-        raise click.ClickException('invalid size specified.')
-
     parsed_args = {}
     for key, value in kwargs.items():
         if value is not None:
@@ -197,7 +199,7 @@ def part_edit(server, volume_id, num, **kwargs):
             if value == '':
                 value = None
             parsed_args[key] = value
-    if len(parsed_args) == 0:
+    if not parsed_args:
         raise click.ClickException('nothing to update.')
 
     client = Client()
@@ -267,10 +269,9 @@ def part_list(server, volume_id, **kwargs):
     table_list = part_table.get('table', [])
     fields_map = ['number', 'size', 'type', 'fs', 'mp', 'mo']
     part_table_cls = namedtuple('PartTable', fields_map)
-    for i in range(0, len(table_list)):
-        part = table_list[i]
+    for index, part in enumerate(table_list):
         row = part_table_cls(
-            number=i+1,
+            number=index+1,
             size=size_to_str(part.get('size', 0)),
             type=part.get('type', ''),
             fs=part.get('fs', ''),
@@ -333,7 +334,7 @@ def vol_add(**kwargs):
         # process add fcp path arg
         elif key == 'path':
             # option was not specified: skip it
-            if len(value) == 0:
+            if not value:
                 continue
 
             if item['type'] != 'FCP':
@@ -442,7 +443,7 @@ def vol_edit(server, cur_id, **kwargs):
         # process add fcp path arg
         elif key == 'addpath':
             # option was not specified: skip it
-            if len(value) == 0:
+            if not value:
                 continue
 
             if item['type'] != 'FCP':
@@ -455,7 +456,7 @@ def vol_edit(server, cur_id, **kwargs):
 
         elif key == 'delpath':
             # option was not specified: skip it
-            if len(value) == 0:
+            if not value:
                 continue
 
             if item['type'] != 'FCP':
@@ -484,10 +485,10 @@ def vol_edit(server, cur_id, **kwargs):
                     continue
 
                 # no more wwpns listed: remove adapter entry
-                if len(adapter_entry['wwpns']) == 0:
+                if not adapter_entry['wwpns']:
                     update_dict['specs']['adapters'].pop(index)
             # at least one path must be available
-            if len(update_dict['specs']['adapters']) == 0:
+            if not update_dict['specs']['adapters']:
                 raise click.ClickException(
                     'fcp volume must have at least one path')
 
@@ -504,7 +505,7 @@ def vol_edit(server, cur_id, **kwargs):
         else:
             update_dict[key] = value
 
-    if len(update_dict) == 0:
+    if not update_dict:
         raise click.ClickException('no update criteria provided.')
     item.update(**update_dict)
 

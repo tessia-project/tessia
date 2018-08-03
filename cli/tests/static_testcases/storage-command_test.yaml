@@ -473,9 +473,7 @@ tasks:
     - - storage part-add --server=DS8K16
       - Missing option "--id".
     - - storage part-add --server=DS8K16 --id=3955
-      - Missing option "--size".
-    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4
-      - Missing option "--size".
+      - Missing option "--fs".
     - - storage part-add --server=DS8K16 --id=3955 --size=7gb
       - Missing option "--fs".
     - - storage part-add --server= --id=3955 --fs=ext4 --size=7gb
@@ -487,17 +485,25 @@ tasks:
     - - storage part-add --server=DS8K16 --id=3955 --fs=axt4 --size=7gb
       - "The server did not accept our request. The response is: Bad Request"
     - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7g
-      - invalid size specified.
-    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7gb --mp=/
+      - 'Error: Invalid value for "--size": 7g is not a valid size'
+    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --mp=/
       - Partition successfully added.
+    # next two commands are to make sure not specifying size used all available space
+    - - storage part-list --server=DS8K16 --id=3955
+      - "1 *| 6.52 GiB *| primary *| ext4 *| *| *\n"
+    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4
+      - "Error: no available free size to create the partition"
     - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=3gb
       - Partition successfully added.
     - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=2gb --mp=/
       - Partition successfully added.
-    - - storage part-add --server=DS8K16 --id=3952 --fs=ext3 --size=2gb --mp=/home --mo=qqqq
+    - - storage part-add --server=DS8K16 --id=3952 --fs=ext3 --mp=/home --mo=qqqq
       - Partition successfully added.
+    # resulting partition should be of 2gb
+    - - storage part-list --server=DS8K16 --id=3952
+      - "3 *| 1.86 GiB *| primary *| ext4 *| *| *\n"
     - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=7gb --mp=/
-      - "The server did not accept our request. The response is: The value 'part_table' is invalid: sum of partitions sizes"
+      - "Error: size specified is bigger than available free space 0MiB"
     - - storage part-add --server=DS8K16 --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=first
       - 'Invalid value for "--type": invalid choice: first.'
     - - storage part-add --server=DS8K16 --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=primary
@@ -545,7 +551,7 @@ tasks:
     - - storage part-edit --server=DS8K16 --id=3955 --num=1
       - nothing to update.
     - - storage part-edit --server=DS8K16 --id=3955 --num=1 --size=7g
-      - invalid size specified.
+      - 'Error: Invalid value for "--size": 7g is not a valid size'
     - - storage part-edit --server=DS8K16 --id=3955 --num=2 --size=7gb
       - specified partition not found
     - - storage part-edit --server=DS8K16 --id=3955 --num=1 --size=7gb

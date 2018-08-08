@@ -33,10 +33,11 @@
     </global>
     <loader_type>grub2</loader_type>
   </bootloader>
+{% if config["system_type"] != "KVM" -%}
   <dasd>
     <devices config:type="list">
       {% for volume in config["svols"] %}
-        {% if config["system_type"] != "KVM" and volume["type"] == "DASD" %}
+        {% if volume["type"] == "DASD" and volume['part_table'] %}
           <listentry>
             <channel>0.0.{{ volume["volume_id"] }}</channel>
             <diag config:type="boolean">false</diag>
@@ -44,8 +45,45 @@
         {% endif %}
       {% endfor %}
     </devices>
-      <format_unformatted config:type="boolean">false</format_unformatted>
+    <format_unformatted config:type="boolean">true</format_unformatted>
   </dasd>
+{% endif -%}
+  <scripts>
+    <postpartitioning-scripts config:type="list">
+      <script>
+        <filename>empty_disks.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Creating partition tables for empty disks..."
+{% for volume in config["svols"] -%}
+  {% if volume['part_table'] and not volume['part_table']['table'] -%}
+parted -s {{volume['system_attributes']['device']}} mklabel {{volume['part_table']['type']}}
+  {% endif -%}
+{% endfor -%}
+]]>
+        </source>
+      </script>
+    </postpartitioning-scripts>
+{% if config["system_type"] != "KVM" -%}
+    <pre-scripts config:type="list">
+      <script>
+        <filename>dasd.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Activating DASDs without partition table defined..."
+{% for volume in config["svols"] -%}
+  {% if volume["type"] == "DASD" and not volume['part_table'] -%}
+/sbin/dasd_configure '0.0.{{ volume["volume_id"] }}' 1 0
+  {% endif -%}
+{% endfor -%}
+]]>
+        </source>
+      </script>
+    </pre-scripts>
+{% endif -%}
+  </scripts>
   <general>
     <ask-list config:type="list"/>
     <cio_ignore config:type="boolean">false</cio_ignore>
@@ -208,9 +246,9 @@
           <crypt_fs config:type="boolean">false</crypt_fs>
           <filesystem config:type="symbol">{{ entry["fs"] }}</filesystem>
           <format config:type="boolean">true</format>
-          {% if entry['mo'] %}
+          {% if entry['mo'] -%}
           <fstopt>{{ entry['mo'] }}</fstopt>
-          {% endif %}
+          {% endif -%}
           <mount>{% if entry["fs"] == "swap" %}swap{% else %}{{ entry["mp"] }}{% endif %}</mount>
           <mountby config:type="symbol">path</mountby>
           <partition_id config:type="integer">{% if entry["fs"] == "swap" %}130{% else %}131{% endif %}</partition_id>
@@ -259,6 +297,7 @@
   <software>
     <install_recommended config:type="boolean">false</install_recommended>
     <packages config:type="list">
+      <package>python</package>
     </packages>
     <patterns config:type="list">
       <pattern>base</pattern>

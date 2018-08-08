@@ -1,7 +1,7 @@
 {%- macro list_devs_with_ptable(vols) -%}
 {% set dev_list = [] -%}
 {% for vol in vols -%}
-  {%- if vol["part_table"]["table"] -%}
+  {%- if vol["part_table"] -%}
     {% set _ = dev_list.append(vol["system_attributes"]["device"].replace('/dev/', '')) -%}
   {% endif -%}
 {% endfor -%}
@@ -72,26 +72,31 @@ kexec-tools
 
 {% if config["system_type"] != "KVM" %}
 %post
-{% for iface in config["ifaces"] %}
-{% if iface["mac_addr"] %}
+  {% for iface in config["ifaces"] %}
+    {% if iface["mac_addr"] %}
 echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
-{% endif %}
-{% if iface["osname"] != iface["systemd_osname"] %}
+    {% endif %}
+    {% if iface["osname"] != iface["systemd_osname"] %}
 sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
 mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
-{% endif %}
+    {% endif %}
+  {% endfor %}
 %end
-{% endfor %}
-{% endif %}
 
-{% if config["system_type"] != "KVM" %}
 %pre
 #!/bin/bash
-{% for volume in config["svols"] %}
-{% if volume['type'] == 'DASD' -%}
-cio_ignore -r {{volume['volume_id']}} && chccwdev -e {{volume['volume_id']}}
-{% endif -%}
-{% endfor -%}
+  {% for volume in config["svols"] %}
+    {%- if volume['type'] == 'DASD' -%}
+while [ ! -e {{ volume["system_attributes"]["device"] }} ]; do
+  cio_ignore -r {{ volume['volume_id'] }}; chccwdev -e {{ volume['volume_id'] }}
+  sleep 1
+done
+      {% if volume["part_table"] -%}
+grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{ volume['volume_id'] }}/status && \
+/sbin/dasdfmt -y -d cdl -b 4096 {{ volume["system_attributes"]["device"] }}
+      {% endif -%}
+    {% endif -%}
+  {% endfor -%}
 %end
 {% endif -%}
 

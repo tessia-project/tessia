@@ -6,6 +6,10 @@
 {%- macro partition_disk(svol) -%}
 {%- set device=svol['system_attributes']['device'] -%}
     while [ ! -e {{device}} ]; do sleep 1; done ; \
+{% if config['system_type'] != 'KVM' and svol['type'] == 'DASD' -%}
+    chroot /target grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{ svol['volume_id'] }}/status && \
+    chroot /target /sbin/dasdfmt -y -d cdl -b 4096 {{ device }}; \
+{% endif -%}
     chroot /target parted -s {{device}} mklabel {{svol['part_table']['type']}} && kpartx -us {{device}} ; \
 {% for part in svol['part_table']['table'] -%}
     {%- set start_mb = mib_to_mb(part['start']) -%}
@@ -270,7 +274,7 @@ d-i preseed/late_command string \
     /target/sbin/partprobe ; multipath -r ; \
     mount -o bind /dev /target/dev ; \
     mount sysfs /target/sys -t sysfs -o rw,nosuid,nodev,noexec,relatime ; \
-{% for sv in config['svols'] if sv['part_table']['table'] -%}
+{% for sv in config['svols'] if sv['part_table'] -%}
  {%- if not sv['is_root'] -%}
     {{partition_disk(sv)}} {{format_partitions(sv)}} {{populate_fstab(sv)}}
  {%- endif -%}

@@ -1,7 +1,7 @@
 {%- macro list_devs_with_ptable(vols) -%}
 {% set dev_list = [] -%}
 {% for vol in vols -%}
-  {%- if vol["part_table"]["table"] -%}
+  {%- if vol["part_table"] -%}
     {% set _ = dev_list.append(vol["system_attributes"]["device"].replace('/dev/', '')) -%}
   {% endif -%}
 {% endfor -%}
@@ -53,7 +53,7 @@ clearpart --initlabel --all --drives={{list_devs_with_ptable(config["svols"])}}
 {% for volume in config["svols"] %}
 {% if volume["is_root"] %}
 # System bootloader configuration
-bootloader --append=" crashkernel=auto" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
+bootloader --append=" zfcp.allow_lun_scan=0" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
 {% endif %}
 # Disk partitioning information
 {% for entry in volume["part_table"]["table"] %}
@@ -65,6 +65,7 @@ part {% if entry["fs"] == "swap" %}swap{% else %}{{entry["mp"]}}{% endif %} --fs
 @core
 @virtualization
 kexec-tools
+python
 %end
 
 %addon com_redhat_kdump --enable
@@ -73,34 +74,36 @@ kexec-tools
 
 {% if config["system_type"] != "KVM" %}
 %post
-{% for iface in config["ifaces"] %}
-{% if iface["mac_addr"] %}
+  {% for iface in config["ifaces"] %}
+    {% if iface["mac_addr"] %}
 echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
-{% endif %}
-{% if iface["osname"] != iface["systemd_osname"] %}
+    {% endif %}
+    {% if iface["osname"] != iface["systemd_osname"] %}
 sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
 mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
-{% endif %}
+    {% endif %}
+  {% endfor %}
 %end
-{% endfor %}
-{% endif %}
 
-{% if config["system_type"] != "KVM" %}
 %pre
 #!/bin/bash
-{% for volume in config["svols"] %}
-{%- if volume['type'] == 'DASD' -%}
+  {% for volume in config["svols"] %}
+    {%- if volume['type'] == 'DASD' -%}
 chzdev -e dasd {{volume['volume_id']}}
-{% endif -%}
-{% if volume['type'] == 'FCP' -%}
-{% for adapter in volume['specs']['adapters'] -%}
+      {% if volume["part_table"] -%}
+grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{volume['volume_id']}}/status && \
+/sbin/dasdfmt -y -d cdl -b 4096 {{volume["system_attributes"]["device"]}}
+      {% endif -%}
+    {% endif -%}
+    {% if volume['type'] == 'FCP' -%}
+      {% for adapter in volume['specs']['adapters'] -%}
 chzdev -e {{adapter['devno']}}
-{% for wwpn in adapter['wwpns'] -%}
+        {% for wwpn in adapter['wwpns'] -%}
 chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}}
-{% endfor -%}
-{% endfor -%}
-{% endif -%}
-{% endfor -%}
+        {% endfor -%}
+      {% endfor -%}
+    {% endif -%}
+  {% endfor -%}
 %end
 {% endif -%}
 

@@ -151,13 +151,12 @@ class SystemIfaceResource(SecureResource):
     # _verify_ip()
 
     @staticmethod
-    def _verify_mac(system_obj, properties, iface_obj):
+    def _verify_mac(properties, iface_obj):
         """
         Validate the mac address' value given the combination of network card
         and system types
 
         Args:
-            system_obj (System): System db object instance
             properties (dict): field=value dict from create/update request
             iface_obj (SystemIface): target SystemIface db object instance
 
@@ -189,17 +188,7 @@ class SystemIfaceResource(SecureResource):
             # no more verifications, exit
             return
 
-        # zvm guests: mac address should never be specified
-        if system_obj.type.lower() == 'zvm':
-            if iface_mac:
-                msg = ('Defining a MAC address for OSA cards on zVM guests '
-                       'is not allowed')
-                raise BaseHttpError(code=422, msg=msg)
-            # no more verifications, exit
-            return
-
-        # non-zvm with layer2 on: mac address is optional so nothing more to
-        # check
+        # layer2 on: mac address is optional so nothing more to check
         if iface_attr.get('layer2'):
             return
 
@@ -246,7 +235,7 @@ class SystemIfaceResource(SecureResource):
 
         self._perman.can('CREATE', flask_global.auth_user, target_system)
 
-        self._verify_mac(target_system, properties, None)
+        self._verify_mac(properties, None)
         self._verify_ip(properties)
 
         item = self.manager.create(properties)
@@ -364,7 +353,7 @@ class SystemIfaceResource(SecureResource):
         self._perman.can(
             'UPDATE', flask_global.auth_user, item.system_rel, 'system')
 
-        self._verify_mac(item.system_rel, properties, item)
+        self._verify_mac(properties, item)
         self._verify_ip(properties)
 
         # an iface cannot change its system so we only allow to set it on

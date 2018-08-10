@@ -188,7 +188,11 @@ class SystemProfileResource(SecureResource):
             raise ItemNotFoundError(item_id_key, item_id, None)
         # make sure user has update permission on the item
         if hasattr(item, 'project'):
-            self._perman.can('UPDATE', flask_global.auth_user, item, item_desc)
+            try:
+                self._perman.can('UPDATE', flask_global.auth_user, item,
+                                 item_desc)
+            except PermissionError as exc:
+                raise Forbidden(description=str(exc))
 
         # retrieve the system row for permission verification
         # first we need the profile object
@@ -201,7 +205,11 @@ class SystemProfileResource(SecureResource):
         if system is None:
             raise ItemNotFoundError('profile_id', prof_id, None)
         # make sure user has update permission on the system
-        self._perman.can('UPDATE', flask_global.auth_user, system, 'system')
+        try:
+            self._perman.can('UPDATE', flask_global.auth_user, system,
+                             'system')
+        except PermissionError as exc:
+            raise Forbidden(description=str(exc))
 
         return item, system
     # _fetch_and_assert_item()

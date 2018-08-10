@@ -106,14 +106,6 @@ def edit(cur_name, **kwargs):
     """
     change properties of an existing repository
     """
-    if kwargs['operating_system'] is not None:
-        if kwargs['kernel'] is None:
-            raise click.ClickException(
-                '--kernel is required when --os was specified')
-        elif kwargs['initrd'] is None:
-            raise click.ClickException(
-                '--initrd is required when --os was specified')
-
     client = Client()
     fetch_and_update(
         client.Repositories,

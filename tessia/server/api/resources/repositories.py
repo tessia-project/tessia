@@ -97,18 +97,29 @@ class RepositoryResource(SecureResource):
     # Schema
 
     @staticmethod
-    def _assert_os(properties):
+    def _assert_os(properties, repo_obj):
         """
         Assert that kernel and initrd paths are not null when an operating
         system is specified.
         """
-        operating_system = properties.get('operating_system')
-        if operating_system is not None:
-            for prop in ('kernel', 'initrd'):
-                if properties.get(prop) is None:
-                    msg = ("Property '{}' cannot be null when operating "
-                           "system is specified.".format(prop))
-                    raise BaseHttpError(code=400, msg=msg)
+        operating_system = None
+        if 'operating_system' in properties:
+            operating_system = properties['operating_system']
+        elif repo_obj:
+            operating_system = repo_obj.operating_system_rel
+        if operating_system is None:
+            return
+
+        for prop in ('kernel', 'initrd'):
+            prop_value = None
+            if prop in properties:
+                prop_value = properties[prop]
+            elif repo_obj:
+                prop_value = getattr(repo_obj, prop)
+            if not prop_value:
+                msg = ("Property '{}' cannot be null when operating "
+                       "system is specified.".format(prop))
+                raise BaseHttpError(code=400, msg=msg)
 
     # _assert_os()
 
@@ -118,7 +129,7 @@ class RepositoryResource(SecureResource):
         combination.
         See parent class for complete docstring.
         """
-        self._assert_os(properties)
+        self._assert_os(properties, None)
 
         return super().do_create(properties)
     # do_create()
@@ -129,7 +140,8 @@ class RepositoryResource(SecureResource):
         Overriden method to perform sanity check on the address provided.
         See parent class for complete docstring.
         """
-        self._assert_os(properties)
+        item = self.manager.read(id)
+        self._assert_os(properties, item)
 
         return super().do_update(properties, id)
     # do_update()

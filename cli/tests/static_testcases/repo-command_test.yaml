@@ -112,12 +112,6 @@ tasks:
     - - repo list --desc='repository for RHEL7.2'
       - 'no such option: --desc'
     # 'repo edit' subcommand
-        # repo edit: --os without --kernel
-    - - repo edit --name='SLES12.1-GA' --os=sles12.1
-      - --kernel is required when --os was specified
-        # repo edit: --os without --initrd
-    - - repo edit --name='SLES12.1-GA' --kernel='/boot/s390x/linux' --os=sles12.1
-      - --initrd is required when --os was specified
     - - repo edit
       - Missing option "--name".
     - - repo edit --name='SLES12.2'
@@ -137,15 +131,27 @@ tasks:
       - Item successfully updated.
     - - repo edit --name='SLES12.2' --url=''
       - 'Invalid value for "--url": value may not be empty'
-    - - repo edit --name='SLES12.2' --os=sles12.2
-      - --kernel is required when --os was specified
-    - - repo edit --name='SLES12.2' --os=sles12.2  --kernel='/boot/s390x/linux'
-      - --initrd is required when --os was specified
-    - - repo edit --name='SLES12.2' --os=sles12.2  --initrd='/boot/s390x/initrd'
-      - --kernel is required when --os was specified
-    - - repo edit --name='SLES12.2' --os=wrong_os  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
+    - - repo edit --name='SLES12.1-GA' --os=sles12.1
+      - Item successfully updated.
+    - - repo edit --name='SLES12.1-GA' --os=sles12.1 --kernel=
+      - Property 'kernel' cannot be null when operating system is specified.
+    - - repo edit --name='SLES12.1-GA' --os=sles12.1 --kernel='/boot/s390x/linux'
+      - Item successfully updated.
+    - - repo edit --name='SLES12.1-GA' --kernel=
+      - Property 'kernel' cannot be null when operating system is specified.
+    - - repo edit --name='SLES12.1-GA' --kernel='/boot/s390x/linux'
+      - Item successfully updated.
+    - - repo edit --name='SLES12.1-GA' --os=sles12.1 --initrd=
+      - Property 'initrd' cannot be null when operating system is specified.
+    - - repo edit --name='SLES12.1-GA' --os=sles12.1 --initrd='/boot/s390x/initrd'
+      - Item successfully updated.
+    - - repo edit --name='SLES12.1-GA' --initrd=
+      - Property 'initrd' cannot be null when operating system is specified.
+    - - repo edit --name='SLES12.1-GA' --initrd='/boot/s390x/initrd'
+      - Item successfully updated.
+    - - repo edit --name='SLES12.1-GA' --os=wrong_os  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
       - "request failed. Server answered: No associated item found with value 'wrong_os' for field 'os'"
-    - - repo edit --name='SLES12.2' --os=sles12.2  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
+    - - repo edit --name='SLES12.1-GA' --os=sles12.1  --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd'
       - Item successfully updated.
     - - repo edit --name='SLES12.2' --owner=dev9
       - "request failed. Server answered: No associated item found with value 'dev9' for field 'Owner'"

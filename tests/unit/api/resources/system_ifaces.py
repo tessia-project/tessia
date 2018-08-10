@@ -353,7 +353,7 @@ class TestSystemIface(TestSecureResource):
         """
         user_cred = '{}:a'.format('user_user@domain.com')
 
-        # layer2 on, no mac - allowed
+        # layer2 on, mac defined - allowed
         user_cred = '{}:a'.format('user_user@domain.com')
         data = next(self._get_next_entry)
         created_id = self._request_and_assert('create', user_cred, data)
@@ -412,22 +412,42 @@ class TestSystemIface(TestSecureResource):
         data = next(self._get_next_entry)
         data['system'] = system_name
 
+        # layer2 on, mac defined - allowed
         user_cred = '{}:a'.format('user_user@domain.com')
-        # try to create iface while specifying mac, causes error
-        zvm_msg = ('Defining a MAC address for OSA cards on zVM guests is '
-                   'not allowed')
-        resp = self._do_request('create', user_cred, data)
-        self._validate_resp(resp, zvm_msg, 422)
-
-        # create without mac so that we can try an update
-        orig_mac = data['mac_address']
-        data['mac_address'] = None
         created_id = self._request_and_assert('create', user_cred, data)
 
-        # try to remove mac - causes error
-        update_data = {'id': created_id, 'mac_address': orig_mac}
+        # update layer2 to off, mac gets removed
+        new_attr = data['attributes'].copy()
+        new_attr['layer2'] = False
+        update_data = {'id': created_id, 'attributes': new_attr}
         resp = self._do_request('update', user_cred, update_data)
-        self._validate_resp(resp, zvm_msg, 422)
+        # include mac in verification
+        update_data['mac_address'] = None
+        self._assert_updated(resp, update_data)
+
+        # try to define mac when layer2 is off - causes error
+        update_data = {'id': created_id, 'mac_address': '00:11:22:33:44:55'}
+        error_msg = 'When layer2 is off no MAC address should be defined'
+        resp = self._do_request('update', user_cred, update_data)
+        self._validate_resp(resp, error_msg, 422)
+
+        # clean up
+        created_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=created_id).one()
+        self.db.session.delete(created_entry)
+        models.System.query.filter_by(id=system_id).delete()
+        self.db.session.commit()
+
+        # layer2 off, mac specified - not allowed
+        data = next(self._get_next_entry)
+        data['attributes']['layer2'] = False
+        error_msg = 'When layer2 is off no MAC address should be defined'
+        resp = self._do_request('create', user_cred, data)
+        self._validate_resp(resp, error_msg, 422)
+
+        # layer2 off, no mac - success
+        data['mac_address'] = None
+        created_id = self._request_and_assert('create', user_cred, data)
 
         # clean up
         created_entry = self.RESOURCE_MODEL.query.filter_by(

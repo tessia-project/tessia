@@ -27,7 +27,7 @@ from tessia.cli.types import ACTION_TYPE
 from tessia.cli.types import CONSTANT
 from tessia.cli.types import JOB_TYPE
 from tessia.cli.utils import fetch_item
-from tessia.cli.utils import wait_scheduler
+from tessia.cli.utils import wait_job_exec, wait_scheduler
 from time import sleep
 
 import click
@@ -125,7 +125,7 @@ def output(job_id):
     while True:
         output_buf = item.output({'offset': offset, 'qty': qty})
         # no output: set the line counter to 0
-        if len(output_buf) == 0:
+        if not output_buf:
             buf_lines = 0
         # output available: print and increment the line counter and offset
         else:
@@ -141,8 +141,11 @@ def output(job_id):
                 client.Jobs,
                 {'job_id': job_id},
                 'job not found.')
+            # job has failed: report error and stop
+            if item.state == 'FAILED':
+                raise click.ClickException('Job #{} failed'.format(job_id))
             # job has finished: nothing more to do
-            if item.state not in ('RUNNING', 'CLEANINGUP', 'WAITING'):
+            elif item.state not in ('RUNNING', 'CLEANINGUP', 'WAITING'):
                 return
 
             # job still active: sleep a bit and try to fetch more lines
@@ -152,6 +155,7 @@ def output(job_id):
 
 @click.command(
     short_help='send a request to the scheduler to submit a new job')
+@click.pass_context
 @click.option('job_type', '--type', type=JOB_TYPE, required=True,
               help="type of execution machine to use")
 @click.option('--parmfile', type=click.File('r'), required=True,
@@ -160,7 +164,9 @@ def output(job_id):
               help="period in seconds after job times out")
 @click.option('--startdate', help="date when the job should be started")
 @click.option('priority', '--prio', type=int, help="job priority")
-def submit(job_type, parmfile, **kwargs):
+@click.option('--detach', is_flag=True,
+              help="do not wait for output after submit")
+def submit(ctx, job_type, parmfile, **kwargs):
     """
     send a request to the scheduler to submit a new job
     """
@@ -176,7 +182,21 @@ def submit(job_type, parmfile, **kwargs):
     if kwargs['startdate'] is not None:
         request['startdate'] = kwargs['startdate']
 
-    wait_scheduler(Client(), request)
+    client = Client()
+    job_id = wait_scheduler(client, request)
+    # detach flag: do not wait for output, just return to prompt
+    if kwargs['detach']:
+        return
+    try:
+        wait_job_exec(client, job_id)
+        ctx.invoke(output, job_id=job_id)
+    except KeyboardInterrupt:
+        cancel_job = click.confirm('\nDo you want to cancel the job?')
+        if not cancel_job:
+            click.echo('warning: job is still running, remember to cancel it '
+                       'if you want to submit a new action for this system')
+            raise
+        ctx.invoke(cancel, job_id=job_id)
 # submit()
 
 @click.command(

@@ -193,8 +193,6 @@ tasks:
     - - job submit --type=autoinst --parmfile='test_parmfile'
       - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
     - - job submit --type=echo --parmfile='test_parmfile'
-      - 'Request accepted; job id is'
-    - - job output --id=8
       - Waiting for job output
     - - job submit --type=autoinstall --parmfile='test'
       - 'Invalid value for "--parmfile": Could not open file: test: No such file or directory'
@@ -267,7 +265,7 @@ tasks:
     - - job output --id=1
       - 'Process Process-1:'
       # cover stmt 148 in job.py
-    - - job submit --type=echo --parmfile='test_parmfile_2'
+    - - job submit --type=echo --parmfile='test_parmfile_2' --detach
       - 'Request accepted; job id is'
     - - job output --id=9
       - 'Hello, world!'
@@ -330,13 +328,13 @@ tasks:
       - 'request failed, reason is: Cannot cancel job because it already ended'
     - - job cancel --id=27
       - 'request failed. Server answered: Job id provided does not exist'
-    - - job submit --type=echo --parmfile='test_parmfile_2'
+    - - job submit --type=echo --parmfile='test_parmfile_2' --detach
       - 'Request accepted; job id is'
     - - job cancel --id=10
       - 'Request accepted; job #\d+ canceled'
     - - job list --id=10
       - 'Job ID         : 10'
-    - - job submit --type=echo --parmfile='test_parmfile_2' --timeout=1
+    - - job submit --type=echo --parmfile='test_parmfile_2' --timeout=1 --detach
       - 'Request accepted; job id is'
     - - job list
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'

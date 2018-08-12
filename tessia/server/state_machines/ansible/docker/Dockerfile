@@ -1,0 +1,46 @@
+FROM ubuntu:latest
+
+# by default we expect the git repos to be placed by the ci process under /assets
+# but it is also possible to use this dockerfile directly and override the variables
+# to point to another location
+#ARG git_repo=file:///assets/tessia.git
+#ARG baselib_repo=file:///assets/tessia-baselib.git
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+COPY assets /assets
+
+RUN apt-get -q update > /dev/null && \
+    # Install the distro dependencies.
+    # ATTENTION: make sure to keep a comment for each explaining why is it needed.
+    apt-get -yq install --no-install-recommends \
+    # to manage the system locale
+    locales \
+    # used to install python libraries
+    python3-pip \
+    # so that rsync module in ansible works
+    rsync \
+    # clone repositories
+    git > /dev/null && \
+    # clean the cache to free up space
+    apt-get -q clean && \
+    # generate the locale/encoding and set it as default
+    locale-gen en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
+    # set up python packaging tools
+    pip3 -q install -U setuptools pip && \
+    # remove pip from distro to avoid conflicts
+    apt-get -y remove python3-pip && hash -r && \
+    # dependencies for entrypoint
+    pip3 -q install -U ansible \
+    # used by downloader
+    requests && \
+    chmod a+x /assets/downloader && \
+    mkdir /home/ansible
+
+# set the locale/encoding for the session
+ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+
+WORKDIR /home/ansible
+
+ENTRYPOINT ["/bin/bash"]

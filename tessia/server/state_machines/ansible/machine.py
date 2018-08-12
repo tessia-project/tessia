@@ -25,6 +25,7 @@ from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import System
 from tessia.server.db.models import SystemProfile
 from tessia.server.state_machines.base import BaseMachine
+from tessia.server.state_machines.ansible.env_docker import EnvDocker
 from tessia.server.state_machines.autoinstall.machine import AutoInstallMachine
 from urllib.parse import urlsplit, urlunsplit
 
@@ -32,7 +33,6 @@ import logging
 import os
 import requests
 import tempfile
-import time
 import subprocess
 import yaml
 
@@ -143,6 +143,7 @@ class AnsibleMachine(BaseMachine):
         self._params = parsed_params['params']
         self._params['repo_info'] = parsed_params['repo_info']
 
+        self._env = EnvDocker()
         # work directory (to be created in download stage)
         self._temp_dir = None
         # dir where repo is extracted (to be created in download stage)
@@ -455,7 +456,7 @@ class AnsibleMachine(BaseMachine):
             self._logger.info('system %s activated', system['name'])
     # _stage_activate_systems()
 
-    def _stage_create_inventory(self):
+    def _stage_create_config(self):
         """
         Fetch info from db and create inventory file for ansible
         """
@@ -506,6 +507,9 @@ class AnsibleMachine(BaseMachine):
                 }
                 groups.setdefault(group, []).append(entry)
 
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self._repo_dir = self._temp_dir.name
+
         # write the inventory file
         inventory_file = '{}/{}'.format(self._repo_dir, INVENTORY_FILE_NAME)
         with open(inventory_file, 'w') as file_fd:
@@ -519,15 +523,31 @@ class AnsibleMachine(BaseMachine):
                         'ansible_ssh_pass={pass}\n'.format(**entry)
                     )
                 file_fd.write('\n')
-    # _stage_create_inventory()
+
+        self._logger.info('creating config file')
+        # write the config file
+        config_content = """
+[defaults]
+inventory = {inv_file}
+host_key_checking = False
+
+[ssh_connection]
+pipelining = True
+""".format(inv_file=INVENTORY_FILE_NAME)
+        config_file = '{}/ansible.cfg'.format(self._repo_dir)
+        with open(config_file, 'w') as file_fd:
+            file_fd.write(config_content)
+
+    # _stage_create_config()
 
     def _stage_download(self):
         """
         Download the ansible repository from the network
         """
-        self._temp_dir = tempfile.TemporaryDirectory()
-        self._repo_dir = '{}/src'.format(self._temp_dir.name)
+        #self._temp_dir = tempfile.TemporaryDirectory()
+        #self._repo_dir = '{}/src'.format(self._temp_dir.name)
 
+        """
         if self._params['repo_info']['type'] == 'git':
             self._download_git()
         elif self._params['repo_info']['type'] == 'web':
@@ -543,6 +563,7 @@ class AnsibleMachine(BaseMachine):
         if not os.path.exists(playbook_path):
             raise ValueError("Specified playbook '{}' not found in "
                              "repository".format(self._params['playbook']))
+        """
 
     # _stage_download()
 
@@ -550,36 +571,12 @@ class AnsibleMachine(BaseMachine):
         """
         Run the ansible playbook specified by the user.
         """
-        # TODO: use overlayfs and chroot to isolate environment for security
-        # see
-        # https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt
+        self._logger.info("executing playbook")
 
-        ansible_cmd = 'ansible-playbook -i tessia-hosts {}'.format(
-            self._params['playbook'])
-        self._logger.info("executing: '%s'", ansible_cmd)
-
-        process_env = os.environ.copy()
-        process_env['ANSIBLE_SSH_PIPELINING'] = 'true'
-        process_env['ANSIBLE_HOST_KEY_CHECKING'] = 'false'
-        proc = subprocess.Popen(
-            ansible_cmd.split(), cwd=self._repo_dir,
-            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            env=process_env, universal_newlines=True)
-        # read from pipe in an non-blocking way to avoid hanging in ssh related
-        # commands (i.e. git clone) due to stderr left open by ssh
-        # controlpersist background process
-        # (https://bugzilla.mindrot.org/show_bug.cgi?id=1988)
-        os.set_blocking(proc.stdout.fileno(), False)
-        while True:
-            output_buffer = proc.stdout.readline()
-            if not output_buffer:
-                if proc.poll() is not None:
-                    break
-                time.sleep(0.2)
-                continue
-            print(output_buffer, end='', flush=True)
-
-        if proc.returncode != 0:
+        ret_code = self._env.run(
+            self._params['repo_info']['url'],
+            self._repo_dir, self._params['playbook'])
+        if ret_code != 0:
             raise RuntimeError('playbook execution failed')
     # _stage_exec_playbook()
 
@@ -664,8 +661,8 @@ class AnsibleMachine(BaseMachine):
         self._logger.info('new stage: download-source')
         self._stage_download()
 
-        self._logger.info('new stage: create-inventory')
-        self._stage_create_inventory()
+        self._logger.info('new stage: create-config')
+        self._stage_create_config()
 
         self._logger.info('new stage: activate-systems')
         self._stage_activate_systems()

@@ -105,6 +105,14 @@ subjectAltName=DNS:${fqdn}
     echo "info: ssl certificate created"
 }
 
+function _set_docker_perms() {
+    # TODO
+    # if /var/run/docker.sock exists;
+    # get file's group  (usually 970 for docker)
+    # if tessia's user not in this group: add it
+    echo "TODO"
+}
+
 function _tweak_cfg() {
     # set the url where auto install machine stores the generated autofiles so
     # that the systems being installed can reach them

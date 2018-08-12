@@ -34,6 +34,8 @@ RUN apt-get -q update > /dev/null && \
     libpq-dev \
     # to use python postgres connector (psycopg2)
     libpq5 \
+    # useful for administration tasks
+    vim \
     # init-like daemon to manage our services' processes
     supervisor > /dev/null && \
     # clean the cache to free up space
@@ -90,6 +92,6 @@ RUN cd /assets && \
 
 EXPOSE 80 5000
 
-VOLUME ["/etc/tessia", "/var/tessia/jobs"]
+VOLUME ["/etc/tessia", "/var/tessia/jobs", "/var/run/docker.sock"]
 
 ENTRYPOINT ["/entrypoint"]

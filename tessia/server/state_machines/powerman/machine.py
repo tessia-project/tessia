@@ -964,6 +964,9 @@ class PowerManagerMachine(BaseMachine):
         """
         Clean up in case of cancelation.
         """
+        # When the job is canceled during a cleanup the routine
+        # is not executed again by the scheduler.
+        self.cleaning_up = True
         # make sure any profile overrides are discarded and not committed to
         # the db
         MANAGER.session.rollback()

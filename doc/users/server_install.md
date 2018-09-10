@@ -321,6 +321,9 @@ Make sure to keep the token secure as it provides admin access to the applicatio
 **IMPORTANT**: In order to be able to install LPARs, one more step is needed.
 Refer to the section [Deployment of the auxiliar live-image](#deployment-of-the-auxiliar-live-image) for details.
 
+**IMPORTANT 2**: If you intend to use the ansible integration functionality you also need to properly configure a docker daemon and
+allow the tessia user to connect to docker's socket file `/var/run/docker.sock`.
+
 The tool is now ready for use. To learn how to install your first system, visit [Getting started](getting_started.md).
 
 # Deployment of the auxiliar live-image

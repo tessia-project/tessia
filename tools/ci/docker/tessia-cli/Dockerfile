@@ -30,7 +30,7 @@ RUN apt-get -q update > /dev/null && \
     # remove pip from distro to avoid conflicts
     apt-get -y remove python3-pip && hash -r && \
     # add the admin user for administrative work
-    useradd -ms /bin/bash admin
+    useradd --create-home --shell /bin/bash admin
 
 # set the locale/encoding for the session
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8

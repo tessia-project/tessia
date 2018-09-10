@@ -33,18 +33,47 @@ class EnvBase(metaclass=abc.ABCMeta):
     Abstract class to define the environment interface to be implemented by
     specialized classes.
     """
-    @abc.abstractmethod
-    def run(self, repo_dir):
-        """
-        Start ansible execution using given directory as ansible config
 
-        Args:
-            repo_dir (str): ansible repository directory
+    @abc.abstractmethod
+    def build(self):
+        """
+        Build environment
 
         Raises:
             NotImplementedError: as it has to be implemented in concrete
                                  classes
         """
         raise NotImplementedError()
-    # exec()
+    # build()
+
+    @abc.abstractmethod
+    def run(self, repo_url, repo_dir, playbook_name):
+        """
+        Start ansible execution using given directory as ansible config
+
+        Args:
+            repo_url (str): URL to an ansible playbook git repository.
+            repo_dir (str): TemporaryDirectory with configuration files which
+                            are transferred to the run environment.
+            playbook_name (str): playbook name to be executed.
+
+        Raises:
+            NotImplementedError: as it has to be implemented in concrete
+                                 classes
+        """
+        raise NotImplementedError()
+    # run()
+
+    @abc.abstractmethod
+    def cleanup(self):
+        """
+        Cleanup environment
+
+        Raises:
+            NotImplementedError: as it has to be implemented in concrete
+                                 classes
+        """
+        raise NotImplementedError()
+    # cleanup()
+
 # EnvBase()

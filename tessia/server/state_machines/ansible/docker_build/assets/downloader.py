@@ -14,16 +14,17 @@
 # limitations under the License.
 
 """
-Entrypoint for ansible playbook execution
+Utility for downloading ansible playbook repositories
 """
 
 #
 # IMPORTS
 #
-from copy import deepcopy
+from logging import INFO as logging_INFO
+from logging import getLogger
+from logging.config import dictConfig
 from urllib.parse import urlsplit, urlunsplit
 
-import logging
 import os
 import requests
 import subprocess
@@ -31,6 +32,27 @@ import subprocess
 #
 # CONSTANTS AND DEFINITIONS
 #
+LOG_CONFIG = {
+    'version': 1,
+    'formatters': {
+        'default': {
+            'format': '%(asctime)s | %(levelname)s | %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'default',
+            'level': 'DEBUG',
+            'stream': 'ext://sys.stdout'
+        }
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    }
+}
 
 # max allowed size for source repositories
 MAX_REPO_MB_SIZE = 100
@@ -42,19 +64,15 @@ MAX_GIT_CLONE_DEPTH = '10'
 #
 class RepoDownloader(object):
     """
-    This machine acts as a wrapper for the execution of ansible playbooks by
-    performing preparation steps like fetching the ansible repo from a given
-    url and creating an inventory file of the systems reserved for the job.
+    Download ansible playbooks from git or from web as a tarball.
+    The URL is read from an environment variable.
     """
     def __init__(self, repo_url):
         """
-        See base class docstring.
-
         Args:
-            params (str): A string containing a json in the format defined by
-                          the REQUEST_SCHEMA constant.
+            repo_url (str): The repository url (git or web tarball)
         """
-        self._logger = logging.getLogger(__name__)
+        self._logger = getLogger(__name__)
 
         self._repo_info = self._parse_source(repo_url)
     # __init__()
@@ -190,10 +208,12 @@ class RepoDownloader(object):
         else:
             depth = MAX_GIT_CLONE_DEPTH
 
+        cmd = ['git', 'clone', '-n', '--depth', depth, '--single-branch',
+               '-b', repo['git_branch'], repo['url'], '.']
+        self._logger.debug('cloning git repo with: %s', ' '.join(cmd))
         try:
             subprocess.run(
-                ['git', 'clone', '-n', '--depth', depth, '--single-branch',
-                 '-b', repo['git_branch'], repo['url'], '.'],
+                cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 env={'GIT_SSL_NO_VERIFY': 'true'},
@@ -206,9 +226,11 @@ class RepoDownloader(object):
         except OSError as exc:
             raise RuntimeError('Failed to execute git: {}'.format(
                 str(exc)))
+        cmd = ['git', 'reset', '--hard', repo['git_commit']]
+        self._logger.debug('setting git HEAD with: %s', ' '.join(cmd))
         try:
             subprocess.run(
-                ['git', 'reset', '--hard', repo['git_commit']],
+                cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 check=True,
@@ -223,7 +245,6 @@ class RepoDownloader(object):
                         repo['url'], repo['url_obs'])))
         except OSError as exc:
             raise RuntimeError('Failed to execute git: {}'.format(str(exc)))
-
     # _download_git()
 
     def _download_web(self):
@@ -321,13 +342,19 @@ class RepoDownloader(object):
 
         return urlunsplit(repo_parts)
     # _url_obfuscate()
-
 # RepoDownloader
 
 def main():
     """
     Entry point
     """
+    try:
+        log_level = int(os.environ.get('TESSIA_ANSIBLE_DOCKER_LOG_LEVEL'))
+    except (TypeError, ValueError):
+        log_level = logging_INFO
+    dictConfig(LOG_CONFIG)
+    getLogger().setLevel(log_level)
+
     repo_url = os.environ.get('TESSIA_ANSIBLE_DOCKER_REPO_URL')
     if not repo_url:
         raise RuntimeError(
@@ -335,7 +362,7 @@ def main():
 
     downloader = RepoDownloader(repo_url)
     downloader.download()
-# root()
+# main()
 
 if __name__ == '__main__':
     main()

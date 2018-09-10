@@ -135,8 +135,8 @@ class TestAutoInstallMachine(TestCase):
             "profile" and "template" are optional.
         """
         mach = machine.AutoInstallMachine(parameters)
+        # start also calls cleanup
         mach.start()
-        mach.cleanup()
         # Assert that the methods of the correct install machine were called.
         self._mock_sm_anaconda.return_value.start.assert_called_once_with()
         self._mock_sm_anaconda.return_value.cleanup.assert_called_once_with()

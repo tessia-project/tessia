@@ -37,3 +37,4 @@ pages:
     - Working with documentation: 'developers/documentation.md'
     - Continous Integration: 'developers/continuous_integration.md'
     - Design topics: 'developers/design.md'
+    - Scheduler: 'developers/scheduler.md'

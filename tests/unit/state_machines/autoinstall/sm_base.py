@@ -237,6 +237,7 @@ class TestSmBase(TestCase):
                                "kvm054/kvm_kvm054_install", "rhel7-default")
         with self.assertRaisesRegex(RuntimeError, "Unable to delete"):
             mach.start()
+            mach.cleanup()
     # test_init()
 
     def test_invalid_config(self):

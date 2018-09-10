@@ -21,6 +21,7 @@ Machine to enable the usage of ansible playbooks
 #
 from copy import deepcopy
 from jsonschema import validate
+from tessia.server.config import CONF
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import System
 from tessia.server.db.models import SystemProfile
@@ -32,6 +33,7 @@ from urllib.parse import urlsplit, urlunsplit
 import logging
 import os
 import requests
+import shutil
 import tempfile
 import subprocess
 import yaml
@@ -104,6 +106,10 @@ REQUEST_SCHEMA = {
             # at lest one system must be specified
             'minItems': 1,
         },
+        "verbosity": {
+            "type": "string",
+            "enum": list(BaseMachine._LOG_LEVELS),
+        },
     },
     'required': [
         'playbook',
@@ -112,6 +118,9 @@ REQUEST_SCHEMA = {
     ],
     'additionalProperties': False
 }
+
+# A file where the temporary directory path is stored
+TEMP_DIR_FILE = ".temp_dir"
 
 #
 # CODE
@@ -136,18 +145,21 @@ class AnsibleMachine(BaseMachine):
         # connecting to db
         MANAGER.connect()
 
-        self._logger = logging.getLogger(__name__)
-
         # validate params and store them
         parsed_params = self.parse(params)
         self._params = parsed_params['params']
         self._params['repo_info'] = parsed_params['repo_info']
 
+        # user specified custom log level: apply it to log config
+        if 'verbosity' in self._params:
+            CONF.log_config(conf=self._LOG_CONFIG,
+                            log_level=self._params['verbosity'])
+        self._logger = logging.getLogger(__name__)
+
         self._env = EnvDocker()
-        # work directory (to be created in download stage)
+        # work directory (to be created in create config stage)
+        # dir where repo is extracted (to be created in create config stage)
         self._temp_dir = None
-        # dir where repo is extracted (to be created in download stage)
-        self._repo_dir = None
     # __init__()
 
     @staticmethod
@@ -265,122 +277,27 @@ class AnsibleMachine(BaseMachine):
         return repo
     # _parse_source()
 
-    def _download_git(self):
+    @staticmethod
+    def _url_obfuscate(parsed_url):
         """
-        Download a repository from a git url
+        Obfuscate sensitive information (i.e. user and password) from the
+        repository URL.
+
+        Args:
+            parsed_url (urllib.parse.SplitResult): result of urlsplit
+
+        Returns:
+            str: url with obfuscated user credentials
         """
-        repo = self._params['repo_info']
-        self._logger.info('cloning git repo from %s', repo['url_obs'])
-
-        # Since git doesn't allow to clone specific commit and for
-        # optimal resources usage, we set the depth of cloning.
-        # So by default we take only the last commit. But if an user specifies
-        # a target commit, then we set the predefined depth value.
-        if repo['git_commit'] == 'HEAD':
-            depth = '1'
-        else:
-            depth = MAX_GIT_CLONE_DEPTH
-
         try:
-            subprocess.run(
-                ['git', 'clone', '-n', '--depth', depth, '--single-branch',
-                 '-b', repo['git_branch'], repo['url'], self._repo_dir],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                env={'GIT_SSL_NO_VERIFY': 'true'},
-                check=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            raise ValueError('Failed to git clone: {}'.format(
-                exc.stderr.decode('utf8').replace(
-                    repo['url'], repo['url_obs'])))
-        except OSError as exc:
-            raise RuntimeError('Failed to execute git: {}'.format(
-                str(exc)))
-        try:
-            subprocess.run(
-                ['git', '-C', self._repo_dir, 'reset', '--hard',
-                 repo['git_commit']],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                check=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            raise ValueError(
-                'Failed to checkout to {}, make sure it is not older than {} '
-                'commits. Received error: {}'.format(
-                    repo['git_commit'],
-                    MAX_GIT_CLONE_DEPTH,
-                    exc.stderr.decode('utf8').replace(
-                        repo['url'], repo['url_obs'])))
-        except OSError as exc:
-            raise RuntimeError('Failed to execute git: {}'.format(str(exc)))
+            _, host_name = parsed_url.netloc.rsplit('@', 1)
+        except ValueError:
+            return parsed_url.geturl()
+        repo_parts = [*parsed_url]
+        repo_parts[1] = '{}@{}'.format('****', host_name)
 
-    # _download_git()
-
-    def _download_web(self):
-        """
-        Download a repository from a web url
-        """
-        repo = self._params['repo_info']
-        file_name = repo['url_parsed'].path.split('/')[-1]
-
-        # determine how to extract the source file
-        tar_flags = ''
-        if file_name.endswith('tgz') or file_name.endswith('.tar.gz'):
-            tar_flags = 'zxf'
-        elif file_name.endswith('.tar.bz2'):
-            tar_flags = 'jxf'
-        # should never happen as it was validated by parse before
-        if not tar_flags:
-            raise RuntimeError('Unsupported source file format')
-
-        self._logger.info(
-            'downloading compressed file from %s', repo['url_obs'])
-
-        try:
-            resp = requests.get(
-                self._params['source'], stream=True, verify=False)
-            resp.raise_for_status()
-        except requests.exceptions.RequestException as exc:
-            raise ValueError(
-                "Source url is not accessible: {} {}".format(
-                    exc.response.status_code, exc.response.reason))
-
-        # define a sane maximum size to avoid consuming all space from the
-        # filesystem
-        if (int(resp.headers['content-length']) >
-                MAX_REPO_MB_SIZE * 1024 * 1024):
-            raise RuntimeError('Source file exceeds max allowed size '
-                               '({}MB)'.format(MAX_REPO_MB_SIZE))
-
-        # download the file
-        file_target_path = '{}/{}'.format(self._temp_dir.name, file_name)
-        chunk_size = 10 * 1024
-        with open(file_target_path, 'wb') as file_fd:
-            for chunk in resp.iter_content(chunk_size=chunk_size):
-                file_fd.write(chunk)
-
-        # extract file
-        os.makedirs(self._repo_dir)
-        try:
-            subprocess.run(
-                ['tar', tar_flags, file_target_path],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                cwd=self._repo_dir,
-                check=True,
-            )
-        except subprocess.CalledProcessError as exc:
-            raise ValueError('Failed to extract file: {}'.format(
-                exc.stderr.decode('utf8')))
-        except OSError as exc:
-            raise RuntimeError('Failed to execute tar: {}'.format(
-                str(exc)))
-
-        # source file not needed anymore, free up disk space
-        os.remove(file_target_path)
-    # _download_web()
+        return urlunsplit(repo_parts)
+    # _url_obfuscate()
 
     @staticmethod
     def _get_resources(systems):
@@ -443,6 +360,13 @@ class AnsibleMachine(BaseMachine):
         return resources
     # _get_resources()
 
+    def _stage_build_environment(self):
+        """
+        Build the run environment to execute the playbook in.
+        """
+        self._env.build()
+    # _stage_build_environment()
+
     def _stage_activate_systems(self):
         """
         Activate the systems used in the job. Any systems tagged for
@@ -458,7 +382,11 @@ class AnsibleMachine(BaseMachine):
 
     def _stage_create_config(self):
         """
-        Fetch info from db and create inventory file for ansible
+        Fetch info from db and create inventory file for ansible.
+
+        Creates an ansible.cfg file which is used during ansible-playbook
+        execution. Creates an inventory file (tessia-hosts) which is referenced
+        in the ansible.cfg file.
         """
         self._logger.info('creating inventory file')
 
@@ -507,11 +435,17 @@ class AnsibleMachine(BaseMachine):
                 }
                 groups.setdefault(group, []).append(entry)
 
-        self._temp_dir = tempfile.TemporaryDirectory()
-        self._repo_dir = self._temp_dir.name
+        # There's a slight chance that an empty temp dir is not cleaned up if
+        # a signal interrupts the execution between dir creation and storing
+        # its name in the file, but it is still better to use the standard lib
+        # to securely create the dir than generating a random name, avoiding
+        # race conditions, permissions, etc. if creating it manually.
+        with open(TEMP_DIR_FILE, 'w') as temp_dir_file:
+            self._temp_dir = tempfile.mkdtemp()
+            temp_dir_file.write(self._temp_dir)
 
         # write the inventory file
-        inventory_file = '{}/{}'.format(self._repo_dir, INVENTORY_FILE_NAME)
+        inventory_file = '{}/{}'.format(self._temp_dir, INVENTORY_FILE_NAME)
         with open(inventory_file, 'w') as file_fd:
             # create each group section
             for group in groups:
@@ -526,46 +460,18 @@ class AnsibleMachine(BaseMachine):
 
         self._logger.info('creating config file')
         # write the config file
-        config_content = """
-[defaults]
-inventory = {inv_file}
-host_key_checking = False
-
-[ssh_connection]
-pipelining = True
-""".format(inv_file=INVENTORY_FILE_NAME)
-        config_file = '{}/ansible.cfg'.format(self._repo_dir)
+        config_content = ("[defaults]\n"
+                          "inventory = {inv_file}\n"
+                          "\n"
+                          "host_key_checking = False\n"
+                          "\n"
+                          "[ssh_connection]\n"
+                          "pipelining = True")\
+            .format(inv_file=INVENTORY_FILE_NAME)
+        config_file = '{}/ansible.cfg'.format(self._temp_dir)
         with open(config_file, 'w') as file_fd:
             file_fd.write(config_content)
-
     # _stage_create_config()
-
-    def _stage_download(self):
-        """
-        Download the ansible repository from the network
-        """
-        #self._temp_dir = tempfile.TemporaryDirectory()
-        #self._repo_dir = '{}/src'.format(self._temp_dir.name)
-
-        """
-        if self._params['repo_info']['type'] == 'git':
-            self._download_git()
-        elif self._params['repo_info']['type'] == 'web':
-            self._download_web()
-        # should never happen as it was validated by parse before
-        else:
-            raise RuntimeError('Unsupported source url')
-
-        # perform some sanity checks
-        self._logger.info('validating repository content')
-        playbook_path = '{}/{}'.format(
-            self._repo_dir, self._params['playbook'])
-        if not os.path.exists(playbook_path):
-            raise ValueError("Specified playbook '{}' not found in "
-                             "repository".format(self._params['playbook']))
-        """
-
-    # _stage_download()
 
     def _stage_exec_playbook(self):
         """
@@ -575,41 +481,10 @@ pipelining = True
 
         ret_code = self._env.run(
             self._params['repo_info']['url'],
-            self._repo_dir, self._params['playbook'])
+            self._temp_dir, self._params['playbook'])
         if ret_code != 0:
             raise RuntimeError('playbook execution failed')
     # _stage_exec_playbook()
-
-    @staticmethod
-    def _url_obfuscate(parsed_url):
-        """
-        Obfuscate sensitive information (i.e. user and password) from the
-        repository URL.
-
-        Args:
-            parsed_url (urllib.parse.SplitResult): result of urlsplit
-
-        Returns:
-            str: url with obfuscated user credentials
-        """
-        try:
-            _, host_name = parsed_url.netloc.rsplit('@', 1)
-        except ValueError:
-            return parsed_url.geturl()
-        repo_parts = [*parsed_url]
-        repo_parts[1] = '{}@{}'.format('****', host_name)
-
-        return urlunsplit(repo_parts)
-    # _url_obfuscate()
-
-    def cleanup(self):
-        """
-        Remove temp dir
-        """
-        if self._temp_dir is not None:
-            self._temp_dir.cleanup()
-            self._temp_dir = None
-    # cleanup()
 
     @classmethod
     def parse(cls, params):
@@ -654,12 +529,46 @@ pipelining = True
         return result
     # parse()
 
+    def cleanup(self):
+        """
+        Remove temp dir
+        """
+        # When the job is canceled during a cleanup the routine
+        # is not executed again by the scheduler.
+        self.cleaning_up = True
+
+        self._logger.info('performing cleanup')
+
+        # cleanup the run environment
+        self._env.cleanup()
+
+        if self._temp_dir is not None:
+            dir_path = self._temp_dir
+        else:
+            # When the job was canceled the self._temp_dir variable does not
+            # contain the actual directory anymore.
+            # Therefore the path was saved to a file (TEMP_DIR_FILE).
+            # The path to TEMP_DIR was stored in a file.
+            # When the folder exists gracefully remove folder.
+            try:
+                with open(TEMP_DIR_FILE, 'r') as temp_dir_file:
+                    dir_path = temp_dir_file.read().strip()
+            except OSError:
+                self._logger.debug("no temporary directory to delete")
+                return
+
+        # make sure we are deleting a temp folder
+        if (os.path.isdir(dir_path) and
+                os.path.dirname(dir_path) == tempfile.gettempdir()):
+            shutil.rmtree(dir_path)
+    # cleanup()
+
     def start(self):
         """
         Start the machine execution.
         """
-        self._logger.info('new stage: download-source')
-        self._stage_download()
+        self._logger.info('new stage: build-environment')
+        self._stage_build_environment()
 
         self._logger.info('new stage: create-config')
         self._stage_create_config()

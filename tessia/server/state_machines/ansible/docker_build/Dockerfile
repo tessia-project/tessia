@@ -1,11 +1,5 @@
 FROM ubuntu:latest
 
-# by default we expect the git repos to be placed by the ci process under /assets
-# but it is also possible to use this dockerfile directly and override the variables
-# to point to another location
-#ARG git_repo=file:///assets/tessia.git
-#ARG baselib_repo=file:///assets/tessia-baselib.git
-
 ARG DEBIAN_FRONTEND=noninteractive
 
 COPY assets /assets
@@ -18,6 +12,8 @@ RUN apt-get -q update > /dev/null && \
     locales \
     # used to install python libraries
     python3-pip \
+    # these are needed to compile ansible dependencies
+    build-essential libssl-dev libffi-dev python3-dev \
     # so that rsync module in ansible works
     rsync \
     # clone repositories
@@ -33,14 +29,18 @@ RUN apt-get -q update > /dev/null && \
     apt-get -y remove python3-pip && hash -r && \
     # dependencies for entrypoint
     pip3 -q install -U ansible \
-    # used by downloader
+    # used by downloader.py
     requests && \
-    chmod a+x /assets/downloader && \
-    mkdir /home/ansible
+    chmod a+x /assets/downloader.py && \
+    # add the ansible user for less privileged playbook execution
+    useradd --create-home --shell /bin/bash ansible && \
+    # add empty folder to clone ansible playbook to
+    mkdir /home/ansible/playbook && \
+    chown ansible:ansible /home/ansible/playbook
 
 # set the locale/encoding for the session
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 WORKDIR /home/ansible
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/bin/cat"]

@@ -29,7 +29,7 @@ from tessia.cli.types import LIBVIRT_XML
 from tessia.cli.types import MACADDRESS
 from tessia.cli.types import NAME
 from tessia.cli.types import SUBNET
-from tessia.cli.types import QETH_GROUP
+from tessia.cli.types import QETH_GROUP, QETH_PORTNO
 from tessia.cli.utils import fetch_and_delete
 
 import click
@@ -73,7 +73,7 @@ ATTR_BY_TYPE = {
 @click.option('--layer2', type=click.BOOL,
               help="enable layer2 mode (OSA only)")
 @click.option('--ccwgroup', type=QETH_GROUP, help="device channels (OSA only)")
-@click.option('--portno', help="port number (OSA only)")
+@click.option('--portno', type=QETH_PORTNO, help="port number (OSA only)")
 @click.option('--portname', help="port name (OSA only)")
 @click.option('--hostiface', help="host iface to bind (KVM only)")
 @click.option('--libvirt', type=LIBVIRT_XML,
@@ -248,7 +248,7 @@ def iface_detach(system, profile, iface):
               help="enable layer2 mode (OSA only)")
 @click.option('--ccwgroup', type=QETH_GROUP,
               help="device channels (OSA only)")
-@click.option('--portno', help="port number (OSA only)")
+@click.option('--portno', type=QETH_PORTNO, help="port number (OSA only)")
 @click.option('--portname', help="port name (OSA only)")
 @click.option('--hostiface', help="host iface to bind (KVM only)")
 @click.option('--libvirt', type=LIBVIRT_XML,

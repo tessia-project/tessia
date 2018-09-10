@@ -37,7 +37,11 @@
                     "type": "string"
                 },
                 "portno": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "0",
+                        "1"
+                    ]
                 }
             },
             "required": [

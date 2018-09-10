@@ -437,10 +437,12 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portname=OSAE1
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa3' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=65
+      - 'Invalid value for "--portno": portno must be one of: 0, 1'
+    - - system iface-add --system=cpc3lp52 --name='default osa3' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=1
       - Item added successfully.
-    - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --osname=enccw0.0.f500 --layer2=false --ccwgroup=f500 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=65
+    - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --osname=enccw0.0.f500 --layer2=false --ccwgroup=f500 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=1
       - 'Invalid value for "--ccwgroup": f500 is not a valid qeth ccwgroup'
-    - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --osname=enccw0.0.f500 --layer2=false --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=65
+    - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --osname=enccw0.0.f500 --layer2=false --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=1
       - Item added successfully.
       # iface-add with ip and without subnet
     - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --ip=192.168.160.55 --hostiface=enccw0.0.f500
@@ -628,7 +630,7 @@ tasks:
       - invalid attribute for this iface type
     - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --portname=OSAE1
       - invalid attribute for this iface type
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --portno=65
+    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --portno=0
       - invalid attribute for this iface type
       # no update criteria
     - - system iface-edit --system=guest55 --name='default macvtap'

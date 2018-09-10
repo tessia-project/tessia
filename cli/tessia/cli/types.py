@@ -412,6 +412,34 @@ class QethGroup(click.ParamType):
 
 QETH_GROUP = QethGroup()
 
+class QethPortno(click.ParamType):
+    """
+    Represents the portno for OSA cards.
+    """
+    ALLOWED_VALUES = ('0', '1')
+    name = 'port_no'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure value is correct.
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        if value.lower() not in self.ALLOWED_VALUES:
+            self.fail('portno must be one of: {}'.format(
+                ', '.join(self.ALLOWED_VALUES)), param, ctx)
+
+        return value.upper()
+    # convert()
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[{}]'.format('|'.join(self.ALLOWED_VALUES))
+# QethPortno
+
+QETH_PORTNO = QethPortno()
+
 class ScsiWwid(click.ParamType):
     """
     Represents a SCSI's World Wide Identifier

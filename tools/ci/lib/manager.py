@@ -23,6 +23,7 @@ from lib.image import DockerImage
 from lib.image_server import DockerImageServer
 from lib.util import Shell, build_image_map
 
+import ipaddress
 import logging
 import os
 import signal
@@ -49,7 +50,8 @@ class Manager(object):
 
     def __init__(self, stage, docker_tag, images=None, registry_url=None,
                  field_tests=None, img_passwd_file=None,
-                 install_server_hostname=None, verbose=True, **stage_args):
+                 install_server_hostname=None, custom_cli_subnet=None, custom_db_subnet=None,
+                 verbose=True, **stage_args):
         """
         Create the image objects and set necessary configuration parameters
 
@@ -82,6 +84,8 @@ class Manager(object):
         self._registry_url = registry_url
         self._field_tests = field_tests
         self._install_server_hostname = install_server_hostname
+        self._custom_cli_subnet = custom_cli_subnet
+        self._custom_db_subnet = custom_db_subnet
         if img_passwd_file:
             with open(img_passwd_file, 'r') as file_fd:
                 self._img_passwd = file_fd.read().strip()
@@ -262,6 +266,28 @@ class Manager(object):
                     'failed to clean db after test: {}'.format(output))
     # _clitest_loop()
 
+    @staticmethod
+    def parse_ip_range(ip_range):
+        """
+        Check that the ip range provided is valid by creating an IPvXNetwork
+        python object out of it.
+
+        Args:
+            ip_range (str): ip address range, valid notations:
+                            CIDR: e.g. 192.168.178.0/24
+                            dotted decimal notation: e.g.
+                                192.168.178.0/255.255.255.0
+
+        Returns:
+            parsed ip_address range (str)
+
+        Raises:
+            ValueError: When ip address range is invalid.
+        """
+        range_obj = ipaddress.ip_network(ip_range)
+        return str(range_obj)
+    # parse_ip_range()
+
     def _compose_start(self, dev_mode=False, cli_test=False):
         """
         Bring up and configure the services by using docker-compose.
@@ -314,6 +340,22 @@ class Manager(object):
         # static tests: do not expose ports unnecessarily
         if cli_test and not self._field_tests:
             compose_cfg['services']['server'].pop('ports')
+
+        # set custom subnet for tessia_cli_net
+        if self._custom_cli_subnet:
+            parsed_ip_range = self.parse_ip_range(self._custom_cli_subnet)
+            compose_cfg['networks']['cli_net'] = {}
+            compose_cfg['networks']['cli_net']['ipam'] = {
+                'driver': 'default', 'config': [{'subnet': parsed_ip_range}]
+            }
+
+        # set custom subnet for tessia_db_net
+        if self._custom_db_subnet:
+            parsed_ip_range = self.parse_ip_range(self._custom_db_subnet)
+            compose_cfg['networks']['db_net'] = {}
+            compose_cfg['networks']['db_net']['ipam'] = {
+                'driver': 'default', 'config': [{'subnet': parsed_ip_range}]
+            }
 
         if self._img_passwd:
             (compose_cfg['services']['server']['environment']

@@ -26,7 +26,7 @@ from tessia.server.state_machines.autoinstall import plat_base, plat_lpar
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tests.unit.state_machines.autoinstall import utils
 from unittest import mock, TestCase
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -51,6 +51,13 @@ class TestPlatLpar(TestCase):
         """
         Setup all the mocks used for the execution of the tests.
         """
+        # patch logger
+        patcher = patch.object(plat_lpar, 'logging')
+        mock_logging = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_logging.getLogger.return_value = Mock(
+            spec=['warning', 'error', 'debug', 'info'])
+
         # We cannot use autospec here because the Hypervisor class does not
         # really have all the methods since it is a factory class.
         patcher = patch.object(plat_base, 'Hypervisor')
@@ -65,10 +72,6 @@ class TestPlatLpar(TestCase):
                 'live_img_passwd': 'some_test_password'
             }
         }
-
-        patcher = patch.object(plat_lpar, 'SshClient', autospec=True)
-        self._mock_ssh_client_cls = patcher.start()
-        self.addCleanup(patcher.stop)
 
         self._os_entry = utils.get_os("rhel7.2")
         self._profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
@@ -210,33 +213,6 @@ class TestPlatLpar(TestCase):
         for vol, devpath in zip(volumes, devpaths):
             self.assertEqual(plat.get_vol_devpath(vol), devpath)
     # test_get_vol_devpath()
-
-    def test_reboot(self):
-        """
-        Test the correct initialization and the operations of a
-        PlatLpar object.
-        """
-        plat = self._create_plat_lpar()
-
-        mock_ssh_client = self._mock_ssh_client_cls.return_value
-        mock_shell = mock_ssh_client.open_shell.return_value
-        mock_shell.run.side_effect = TimeoutError
-
-        # Performs the reboot operation.
-        plat.reboot(self._profile_entry)
-
-        hostname = self._profile_entry.system_rel.hostname
-        user = self._profile_entry.credentials['user']
-        password = self._profile_entry.credentials['passwd']
-
-        # Makes sure the reboot procedure was properly executed.
-        mock_ssh_client.login.assert_called_with(hostname, user=user,
-                                                 passwd=password,
-                                                 timeout=10)
-        mock_shell.run.assert_called_with(
-            'nohup reboot -f; nohup killall sshd', timeout=1)
-
-    # test_reboot()
 
     def test_unknown_volume_type(self):
         """

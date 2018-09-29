@@ -19,6 +19,7 @@ Interface for epresentation of each platform type
 #
 # IMPORTS
 #
+from tessia.baselib.common.ssh.client import SshClient
 from tessia.baselib.hypervisors import Hypervisor
 
 import abc
@@ -128,7 +129,23 @@ class PlatBase(metaclass=abc.ABCMeta):
         Args:
             system_profile (SystemProfile): db's entry
         """
-        self._hyp_obj.reboot(system_profile.system_rel.name, None)
+        # perform a soft reboot
+        self._logger.info('rebooting the system now')
+
+        hostname = system_profile.system_rel.hostname
+        user = system_profile.credentials['user']
+        password = system_profile.credentials['passwd']
+
+        ssh_client = SshClient()
+        ssh_client.login(hostname, user=user, passwd=password,
+                         timeout=10)
+        shell = ssh_client.open_shell()
+        try:
+            shell.run('nohup reboot -f; nohup killall sshd', timeout=1)
+        except TimeoutError:
+            pass
+        shell.close()
+        ssh_client.logoff()
     # reboot()
 
 # PlatBase

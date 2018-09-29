@@ -24,7 +24,7 @@ from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tessia.server.state_machines.autoinstall import plat_zvm
 from tests.unit.state_machines.autoinstall import utils
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -49,14 +49,17 @@ class TestPlatZvm(TestCase):
         """
         Set the common mocks used in the tests
         """
+        # patch logger
+        patcher = patch.object(plat_zvm, 'logging')
+        mock_logging = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_logging.getLogger.return_value = Mock(
+            spec=['warning', 'error', 'debug', 'info'])
+
         # specify the class for autospec as the Hypervisor class is actually a
         # factory class
         patcher = patch.object(plat_zvm, 'Hypervisor', autospec=HypervisorZvm)
         self._mock_hyp_cls = patcher.start()
-        self.addCleanup(patcher.stop)
-
-        patcher = patch.object(plat_zvm, 'SshClient', autospec=True)
-        self._mock_ssh_client_cls = patcher.start()
         self.addCleanup(patcher.stop)
 
         self._os_entry = utils.get_os("rhel7.2")
@@ -141,29 +144,5 @@ class TestPlatZvm(TestCase):
         self.db.session.add(self._prof_entry)
         self.db.session.commit()
     # test_init_error()
-
-    def test_reboot(self):
-        """
-        Exercise the reboot action.
-        """
-        mock_ssh_client = self._mock_ssh_client_cls.return_value
-        mock_shell = mock_ssh_client.open_shell.return_value
-        mock_shell.run.side_effect = TimeoutError
-
-        # Performs the reboot operation.
-        self._plat.reboot(self._prof_entry)
-
-        hostname = self._prof_entry.system_rel.hostname
-        user = self._prof_entry.credentials['user']
-        password = self._prof_entry.credentials['passwd']
-
-        # Makes sure the reboot procedure was properly executed.
-        mock_ssh_client.login.assert_called_with(hostname, user=user,
-                                                 passwd=password,
-                                                 timeout=10)
-        mock_shell.run.assert_called_with(
-            'nohup reboot -f; nohup killall sshd', timeout=1)
-
-    # test_reboot()
 
 # TestPlatZvm

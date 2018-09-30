@@ -69,6 +69,45 @@ echo "Activating DASDs without partition table defined..."
       </script>
     </pre-scripts>
 {% endif -%}
+{% if config["system_type"] != "KVM" -%}
+    <chroot-scripts config:type="list">
+      <script>
+        <filename>portno.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Adjusting OSA cards portno configuration..."
+  {% for iface in config["ifaces"] %}
+    {% if iface['attributes']['portno'] == "1" -%}
+# autoyast provides no option to set portno therefore we do it here
+chzdev -p qeth {{iface['attributes']['ccwgroup']}} portno=1
+    {% endif -%}
+  {% endfor -%}
+]]>
+        </source>
+      </script>
+    </chroot-scripts>
+{% endif -%}
+{% if config["system_type"] != "KVM" -%}
+    <init-scripts config:type="list">
+      <script>
+        <filename>osname.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Adjusting OSA cards osname configuration..."
+  {% for iface in config["ifaces"] %}
+    {% if iface['type'] == 'OSA' -%}
+# autoyast can't generate rules correctly when multiple interfaces are installed;
+# therefore we do it here
+echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", NAME="{{iface['osname']}}"' >> /etc/udev/rules.d/70-persistent-net.rules
+    {% endif -%}
+  {% endfor -%}
+]]>
+        </source>
+      </script>
+    </init-scripts>
+{% endif -%}
   </scripts>
   <general>
     <ask-list config:type="list"/>

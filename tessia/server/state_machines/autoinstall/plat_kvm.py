@@ -19,12 +19,14 @@ Module to deal with operations on KVM guests
 #
 # IMPORTS
 #
+from tessia.baselib.common.ssh.client import SshClient
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import SystemProfile
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
 from xml.etree import ElementTree
 
+from time import sleep
 import logging
 
 #
@@ -425,4 +427,41 @@ class PlatKvm(PlatBase):
         # return it
         return self._devpath_by_vol[vol_obj.id]
     # get_vol_devpath()
+
+    def reboot(self, system_profile):
+        """
+        Restart the guest after installation is finished.
+
+        Args:
+            system_profile (SystemProfile): db's entry
+        """
+        # On kvm a soft reboot does not work as it only starts the distro
+        # installer again. Instead we do a shutdown and then boot from
+        # the hypervisor level
+        self._logger.info('rebooting the system now')
+
+        hostname = system_profile.system_rel.hostname
+        user = system_profile.credentials['user']
+        password = system_profile.credentials['passwd']
+
+        ssh_client = SshClient()
+        ssh_client.login(hostname, user=user, passwd=password,
+                         timeout=10)
+        shell = ssh_client.open_shell()
+        # in certain installations files created by post-install scripts don't
+        # get written to disk if we don't call sync before rebooting
+        shell.run('sync')
+        try:
+            shell.run('nohup shutdown; nohup killall sshd', timeout=1)
+        except TimeoutError:
+            pass
+        shell.close()
+        ssh_client.logoff()
+
+        # TODO: when baselib has support to provide guest status, replace this
+        # sleep by polling until guest is off
+        sleep(5)
+
+        self._hyp_obj.reboot(system_profile.system_rel.name, None)
+    # reboot()
 # PlatKvm

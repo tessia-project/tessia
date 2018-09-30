@@ -453,7 +453,7 @@ tasks:
     - - storage part-init --server=DS8K16
       - Missing option "--id".
     - - storage part-init --server=DS8K16 --id=3955
-      - Missing option "--label".  Choose from dasd, gpt, msdos.
+      - 'Missing option "--label".  Choose from:[ \n\t]*dasd,[ \n\t]*gpt,[ \n\t]*msdos\.'
     - - storage part-init --server=DS8K16 --label=dasd
       - Missing option "--id".
     - - storage part-init --id=3955 --label=dasd

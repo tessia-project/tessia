@@ -20,7 +20,6 @@ Module to deal with operations on LPARs
 # IMPORTS
 #
 from copy import deepcopy
-from tessia.baselib.common.ssh.client import SshClient
 from tessia.server.config import Config
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
@@ -144,30 +143,4 @@ class PlatLpar(PlatBase):
             "Unknown volume type'{}'".format(vol_obj.type))
 
     # get_vol_devpath()
-
-    def reboot(self, system_profile):
-        """
-        Restart the guest after installation is finished.
-
-        Args:
-            system_profile (SystemProfile): db's entry
-        """
-        # perform a soft reboot until reboot via hypervisor gets fixed in hmc
-        self._logger.info('Rebooting the system now!')
-
-        hostname = system_profile.system_rel.hostname
-        user = system_profile.credentials['user']
-        password = system_profile.credentials['passwd']
-
-        ssh_client = SshClient()
-        ssh_client.login(hostname, user=user, passwd=password,
-                         timeout=10)
-        shell = ssh_client.open_shell()
-        try:
-            shell.run('nohup reboot -f; nohup killall sshd', timeout=1)
-        except TimeoutError:
-            pass
-        shell.close()
-        ssh_client.logoff()
-    # reboot()
 # PlatLpar

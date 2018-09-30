@@ -25,7 +25,7 @@ from tessia.server.state_machines.autoinstall import plat_base
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tests.unit.state_machines.autoinstall import utils
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -51,6 +51,20 @@ class TestPlatBase(TestCase):
         """
         Setup all the mocks used for the execution of the tests.
         """
+        # patch logger
+        patcher = patch.object(plat_base, 'logging')
+        mock_logging = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_logging.getLogger.return_value = Mock(
+            spec=['warning', 'error', 'debug', 'info'])
+
+        patcher = patch.object(plat_base, 'SshClient', autospec=True)
+        self._mock_ssh_client_cls = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_ssh_client = self._mock_ssh_client_cls.return_value
+        mock_shell = mock_ssh_client.open_shell.return_value
+        mock_shell.run.side_effect = TimeoutError
+
         # We cannot use autospec here because the Hypervisor class does not
         # really have all the methods since it is a factory class.
         patcher = patch.object(plat_base, 'Hypervisor')
@@ -122,14 +136,25 @@ class TestPlatBase(TestCase):
 
         # Performs the reboot operation.
         plat.reboot(self._profile_entry)
-        hyper.reboot.assert_called_with(
-            self._profile_entry.system_rel.name,
-            None)
+
+        hostname = self._profile_entry.system_rel.hostname
+        user = self._profile_entry.credentials['user']
+        password = self._profile_entry.credentials['passwd']
+
+        # make sure the reboot procedure was properly executed
+        mock_ssh_client = self._mock_ssh_client_cls.return_value
+        mock_ssh_client.login.assert_called_with(hostname, user=user,
+                                                 passwd=password,
+                                                 timeout=10)
+        mock_shell = mock_ssh_client.open_shell.return_value
+        mock_shell.run.assert_called_with(
+            'nohup reboot -f; nohup killall sshd', timeout=1)
+
     # test_init()
 
     def test_unknown_hypervisor(self):
         """
-        Test the case that the hypervisor is unknow.
+        Test the case that the hypervisor is unknown.
         """
         system_entry = self._profile_entry.system_rel
         backup_name = system_entry.type_rel.name

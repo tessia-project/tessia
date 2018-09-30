@@ -628,6 +628,38 @@ some_output
                 fcp_prof_entry, permissive=True)
             checker.verify(areas=['memory'])
             self._mock_logger.warning.assert_called_with(error_msg)
+
+        # simulate lsmem not available
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        checker = post_install.PostInstallChecker(fcp_prof_entry)
+        # mock the failure to call lsmem
+        exc = subprocess.CalledProcessError(returncode=1, cmd='')
+        exc.output = (
+            """cpc3lp52.domain.com | FAILED | rc=2 >>
+[Errno 2] No such file or directory
+"""
+        )
+        # add the failure to the list of outputs
+        test_outputs = self._mock_check_output.side_effect[:]
+        test_outputs[8] = RuntimeError()
+        test_outputs.append(exc)
+        self._mock_check_output.side_effect = test_outputs
+        # expected error message
+        error_msg = self._mismatch_msg.format(
+            'minimum MiB memory', 3968, -1)
+        # test and validate
+        with self.assertRaisesRegex(
+            post_install.Misconfiguration, error_msg):
+            checker.verify()
+        # now test permissive - only logging occurs
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        self._mock_check_output.side_effect = test_outputs
+        self._mock_logger.reset_mock()
+        checker = post_install.PostInstallChecker(
+            fcp_prof_entry, permissive=True)
+        checker.verify(areas=['memory'])
+        self._mock_logger.warning.assert_called_with(error_msg)
+
     # test_misconfiguration_memory()
 
     def test_misconfiguration_os(self):

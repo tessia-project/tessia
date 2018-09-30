@@ -25,7 +25,7 @@ from tessia.server.state_machines.autoinstall import plat_base, plat_kvm
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tests.unit.state_machines.autoinstall import utils
 from unittest import mock, TestCase
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -51,6 +51,22 @@ class TestPlatKvm(TestCase):
         """
         Setup all the mocks used for the execution of the tests.
         """
+        # mock sleep
+        patcher = patch.object(plat_kvm, 'sleep', autospec=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+        # patch logger
+        patcher = patch.object(plat_kvm, 'logging')
+        mock_logging = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_logging.getLogger.return_value = Mock(
+            spec=['warning', 'error', 'debug', 'info'])
+
+        patcher = patch.object(plat_kvm, 'SshClient', autospec=True)
+        self._mock_ssh_client_cls = patcher.start()
+        self.addCleanup(patcher.stop)
+
         # We cannot use autospec here because the Hypervisor class does not
         # really have all the methods since it is a factory class.
         patcher = patch.object(plat_base, 'Hypervisor')
@@ -93,7 +109,7 @@ class TestPlatKvm(TestCase):
         mock_hyp = self._mock_hypervisor_cls.return_value
         plat = self._create_plat_kvm()
 
-        # Performs the reboot operation.
+        # Performs the boot operation.
         plat.boot("SOME PARAM")
         guest_name = self._profile_entry.system_rel.name
         cpu = self._profile_entry.cpu
@@ -215,6 +231,37 @@ class TestPlatKvm(TestCase):
         self.assertRaisesRegex(ValueError, "Libvirt xml has missing",
                                self._create_plat_kvm)
     # test_missing_target_tag()
+
+    def test_reboot(self):
+        """
+        Test the correct reboot of the KVM guest.
+        """
+        plat = self._create_plat_kvm()
+
+        mock_hyp = self._mock_hypervisor_cls.return_value
+        mock_ssh_client = self._mock_ssh_client_cls.return_value
+        mock_shell = mock_ssh_client.open_shell.return_value
+        mock_shell.run.side_effect = (
+            (0, ''), TimeoutError)
+
+        plat.reboot(self._profile_entry)
+
+        hostname = self._profile_entry.system_rel.hostname
+        user = self._profile_entry.credentials['user']
+        password = self._profile_entry.credentials['passwd']
+
+        # Makes sure the reboot procedure was properly executed.
+        mock_ssh_client.login.assert_called_with(hostname, user=user,
+                                                 passwd=password,
+                                                 timeout=10)
+        run_calls = [
+            mock.call('sync'),
+            mock.call('nohup shutdown; nohup killall sshd', timeout=1)
+        ]
+        mock_shell.run.assert_has_calls(run_calls)
+        mock_hyp.reboot.assert_called_with(
+            self._profile_entry.system_rel.name, None)
+    # test_reboot()
 
     def test_same_device_number(self):
         """

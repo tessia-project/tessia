@@ -331,8 +331,14 @@ class PostInstallChecker(object):
             output = self._exec_ansible('command', 'lsmem -b')
             regex = r'Total online memory\s*:\s*(\d+)'
         except RuntimeError:
-            output = self._exec_ansible('command', 'lsmem')
-            regex = r'Total online memory\s*:\s*(\d+)\s*(B|K|M|G|T)'
+            try:
+                output = self._exec_ansible('command', 'lsmem')
+                regex = r'Total online memory\s*:\s*(\d+)\s*(B|K|M|G|T)'
+            except RuntimeError as exc:
+                self._logger.warning(
+                    "verification of memory values won't work, failed to "
+                    "fetch information with lsmem: %s", str(exc))
+                return -1
 
         self._logger.debug('lsmem output:\n %s', output)
 

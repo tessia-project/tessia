@@ -23,7 +23,7 @@ ome more detailed info about the module here.
 #
 from contextlib import contextmanager
 from tessia.server.db.connection import MANAGER
-from tessia.server.db.models import OperatingSystem
+from tessia.server.db.models import OperatingSystem, Repository
 from tessia.server.state_machines.autoinstall import sm_base
 from tests.unit.state_machines.autoinstall import utils
 from unittest import mock, TestCase
@@ -65,8 +65,16 @@ class TestSmBase(TestCase):
         dict_patcher.start()
         self.addCleanup(dict_patcher.stop)
 
+        patcher = patch.object(sm_base, 'gethostbyname', autospec=True)
+        self._mock_gethostbyname = patcher.start()
+        self._mock_gethostbyname.side_effect = Exception()
+        self.addCleanup(patcher.stop)
+
         patcher = patch.object(sm_base, 'SshClient', autospec=True)
         self._mock_ssh_client = patcher.start()
+        # mock it for the common case
+        mock_client = self._mock_ssh_client.return_value
+        mock_client.open_shell.return_value.run.return_value = 0, ""
         self.addCleanup(patcher.stop)
 
         patcher = patch.object(sm_base, 'sleep', autospec=True)
@@ -152,6 +160,38 @@ class TestSmBase(TestCase):
         self._ni_child_cls = NotImplementedChild
     # setUp()
 
+    def _create_repos(self, repo_list):
+        """
+        Create the repository entries in the db and return the corresponding
+        dictionary in the format expected for validation.
+        """
+        repos_ret = {'objs': [], 'dicts': [], 'names': []}
+        for repo_dict in repo_list:
+            repo_obj = Repository(
+                name=repo_dict['name'],
+                desc=repo_dict['name'],
+                initrd=repo_dict.get('initrd'),
+                kernel=repo_dict.get('kernel'),
+                operating_system=repo_dict.get('os'),
+                url=repo_dict['url'],
+                owner='admin', project='Admins', modifier='admin'
+            )
+            MANAGER.session.add(repo_obj)
+            MANAGER.session.commit()
+            self.addCleanup(MANAGER.session.delete, repo_obj)
+
+            repos_ret['objs'].append(repo_obj)
+            repos_ret['dicts'].append({
+                'url': repo_obj.url,
+                'name': repo_obj.name,
+                'desc': repo_obj.desc,
+                'os': repo_obj.operating_system
+            })
+            repos_ret['names'].append(repo_obj.name)
+
+        return repos_ret
+    # _create_repos()
+
     @staticmethod
     def _create_sm(sm_cls, os_name, profile_name, template_name):
         """
@@ -195,8 +235,6 @@ class TestSmBase(TestCase):
         self._mock_os.remove.side_effect = OSError
         mach = self._create_sm(self._child_cls, "rhel7.2",
                                "kvm054/kvm_kvm054_install", "rhel7-default")
-        mock_client = self._mock_ssh_client.return_value
-        mock_client.open_shell.return_value.run.return_value = 0, ""
         with self.assertRaisesRegex(RuntimeError, "Unable to delete"):
             mach.start()
     # test_init()
@@ -241,8 +279,6 @@ class TestSmBase(TestCase):
         system_entry = profile_entry.system_rel
         hyp_type = system_entry.type_rel.name.lower()
         repo_entry = os_entry.repository_rel[0]
-        mock_client = self._mock_ssh_client.return_value
-        mock_client.open_shell.return_value.run.return_value = 0, ""
 
         # cmdline file mock
         cmdline_content = self._mock_open(
@@ -297,6 +333,135 @@ class TestSmBase(TestCase):
         self.assertEqual(profile_entry.operating_system_id, os_entry.id)
     # test_machine_execution()
 
+    def test_machine_execution_custom_repo_install(self):
+        """
+        Test usage of custom repositories specified by the user when an install
+        repo is included.
+        """
+        repos = [{
+            'name': "rhel7.2-custom",
+            'initrd': '/images/initrd.img',
+            'kernel': '/images/kernel.img',
+            'os': "rhel7.2",
+            'url': "http://_installserver.z",
+        }, {
+            'name': "other-repo",
+            'url': "http://_somepackages.z",
+        }]
+        repos = self._create_repos(repos)
+
+        os_entry = utils.get_os("rhel7.2")
+        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        template_entry = utils.get_template("rhel7-default")
+        system_entry = profile_entry.system_rel
+        hyp_type = system_entry.type_rel.name.lower()
+
+        # execute machine
+        mach = self._child_cls(
+            os_entry, profile_entry, template_entry, repos['names'])
+        mach.start()
+
+        # validate behavior
+        mock_hyper_class = self._mocked_supported_platforms[hyp_type]
+        mock_hyper_class.assert_called_with(
+            profile_entry.hypervisor_profile_rel,
+            profile_entry,
+            os_entry,
+            repos['objs'][0],
+            mock.ANY)
+
+        # verify that the custom os repo is the first on the list and the
+        # additional repo was also included
+        try:
+            info_dict = (self._mock_jinja2.Template.return_value.render.
+                         call_args[1]['config'])
+        except Exception as exc:
+            raise AssertionError(
+                'Template.render() was not executed correctly') from exc
+        self.assertEqual(repos['dicts'], info_dict['repos'])
+    # test_machine_execution_custom_repo_install()
+
+    def test_machine_execution_custom_repo_no_install(self):
+        """
+        Test usage of custom repositories specified by the user when only
+        additional repositories are included.
+        """
+        os_entry = utils.get_os("rhel7.2")
+        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        template_entry = utils.get_template("rhel7-default")
+        def_repo_entry = os_entry.repository_rel[0]
+        system_entry = profile_entry.system_rel
+        hyp_type = system_entry.type_rel.name.lower()
+
+        repos = [{
+            'name': "other-repo",
+            'url': "http://_somepackages.z",
+        }, {
+            'name': "other-repo2",
+            'url': "http://_somepackages2.z",
+        }]
+        repos = self._create_repos(repos)
+        # also add repos with urls, repos don't exist in db
+        for scheme in ('http', 'https', 'ftp', 'file'):
+            url = '{}://_urlrepo1.x'.format(scheme)
+            repos['names'].append(url)
+            repos['dicts'].append({
+                'name': '{}____urlrepo1_x'.format(scheme),
+                'desc': 'User defined repo {}____urlrepo1_x'.format(scheme),
+                'url': url,
+                'os': None
+            })
+        # include the default os repository in the expected result
+        def_repo_dict = {
+            'url': def_repo_entry.url,
+            'name': def_repo_entry.name,
+            'desc': def_repo_entry.desc,
+            'os': def_repo_entry.operating_system,
+        }
+        if not def_repo_dict['desc']:
+            def_repo_dict['desc'] = def_repo_dict['name']
+        repos['dicts'].insert(0, def_repo_dict)
+
+        # execute machine
+        mach = self._child_cls(
+            os_entry, profile_entry, template_entry, repos['names'])
+        mach.start()
+
+        # validate behavior
+        mock_hyper_class = self._mocked_supported_platforms[hyp_type]
+        mock_hyper_class.assert_called_with(
+            profile_entry.hypervisor_profile_rel,
+            profile_entry,
+            os_entry,
+            def_repo_entry,
+            mock.ANY)
+
+        # verify that the custom os repo is the first on the list and the
+        # additional repo was also included
+        try:
+            info_dict = (self._mock_jinja2.Template.return_value.render.
+                         call_args[1]['config'])
+        except Exception as exc:
+            raise AssertionError(
+                'Template.render() was not executed correctly') from exc
+        self.assertEqual(repos['dicts'], info_dict['repos'])
+
+        # negative test - try to specify a repo name which does not exist in db
+        error_msg = (
+            "Repository <some_wrong_repo> specified by user does not exist")
+        with self.assertRaisesRegex(ValueError, error_msg):
+            mach = self._child_cls(
+                os_entry, profile_entry, template_entry, ['some_wrong_repo'])
+
+        # negative test - try to specify a repo with invalid url
+        error_msg = (
+            r'Repository <http://_wrong\[aa.z> specified by user is not a '
+            'valid URL')
+        with self.assertRaisesRegex(ValueError, error_msg):
+            self._child_cls(os_entry, profile_entry, template_entry,
+                            ['http://_wrong[aa.z'])
+    # test_machine_execution_custom_repo_no_install()
+
     def test_machine_execution_no_hyp_profile(self):
         """
         Test the case where the system activation profile does not have a
@@ -311,8 +476,6 @@ class TestSmBase(TestCase):
         system_obj = profile_obj.system_rel
         hyp_type = system_obj.type_rel.name.lower()
         repo_obj = os_obj.repository_rel[0]
-        mock_client = self._mock_ssh_client.return_value
-        mock_client.open_shell.return_value.run.return_value = 0, ""
 
         # cmdline file mock
         cmdline_content = self._mock_open(
@@ -364,6 +527,137 @@ class TestSmBase(TestCase):
 
         self.assertEqual(profile_obj.operating_system_id, os_obj.id)
     # test_machine_execution_no_hyp_profile()
+
+    def test_machine_execution_same_subnet(self):
+        """
+        Test the case where multiple repositories for the same os exists and
+        the tool chooses the one in the same subnet as the system to be
+        installed.
+        """
+        # create multiple install repo entries
+        repos = []
+        for index in range(0, 5):
+            repos.append({
+                'name': "rhel7.2-repo{}".format(index),
+                'initrd': '/images/initrd.img',
+                'kernel': '/images/kernel.img',
+                'os': "rhel7.2",
+                'url': "http://_repo{}.z".format(index),
+            })
+        repos = self._create_repos(repos)
+
+        # pretend third repo is in same subnet
+        def mock_gethostbyname(hostname):
+            """
+            Mock the process of resolving hostnames to ip addreses
+            """
+            # pretend this repo is in the subnet inside the range of
+            # 'external osa' iface, so that it gets chosen as the install
+            # repository in the test
+            if hostname == repos['objs'][2].url[7:]:
+                return '192.168.160.10'
+            # subnet outside the range of the system's ifaces
+            return '192.168.0.50'
+        # mock_gethostbyname
+        self._mock_gethostbyname.side_effect = mock_gethostbyname
+
+        os_entry = utils.get_os("rhel7.2")
+        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        template_entry = utils.get_template("rhel7-default")
+        system_entry = profile_entry.system_rel
+        hyp_type = system_entry.type_rel.name.lower()
+
+        # execute machine
+        mach = self._child_cls(os_entry, profile_entry, template_entry)
+        mach.start()
+
+        # validate behavior
+        mock_hyper_class = self._mocked_supported_platforms[hyp_type]
+        mock_hyper_class.assert_called_with(
+            profile_entry.hypervisor_profile_rel,
+            profile_entry,
+            os_entry,
+            repos['objs'][2],
+            mock.ANY)
+
+        # verify that the third install repo was used
+        try:
+            info_dict = (self._mock_jinja2.Template.return_value.render.
+                         call_args[1]['config'])
+        except Exception as exc:
+            raise AssertionError(
+                'Template.render() was not executed correctly') from exc
+        self.assertEqual([repos['dicts'][2]], info_dict['repos'])
+    # test_machine_execution_same_subnet()
+
+    def test_machine_execution_same_subnet_custom_repo(self):
+        """
+        Test the case where multiple repositories for the same OS exists, the
+        tool chooses the one in the same subnet as the system to be
+        installed and the user specified an additional package repository.
+        """
+        # create multiple install repo entries
+        repos = []
+        for index in range(0, 5):
+            repos.append({
+                'name': "rhel7.2-repo{}".format(index),
+                'initrd': '/images/initrd.img',
+                'kernel': '/images/kernel.img',
+                'os': "rhel7.2",
+                'url': "http://_repo{}.z".format(index),
+            })
+        repos.append({
+            'name': "other-repo2",
+            'url': "http://_somepackages2.z",
+        })
+        repos = self._create_repos(repos)
+
+        # pretend third repo is in same subnet
+        def mock_gethostbyname(hostname):
+            """
+            Mock the process of resolving hostnames to ip addreses
+            """
+            # pretend this repo is in the subnet inside the range of
+            # 'external osa' iface, so that it gets chosen as the install
+            # repository in the test
+            if hostname == repos['objs'][2].url[7:]:
+                return '192.168.160.10'
+            # subnet outside the range of the system's ifaces
+            return '192.168.0.50'
+        # mock_gethostbyname
+        self._mock_gethostbyname.side_effect = mock_gethostbyname
+
+        os_entry = utils.get_os("rhel7.2")
+        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        template_entry = utils.get_template("rhel7-default")
+        system_entry = profile_entry.system_rel
+        hyp_type = system_entry.type_rel.name.lower()
+
+        # execute machine
+        mach = self._child_cls(os_entry, profile_entry, template_entry,
+                               [repos['names'][-1]])
+        mach.start()
+
+        # validate behavior
+        mock_hyper_class = self._mocked_supported_platforms[hyp_type]
+        mock_hyper_class.assert_called_with(
+            profile_entry.hypervisor_profile_rel,
+            profile_entry,
+            os_entry,
+            repos['objs'][2],
+            mock.ANY)
+
+        # verify that the third install repo was used
+        try:
+            info_dict = (self._mock_jinja2.Template.return_value.render.
+                         call_args[1]['config'])
+        except Exception as exc:
+            raise AssertionError(
+                'Template.render() was not executed correctly') from exc
+        self.assertEqual(
+            # expected install repo in same subnet and package repo
+            [repos['dicts'][2], repos['dicts'][-1]], info_dict['repos'])
+    # test_machine_execution_same_subnet()
 
     def test_not_supported_platform(self):
         """
@@ -422,10 +716,6 @@ class TestSmBase(TestCase):
         Exercise time out when the post install library tries to connect to the
         target system.
         """
-        # mock shell command in check_installation
-        mock_client = self._mock_ssh_client.return_value
-        mock_client.open_shell.return_value.run.return_value = 0, ""
-
         # mock post install failure to connect
         post_install_obj = self._mock_checker.return_value
         post_install_obj.verify.side_effect = ConnectionError()
@@ -463,7 +753,7 @@ class TestSmBase(TestCase):
         MANAGER.session.commit()
         self.addCleanup(MANAGER.session.delete, unsupported_os)
 
-        with self.assertRaisesRegex(RuntimeError, "No repository"):
+        with self.assertRaisesRegex(RuntimeError, "No install repository"):
             self._create_sm(self._child_cls, "AnotherOS",
                             "kvm054/kvm_kvm054_install", "rhel7-default")
     # test_no_repo_os()

@@ -40,9 +40,9 @@ tasks:
     - - storage server-add --name=DS8K16 --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
       - Item added successfully.
     # repositories
-    - - repo add --name='RHEL7.2-GA' --url='http://example.com/redhat/s390x/RHEL7.2/DVD' --kernel='/images/kernel.img' --initrd='/images/initrd.img' --os=rhel7.2
+    - - repo add --name='RHEL7.2-GA' --url='http://_myrepo.zzz/redhat/s390x/RHEL7.2/DVD' --kernel='/images/kernel.img' --initrd='/images/initrd.img' --os=rhel7.2
       - Item added successfully.
-    - - repo add --name='SLES12.1-GA' --url='http://example.com/suse/s390x/SLES12.1/DVD' --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd' --os=sles12.1
+    - - repo add --name='SLES12.1-GA' --url='http://_myrepo.zzz/suse/s390x/SLES12.1/DVD' --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd' --os=sles12.1
       - Item added successfully.
   lpar_add:
     # switch to lab admin user
@@ -77,7 +77,7 @@ tasks:
     - - storage part-add --server=DS8K16 --id=1022400100000000 --fs=swap --size=1gb
       - Partition successfully added.
     # create the system resources
-    - - system add --name=cpc3 --type=cpc --hostname=hmcserver.example.com --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
+    - - system add --name=cpc3 --type=cpc --hostname=_hmcserver.zzz --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
       - Item added successfully.
     - - system add --name=cpc3lp52 --hyp=cpc3 --type=LPAR --hostname=cpc3lp52.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
@@ -142,8 +142,10 @@ tasks:
       - Invalid value for "--verbosity"
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --profile='DASD root1'
       - 'Failed to establish a new connection'
-    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --vol=3957
-      - 'no such option: --vol'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=invalid=name
+      - "Error: 'invalid=name' is not a valid URL or name"
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=http://_myserver.z --repo=valid-name
+      - 'request failed, reason is: Parsing of parameters failed with: Default profile for system cpc3lp55 not available'
   # test install failure when live-image disk is not available
   install_no_liveimg:
     # switch to lab admin user so that the volume can be detached

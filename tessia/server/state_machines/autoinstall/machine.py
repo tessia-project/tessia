@@ -47,6 +47,12 @@ INSTALL_REQ_PARAMS_SCHEMA = {
         "os": {"type": "string"},
         "profile": {"type": "string"},
         "template": {"type": "string"},
+        "repos": {
+            "type": "array",
+            "items": {
+                "type": "string",
+            },
+        },
         "system": {"type": "string"},
         "verbosity": {"type": "string", "enum": list(BaseMachine._LOG_LEVELS)}
     },
@@ -114,13 +120,15 @@ class AutoInstallMachine(BaseMachine):
         # get the profile entry in db
         prof_entry = self._get_profile(
             self._params['system'], self._params.get("profile"))
+        # get user defined repositories, if any
+        custom_repos = self._params.get('repos', None)
 
         try:
             sm_class = SUPPORTED_TYPES[os_entry.type]
         except KeyError:
             raise ValueError("OS type '{}' is not supported for installation"
                              .format(os_entry.type))
-        return sm_class(os_entry, prof_entry, template_entry)
+        return sm_class(os_entry, prof_entry, template_entry, custom_repos)
     # _create_machine()
 
     @staticmethod
@@ -230,12 +238,8 @@ class AutoInstallMachine(BaseMachine):
     def parse(cls, params):
         """
         Args:
-            params(str): A string containing a json in the format:
-               {
-                   "os": "<name of the operating system>",
-                   "template": "<name of the template>",
-                   "profile": "<system_name>[/<name of the profile>]"
-               }
+            params(str): A string containing a json in the format defined by
+            the INSTALL_REQ_PARAMS_SCHEMA variable.
 
         Returns:
             dict: Resources allocated for the installation.

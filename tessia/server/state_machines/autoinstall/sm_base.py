@@ -21,10 +21,10 @@ Base state machine for auto installation of operating systems
 #
 from copy import deepcopy
 from tessia.baselib.common.ssh.client import SshClient
-from socket import inet_ntoa
+from socket import inet_ntoa, gethostbyname
 from tessia.server.config import Config
 from tessia.server.db.connection import MANAGER
-from tessia.server.db.models import System, SystemProfile
+from tessia.server.db.models import Repository, System, SystemProfile
 from tessia.server.lib.post_install import PostInstallChecker
 from tessia.server.state_machines.autoinstall.plat_lpar import PlatLpar
 from tessia.server.state_machines.autoinstall.plat_kvm import PlatKvm
@@ -35,10 +35,12 @@ from urllib.parse import urlsplit
 
 import abc
 import crypt
+import ipaddress
 import jinja2
 import logging
 import os
 import random
+import re
 import string
 
 #
@@ -64,7 +66,8 @@ class SmBase(metaclass=abc.ABCMeta):
     agnostic go here.
     """
     @abc.abstractmethod
-    def __init__(self, os_entry, profile_entry, template_entry):
+    def __init__(self, os_entry, profile_entry, template_entry,
+                 custom_repos=None):
         """
         Store the objects and create the right platform object
         """
@@ -73,12 +76,6 @@ class SmBase(metaclass=abc.ABCMeta):
         self._template = template_entry
         self._system = profile_entry.system_rel
         self._logger = logging.getLogger(__name__)
-
-        # TODO: allow usage of multiple/additional repositories
-        try:
-            self._repo = self._os.repository_rel[0]
-        except IndexError:
-            raise RuntimeError('No repository available for the specified OS')
 
         gw_iface = self._profile.gateway_rel
         # gateway interface not defined: use first available
@@ -89,6 +86,9 @@ class SmBase(metaclass=abc.ABCMeta):
                 msg = 'No network interface attached to perform installation'
                 raise RuntimeError(msg)
         self._gw_iface = self._parse_iface(gw_iface, True)
+
+        # prepare the list of repositories
+        self._repos = self._get_repos(custom_repos)
 
         # sanity check, without hypervisor it's not possible to manage
         # system
@@ -125,7 +125,7 @@ class SmBase(metaclass=abc.ABCMeta):
             hyp_profile_obj,
             self._profile,
             self._os,
-            self._repo,
+            self._repos[0],
             self._gw_iface)
 
         # The path and url for the auto file.
@@ -139,6 +139,106 @@ class SmBase(metaclass=abc.ABCMeta):
         # set during collect_info state
         self._info = None
     # __init__()
+
+    def _get_repos(self, custom_repos):
+        """
+        Prepare the list of repositories to be used for the installation.
+
+        Args:
+            custom_repos (list): user defined repositories
+
+        Returns:
+            list: list of repository db objects
+
+        Raises:
+            ValueError: in case user specified a repo which doesn't exist
+            RuntimeError: if no install repository is available for the OS
+        """
+        if not custom_repos:
+            custom_repos = []
+
+        repos = []
+        # after processing we must have the repo to use during installation
+        install_repo = None
+        # check the repositories specified by the user
+        for repo_entry in custom_repos:
+            repo_obj = None
+            for scheme in ('http', 'https', 'ftp', 'file'):
+                if not repo_entry.startswith('{}://'.format(scheme)):
+                    continue
+                try:
+                    urlsplit(repo_entry).hostname
+                except Exception:
+                    raise ValueError(
+                        'Repository <{}> specified by user is not a valid URL'
+                        .format(repo_entry))
+                # sanitize to avoid invalid syntax problems with distro package
+                # managers
+                repo_name = re.sub('[^a-zA-Z0-9]', '_', repo_entry)
+                repo_obj = Repository(
+                    name=repo_name,
+                    desc='User defined repo {}'.format(repo_name),
+                    url=repo_entry,
+                    owner='admin', project='Admins', modifier='admin'
+                )
+                repos.append(repo_obj)
+                break
+            # entry was a url: there's no need to query the db
+            if repo_obj:
+                continue
+
+            # see if name refers to a registered repository
+            repo_obj = Repository.query.filter_by(name=repo_entry).first()
+            if not repo_obj:
+                raise ValueError(
+                    "Repository <{}> specified by user does not exist"
+                    .format(repo_entry))
+            # user specified an install repository: use it
+            if repo_obj.operating_system_rel == self._os:
+                install_repo = repo_obj
+            # package repository: don't use for installation, just add to the
+            # list
+            else:
+                repos.append(repo_obj)
+        # no install repo defined by user: find one automatically
+        if not install_repo:
+            # no install repos available for this os: abort, can't install
+            if not self._os.repository_rel:
+                raise RuntimeError(
+                    'No install repository available for the specified OS')
+
+            # preferably use a repository in the same subnet as the system
+            for repo_obj in self._os.repository_rel:
+                try:
+                    repo_addr = gethostbyname(urlsplit(repo_obj.url).hostname)
+                    address_pyobj = ipaddress.ip_address(repo_addr)
+                # can't resolve repo's hostname: skip it
+                except Exception:
+                    continue
+                for iface_obj in self._profile.system_ifaces_rel:
+                    # no ip assigned: skip iface
+                    if not iface_obj.ip_address_rel:
+                        continue
+                    subnet_pyobj = ipaddress.ip_network(
+                        iface_obj.ip_address_rel.subnet_rel.address,
+                        strict=True)
+                    # ip assigned to iface is in same subnet as repo's
+                    # hostname: use this repo as install media
+                    if address_pyobj in subnet_pyobj.hosts():
+                        install_repo = repo_obj
+                        break
+                if install_repo:
+                    break
+            # no repo in same subnet as system's interfaces: simply use first
+            # in the list
+            if not install_repo:
+                install_repo = self._os.repository_rel[0]
+
+        # install repo is the first entry in the repo list
+        repos.insert(0, install_repo)
+
+        return repos
+    # _get_repos()
 
     def _get_ssh_conn(self):
         """
@@ -337,12 +437,16 @@ class SmBase(metaclass=abc.ABCMeta):
             'autofile': self._autofile_url,
             'gw_iface': self._gw_iface,
         }
-        # add repo entries - as of today only one repo is supported
-        repo = {'url': self._repo.url, 'desc': self._repo.desc,
-                'name': self._repo.name.replace(' ', '_')}
-        if not repo['desc']:
-            repo['desc'] = repo['name']
-        info['repos'].append(repo)
+        # add repo entries
+        for repo_obj in self._repos:
+            repo = {
+                'url': repo_obj.url, 'desc': repo_obj.desc,
+                'name': repo_obj.name.replace(' ', '_'),
+                'os': repo_obj.operating_system
+            }
+            if not repo['desc']:
+                repo['desc'] = repo['name']
+            info['repos'].append(repo)
 
         # generate pseudo-random password for vnc session
         info['credentials']['vncpasswd'] = ''.join(

@@ -33,7 +33,7 @@ Documentation explaining how to install and use the tool.
     - [Getting started](users/getting_started.md): using the client to install the first system
     - [Resources model](users/resources_model.md): recommended read to understand the resources model and terminology used
 - Features
-    - [Auto installation](users/getting_started.md#install-the-system): automatic system installation using kickstart/preseed/autoinst templates
+    - [Auto installation](users/autoinstall_machine.md): automatic system installation using kickstart/preseed/autoinst templates
         - The installation combinations supported can be found at [Supported installation combinations](users/supported_install_combinations.md)
     - System Management: power on systems with different activation profiles, see details in [Power Manager machine](users/powerman_machine.md)
     - Task execution: schedule a job to perform automated tasks on one or more system(s). Supported methods:

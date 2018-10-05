@@ -337,6 +337,8 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
     <install_recommended config:type="boolean">false</install_recommended>
     <packages config:type="list">
       <package>python</package>
+      <!-- provides ping utility -->
+      <package>iputils</package>
     </packages>
     <patterns config:type="list">
       <pattern>base</pattern>

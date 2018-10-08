@@ -15,6 +15,7 @@ sshpw --username=root {{config["credentials"]["passwd"]}} --plaintext
 url --url="{{config["repos"][0]['url']}}"
 # Use graphical install
 graphical
+vnc --password={{config["credentials"]["vncpasswd"]}}
 # Run the Setup Agent on first boot
 firstboot --enable
 

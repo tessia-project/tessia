@@ -40,11 +40,13 @@ class SmDebianInstaller(SmBase):
     # the type of linux distribution supported
     DISTRO_TYPE = 'debian'
 
-    def __init__(self, os_entry, profile_entry, template_entry):
+    def __init__(self, os_entry, profile_entry, template_entry, *args,
+                 **kwargs):
         """
         Constructor
         """
-        super().__init__(os_entry, profile_entry, template_entry)
+        super().__init__(
+            os_entry, profile_entry, template_entry, *args, **kwargs)
         self._logger = logging.getLogger(__name__)
     # __init__()
 
@@ -241,10 +243,22 @@ class SmDebianInstaller(SmBase):
 
         # It is easier to get the following information here than in the
         # template.
-        parsed_result = urlparse(self._repo.url)
-        self._info["repo_protocol"] = parsed_result.scheme
-        self._info["repo_netloc"] = parsed_result.netloc
-        self._info["repo_path"] = parsed_result.path
+        for repo in self._info['repos']:
+            parsed_result = urlparse(repo['url'])
+            repo['debian_protocol'] = parsed_result.scheme
+            repo['debian_netloc'] = parsed_result.netloc
+            repo['debian_path'] = parsed_result.path
+            # install repository url: no parsing needed
+            if repo['os']:
+                continue
+            try:
+                root_path, comps = repo['url'].split('/dists/', 1)
+            except ValueError:
+                raise ValueError(
+                    "Repository URL <{}>  is in invalid format, no '/dists/' "
+                    "component found".format(repo['url']))
+            repo['apt_url'] = '{} {}'.format(
+                root_path, comps.replace('/', ' ')).rstrip()
     # collect_info()
 
     def wait_install(self):

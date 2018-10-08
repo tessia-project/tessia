@@ -20,6 +20,7 @@ pages:
     - Server configuration: 'users/server_conf.md'
     - Getting started: 'users/getting_started.md'
     - Resources model: 'users/resources_model.md'
+    - Autoinstall machine: 'users/autoinstall_machine.md'
     - Power Manager machine: 'users/powerman_machine.md'
     - Ansible machine: 'users/ansible_machine.md'
     - Supported installation combinations: 'users/supported_install_combinations.md'

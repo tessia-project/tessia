@@ -373,6 +373,37 @@ class Name(click.ParamType):
 
 NAME = Name()
 
+class NameUrl(click.ParamType):
+    """
+    A type which accepts either a name or a URL
+    """
+    name = 'name|URL'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        msg = ("'{}' is not a valid URL or name. For a name, it must start "
+               "with a letter or number, have at least 2 characters and may "
+               "only contain letters, numbers, blanks, '.', and '-'")
+        try:
+            value = NAME.convert(value, param, ctx)
+        except click.UsageError:
+            try:
+                value = URL.convert(value, param, ctx)
+            except click.UsageError:
+                raise click.UsageError(msg.format(value), ctx)
+
+        return value
+    # convert()
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[NAME|URL]'
+# NameUrl
+
+NAME_URL = NameUrl()
+
 class QethGroup(click.ParamType):
     """
     Represents a qeth group for use with OSA cards

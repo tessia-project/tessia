@@ -187,7 +187,7 @@ tasks:
         - y
         # choose OS
         - "1"
-      - No repository available for the specified OS
+      - No install repository available for the specified OS
       # verification section - make sure all resources were correctly created
     - - system list --name=cp1lp10
       - - 'Hostname *: cp1lp10\.example\._com'

@@ -24,7 +24,7 @@ from tessia.cli.cmds.job.job import cancel, output
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.types import CONSTANT, CustomIntRange, HOSTNAME, \
-    VERBOSITY_LEVEL, NAME
+    VERBOSITY_LEVEL, NAME, NAME_URL
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 from tessia.cli.utils import fetch_item
@@ -101,6 +101,9 @@ def del_(name):
               help='system to be installed')
 @click.option('--profile', type=NAME,
               help='activation profile; if not specified default is used')
+@click.option('repos', '--repo', multiple=True, type=NAME_URL,
+              help='package repository to configure in installed system '
+                   'or install repository to use for installation')
 @click.option('--verbosity', type=VERBOSITY_LEVEL,
               help='output verbosity level')
 def autoinstall(ctx, **kwargs):
@@ -111,6 +114,8 @@ def autoinstall(ctx, **kwargs):
     for key in ('profile', 'template', 'verbosity'):
         if kwargs[key] is None:
             kwargs.pop(key)
+    if not kwargs['repos']:
+        kwargs.pop('repos')
     request['parameters'] = json.dumps(kwargs)
     client = Client()
     job_id = wait_scheduler(client, request)

@@ -88,8 +88,20 @@ chzdev -p qeth {{iface['attributes']['ccwgroup']}} portno=1
       </script>
     </chroot-scripts>
 {% endif -%}
-{% if config["system_type"] != "KVM" -%}
     <init-scripts config:type="list">
+      <script>
+        <filename>repos.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Adding additional repositories..."
+{% for repo in config["repos"][1:] %}
+zypper ar -C -G -n '{{repo['desc']}}' {{repo['url']}} {{repo['name']}}
+{% endfor %}
+]]>
+        </source>
+      </script>
+{% if config["system_type"] != "KVM" -%}
       <script>
         <filename>osname.sh</filename>
         <interpreter>shell</interpreter>
@@ -106,8 +118,8 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
 ]]>
         </source>
       </script>
-    </init-scripts>
 {% endif -%}
+    </init-scripts>
   </scripts>
   <general>
     <ask-list config:type="list"/>
@@ -323,6 +335,8 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
     <install_recommended config:type="boolean">false</install_recommended>
     <packages config:type="list">
       <package>python</package>
+      <!-- provides ping utility -->
+      <package>iputils</package>
     </packages>
     <patterns config:type="list">
       <pattern>base</pattern>

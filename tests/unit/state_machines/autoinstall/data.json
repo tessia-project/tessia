@@ -1063,6 +1063,18 @@
         },
         {
             "attributes": {
+                "ccwgroup": "0.0.1503,0.0.1504,0.0.1505",
+                "layer2": true
+            },
+            "ip_address": null,
+            "mac_address": "02:57:55:15:71:04",
+            "name": "third-osa-no-ip",
+            "osname": "enc1503",
+            "system": "CPC3LP55",
+            "type": "OSA"
+        },
+        {
+            "attributes": {
                 "ccwgroup": "0.0.f500,0.0.f501,0.0.f502",
                 "layer2": false
             },
@@ -1114,11 +1126,15 @@
             "iface": "CPC3LP55/external osa",
             "profile": "CPC3LP55/default_CPC3LP55"
         },
-		{
+        {
             "iface": "CPC3LP55/second osa",
             "profile": "CPC3LP55/default_CPC3LP55"
         },
-		{
+        {
+            "iface": "CPC3LP55/third-osa-no-ip",
+            "profile": "CPC3LP55/default_CPC3LP55"
+        },
+        {
             "iface": "CPC3LP55/external osa",
             "profile": "CPC3LP55/default_CPC3LP55_one_dasd"
         },

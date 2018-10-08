@@ -40,11 +40,13 @@ class SmAutoyast(SmBase):
     # the type of linux distribution supported
     DISTRO_TYPE = 'suse'
 
-    def __init__(self, os_entry, profile_entry, template_entry):
+    def __init__(self, os_entry, profile_entry, template_entry, *args,
+                 **kwargs):
         """
         Constructor
         """
-        super().__init__(os_entry, profile_entry, template_entry)
+        super().__init__(
+            os_entry, profile_entry, template_entry, *args, **kwargs)
         self._logger = logging.getLogger(__name__)
     # __init__()
 

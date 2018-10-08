@@ -115,7 +115,7 @@
 
 {# replace internal mirror entries by the external ports repository #}
 {% macro configure_repos() -%}
-{% set repo_mirror = config['repo_protocol'] + "://" + config['repo_netloc'] + config['repo_path'] -%}
+{% set repo_mirror = config['repos'][0]['url'] -%}
 {# make sure we don't cause a syntax error due to a double quote in the url #}
 {% set repo_mirror = repo_mirror | replace('"', '\"') -%}
     in-target python -c "fd = open('/etc/apt/sources.list'); \
@@ -127,6 +127,10 @@ lines = lines.replace(repo_mirror, repo_ports); \
 fd = open('/etc/apt/sources.list', 'w'); \
 fd.write(lines); \
 fd.close()"; \
+{# include additional repositories -#}
+{% for repo in config["repos"][1:] -%}
+    echo -e 'deb {{repo['apt_url']}}' >> /target/etc/apt/sources.list; \
+{% endfor -%}
 {% endmacro %}
 
 {# Since only one disk and one network interface is supported during
@@ -158,10 +162,10 @@ d-i localechooser/countrylist/Europe	     select	DE
 d-i localechooser/supported-locales multiselect	en_US.UTF-8
 
 # Repository configuration
-d-i mirror/protocol string {{config['repo_protocol']}}
+d-i mirror/protocol string {{config['repos'][0]['debian_protocol']}}
 d-i mirror/country string manual
-d-i mirror/http/hostname string {{config['repo_netloc']}}
-d-i mirror/http/directory string {{config['repo_path']}}
+d-i mirror/http/hostname string {{config['repos'][0]['debian_netloc']}}
+d-i mirror/http/directory string {{config['repos'][0]['debian_path']}}
 d-i mirror/http/proxy string
 
 # Root password configuration

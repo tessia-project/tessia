@@ -20,6 +20,8 @@ Module to handle configuration file parsing
 # IMPORTS
 #
 from logging.config import dictConfig
+from tessia.cli.secutils import \
+    is_file_private, makedirs_private, open_private_file
 
 import click
 import os
@@ -116,7 +118,13 @@ class Config(object):
             RuntimeError: in case a parsing error occurs
         """
         try:
-            with open(cls.USER_CONF_PATH, 'r') as config_fd:
+            if not is_file_private(os.path.dirname(cls.USER_CONF_PATH)):
+                click.echo(
+                    'warning: configuration folder {} may be accessible for '
+                    'others!'.format(os.path.abspath(cls.USER_CONF_PATH))
+                )
+
+            with open_private_file(cls.USER_CONF_PATH, 'r') as config_fd:
                 config_content = config_fd.read()
         except FileNotFoundError:
             config_content = cls._set_init_config()
@@ -204,11 +212,11 @@ class Config(object):
         content_str = yaml.dump(
             content_dict, default_flow_style=False)
         try:
-            os.makedirs(
+            makedirs_private(
                 os.path.abspath(os.path.dirname(cls.USER_CONF_PATH)),
                 exist_ok=True
             )
-            with open(cls.USER_CONF_PATH, 'w') as config_fd:
+            with open_private_file(cls.USER_CONF_PATH, 'w') as config_fd:
                 config_fd.write(content_str)
         except IOError as exc:
             msg = 'Failed to write configuration file: {}'.format(str(exc))
@@ -295,8 +303,15 @@ class Config(object):
         if cls._auth_key is not None:
             return cls._auth_key
 
+        if not is_file_private(os.path.dirname(cls.KEY_PATH)):
+            click.echo(
+                'warning: key folder {} may be accessible for others!'
+                .format(os.path.abspath(cls.KEY_PATH)),
+                err=True
+            )
+
         try:
-            key_fd = open(cls.KEY_PATH, 'r')
+            key_fd = open_private_file(cls.KEY_PATH, 'r')
             key_id, key_secret = key_fd.read().strip().split(':')
             key_fd.close()
         except FileNotFoundError:
@@ -355,11 +370,11 @@ class Config(object):
             OSError: see IOError
         """
         try:
-            os.makedirs(
+            makedirs_private(
                 os.path.abspath(os.path.dirname(cls.USER_CONF_PATH)),
                 exist_ok=True
             )
-            config_fd = open(cls.USER_CONF_PATH, 'w')
+            config_fd = open_private_file(cls.USER_CONF_PATH, 'w')
             config_content = yaml.dump(
                 new_dict, default_flow_style=False)
             config_fd.write(config_content)
@@ -391,7 +406,7 @@ class Config(object):
             OSError: see IOError
         """
         try:
-            key_fd = open(cls.KEY_PATH, 'w')
+            key_fd = open_private_file(cls.KEY_PATH, 'w')
             key_fd.write('{}:{}'.format(key_id, key_secret))
             key_fd.close()
         except IOError as exc:

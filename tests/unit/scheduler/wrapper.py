@@ -116,28 +116,26 @@ class TestWrapper(TestCase):
         else:
             self.assertEqual(len(written_lines), 2)
 
-    def _run_normal_start(self, ret=None, exception=None):
+    def _run_normal_start(self, ret=None):
         """
         Run start on a machine wrapper with no interruptions. Check if the
         results are properly written.
         """
 
-        if exception is not None:
-            self._mock_machine.start.side_effect = exception
-            expected_rc = wrapper.RESULT_EXCEPTION
-        else:
-            assert ret is not None
-            self._mock_machine.start.return_value = ret
-            expected_rc = ret
+        assert ret is not None
+        self._mock_machine.start.return_value = ret
+        expected_rc = ret
 
         self._wrapper.start()
 
         self._check_written_rc(expected_rc)
 
-    def _run_interrupted_start(self, timeout=False,
+    def _run_interrupted_start(self, timeout=False, exception=None,
                                cleanup_ret=None, cleanup_exception=None,
                                cleanup_timeout=False):
-
+        # either an exception occurs during machine start/run or
+        # a signal triggers either a WrapperTimeout or WrapperCanceled
+        # Exception
         if timeout:
             self._wrapper.timeout = 5
 
@@ -156,8 +154,10 @@ class TestWrapper(TestCase):
 
             self._mock_machine.start.side_effect = start_side_effect
             expected_ret = wrapper.RESULT_TIMEOUT
+        elif exception:
+            self._mock_machine.start.side_effect = exception
+            expected_ret = wrapper.RESULT_EXCEPTION
         else:
-
             def start_side_effect():
                 """
                 Simulate a machine start method that receives
@@ -170,7 +170,7 @@ class TestWrapper(TestCase):
 
         if self._mock_machine.cleaning_up:
             # machine was set to be cleaning up during interruption,
-            # we don't expected a cleanup retun code
+            # we don't expect a cleanup return code
             expected_cleanup_ret = None
         else:
             # machine was set to not be cleaning up during interruption,
@@ -251,7 +251,7 @@ class TestWrapper(TestCase):
         """
 
         # test without a timeout
-
+        self._mock_machine.cleaning_up = True
         self._run_normal_start(ret=wrapper.RESULT_SUCCESS)
 
         # no timeout and no interruption cleanup
@@ -261,16 +261,23 @@ class TestWrapper(TestCase):
         for call in alarm_args:
             self.assertEqual(call, (0,))
 
-        # test with a timeout and a start that raises an exception
+    def test_machine_start_exception(self):
+        """
+        Test a wrapper that has machine starting with an exception but
+        performs a successful cleanup
+        """
+        self._mock_machine.cleaning_up = False
+        self._run_interrupted_start(exception=RuntimeError('test'),
+                                    cleanup_ret=wrapper.RESULT_SUCCESS)
 
-        self._mock_signal.alarm.reset_mock()
-
-        self._wrapper._timeout = 5
-
-        self._run_normal_start(exception=RuntimeError('test'))
-
-        self._mock_signal.alarm.assert_has_calls(
-            [mock.call(self._wrapper._timeout)])
+    def test_machine_start_exception_cleanup_exception(self):
+        """
+        Test a wrapper that has machine starting with an exception and also
+        fails during cleanup.
+        """
+        self._mock_machine.cleaning_up = False
+        self._run_interrupted_start(exception=RuntimeError('test'),
+                                    cleanup_exception=RuntimeError("test"))
 
     def test_canceled_start_no_cleanup(self):
         """
@@ -281,7 +288,7 @@ class TestWrapper(TestCase):
         self._mock_machine.cleaning_up = True
         self._run_interrupted_start(cleanup_ret=wrapper.RESULT_SUCCESS)
 
-    def test_timed_out_start_with_cleanup(self):
+    def test_timed_out_start_with_cleanup_failing(self):
         """
         Test a wrapper that starts and gets interrupted by an alarm
         and the cleanup routine fails with an exception.

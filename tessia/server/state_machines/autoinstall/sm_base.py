@@ -411,6 +411,9 @@ class SmBase(metaclass=abc.ABCMeta):
     def cleanup(self):
         """
         Called upon job cancellation or end. Deletes the autofile if it exists.
+
+        Do not call this method directly but indirectly from machine.py to make
+        sure that the cleaning_up variable is set.
         """
         if os.path.exists(self._autofile_path):
             try:
@@ -499,8 +502,6 @@ class SmBase(metaclass=abc.ABCMeta):
         # Change the operating system in the profile.
         self._profile.operating_system_id = self._os.id
         MANAGER.session.commit()
-
-        self.cleanup()
     # post_install()
 
     def target_boot(self):

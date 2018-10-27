@@ -58,3 +58,4 @@ Information for people interested in collaborating with tessia's development.
     - [Database](developers/design.md#database)
         - [How to make changes to the database schema](developers/design.md#how-to-make-changes-to-the-database-schema)
     - [Authentication subsystem](developers/design.md#authentication-subsystem)
+    - [Scheduler](developers/scheduler.md)

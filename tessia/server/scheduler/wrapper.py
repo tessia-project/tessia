@@ -109,7 +109,6 @@ class MachineWrapper(object):
         Returns:
         Raises:
         """
-
         # The file will be written in the current working directory of the job.
         with open(WRAPPER_PARAMETERS_FILE, 'wb') as params_file:
             pickle.dump(
@@ -220,8 +219,8 @@ class MachineWrapper(object):
 
     # _write_result()
 
-    @classmethod
-    def set_cancel_signal_handler(cls, handler):
+    @staticmethod
+    def set_cancel_signal_handler(handler):
         """
         Set the handler function for all cancellation signals.
 
@@ -234,12 +233,12 @@ class MachineWrapper(object):
         for signal_type in CANCEL_SIGNALS:
             signal.signal(signal_type, handler)
 
-    @classmethod
-    def write_comm(cls):
+    @staticmethod
+    def write_comm():
         """
         Change the process comm so that the scheduler can identify it.
 
-        This is a class method so that it can be called early on by
+        This is a static method so that it can be called early on by
         a new interpreter when handling timeout/cancel signals.
 
         Args:
@@ -284,14 +283,12 @@ class MachineWrapper(object):
         self._machine = MACHINES.classes[self._job_type](
             self._job_params)
 
-        timed_out = False
-
         try:
             # This outer try block is to catch the timeout/cancel
             # exceptions.
             try:
                 # This inner try block is to ensure the timeout/cancel
-                # signals are supressed i nthe finally block.
+                # signals are suppressed in the finally block.
 
                 MachineWrapper.set_cancel_signal_handler(self._handle_cancel)
 
@@ -302,6 +299,7 @@ class MachineWrapper(object):
                     signal.alarm(self._timeout)
 
                 try:
+                    self._logger.debug("state machine start")
                     ret_code = self._machine.start()
                 except Exception:
                     sys.excepthook(*sys.exc_info())
@@ -310,26 +308,20 @@ class MachineWrapper(object):
             finally:
                 self._supress_signals()
 
-            # At this point start and cleanup finished, the signals are
-            # are supressed and we can safely write the exit codes and
-            # finish.
-            self._write_result(ret_code)
-            return
-
+            # At this point either an exception occurred and therefore
+            # a cleanup is needed or the machine including the cleanup finished
+            self._logger.debug(
+                "state machine finished with ret_code=%d", ret_code)
         except exceptions.WrapperCanceled:
-            pass
-        except exceptions.WrapperTimeout:
-            timed_out = True
-
-        # At this point either there was a timeout or a cancel signal.
-
-        if timed_out:
-            ret_code = RESULT_TIMEOUT
-        else:
+            self._logger.debug("caught WrapperCanceled exception")
             ret_code = RESULT_CANCELED
+        except exceptions.WrapperTimeout:
+            self._logger.debug("caught WrapperTimeout exception")
+            ret_code = RESULT_TIMEOUT
 
-        if self._machine.cleaning_up:
-            # The state machine was in the process of cleaning up,
+        if self._machine.cleaning_up or ret_code == RESULT_SUCCESS:
+            # The state machine was in the process of cleaning up
+            # or finished the cleanup,
             # don't do it again.
             self._write_result(ret_code)
             return
@@ -351,6 +343,9 @@ class MachineWrapper(object):
         Returns:
         Raises:
         """
+        self._logger.debug("preparing cleanup")
+        sys.stdout.flush()
+        sys.stderr.flush()
         self._pickle_cleanup_parameters(ret_code)
         python_location = os.readlink('/proc/self/exe')
         os.execv(python_location,
@@ -404,6 +399,8 @@ def do_interruption_cleanup():
     when handling cancel/timeout signals.
     """
     # Ignore signals since we are already cleaning up.
+    # signal.SIG_IGN is a special value which tells signal.signal
+    # to ignore the signal.
     MachineWrapper.set_cancel_signal_handler(signal.SIG_IGN)
     MachineWrapper.write_comm()
 

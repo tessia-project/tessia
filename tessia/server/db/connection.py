@@ -25,6 +25,7 @@ from sqlalchemy.orm import sessionmaker
 from tessia.server.config import CONF
 from tessia.server.db.models import BASE
 
+
 #
 # CONSTANTS AND DEFINITIONS
 #

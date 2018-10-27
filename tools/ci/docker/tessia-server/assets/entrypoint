@@ -105,6 +105,21 @@ subjectAltName=DNS:${fqdn}
     echo "info: ssl certificate created"
 }
 
+function _set_docker_perms() {
+    # make sure tessia user can use the docker socket
+    if [ -S "/var/run/docker.sock" ]; then
+        # get file's group
+        group=$(stat -c '%g' /var/run/docker.sock)
+        # group does not exist yet; create it and add tessia user
+        if echo $group | grep -Eq '^[0-9]+$'; then
+            echo "dockersock:x:$group:tessia" >> /etc/group
+        # add tessia user to existing group
+        else
+            usermod -aG $group tessia
+        fi
+    fi
+}
+
 function _tweak_cfg() {
     # set the url where auto install machine stores the generated autofiles so
     # that the systems being installed can reach them
@@ -129,6 +144,9 @@ _db_verify
 
 # generate ssl cert if not available
 _ssl_config
+
+# set docker.sock file permissions
+_set_docker_perms
 
 # start the api and scheduler via supervisor
 echo "info: starting services..."

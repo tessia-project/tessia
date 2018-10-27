@@ -231,6 +231,10 @@ class AutoInstallMachine(BaseMachine):
         """
         Proxy the call to the real machine to perform cleanup.
         """
+        # When the job is canceled during a cleanup the routine
+        # is not executed again by the scheduler.
+        self.cleaning_up = True
+        self._logger.info("AutoInstall cleanup is running")
         return self._machine.cleanup()
     # cleanup()
 
@@ -325,6 +329,10 @@ class AutoInstallMachine(BaseMachine):
         """
         Proxy the call to the real machine to start execution.
         """
-        return self._machine.start()
+        ret_val = self._machine.start()
+        # To make sure the cleaning_up variable is set correctly,
+        # run the cleanup here.
+        self.cleanup()
+        return ret_val
     # start()
 # AutoInstallMachine

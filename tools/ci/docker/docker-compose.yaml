@@ -20,6 +20,7 @@ services:
     volumes:
       - server-etc:/etc/tessia
       - server-jobs:/var/tessia/jobs
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: "always"
     depends_on:
       - db

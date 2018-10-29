@@ -38,7 +38,7 @@ import logging
 #
 # CONSTANTS AND DEFINITIONS
 #
-MACHINE_DESCRIPTION = 'Auto installation of OS {}'
+MACHINE_DESCRIPTION = 'Autoinstall {} with OS {}'
 
 # Schema for the installation request
 INSTALL_REQ_PARAMS_SCHEMA = {
@@ -265,15 +265,16 @@ class AutoInstallMachine(BaseMachine):
             raise ValueError("OS type '{}' is not supported for installation"
                              .format(os_entry.type))
 
-        result = {
-            'resources': {'shared': [], 'exclusive': []},
-            'description': MACHINE_DESCRIPTION.format(os_entry.name),
-            'params': params
-        }
-
         # check which format the profile parameter is using
         profile = cls._get_profile(params['system'], params.get("profile"))
         system = profile.system_rel
+
+        result = {
+            'resources': {'shared': [], 'exclusive': []},
+            'description': MACHINE_DESCRIPTION.format(
+                system.name, os_entry.name),
+            'params': params
+        }
 
         # check required FCP parameters- use schema to validate specs field
         volumes = profile.storage_volumes_rel

@@ -57,6 +57,7 @@ DESC = {
     'gateway': 'Gateway interface',
 }
 
+MARKER_STRIPPED_SECRET = '****'
 MARKER_HIDDEN_CRED = '[NOT DISPLAYED]'
 
 #
@@ -214,6 +215,23 @@ class SystemProfileResource(SecureResource):
         return item, system
     # _fetch_and_assert_item()
 
+    def _strip_secrets(self, credentials):
+        """
+        Strip all secrets from a credentials field
+
+        Args:
+            credentials (dict): key from credentials dict
+        """
+        if not isinstance(credentials, dict):
+            return
+
+        for key in credentials:
+            if isinstance(credentials[key], dict):
+                self._strip_secrets(credentials[key])
+                continue
+            credentials[key] = MARKER_STRIPPED_SECRET
+    # _strip_secrets()
+
     def do_create(self, properties):
         """
         Custom implementation of creation. Perform some sanity checks and
@@ -354,12 +372,14 @@ class SystemProfileResource(SecureResource):
             list: list of items retrieved, can be an empty in case no items are
                   found or a restricted user has no permission to see them
         """
-        allowed_instances = []
+        ret_instances = []
         for instance in self.manager.instances(kwargs.get('where'),
                                                kwargs.get('sort')):
+            self._strip_secrets(instance.credentials)
+
             if self._perman.is_owner_or_admin(flask_global.auth_user,
                                               instance.system_rel):
-                allowed_instances.append(instance)
+                ret_instances.append(instance)
                 continue
 
             # user is not the resource's owner or an administrator: verify
@@ -374,10 +394,10 @@ class SystemProfileResource(SecureResource):
                 # hidden
                 instance.credentials = MARKER_HIDDEN_CRED
 
-            allowed_instances.append(instance)
+            ret_instances.append(instance)
 
         return Pagination.from_list(
-            allowed_instances, kwargs['page'], kwargs['per_page'])
+            ret_instances, kwargs['page'], kwargs['per_page'])
     # do_list()
 
     def do_read(self, id):
@@ -418,6 +438,7 @@ class SystemProfileResource(SecureResource):
                 # hidden
                 item.credentials = MARKER_HIDDEN_CRED
 
+        self._strip_secrets(item.credentials)
         return item
     # do_read()
 

@@ -154,13 +154,14 @@ class TestSecureResource(TestCase):
                 if key == 'id':
                     self.assertEqual(
                         '{}/{}'.format(self.RESOURCE_URL, value),
-                        entry['$uri']
+                        entry['$uri'], "key <uri> didn't match"
                     )
 
                 # item content
                 else:
                     db_field = entry[key]
-                    self.assertEqual(value, db_field)
+                    self.assertEqual(value, db_field,
+                                     "key <{}> didn't match".format(key))
     # _assert_listed_or_read()
 
     def _assert_updated(self, resp, updated_data):

@@ -20,11 +20,13 @@ Unit test for system_profiles resource module
 # IMPORTS
 #
 from tessia.server.api.resources.system_profiles import MARKER_HIDDEN_CRED
+from tessia.server.api.resources.system_profiles import MARKER_STRIPPED_SECRET
 from tessia.server.api.resources.system_profiles import SystemProfileResource
 from tessia.server.db import models
 from tests.unit.api.resources.secure_resource import TestSecureResource
 
 import json
+import time
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -399,10 +401,13 @@ class TestSystemProfile(TestSecureResource):
         self.db.session.commit()
     # test_add_update_profile_without_hypervisor()
 
-    def test_add_update_zvm(self):
+    def test_add_update_list_read_zvm(self):
         """
-        Test creation and update of profiles for a zVM guest
+        Test creation/update/list/read of profiles for a zVM guest
         """
+        # store the start time for later comparison with datetime fields
+        time_range = [int(time.time() - 5)]
+
         # create a new zvm system
         system_obj = models.System(
             name="vmguest01",
@@ -439,12 +444,35 @@ class TestSystemProfile(TestSecureResource):
         }
         resp = self._do_request('create', user_login, data)
         created_id = int(resp.get_data(as_text=True))
+        # add the end time for later comparison with datetime fields
+        time_range.append(int(time.time() + 5))
 
         # try to remove zvm password from credentials, causes error
         data['id'] = created_id
-        data['credentials'].pop('host_zvm')
+        host_zvm_orig = data['credentials'].pop('host_zvm')
         resp = self._do_request('update', user_login, data)
         self._validate_resp(resp, zvm_msg, 422)
+
+        # test listing to make sure credentials' secrets are stripped
+        # prepare expected response
+        data['default'] = True
+        data['credentials']['host_zvm'] = host_zvm_orig
+        data['credentials']['user'] = MARKER_STRIPPED_SECRET
+        data['credentials']['passwd'] = MARKER_STRIPPED_SECRET
+        data['credentials']['host_zvm'] = {
+            'passwd': MARKER_STRIPPED_SECRET,
+            'byuser': MARKER_STRIPPED_SECRET,
+        }
+        # validate list
+        params = 'where={}'.format(json.dumps({'system': system_name}))
+        resp = self._do_request(
+            'list', '{}:a'.format(user_login), params)
+        self._assert_listed_or_read(resp, [data], time_range)
+        # validate read
+        resp = self._do_request(
+            'get', '{}:a'.format(user_login), data['id'])
+        self._assert_listed_or_read(
+            resp, [data], time_range, read=True)
 
         # clean up
         created_entry = self.RESOURCE_MODEL.query.filter_by(
@@ -634,7 +662,8 @@ class TestSystemProfile(TestSecureResource):
         """
         Verify if listing and reading permissions are correctly handled
         """
-        logins = [
+        login_add = 'user_user@domain.com'
+        logins_list = [
             'user_user@domain.com',
             'user_privileged@domain.com',
             'user_project_admin@domain.com',
@@ -642,7 +671,38 @@ class TestSystemProfile(TestSecureResource):
             'user_admin@domain.com',
         ]
 
-        self._test_list_and_read('user_user@domain.com', logins)
+        # store the existing entries and add them to the new ones for
+        # later validation
+        resp = self._do_request(
+            'list', '{}:a'.format(login_add), None)
+        entries = json.loads(resp.get_data(as_text=True))
+        # adjust id field to make the http response look like the same as the
+        # dict from the _create_many_entries return
+        for entry in entries:
+            entry['id'] = entry.pop('$uri').split('/')[-1]
+
+        # create some more entries to work with
+        new_entries, time_range = self._create_many_entries(login_add, 5)
+        # add the expected marker for secrets
+        for entry in new_entries:
+            if not entry.get('credentials'):
+                continue
+            for key in entry['credentials']:
+                entry['credentials'][key] = MARKER_STRIPPED_SECRET
+        entries += new_entries
+
+        # retrieve list
+        for login in logins_list:
+            resp = self._do_request('list', '{}:a'.format(login), None)
+            self._assert_listed_or_read(resp, entries, time_range)
+
+        # perform a read
+        for login in logins_list:
+            resp = self._do_request(
+                'get', '{}:a'.format(login), entries[0]['id'])
+            self._assert_listed_or_read(
+                resp, [entries[0]], time_range, read=True)
+
     # test_list_and_read()
 
     def test_list_and_read_hidden_credentials(self):

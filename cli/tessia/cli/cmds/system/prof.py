@@ -23,7 +23,7 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.types import CustomIntRange
-from tessia.cli.types import LOGIN, NAME, TEXT
+from tessia.cli.types import LOGIN, NAME, TEXT, USER_PASSWD
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 from tessia.cli.utils import fetch_item
@@ -40,6 +40,9 @@ PROFILE_FIELDS = (
     'cpu', 'memory', 'parameters', 'credentials', 'storage_volumes',
     'system_ifaces', 'gateway'
 )
+USERNAME_PROMPT = "OS admin's username"
+PASSWORD_PROMPT = "OS admin's password"
+ZVM_PROMPT = 'z/VM password'
 
 #
 # CODE
@@ -54,8 +57,8 @@ PROFILE_FIELDS = (
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('hypervisor_profile', '--hyp', type=NAME,
               help="hypervisor profile required for activation")
-@click.option('--login', required=True, type=LOGIN,
-              help="user:passwd for admin access to operating system")
+@click.option('--login', type=USER_PASSWD,
+              help="set the admin credentials to access the OS")
 @click.option('operating_system', '--os', type=NAME,
               help="operating system (if installed manually)")
 @click.option('--zvm-pass', 'zvm_pass', type=TEXT,
@@ -79,24 +82,33 @@ def prof_add(**kwargs):
         raise click.ClickException(
             'invalid format for hypervisor profile, specify profile name only')
 
-    # login provided: parse it to json format expected by API
     login = kwargs.pop('login')
-    try:
-        user, passwd = login.split(':', 1)
-    except (AttributeError, ValueError):
-        raise click.ClickException('invalid format specified for login')
-    kwargs['credentials'] = {'user': user, 'passwd': passwd}
+    # login not provided: prompt for it
+    if not login:
+        login = (
+            click.prompt(USERNAME_PROMPT, default='root', type=LOGIN),
+            click.prompt(PASSWORD_PROMPT, hide_input=True,
+                         confirmation_prompt=True, type=TEXT)
+        )
+    kwargs['credentials'] = {'user': login[0], 'passwd': login[1]}
 
     zvm_pass = kwargs.pop('zvm_pass')
     zvm_by = kwargs.pop('zvm_by')
-    if zvm_pass:
+
+    system = fetch_item(
+        client.Systems,
+        {'name': kwargs['system']},
+        'system specified not found.')
+    if system.type.lower() == 'zvm':
+        if not zvm_pass:
+            zvm_pass = click.prompt(ZVM_PROMPT, hide_input=True,
+                                    confirmation_prompt=True, type=TEXT)
         kwargs['credentials']['host_zvm'] = {'passwd': zvm_pass}
         if zvm_by:
             kwargs['credentials']['host_zvm']['byuser'] = zvm_by
-    # zvm byuser specified without passwd: report error
-    elif zvm_by:
+    elif zvm_pass or zvm_by:
         raise click.ClickException(
-            '--zvm-by requires --zvm-pass to be specified')
+            'zVM credentials should be provided for zVM guests only')
 
     item = client.SystemProfiles()
     for key, value in kwargs.items():
@@ -135,12 +147,16 @@ def prof_del(**kwargs):
 @click.option('--gateway', help='name of interface to use as gateway')
 @click.option('hypervisor_profile', '--hyp', type=NAME,
               help="hypervisor profile required for activation")
-@click.option('--login', type=LOGIN,
-              help="user:passwd for admin access to operating system")
+@click.option('--login', type=USER_PASSWD,
+              help="set the admin credentials to access the OS")
+@click.option('--ask-login', is_flag=True,
+              help="prompt for the OS admin user and password")
 @click.option('operating_system', '--os',
               help="operating system (if installed manually)")
 @click.option('--zvm-pass', 'zvm_pass', type=TEXT,
               help="password for access to zvm hypervisor (zVM guests only)")
+@click.option('--ask-zvm-pass', is_flag=True,
+              help="prompt for the zvm password (zVM guests only)")
 @click.option('--zvm-by', 'zvm_by',
               help="byuser for access to zvm hypervisor (zVM guests only)")
 def prof_edit(system, cur_name, **kwargs):
@@ -165,10 +181,20 @@ def prof_edit(system, cur_name, **kwargs):
     client = Client()
 
     login = kwargs.pop('login')
+    if kwargs.pop('ask_login'):
+        login = (
+            click.prompt(USERNAME_PROMPT, default='root', type=LOGIN),
+            click.prompt(PASSWORD_PROMPT, hide_input=True,
+                         confirmation_prompt=True, type=TEXT)
+        )
+
     zvm_pass = kwargs.pop('zvm_pass')
+    if kwargs.pop('ask_zvm_pass'):
+        zvm_pass = click.prompt(ZVM_PROMPT, hide_input=True,
+                                confirmation_prompt=True, type=TEXT)
     zvm_by = kwargs.pop('zvm_by')
     # no credentials updated: nothing more to check, perform update
-    if not login and not zvm_pass and zvm_by is None:
+    if not login and not zvm_pass and (zvm_by is None):
         fetch_and_update(
             client.SystemProfiles,
             {'system': system, 'name': cur_name},
@@ -190,17 +216,15 @@ def prof_edit(system, cur_name, **kwargs):
 
     # login provided: parse it to json format expected by API
     if login:
-        try:
-            merged_creds['user'], merged_creds['passwd'] = login.split(':', 1)
-        except (AttributeError, ValueError):
-            raise click.ClickException('invalid format specified for login')
+        merged_creds['user'] = login[0]
+        merged_creds['passwd'] = login[1]
 
     # process the zvm specific credentials
     host_zvm = merged_creds.get('host_zvm', {})
     if zvm_pass:
         host_zvm['passwd'] = zvm_pass
     # empty value: unset byuser parameter
-    if zvm_by == '':
+    if not zvm_by and isinstance(zvm_by, str):
         try:
             host_zvm.pop('byuser')
         except KeyError:
@@ -284,7 +308,36 @@ def prof_list(**kwargs):
         return ', '.join(parsed_ifaces)
     # parse_ifaces()
 
+    def translate_credentials(credentials):
+        """
+        Helper function to rename credentials fields to meaningful names
+        """
+        if not credentials:
+            return ''
+
+        zvm_map = {'passwd': 'password', 'byuser': 'logonby'}
+        for key in zvm_map:
+            try:
+                credentials['host_zvm'][zvm_map[key]] = (
+                    credentials['host_zvm'].pop(key))
+            except KeyError:
+                pass
+
+        trans_map = {
+            'host_zvm': 'zvm-credentials',
+            'user': 'admin-user',
+            'passwd': 'admin-password'
+        }
+        for key in trans_map:
+            try:
+                credentials[trans_map[key]] = credentials.pop(key)
+            except KeyError:
+                pass
+        return credentials
+    # translate_credentials()
+
     parser_map = {
+        'credentials': translate_credentials,
         'memory': size_to_str,
         'storage_volumes': lambda vols: ', '.join(
             ['[{}/{}]'.format(vol.server, vol.volume_id) for vol in vols]),

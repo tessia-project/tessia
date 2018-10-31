@@ -199,7 +199,8 @@ tasks:
         - 'CPU\(s\) *: 2'
         - 'Memory *: 2.0 GiB'
         - 'Default *: True'
-        - 'Credentials *: .*mypasswd'
+        - "Credentials *: .*'admin-user': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
         - 'Storage volumes *: .*ds8k15/0abc'
         - 'Storage volumes *: .*ds8k10/123456789abcdef'
         - 'Network interfaces *: .*gw-iface/192\.168\.0\.10'
@@ -297,7 +298,8 @@ tasks:
         - 'CPU\(s\) *: 1'
         - 'Memory *: 1.0 GiB'
         - 'Default *: False'
-        - 'Credentials *: .*somepasswdthatissomehowlong'
+        - "Credentials *: .*'admin-user': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
         - 'Storage volumes *: .*\[ds8k15/0abc\]'
         - 'Network interfaces *: .*\[vlan100-iface\]'
     - - system iface-list --system=cp1lp10 --name=vlan100-iface
@@ -406,8 +408,9 @@ tasks:
         - 'CPU\(s\) *: 3'
         - 'Memory *: 2.0 GiB'
         - 'Default *: True'
-        - 'Credentials *: .*somepasswd'
-        - 'Credentials *: .*zvmpasswd'
+        - "Credentials *: .*'admin-user': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'zvm-credentials': {[^}]*'password': '\\*\\*\\*\\*'"
         - 'Storage volumes *: .*ds8k10/0123'
         - 'Network interfaces *: .*\[zvm-gw-iface/192\.168\.0\.11\]'
         - 'Network interfaces *: .*\[internal-iface/192\.168\.0\.12\]'
@@ -516,7 +519,8 @@ tasks:
         - 'CPU\(s\) *: 5'
         - 'Memory *: 3.0 GiB'
         - 'Default *: True'
-        - 'Credentials *: .*my_password'
+        - "Credentials *: .*'admin-user': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
         - 'Storage volumes *: .*ds8k15/abcd'
         - 'Network interfaces *: .*\[macvtap-iface\] *\n'
     - - storage part-list --server=ds8k15 --id=abcd

@@ -319,40 +319,64 @@ tasks:
   system_zvm: # zvm guest system and profile add/update
     - - system add --name=vmguest01 --hyp=cpc3lp53 --type=ZVM --hostname=vmguest01.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
-    - - system prof-add --name=default --system=vmguest01 --login=root:passwd
-      - 'Error: request failed. Server answered: For zVM guests the zVM password must be specified'
-    - - system prof-add --name=default --system=vmguest01 --login=root:passwd --zvm-by=admin
-      - 'Error: --zvm-by requires --zvm-pass to be specified'
+        # login specified, no zvm specified
+    - - - system prof-add --name=login_int --system=vmguest01 --login=root:passwd
+        # enter zvm password
+        - myzvmpasswd
+        # repeat
+        - myzvmpasswd
+      - 'Item added successfully.'
+    - - system prof-list --name=login_int --system=vmguest01
+      - "Credentials *: .*'zvm-credentials': {'password': '\\*\\*\\*\\*'"
+        # no login and no zvm specified
+    - - - system prof-add --name=login_int2 --system=vmguest01
+        # enter admin username
+        - root
+        # enter admin password
+        - myadminpasswd
+        # repeat
+        - myadminpasswd
+        # enter zvm password
+        - myzvmpasswd
+        # repeat
+        - myzvmpasswd
+      - 'Item added successfully.'
+    - - system prof-list --name=login_int2 --system=vmguest01
+      - "Credentials *: .*'zvm-credentials': {'password': '\\*\\*\\*\\*'"
     - - system prof-add --name=default --system=vmguest01 --login=root:passwd --zvm-pass=vmpassword --zvm-by=vmadmin
       - 'Item added successfully.'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'host_zvm': {.*'passwd': 'vmpassword'"
-    - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'host_zvm': {.*'byuser': 'vmadmin'"
+      - - "Credentials *: .*'zvm-credentials': {[^}]*'password': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'zvm-credentials': {[^}]*'logonby': '\\*\\*\\*\\*'"
     - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword2 --zvm-by=
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'host_zvm': {'passwd': 'vmpassword2'}"
-    # second clearing of zvm-by when it's already cleared
-    - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword2 --zvm-by=
-      - 'Item successfully updated'
-    - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'host_zvm': {'passwd': 'vmpassword2'}"
+      - "Credentials *: .*'zvm-credentials': {'password': '\\*\\*\\*\\*'}"
     # set zvm-by again
     - - system prof-edit --name=default --system=vmguest01 --zvm-by=vmadmin
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'host_zvm': {.*byuser': 'vmadmin'"
+      - "Credentials *: .*'zvm-credentials': {.*logonby': '\\*\\*\\*\\*'"
+    # unset zvm-by without setting password
+    - - system prof-edit --name=default --system=vmguest01 --zvm-by=
+      - 'Item successfully updated'
+    - - system prof-list --name=default --system=vmguest01
+      - "Credentials *: .*'zvm-credentials': {'password': '\\*\\*\\*\\*'}"
+    # upate zvm password
     - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword3
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'host_zvm': {.*'passwd': 'vmpassword3'"
+      - "Credentials *: .*'zvm-credentials': {.*'password': '\\*\\*\\*\\*'"
+    # ask to update zvm password
+    - - - system prof-edit --name=default --system=vmguest01 --ask-zvm-pass
+        - myzvmpass
+        - myzvmpass
+      - 'Item successfully updated'
     - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword4 --zvm-by=vmadmin2
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'host_zvm': {.*'passwd': 'vmpassword4'"
-    - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'host_zvm': {.*'byuser': 'vmadmin2'"
+      - - "Credentials *: .*'zvm-credentials': {[^}]*'password': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'zvm-credentials': {[^}]*'logonby': '\\*\\*\\*\\*'"
   system_model:
     - - system model-list
       - 'Model name identifier    : ZGENERIC'
@@ -671,8 +695,6 @@ tasks:
       - Missing option "--name".
     - - system prof-add --name='DASD'
       - Missing option "--system".
-    - - system prof-add --system=cpc3lp52 --name='DASD'
-      - Missing option "--login".
     - - system prof-add --system=cpc3lp52 --name='DASD' --login=
       - 'Invalid value for "--login": value may not be empty'
     - - system prof-add --system= --name='DASD'  --login='root:mypasswd'
@@ -686,18 +708,33 @@ tasks:
     - - system prof-add --system=cpc3lp52 --name= --login='root:mypasswd'
       - 'Invalid value for "--name": value may not be empty'
     - - system prof-add --system=cpc3lp60 --name='DASD2' --login='root:mypasswd'
-      - "request failed. Server answered: No associated item found with value 'cpc3lp60' for field 'System'"
+      - "Error: system specified not found"
     - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu= --login='root:mypasswd'
       - 'Invalid value for "--cpu":  is not a valid integer'
+        # exercise login with invalid username
+    - - system prof-add --system=cpc3lp52 --name='DASD4' --cpu=4 --login='root#:mypasswd'
+      - "Invalid value for \"--login\": 'root#' is not a valid username, it may only contain letters, numbers, and the characters"
     - - system prof-add --system=cpc3lp52 --name='DASD4' --cpu=4 --login='root:mypasswd'
       - Item added successfully.
+        # exercise entering login interactively
+    - - - system prof-add --system=cpc3lp52 --name='login_int' --cpu=4
+        # username - try with invalid character
+        - root#
+        # correct username
+        - root
+        # password
+        - mypasswd
+        # repeat
+        - mypasswd
+      - Item added successfully.
+    - - system prof-list --system=cpc3lp52 --name='login_int'
+      - - "Credentials *: .*'admin-user': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
     - - system prof-add --system=cpc3lp52 --name='DASD5' --cpu=4 --memory= --login='root:mypasswd'
       - invalid memory size specified.
-    - - system prof-add --system=cpc3lp52 --name='DASD6' --cpu=4 --memory=2048mib --default=yes --login='root:mypasswd'
-      - --default option does not take a value
     - - system prof-add --system=cpc3lp52 --name='DASD7' --default --login='root:mypasswd'
       - Item added successfully.
-      # edit default profile 
+      # edit default profile
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --memory
       - '--memory option requires an argument'
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --memory=2gb
@@ -706,7 +743,21 @@ tasks:
       - 'Invalid value for "--newname": value may not be empty'
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --newname=DASD17
       - Item successfully updated.
-      # The next default profile changes the status of the existing default profile to 'not default'      
+        # update login interactively
+    - - - system prof-edit --system=cpc3lp52 --name=login_int --ask-login
+        # username - try with invalid character
+        - root#
+        # correct username
+        - root
+        # password
+        - mypasswd
+        # repeat
+        - mypasswd
+      - Item successfully updated.
+    - - system prof-list --system=cpc3lp52 --name='login_int'
+      - - "Credentials *: .*'admin-user': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
+      # The next default profile changes the status of the existing default profile to 'not default'
     - - system prof-add --system=cpc3lp52 --name='DASD10' --default --cpu=4 --login='root:mypasswd'
       - Item added successfully.
     - - system prof-add --system=cpc3lp52 --name='DASD11' --default --memory=2gib --login='root:mypasswd'
@@ -734,7 +785,7 @@ tasks:
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='cpc3/default cpc3'
       - 'Invalid value for "--hyp"'
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root-mypasswd' --hyp='default cpc3'
-      - invalid format specified for login
+      - 'Error: Invalid value for "--login": input should be in the format username:password'
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='default cpc3'
       - Item added successfully.
     # 'system prof-list' subcommand
@@ -861,10 +912,6 @@ tasks:
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway
       - --gateway option requires an argument
-    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default macvtap4'
-      - "request failed. Server answered: No associated item found with value 'default macvtap4' for field 'Gateway interface'"
-    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway=xxxx
-      - "request failed. Server answered: No associated item found with value 'xxxx' for field 'Gateway interface'"
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa3'
       - "request failed. Server answered: No associated item found with value 'default osa3' for field 'Gateway interface'"
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp=
@@ -873,18 +920,12 @@ tasks:
       - "request failed. Server answered: No associated item found with value 'default cpc5' for field 'Required hypervisor profile'"
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp='default cpc3'
       - Item successfully updated.
-    - - system prof-edit --system=cpc3lp52 --name=DASD4 --login
-      - --login option requires an argument
-    - - system prof-edit --system=cpc3lp52 --name=DASD4 --login=root
-      - invalid format specified for login
     - - system prof-edit --system=cpc3 --name='default cpc3' --memory=1136g
       - invalid memory size specified.
     - - system prof-edit --system=cpc3 --name='default cpc3' --hyp='cpc3/default cpc3'
       - 'Invalid value for "--hyp"'
     - - system prof-edit --system=cpc3 --name='default cpc3' --login='root-mypasswd'
-      - invalid format specified for login
-    - - system prof-edit --system=cpc3 --name='default cpc3' --login='root mypasswd'
-      - "Invalid value for \"--login\": 'root mypasswd' is not a valid login"
+      - 'Error: Invalid value for "--login": input should be in the format username:password'
     - - system prof-edit --system=cpc3 --name='default cpc3' --login='root:mypasswd'
       - Item successfully updated.
     - - system prof-edit --system=cpc3 --name='cpc3' --memory=1136gib
@@ -1111,7 +1152,9 @@ tasks:
       - Volume detached successfully.
       # delete default profile if it is the last one
     - - system prof-list --system=cpc3lp52
-      - 'Profile name                : DASD4'   
+      - 'Profile name                : DASD4'
+    - - system prof-del --system=cpc3lp52 --name=login_int
+      - Item successfully deleted.
     - - system prof-del --system=cpc3lp52 --name='DASD root1'
       - Item successfully deleted.
     - - system prof-del --system=cpc3lp52 --name=DASD17

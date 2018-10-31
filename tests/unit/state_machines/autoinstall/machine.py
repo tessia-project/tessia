@@ -87,9 +87,11 @@ class TestAutoInstallMachine(TestCase):
         self._mocked_supported_distros = patcher_dict.start()
         self.addCleanup(patcher_dict.stop)
 
-        patcher = patch.object(machine, 'logging', autospec=True)
-        self._mock_logging = patcher.start()
+        patcher = patch.object(machine, 'logging')
+        mock_logging = patcher.start()
         self.addCleanup(patcher.stop)
+        mock_logging.getLogger.return_value = Mock(
+            spec=['warning', 'error', 'debug', 'info'])
 
         # We do not patch the jsonschema in order to validate the expressions
         # that are used in the request.

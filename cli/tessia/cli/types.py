@@ -265,7 +265,7 @@ class Login(click.ParamType):
         ret = re.match(r"^[a-zA-Z0-9_\:\@\.\-]+$", value)
         if ret is None:
             msg = ("'{}' is not a valid login, it may only contain "
-                   "letters, numbers, '@', '.', and '-'".format(value))
+                   "letters, numbers, and the characters @.-_".format(value))
             self.fail(msg, param, ctx)
 
         return value
@@ -558,6 +558,37 @@ class Url(click.ParamType):
 # Url
 
 URL = Url()
+
+class UserPasswd(click.ParamType):
+    """
+    Represents a username and password separated by colon
+    """
+    name = 'user:passwd'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        try:
+            user, passwd = value.split(':', 1)
+            assert passwd
+        except (AttributeError, AssertionError, ValueError):
+            self.fail('input should be in the format username:password',
+                      param, ctx)
+
+        if not re.match(r"^[a-zA-Z0-9_\:\@\.\-]+$", user):
+            msg = ("'{}' is not a valid username, it may only contain "
+                   "letters, numbers, and the characters @.-_".format(user))
+            self.fail(msg, param, ctx)
+
+        return user, passwd
+    # convert()
+# UserPasswd
+
+USER_PASSWD = UserPasswd()
 
 class VerbosityLevel(click.ParamType):
     """

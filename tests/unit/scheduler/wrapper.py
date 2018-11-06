@@ -49,6 +49,13 @@ class TestWrapper(TestCase):
         Prepare the necessary patches at the beginning of each testcase
         """
 
+        # logging module
+        patcher = patch.object(wrapper, 'logging')
+        mock_logging = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_logging.getLogger.return_value = mock.Mock(
+            spec=['warning', 'error', 'debug', 'info'])
+
         # signal module
         patcher = patch.object(wrapper, 'signal', autospect=True)
         self._mock_signal = patcher.start()

@@ -411,18 +411,17 @@ Usage: tess system prof-add [OPTIONS]
   create a new system activation profile
 
 Options:
-  --system NAME    target system  [required]
-  --name NAME      profile name  [required]
-  --cpu INTEGER    number of cpus
-  --memory TEXT    memory size (i.e. 1gb)
-  --default        set as default for system
-  --hyp NAME       hypervisor profile required for activation
-  --login LOGIN    user:passwd for admin access to operating system
-                   [required]
-  --os NAME        operating system (if installed manually)
-  --zvm-pass TEXT  password for access to zvm hypervisor (zVM guests only)
-  --zvm-by TEXT    byuser for access to zvm hypervisor (zVM guests only)
-  -h, --help       Show this message and exit.
+  --system NAME        target system  [required]
+  --name NAME          profile name  [required]
+  --cpu INTEGER        number of cpus
+  --memory TEXT        memory size (i.e. 1gib)
+  --default            set as default for system
+  --hyp NAME           hypervisor profile required for activation
+  --login USER:PASSWD  set the admin credentials to access the OS
+  --os NAME            operating system (if installed manually)
+  --zvm-pass TEXT      password for access to zvm hypervisor (zVM guests only)
+  --zvm-by TEXT        byuser for access to zvm hypervisor (zVM guests only)
+  -h, --help           Show this message and exit.
 ```
 
 As for a hypervisor profile, CMS on the LPAR `lpar70` is used as a hypervisor profile for the `vm70002` system.
@@ -442,7 +441,7 @@ Default                     : True
 CPU(s)                      : 1
 Memory                      : 953.0 MiB
 Parameters                  :
-Credentials                 : {'passwd': 'zvm', 'user': 'zvm'}
+Credentials                 : {'admin-password': '****', 'admin-user': '****'}
 Storage volumes             :
 Network interfaces          :
 Gateway interface           :
@@ -463,7 +462,7 @@ Default                     : True
 CPU(s)                      : 1
 Memory                      : 1.0 GiB
 Parameters                  :
-Credentials                 :  {'host_zvm': {'passwd': 'zvmpasswd'}, 'passwd': 'mypasswd', 'user': 'root'}
+Credentials                 :  {'zvm-credentials': {'password': '****'}, 'admin-password': '****', 'admin-user': '****'}
 Storage volumes             :
 Network interfaces          :
 Gateway interface           :
@@ -541,7 +540,7 @@ Default                     : True
 CPU(s)                      : 1
 Memory                      : 1.0 GiB
 Parameters                  :
-Credentials                 : {'user': 'root', 'passwd': 'mypasswd',  'host_zvm': {'passwd': 'zvmpasswd'}}
+Credentials                 : {'admin-user': '****', 'admin-password': '****',  'zvm-credentials': {'password': '****'}}
 Storage volumes             : [DS8K22/e1ab], [DS8K22/e1ac]
 Network interfaces          : [default osa/192.168.0.30]
 Gateway interface           :

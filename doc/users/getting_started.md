@@ -320,7 +320,7 @@ Default                     : True
 CPU(s)                      : 43
 Memory                      : 800.0 GiB
 Parameters                  : 
-Credentials                 : {'passwd': 'hmc_password', 'user': 'hmc_user'}
+Credentials                 : {'admin-password': '****', 'admin-user': '****'}
 Storage volumes             : 
 Network interfaces          : 
 Gateway interface           : 
@@ -355,7 +355,7 @@ Default                     : True
 CPU(s)                      : 43
 Memory                      : 800.0 GiB
 Parameters                  : 
-Credentials                 : {'passwd': 'hmc_password', 'user': 'hmc_user'}
+Credentials                 : {'admin-password': '****', 'admin-user': '****'}
 Storage volumes             : [ds8k16/7e2d]
 Network interfaces          : 
 Gateway interface           : 
@@ -419,7 +419,7 @@ Default                     : True
 CPU(s)                      : 2
 Memory                      : 4.0 GiB
 Parameters                  : 
-Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
+Credentials                 : {'admin-user': '****', 'admin-password': '****'}
 Storage volumes             : [ds8k16/7e2e], [ds8k16/7e2f]
 Network interfaces          : 
 Gateway interface           : 

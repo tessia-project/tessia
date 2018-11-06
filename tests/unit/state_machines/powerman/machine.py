@@ -21,7 +21,7 @@ from tessia.server.state_machines.powerman import machine
 from tessia.server.db.models import System, SystemProfile
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
-from unittest.mock import call, patch
+from unittest.mock import call, patch, Mock
 
 import json
 import os
@@ -55,6 +55,12 @@ class TestPowerManagerMachine(TestCase):
         """
         Called before each test to set up the necessary mocks.
         """
+        patcher = patch.object(machine, 'logging')
+        mock_logging = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_logging.getLogger.return_value = Mock(
+            spec=['warning', 'error', 'debug', 'info'])
+
         # mock config object
         patcher = patch.object(machine, 'CONF', autospec=True)
         patcher.start()

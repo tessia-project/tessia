@@ -37,7 +37,7 @@ Default                     : False
 CPU(s)                      : 2
 Memory                      : 4.0 GiB
 Parameters                  : 
-Credentials                 : {'passwd': 'mypasswd', 'user': 'root'}
+Credentials                 : {'admin-password': '****', 'admin-user': '****'}
 Storage volumes             : [ds8k16/1022400200000000], [ds8k16/1022400000000000]
 Network interfaces          : [gb-extern/192.168.161.222]
 Gateway interface           : 
@@ -51,7 +51,7 @@ Default                     : True
 CPU(s)                      : 2
 Memory                      : 4.0 GiB
 Parameters                  : 
-Credentials                 : {'passwd': 'mypasswd', 'user': 'root'}
+Credentials                 : {'admin-password': '****', 'admin-user': '****'}
 Storage volumes             : [ds8k16/3957], [ds8k16/3956]
 Network interfaces          : [gb-extern/192.168.161.222]
 Gateway interface           : 

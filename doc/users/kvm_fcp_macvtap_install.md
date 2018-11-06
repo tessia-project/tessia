@@ -441,18 +441,17 @@ Usage: tess system prof-add [OPTIONS]
   create a new system activation profile
 
 Options:
-  --system NAME    target system  [required]
-  --name NAME      profile name  [required]
-  --cpu INTEGER    number of cpus
-  --memory TEXT    memory size (i.e. 1gb)
-  --default        set as default for system
-  --hyp NAME       hypervisor profile required for activation
-  --login LOGIN    user:passwd for admin access to operating system
-                   [required]
-  --os NAME        operating system (if installed manually)
-  --zvm-pass TEXT  password for access to zvm hypervisor (zVM guests only)
-  --zvm-by TEXT    byuser for access to zvm hypervisor (zVM guests only)
-  -h, --help       Show this message and exit.
+  --system NAME        target system  [required]
+  --name NAME          profile name  [required]
+  --cpu INTEGER        number of cpus
+  --memory TEXT        memory size (i.e. 1gib)
+  --default            set as default for system
+  --hyp NAME           hypervisor profile required for activation
+  --login USER:PASSWD  set the admin credentials to access the OS
+  --os NAME            operating system (if installed manually)
+  --zvm-pass TEXT      password for access to zvm hypervisor (zVM guests only)
+  --zvm-by TEXT        byuser for access to zvm hypervisor (zVM guests only)
+  -h, --help           Show this message and exit.
 ```
 
 As for a hypervisor profile, our LPAR `lpar68` is used as a hypervisor for the `kvm25` system.
@@ -471,7 +470,7 @@ Default                     : True
 CPU(s)                      : 4
 Memory                      : 2.0 GiB
 Parameters                  :
-Credentials                 : {'user': 'root', 'passwd': 'hyp_passwd'}
+Credentials                 : {'admin-user': '****', 'admin-password': '****'}
 Storage volumes             :
 Network interfaces          :
 Gateway interface           :
@@ -494,7 +493,7 @@ Default                     : True
 CPU(s)                      : 2
 Memory                      : 1.0 GiB
 Parameters                  :
-Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
+Credentials                 : {'admin-user': '****', 'admin-password': '****'}
 Storage volumes             :
 Network interfaces          :
 Gateway interface           :
@@ -554,7 +553,7 @@ Default                     : True
 CPU(s)                      : 2
 Memory                      : 976.0 MiB
 Parameters                  :
-Credentials                 : {'user': 'root', 'passwd': 'mypasswd'}
+Credentials                 : {'admin-user': '****', 'admin-password': '****'}
 Storage volumes             : [DS8K22/1020304500000000]
 Network interfaces          : [KVM macvtap/192.168.0.25]
 Gateway interface           :

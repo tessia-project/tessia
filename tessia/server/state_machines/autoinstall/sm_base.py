@@ -20,6 +20,7 @@ Base state machine for auto installation of operating systems
 # IMPORTS
 #
 from copy import deepcopy
+from datetime import datetime
 from tessia.baselib.common.ssh.client import SshClient
 from socket import inet_ntoa, gethostbyname
 from tessia.server.config import Config
@@ -511,6 +512,7 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         # Change the operating system in the profile.
         self._profile.operating_system_id = self._os.id
+        self._system.modified = datetime.utcnow()
         MANAGER.session.commit()
     # post_install()
 

@@ -275,11 +275,15 @@ class TestSmBase(TestCase):
         execution of the state machine.
         """
         os_entry = utils.get_os("rhel7.2")
-        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        profile_name = "CPC3LP55/default_CPC3LP55"
+        profile_entry = utils.get_profile(profile_name)
         template_entry = utils.get_template("rhel7-default")
         system_entry = profile_entry.system_rel
         hyp_type = system_entry.type_rel.name.lower()
         repo_entry = os_entry.repository_rel[0]
+
+        # store last modified time before system power changes
+        system_last_modified = system_entry.modified
 
         # cmdline file mock
         cmdline_content = self._mock_open(
@@ -330,6 +334,12 @@ class TestSmBase(TestCase):
 
         mock_hyper_class.return_value.boot.assert_called_with(mock.ANY)
         mock_hyper_class.return_value.reboot.assert_called_with(profile_entry)
+
+        # validate that system modified time is updated
+        updated_system_entry = utils.get_profile(profile_name).system_rel
+        self.assertGreater(updated_system_entry.modified,
+                           system_last_modified,
+                           'System modified time is updated')
 
         self.assertEqual(profile_entry.operating_system_id, os_entry.id)
     # test_machine_execution()

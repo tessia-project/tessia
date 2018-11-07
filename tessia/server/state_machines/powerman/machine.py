@@ -19,6 +19,8 @@ Machine to perform power management of systems
 #
 # IMPORTS
 #
+from datetime import datetime
+from itertools import chain
 from jsonschema import validate
 from tessia.baselib.common.s3270.terminal import Terminal
 from tessia.baselib.guests import Guest
@@ -174,6 +176,21 @@ class PowerManagerMachine(BaseMachine):
             raise ValueError('z/VM guest {} has no z/VM credentials '
                              'defined'.format(profile_obj.system_rel.name))
     # _check_profile()
+
+    def _commit_modified_time(self):
+        """
+        Update 'modified' timestamp on all affected systems
+        """
+        # Rollback all profile overrides (if any)
+        MANAGER.session.rollback()
+
+        # Set 'modified' on systems that were powered on or off
+        for profile_obj in chain(self._powered_on.values(),
+                                 self._powered_off.values()):
+            profile_obj.system_rel.modified = datetime.utcnow()
+
+        MANAGER.session.commit()
+    # _commit_modified_time()
 
     @staticmethod
     def _get_profile(system_name, profile_name=None):
@@ -1022,8 +1039,8 @@ class PowerManagerMachine(BaseMachine):
         self._logger.info('new stage: verify-configuration')
         self._stage_verify()
 
-        self._logger.info('new stage: cleanup')
-        self.cleanup()
+        self._logger.info('new stage: commit-modified')
+        self._commit_modified_time()
 
         self._logger.info('Task finished successfully')
         return 0

@@ -664,6 +664,10 @@ class TestPowerManagerMachine(TestCase):
         """
         test_system = 'kvm054'
         system_obj = System.query.filter_by(name=test_system).one()
+
+        # remember last modified time before system power changes
+        system_last_modified = system_obj.modified
+
         request = str({
             'systems': [
                 {
@@ -677,6 +681,11 @@ class TestPowerManagerMachine(TestCase):
 
         hyp_prof = self._get_profile('cpc3lp52')
         self._assert_poweroff_action('kvm', hyp_prof, system_obj, 0, 0)
+
+        # Validate that system modified time is updated
+        updated_system_obj = System.query.filter_by(name=test_system).one()
+        self.assertGreater(updated_system_obj.modified, system_last_modified,
+                           'System modified time is updated')
     # test_poweroff()
 
     def test_poweroff_zvm(self):
@@ -685,6 +694,9 @@ class TestPowerManagerMachine(TestCase):
         """
         test_system = 'zvm033'
         system_obj = System.query.filter_by(name=test_system).one()
+        # remember last modified time before system power changes
+        system_last_modified = system_obj.modified
+
         guest_prof = self._get_profile(test_system)
         request = str({
             'systems': [
@@ -700,6 +712,11 @@ class TestPowerManagerMachine(TestCase):
         hyp_prof = self._get_profile('cpc3lp55')
         self._assert_poweroff_action(
             'zvm', hyp_prof, system_obj, 0, 0, guest_prof)
+
+        # Validate that system modified time is updated
+        updated_system_obj = System.query.filter_by(name=test_system).one()
+        self.assertGreater(updated_system_obj.modified, system_last_modified,
+                           'System modified time is updated')
     # test_poweroff_zvm()
 
     def test_poweron_timeout(self):
@@ -867,6 +884,10 @@ class TestPowerManagerMachine(TestCase):
         # collect necessary db objects
         test_system = 'kvm054'
         system_obj = System.query.filter_by(name=test_system).one()
+        # remember last modified time before forced power action
+        pre_system_obj = System.query.filter_by(name=test_system).one()
+        system_last_modified = pre_system_obj.modified
+
         prof_obj = self._get_profile(system_obj.name)
         hyp_prof = self._get_profile(system_obj.hypervisor_rel.name)
 
@@ -908,6 +929,11 @@ class TestPowerManagerMachine(TestCase):
             call(prof_obj, permissive=False))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[1], call())
+
+        # validate that system modified time is updated
+        updated_system_obj = System.query.filter_by(name=test_system).one()
+        self.assertGreater(updated_system_obj.modified, system_last_modified,
+                           'System modified time is updated')
     # test_poweron_force()
 
     def test_poweron_already_up(self):
@@ -932,12 +958,20 @@ class TestPowerManagerMachine(TestCase):
         machine_obj = machine.PowerManagerMachine(request)
         machine_obj.start()
 
+        # remember last modified time before system power changes
+        system_last_modified = system_obj.modified
+
         # validate call to verify if hypervisor was up
         self._assert_system_up_action(hyp_prof_obj, 0)
         # validate call to verify if system was up
         self._assert_system_up_action(prof_obj, 1)
         # no call to power on system
         self._mock_hyp_cls.assert_not_called()
+
+        # validate that system modified time is not updated
+        updated_system_obj = System.query.filter_by(name=test_system).one()
+        self.assertEqual(updated_system_obj.modified, system_last_modified,
+                         'System modified time is not updated')
     # test_poweron_already_up()
 
     def test_poweron_already_up_profile_no_match(self):
@@ -1279,6 +1313,9 @@ class TestPowerManagerMachine(TestCase):
         # collect necessary db objects
         test_system = 'cpc3lp52'
         system_obj = System.query.filter_by(name=test_system).one()
+        # remember last modified time before system power changes
+        system_last_modified = system_obj.modified
+
         prof_obj = self._get_profile(system_obj.name)
         hyp_prof_obj = self._get_profile(system_obj.hypervisor_rel.name)
 
@@ -1316,5 +1353,102 @@ class TestPowerManagerMachine(TestCase):
         # post checker should be called in permissive mode
         self._mock_post_cls.assert_called_with(prof_obj, permissive=True)
         self._mock_post_obj.verify.assert_called_with()
+
+        # validate that system modified time is updated
+        updated_system_obj = System.query.filter_by(name=test_system).one()
+        self.assertGreater(updated_system_obj.modified, system_last_modified,
+                           'System modified time is updated')
     # test_verify_off()
+
+    def test_poweron_zvm_modified_date(self):
+        """
+        Try a poweron operation of a zvm guest and validate that
+        'modified' attribute is updated.
+        """
+        # collect necessary db objects
+        test_system = 'zvm033'
+        system_obj = System.query.filter_by(name=test_system).one()
+        # remember last modified time before the system is brought up
+        system_last_modified = system_obj.modified
+
+        prof_obj = self._get_profile(system_obj.name)
+        hyp_prof = self._get_profile(system_obj.hypervisor_rel.name)
+
+        # prepare mock, simulate system to be down
+        self._mock_guest_obj.login.side_effect = [
+            # system is down
+            ConnectionError('offline'),
+            # system is up after poweron
+            None
+        ]
+
+        request = str({
+            'systems': [
+                {
+                    'action': 'poweron',
+                    'name': system_obj.name,
+                },
+            ]
+        })
+        machine_obj = machine.PowerManagerMachine(request)
+        machine_obj.start()
+
+        # validate call to verify if hypervisor was up
+        self._assert_system_up_action(hyp_prof, 0, prof_obj)
+
+        # validate call to verify if guest was up
+        self._assert_system_up_action(prof_obj, 0)
+
+        # validate call to poweron
+        self._assert_poweron_action('zvm', hyp_prof, prof_obj, 0)
+
+        # validate stage verify
+        self._assert_system_up_action(prof_obj, 1)
+
+        # validate that system modified time is updated
+        up_system_obj = System.query.filter_by(name=test_system).one()
+        self.assertGreater(up_system_obj.modified, system_last_modified,
+                           'System modified time is updated')
+
+        # validate that post install was called to verify profile
+        self.assertEqual(
+            self._mock_post_cls.call_args_list[0],
+            call(prof_obj, permissive=False))
+        self.assertEqual(
+            self._mock_post_obj.verify.call_args_list[0], call())
+    # test_poweron_zvm_modified_date()
+
+    def test_poweroff_zvm_modified_date(self):
+        """
+        Exercise a poweroff of a zvm guest and verify that 'modified'
+        attribute is updated
+        """
+        test_system = 'zvm033'
+        system_obj = System.query.filter_by(name=test_system).one()
+        # remember last modified time before the system is brought up
+        system_last_modified = system_obj.modified
+
+        guest_prof = self._get_profile(test_system)
+
+        request = str({
+            'systems': [
+                {
+                    'action': 'poweroff',
+                    'name': system_obj.name,
+                },
+            ]
+        })
+        machine_obj = machine.PowerManagerMachine(request)
+        machine_obj.start()
+
+        hyp_prof = self._get_profile('cpc3lp55')
+        self._assert_poweroff_action(
+            'zvm', hyp_prof, system_obj, 0, 0, guest_prof)
+
+        # validate that system modified time is updated
+        down_system_obj = System.query.filter_by(name=test_system).one()
+        self.assertGreater(down_system_obj.modified, system_last_modified,
+                           'System modified time is updated')
+    # test_poweroff_zvm_modified_date()
+
 # TestPowerManagerMachine

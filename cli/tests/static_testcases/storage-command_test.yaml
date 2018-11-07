@@ -105,6 +105,8 @@ tasks:
       - 'Invalid value for "--name": value may not be empty'
     - - storage server-list --name=DS8K22
       - 'Name           : DS8K22'
+    - - storage server-list --name=ds8k22
+      - No results were found.
     - - storage server-list --name=DS8888
       - No results were found.
     - - storage server-list --model=
@@ -285,6 +287,10 @@ tasks:
       - No results were found.
     - - storage vol-list --server=DS8K16
       - 'Volume id                  : 3955'
+    - - storage vol-list --system=lpar69
+      - at least one of --server or --id must be specified
+    - - storage vol-list --owner=lab_admin@example.com
+      - at least one of --server or --id must be specified
     - - storage vol-list --id=3955
       - 'Volume id                  : 3955'
     - - storage vol-list --id=ED51
@@ -312,6 +318,8 @@ tasks:
       - No results were found.
     - - storage vol-list --server=DS8K16 --system=
       - 'Invalid value for "--system": value may not be empty'
+    - - storage vol-list --server=DS8K16 --system=lpar69
+      - No results were found.
     - - storage vol-list --server=DS8K16 --type=
       - No results were found.
     - - storage vol-list --server=DS8K16 --type=DASD

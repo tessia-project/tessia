@@ -22,6 +22,7 @@ Auxiliary class used for managing the CI process
 from lib.image import DockerImage
 from lib.image_server import DockerImageServer
 from lib.util import Shell, build_image_map
+from lib.selinux import is_selinux_enforced
 
 import ipaddress
 import logging
@@ -322,6 +323,11 @@ class Manager(object):
 
             # devmode: bind mount all folders
             if dev_mode:
+                if is_selinux_enforced:
+                    compose_cfg['services']['server']['security_opt'] = [
+                        'label:disable']
+                    compose_cfg['services']['cli']['security_opt'] = [
+                        'label:disable']
                 compose_cfg['services']['server']['volumes'] += [
                     '{}/tessia/server:{}/server:ro'.format(
                         REPO_DIR, pkg_paths['server']),
@@ -334,6 +340,9 @@ class Manager(object):
                 ]
             # clitests requested: bind mount the cli folder
             else:
+                if is_selinux_enforced:
+                    compose_cfg['services']['cli']['security_opt'] = [
+                        'label:disable']
                 compose_cfg['services']['cli']['volumes'] = [
                     '{}/cli:/home/admin/cli:ro'.format(REPO_DIR)]
 

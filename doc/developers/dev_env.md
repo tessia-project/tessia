@@ -1,5 +1,5 @@
 <!--
-Copyright 2017 IBM Corp.
+Copyright 2017, 2018 IBM Corp.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,7 +25,13 @@ There's also the python virtualenv approach which demands more manual steps, thi
 
 ## Complete dev environment via docker containers
 
-First and foremost, make sure you have docker installed. Then, build the project's containers with the `orc` tool:
+First and foremost, make sure you have the following software installed:
+
+- docker
+- docker-compose
+- git v2.7 (git remote get-url)
+
+Then, build the project's containers with the `orc` tool:
 
 ```
 # the build command will prepare a context dir and trigger the docker build process:

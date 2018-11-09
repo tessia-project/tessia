@@ -1,5 +1,5 @@
 <!--
-Copyright 2016, 2017 IBM Corp.
+Copyright 2016, 2017, 2018 IBM Corp.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@ The entry point for the CI execution is the *Orchestrator* (`tools/ci/orc`) whic
 It's possible to list the available images too:
 
 ```console
-$ tools/ci/orc list
+$ tools/ci/orc list-images
 
 List of available images (Name - Description)
 
-tessia-server -> Rest like API and job scheduling
+tessia-server -> Rest like API and job scheduler
 tessia-cli -> Command line client
 
 $ tools/ci/orc build --image=tessia-server

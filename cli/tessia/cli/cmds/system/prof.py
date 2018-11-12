@@ -314,6 +314,8 @@ def prof_list(**kwargs):
         """
         if not credentials:
             return ''
+        elif isinstance(credentials, str):
+            return credentials
 
         zvm_map = {'passwd': 'password', 'byuser': 'logonby'}
         for key in zvm_map:

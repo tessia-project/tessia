@@ -72,22 +72,28 @@ python
 
 %end
 
-{% if config["system_type"] != "KVM" %}
 %post
-  {% for iface in config["ifaces"] %}
-    {% if iface["mac_addr"] %}
-echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
-    {% endif %}
-    {% if iface["osname"] != iface["systemd_osname"] %}
+#!/bin/bash
+# network configuration adjustments
+{% for iface in config["ifaces"] -%}
+  {% if iface["systemd_osname"] and iface["osname"] != iface["systemd_osname"] -%}
 sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
 mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
-    {% endif %}
-  {% endfor %}
+  {% endif -%}
+  {% if iface["mac_addr"] and config["system_type"] != "KVM" -%}
+echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
+  {% endif -%}
+  {% if iface["search_list"] -%}
+echo 'DOMAIN="{{iface["search_list"]}}"' >> /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
+  {% endif -%}
+{% endfor -%}
 %end
 
+{% if config["system_type"] != "KVM" -%}
 %pre
 #!/bin/bash
-  {% for volume in config["svols"] %}
+# disk configuration adjustments
+  {% for volume in config["svols"] -%}
     {%- if volume['type'] == 'DASD' -%}
 chzdev -e dasd {{volume['volume_id']}}
       {% if volume["part_table"] -%}
@@ -109,6 +115,7 @@ chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}}
 
 %post
 #!/bin/bash
+# repositories configuration adjustments
 {% for repo in config["repos"] %}
 cat <<EOF > /etc/yum.repos.d/{{repo['name']}}.repo
 [{{repo['name']}}]
@@ -120,6 +127,7 @@ skip_if_unavailable=False
 EOF
 {% endfor %}
 
+# fcp configuration adjustments
 {% if config["system_type"] != "KVM" %}
 {% for volume in config["svols"] %}
 {% if volume['type'] == 'FCP' -%}

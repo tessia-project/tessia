@@ -51,7 +51,8 @@ def autotemplate():
 @click.option('--name', required=True, type=NAME,
               help="template's name identifier")
 @click.option('--content', required=True, type=AUTO_TEMPLATE,
-              help="template content")
+              help="template content file path")
+@click.option('--owner', help="template owner")
 @click.option('--project', help="project owning template")
 @click.option('--desc', help="free form field describing template")
 def template_add(**kwargs):
@@ -88,7 +89,8 @@ def template_del(name):
               help="template's name identifier")
 @click.option('name', '--newname', type=NAME,
               help="new template's name identifier")
-@click.option('--content', type=AUTO_TEMPLATE, help="template content")
+@click.option('--content', type=AUTO_TEMPLATE,
+              help="template content file path")
 @click.option('--owner', help="template owner")
 @click.option('--project', help="project owning template")
 @click.option('--desc', help="free form field describing model")

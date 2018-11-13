@@ -204,8 +204,8 @@ tasks:
       - 'Invalid value for "--timeout": A is not a valid integer'
     - - job submit --type=autoinstall --parmfile='test_parmfile' --prio
       - '--prio option requires an argument'
-    - - job submit --type=autoinstall --parmfile='test_parmfile' --prio=A
-      - 'Invalid value for "--prio": A is not a valid integer'
+    - - job submit --type=autoinstall --parmfile='test_parmfile' --prio=50
+      - 'Invalid value for "--prio": 50 is not in the valid range of 0 to 9'
     - - job submit --type=autoinstall --parmfile='test_parmfile' --startdate
       - '--startdate option requires an argument'
     - - job submit --type=autoinstall --parmfile='test_parmfile' --startdate=yesterday
@@ -249,12 +249,12 @@ tasks:
       - 'No results were found.'
     - - job list --state
       - '--state option requires an argument'
+    - - job list --state=xxxx
+      - 'Invalid value for "--state": job state must be one of: canceled, cleaningup, completed, failed, running, waiting'
     - - job list --state=FAILED
       - 'job_id(.|\n)+\n$'
     - - job list --state=failed
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
-    - - job list --state=success
-      - 'No results were found.'
     - - job list --state=COMPLETED
       - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
     # job output
@@ -314,7 +314,7 @@ tasks:
     - - job req-list --state
       - '--state option requires an argument'
     - - job req-list --state=xxxx
-      - 'No results were found.'
+      - 'Invalid value for "--state": request state must be one of: completed, failed, pending'
     - - job req-list --state=COMPLETED
       - 'request_id | action_type |   job_type  |     submit_date'
     - - job req-list --state=completed

@@ -195,6 +195,20 @@ class IPaddress(click.ParamType):
 
 IPADDRESS = IPaddress()
 
+class JobPrio(click.IntRange):
+    """
+    Represents a job priority
+    """
+    MIN_PRIO = 0
+    MAX_PRIO = 9
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[{}-{}]'.format(self.MIN_PRIO, self.MAX_PRIO)
+# JobPrio
+
+JOB_PRIO = JobPrio(JobPrio.MIN_PRIO, JobPrio.MAX_PRIO)
+
 class JobType(click.ParamType):
     """
     Represents job types.
@@ -223,6 +237,36 @@ class JobType(click.ParamType):
 # JobType
 
 JOB_TYPE = JobType()
+
+class JobState(click.ParamType):
+    """
+    Represents job states.
+    """
+    STATES = ('canceled', 'cleaningup', 'completed', 'failed', 'running',
+              'waiting')
+    name = 'job_state'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure value is correct.
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        value = value.lower()
+        if value not in self.STATES:
+            self.fail("job state must be one of: {}".format(
+                ', '.join(self.STATES)), param, ctx)
+
+        return value.upper()
+    # convert()
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[{}]'.format('|'.join(self.STATES))
+# JobState
+
+JOB_STATE = JobState()
 
 class Libvirtxml(click.ParamType):
     """
@@ -470,6 +514,35 @@ class QethPortno(click.ParamType):
 # QethPortno
 
 QETH_PORTNO = QethPortno()
+
+class RequestState(click.ParamType):
+    """
+    Represents job request states.
+    """
+    STATES = ('completed', 'failed', 'pending')
+    name = 'request_state'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure value is correct.
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        value = value.lower()
+        if value not in self.STATES:
+            self.fail("request state must be one of: {}".format(
+                ', '.join(self.STATES)), param, ctx)
+
+        return value.upper()
+    # convert()
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[{}]'.format('|'.join(self.STATES))
+# RequestState
+
+REQUEST_STATE = RequestState()
 
 class ScsiWwid(click.ParamType):
     """

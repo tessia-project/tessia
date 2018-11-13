@@ -23,9 +23,8 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
-from tessia.cli.types import ACTION_TYPE
-from tessia.cli.types import CONSTANT
-from tessia.cli.types import JOB_TYPE
+from tessia.cli.types import ACTION_TYPE, JOB_PRIO, JOB_TYPE, \
+    JOB_STATE, REQUEST_STATE
 from tessia.cli.utils import fetch_item
 from tessia.cli.utils import wait_job_exec, wait_scheduler
 from time import sleep
@@ -66,7 +65,7 @@ JOB_FIELDS_DETAILED = (
 @click.option('job_type', '--type', type=JOB_TYPE,
               help='filter by machine type')
 @click.option('requester', '--owner', help='filter by owner login')
-@click.option('--state', type=CONSTANT, help='filter by request state')
+@click.option('--state', type=REQUEST_STATE, help='filter by request state')
 def req_list(request_id, **kwargs):
     """
     show the queue of requests or details of a request
@@ -163,7 +162,8 @@ def output(job_id):
 @click.option('--timeout', type=int,
               help="period in seconds after job times out")
 @click.option('--startdate', help="date when the job should be started")
-@click.option('priority', '--prio', type=int, help="job priority")
+@click.option('priority', '--prio', type=JOB_PRIO,
+              help="job priority, higher starts first")
 @click.option('--detach', is_flag=True,
               help="do not wait for output after submit")
 def submit(ctx, job_type, parmfile, **kwargs):
@@ -205,9 +205,9 @@ def submit(ctx, job_type, parmfile, **kwargs):
 @click.option('job_id', '--id', type=int, help="show details of a job id")
 @click.option('--params', is_flag=True, help="show the job parameters")
 @click.option('job_type', '--type', type=JOB_TYPE,
-              help='filter by machine type')
+              help='filter by execution machine type')
 @click.option('requester', '--owner', help='filter by owner login')
-@click.option('--state', type=CONSTANT, help='filter by request state')
+@click.option('--state', type=JOB_STATE, help='filter by request state')
 def list_(job_id, params, **kwargs):
     """
     show the queue of jobs or details of a job

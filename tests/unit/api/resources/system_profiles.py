@@ -19,6 +19,7 @@ Unit test for system_profiles resource module
 #
 # IMPORTS
 #
+from base64 import b64encode
 from tessia.server.api.resources.system_profiles import MARKER_HIDDEN_CRED
 from tessia.server.api.resources.system_profiles import MARKER_STRIPPED_SECRET
 from tessia.server.api.resources.system_profiles import SystemProfileResource
@@ -69,6 +70,54 @@ class TestSystemProfile(TestSecureResource):
             yield data
     # _entry_gen()
 
+    def _request_attach(self, disk_id, prof_id, user_cred, validate=True):
+        """
+        Perform an attach volume request
+        """
+        # attach a disk
+        auth = 'basic {}'.format(
+            b64encode(bytes(user_cred, 'ascii')).decode('ascii'))
+        url = '{}/{}/storage_volumes'.format(self.RESOURCE_URL, prof_id)
+        disk_data = {'unique_id': disk_id}
+        resp = self.app.post(
+            url,
+            headers={
+                'Authorization': auth, 'Content-type': 'application/json'},
+            data=json.dumps(disk_data)
+        )
+
+        if validate:
+            exp_body = {'profile_id': prof_id, 'volume_id': disk_id}
+            self.assertEqual(resp.status_code, 200)
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(exp_body, body)
+
+        return resp
+    # _req_attach()
+
+    def _request_detach(self, disk_id, prof_id, user_cred, validate=True):
+        """
+        Perform a detach volume request
+        """
+        # detach a disk
+        auth = 'basic {}'.format(
+            b64encode(bytes(user_cred, 'ascii')).decode('ascii'))
+        url = '{}/{}/storage_volumes/{}'.format(
+            self.RESOURCE_URL, prof_id, disk_id)
+        resp = self.app.delete(
+            url,
+            headers={
+                'Authorization': auth, 'Content-type': 'application/json'},
+        )
+
+        if validate:
+            self.assertEqual(resp.status_code, 200)
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(True, body)
+
+        return resp
+    # _req_detach()
+
     def _validate_resp(self, resp, msg, status_code):
         """
         Helper validator
@@ -118,47 +167,99 @@ class TestSystemProfile(TestSecureResource):
         self._test_add_all_fields_many_roles(logins)
     # test_add_all_fields_many_roles()
 
-    def test_add_cpc_multiple_profiles(self):
+    def test_add_cpc_multiple_disks(self):
         """
-        Test creation of multiple profiles for a CPC system
+        Test attachment of multiple disks to a CPC profile
         """
+        user_login = 'user_user@domain.com'
+
         # create a new CPC system
         system_obj = models.System(
             name="cpc_y",
             state="AVAILABLE",
-            modifier="user_user@domain.com",
+            modifier=user_login,
             type="cpc",
             hostname="hmc_y.domain.com",
             project=self._project_name,
             model="ZEC12_H20",
-            owner="user_user@domain.com",
+            owner=user_login,
         )
         self.db.session.add(system_obj)
         self.db.session.commit()
-        # attributes must be stored before the object expires
+        # attributes must be stored before the object expires in the session
         system_id = system_obj.id
         system_name = system_obj.name
+
+        # create disks to attach to profile
+        st_server_obj = models.StorageServer(
+            name='Storage server for CPC test',
+            model='ds8k',
+            type='DASD-FCP',
+            owner=user_login,
+            modifier=user_login,
+            project=self._db_entries['Project'][0]['name'],
+            desc='some description'
+        )
+        self.db.session.add(st_server_obj)
+        self.db.session.commit()
+        st_server_id = st_server_obj.id
+
+        disk_ids = []
+        for disk_id in ('1111', '2222', '3333'):
+            disk_obj = models.StorageVolume(
+                server_id=st_server_obj.id,
+                volume_id=disk_id,
+                type='DASD',
+                size=10000,
+                part_table={},
+                system_attributes={},
+                owner=user_login,
+                modifier=user_login,
+                project=self._db_entries['Project'][0]['name'],
+                desc='some description'
+            )
+            self.db.session.add(disk_obj)
+            self.db.session.commit()
+            disk_ids.append(disk_obj.id)
 
         # create profile
         data = next(self._get_next_entry)
         data['system'] = system_name
-        user_login = '{}:a'.format('user_user@domain.com')
-        resp = self._do_request('create', user_login, data)
-        created_id = int(resp.get_data(as_text=True))
+        # first profile will be set as default
+        data['default'] = True
+        user_cred = '{}:a'.format(user_login)
+        prof_id = self._request_and_assert('create', user_cred, data)
 
-        # validate the created object
-        created_entry = self.RESOURCE_MODEL.query.filter_by(
-            id=created_id).one()
+        # attach a disk
+        self._request_attach(disk_ids[0], prof_id, user_cred)
 
-        # try to add another
+        # try to attach a second disk - should fail
+        resp = self._request_attach(
+            disk_ids[1], prof_id, user_cred, validate=False)
+        one_disk_msg = 'A CPC profile can have only one volume associated'
+        self._validate_resp(resp, one_disk_msg, 422)
+
+        # try to add another profile - should work
         data = next(self._get_next_entry)
         data['system'] = system_name
-        resp = self._do_request('create', user_login, data)
-        msg = 'A CPC system can only have one system profile'
-        self._validate_resp(resp, msg, 422)
+        prof_another_id = self._request_and_assert('create', user_cred, data)
 
-        # clean up
-        self.db.session.delete(created_entry)
+        # attach a disk
+        self._request_attach(disk_ids[1], prof_another_id, user_cred)
+
+        # try to attach a second disk - should fail
+        resp = self._request_attach(
+            disk_ids[2], prof_another_id, user_cred, validate=False)
+        self._validate_resp(resp, one_disk_msg, 422)
+
+        # clean up (and also test detach)
+        self._request_detach(disk_ids[0], prof_id, user_cred)
+        self._request_detach(disk_ids[1], prof_another_id, user_cred)
+        models.SystemProfile.query.filter_by(id=prof_id).delete()
+        models.SystemProfile.query.filter_by(id=prof_another_id).delete()
+        for disk_id in disk_ids:
+            models.StorageVolume.query.filter_by(id=disk_id).delete()
+        models.StorageServer.query.filter_by(id=st_server_id).delete()
         models.System.query.filter_by(id=system_id).delete()
         self.db.session.commit()
     # test_add_cpc_multiple_profiles()

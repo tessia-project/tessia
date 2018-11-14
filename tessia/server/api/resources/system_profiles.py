@@ -258,19 +258,6 @@ class SystemProfileResource(SecureResource):
         # in case of no permissions an exception will be raised
         self._perman.can('UPDATE', flask_global.auth_user, target_system)
 
-        # cpc system: handle it differently
-        if target_system.type == 'CPC':
-            # for cpcs only one profile is created to associate the disk
-            # containing the live image used for netboot and possibly to
-            # define the amount of cpus and memory available for lpars
-            profile_exist = SystemProfile.query.filter_by(
-                system_id=target_system.id).first()
-            if profile_exist:
-                msg = 'A CPC system can only have one system profile'
-                raise BaseHttpError(422, msg=msg)
-            item = self.manager.create(properties)
-            return item.id
-
         def_profile = SystemProfile.query.filter_by(
             system_id=target_system.id, default=True).first()
         # system has no default profile: make the new profile the default
@@ -545,13 +532,14 @@ class SystemProfileResource(SecureResource):
             StorageVolume, properties['unique_id'], 'volume_id',
             'storage volume', id)
 
-        # for a cpc system only one disk can be associated which is regarded
-        # as the disk containing the live image used to netboot lpars.
+        # for a cpc system only one disk can be associated *per profile*
+        # which is regarded as the disk containing the live image used
+        # to netboot lpars.
         if system.type == 'CPC':
-            exist_vol = StorageVolume.query.filter_by(
-                system_id=system.id).first()
-            if exist_vol:
-                msg = 'A CPC system can have only one volume associated'
+            prof_vols = StorageVolumeProfileAssociation.query.filter_by(
+                profile_id=id).all()
+            if prof_vols:
+                msg = 'A CPC profile can have only one volume associated'
                 raise BaseHttpError(422, msg=msg)
 
         # volume not associated to the system yet: do it

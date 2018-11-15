@@ -63,7 +63,8 @@ class TestSystemProfile(TestSecureResource):
                 'cpu': 2,
                 'default': False,
                 'parameters': {},
-                'credentials': {'user': 'root', 'passwd': 'mypasswd'},
+                'credentials': {
+                    'admin-user': 'root', 'admin-password': 'mypasswd'},
                 'operating_system': 'rhel7.2'
             }
             index += 1
@@ -117,6 +118,35 @@ class TestSystemProfile(TestSecureResource):
 
         return resp
     # _req_detach()
+
+    def _update_cred(self, target_id, req_cred, user_login):
+        """
+        Update credentials field and validate merged content
+        """
+        target_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=target_id).one()
+        cur_cred = target_entry.credentials
+
+        data = {'id': target_id, 'credentials': req_cred}
+        resp = self._do_request('update', user_login, data)
+        # validate the response code
+        self.assertEqual(200, resp.status_code, resp.data)
+        # validate that the merged credentials contains the new values
+        merged_cred = {}
+        merged_cred.update(cur_cred)
+        for key, value in data['credentials'].items():
+            # None means unset value so we skip this key
+            if value is None:
+                try:
+                    merged_cred.pop(key)
+                except KeyError:
+                    pass
+                continue
+            merged_cred[key] = value
+        updated_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=target_id).one()
+        self.assertEqual(updated_entry.credentials, merged_cred)
+    # _update_cred()
 
     def _validate_resp(self, resp, msg, status_code):
         """
@@ -294,7 +324,7 @@ class TestSystemProfile(TestSecureResource):
         Test if api correctly reports error when a mandatory field is missing
         during creation.
         """
-        pop_fields = ['system', 'cpu', 'memory', 'default']
+        pop_fields = ['system', 'cpu', 'memory', 'default', 'credentials']
         self._test_add_missing_field('user_user@domain.com', pop_fields)
     # test_add_missing_field()
 
@@ -344,6 +374,40 @@ class TestSystemProfile(TestSecureResource):
         models.System.query.filter_by(id=system_id).delete()
         self.db.session.commit()
     # test_add_set_default()
+
+    def test_add_update_credentials(self):
+        """
+        Test scenarios concerning add/update of admin credentials
+        """
+        user_login = '{}:a'.format('user_user@domain.com')
+
+        # try to create profile without admin credentials
+        data = next(self._get_next_entry)
+        data['default'] = True
+        data['credentials'] = {}
+        resp = self._do_request('create', user_login, data)
+        no_user_msg = 'Credentials must contain OS admin username'
+        self._validate_resp(resp, no_user_msg, 422)
+        data['credentials'] = {'admin-user': 'username'}
+        resp = self._do_request('create', user_login, data)
+        no_passwd_msg = 'Credentials must contain OS admin password'
+        self._validate_resp(resp, no_passwd_msg, 422)
+
+        # now create successfully
+        data['credentials']['admin-password'] = 'password'
+        prof_id = self._request_and_assert('create', user_login, data)
+
+        # update only user
+        self._update_cred(prof_id, {'admin-user': 'username2'}, user_login)
+        # update only passwd
+        self._update_cred(prof_id, {'admin-password': 'password2'}, user_login)
+        # update both
+        self._update_cred(
+            prof_id,
+            {'admin-user': 'username3', 'admin-password': 'password3'},
+            user_login
+        )
+    # test_add_update_credentials()
 
     def test_add_update_default(self):
         """
@@ -436,6 +500,7 @@ class TestSystemProfile(TestSecureResource):
             ('parameters', True),
             ('credentials', 5),
             ('credentials', 'something_wrong'),
+            ('credentials', {'wrong_key': 'something_wrong'}),
             ('credentials', True),
             ('gateway', 5),
             ('gateway', True),
@@ -529,6 +594,9 @@ class TestSystemProfile(TestSecureResource):
         # generate a new profile entry
         data = next(self._get_next_entry)
         data['system'] = system_name
+        # first profile being created is set to default, set here so that
+        # validation later works
+        data['default'] = True
         user_login = '{}:a'.format('user_user@domain.com')
 
         # try to create profile without zvm password, causes error
@@ -537,48 +605,110 @@ class TestSystemProfile(TestSecureResource):
         self._validate_resp(resp, zvm_msg, 422)
 
         # add missing info and create profile correctly
-        data['credentials']['user'] = 'username'
-        data['credentials']['passwd'] = 'password'
-        data['credentials']['host_zvm'] = {
-            'passwd': 'vmpass',
-            'byuser': 'vmadmin'
-        }
-        resp = self._do_request('create', user_login, data)
-        created_id = int(resp.get_data(as_text=True))
+        data['credentials']['admin-user'] = 'username'
+        data['credentials']['admin-password'] = 'password'
+        data['credentials']['zvm-password'] = 'vmpass'
+        prof_id = self._request_and_assert('create', user_login, data)
         # add the end time for later comparison with datetime fields
         time_range.append(int(time.time() + 5))
 
-        # try to remove zvm password from credentials, causes error
-        data['id'] = created_id
-        host_zvm_orig = data['credentials'].pop('host_zvm')
-        resp = self._do_request('update', user_login, data)
-        self._validate_resp(resp, zvm_msg, 422)
+        # update zvm password
+        self._update_cred(prof_id, {'zvm-password': 'vmpass2'}, user_login)
+        # add logonby password
+        self._update_cred(prof_id, {'zvm-logonby': 'vmadmin'}, user_login)
+        # update both
+        self._update_cred(
+            prof_id,
+            {'zvm-password': 'vmpass3', 'zvm-logonby': 'vmadmin2'},
+            user_login
+        )
+        # update admin username
+        self._update_cred(
+            prof_id,
+            {'admin-user': 'username2'},
+            user_login
+        )
+        # update admin password
+        self._update_cred(
+            prof_id,
+            {'admin-password': 'password2'},
+            user_login
+        )
+        # update admin credentials
+        self._update_cred(
+            prof_id,
+            {'admin-user': 'username3', 'admin-password': 'password3'},
+            user_login
+        )
+        # update all
+        self._update_cred(
+            prof_id,
+            {
+                'admin-user': 'username4', 'admin-password': 'password4',
+                'zvm-password': 'vmpass4', 'zvm-logonby': 'vmadmin3'
+            },
+            user_login
+        )
+        # unset logonby
+        self._update_cred(prof_id, {'zvm-logonby': None}, user_login)
+        # set logonby again
+        self._update_cred(prof_id, {'zvm-logonby': 'vmadmin5'}, user_login)
+
+        # create another profile including logonby
+        data_2 = next(self._get_next_entry)
+        data_2['system'] = system_name
+        data_2['credentials']['admin-user'] = 'username'
+        data_2['credentials']['admin-password'] = 'password'
+        data_2['credentials']['zvm-password'] = 'vmpass'
+        data_2['credentials']['zvm-logonby'] = 'vmadmin'
+        prof_id_2 = self._request_and_assert('create', user_login, data_2)
+        # update zvm password
+        self._update_cred(prof_id_2, {'zvm-password': 'vmpass2'}, user_login)
+        # update logonby password
+        self._update_cred(prof_id_2, {'zvm-logonby': 'vmadmin2'}, user_login)
+        # update both
+        self._update_cred(
+            prof_id_2,
+            {'zvm-password': 'vmpass3', 'zvm-logonby': 'vmadmin3'},
+            user_login
+        )
+        # update all
+        self._update_cred(
+            prof_id_2,
+            {
+                'admin-user': 'username2', 'admin-password': 'password2',
+                'zvm-password': 'vmpass4', 'zvm-logonby': 'vmadmin3'
+            },
+            user_login
+        )
+        # unset logonby
+        self._update_cred(prof_id_2, {'zvm-logonby': None}, user_login)
 
         # test listing to make sure credentials' secrets are stripped
         # prepare expected response
         data['default'] = True
-        data['credentials']['host_zvm'] = host_zvm_orig
-        data['credentials']['user'] = MARKER_STRIPPED_SECRET
-        data['credentials']['passwd'] = MARKER_STRIPPED_SECRET
-        data['credentials']['host_zvm'] = {
-            'passwd': MARKER_STRIPPED_SECRET,
-            'byuser': MARKER_STRIPPED_SECRET,
-        }
+        data['credentials']['admin-user'] = 'username4'
+        data['credentials']['admin-password'] = MARKER_STRIPPED_SECRET
+        data['credentials']['zvm-password'] = MARKER_STRIPPED_SECRET
+        data['credentials']['zvm-logonby'] = 'vmadmin5'
+        data_2['credentials']['admin-user'] = 'username2'
+        data_2['credentials']['admin-password'] = MARKER_STRIPPED_SECRET
+        data_2['credentials']['zvm-password'] = MARKER_STRIPPED_SECRET
+        data_2['credentials'].pop('zvm-logonby')
         # validate list
         params = 'where={}'.format(json.dumps({'system': system_name}))
         resp = self._do_request(
             'list', '{}:a'.format(user_login), params)
-        self._assert_listed_or_read(resp, [data], time_range)
+        self._assert_listed_or_read(resp, [data, data_2], time_range)
         # validate read
         resp = self._do_request(
-            'get', '{}:a'.format(user_login), data['id'])
+            'get', '{}:a'.format(user_login), prof_id)
         self._assert_listed_or_read(
             resp, [data], time_range, read=True)
 
         # clean up
-        created_entry = self.RESOURCE_MODEL.query.filter_by(
-            id=created_id).one()
-        self.db.session.delete(created_entry)
+        self.RESOURCE_MODEL.query.filter_by(id=prof_id).delete()
+        self.RESOURCE_MODEL.query.filter_by(id=prof_id_2).delete()
         models.System.query.filter_by(id=system_id).delete()
         self.db.session.commit()
     # test_add_update_zvm()
@@ -593,24 +723,34 @@ class TestSystemProfile(TestSecureResource):
         user_login = '{}:a'.format('user_user@domain.com')
 
         # try to create profile with zvm password, causes error
-        data['credentials']['user'] = 'username'
-        data['credentials']['passwd'] = 'password'
-        data['credentials']['host_zvm'] = {
-            'passwd': 'vmpass',
-            'byuser': 'vmadmin'
-        }
+        data['credentials']['admin-user'] = 'username'
+        data['credentials']['admin-password'] = 'password'
+        data['credentials']['zvm-password'] = 'vmpass'
+        resp = self._do_request('create', user_login, data)
+        zvm_msg = 'zVM credentials should be provided for zVM guests only'
+        self._validate_resp(resp, zvm_msg, 422)
+
+        # try to create profile with zvm logonby, causes error
+        data['credentials'].pop('zvm-password')
+        data['credentials']['zvm-logonby'] = 'vmadmin'
         resp = self._do_request('create', user_login, data)
         zvm_msg = 'zVM credentials should be provided for zVM guests only'
         self._validate_resp(resp, zvm_msg, 422)
 
         # remove zvm info and create profile correctly
-        data['credentials'].pop('host_zvm')
+        data['credentials'].pop('zvm-logonby')
         resp = self._do_request('create', user_login, data)
         created_id = int(resp.get_data(as_text=True))
 
         # try to add zvm password to existing profile, causes error
         data['id'] = created_id
-        data['credentials']['host_zvm'] = {'passwd': 'vmpass'}
+        data['credentials']['zvm-password'] = 'vmpass'
+        resp = self._do_request('update', user_login, data)
+        self._validate_resp(resp, zvm_msg, 422)
+
+        # try to add zvm logonby to existing profile, causes error
+        data['credentials'].pop('zvm-password')
+        data['credentials']['zvm-logonby'] = 'vmadmin'
         resp = self._do_request('update', user_login, data)
         self._validate_resp(resp, zvm_msg, 422)
 
@@ -788,8 +928,8 @@ class TestSystemProfile(TestSecureResource):
         for entry in new_entries:
             if not entry.get('credentials'):
                 continue
-            for key in entry['credentials']:
-                entry['credentials'][key] = MARKER_STRIPPED_SECRET
+            if entry['credentials'].get('admin-password'):
+                entry['credentials']['admin-password'] = MARKER_STRIPPED_SECRET
         entries += new_entries
 
         # retrieve list

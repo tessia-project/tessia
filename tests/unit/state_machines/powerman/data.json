@@ -432,8 +432,8 @@
         {
             "cpu": 32,
             "credentials": {
-                "passwd": "passwd",
-                "user": "user"
+                "admin-password": "passwd",
+                "admin-user": "user"
             },
             "default": true,
             "memory": 1136000,
@@ -443,8 +443,8 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "mypasswd",
-              "user": "root"
+              "admin-password": "mypasswd",
+              "admin-user": "root"
             },
             "default": true,
             "gateway": null,
@@ -458,8 +458,8 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "mypasswd",
-              "user": "root"
+              "admin-password": "mypasswd",
+              "admin-user": "root"
             },
             "default": false,
             "gateway": null,
@@ -473,8 +473,8 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "somepasswd",
-              "user": "root"
+              "admin-password": "somepasswd",
+              "admin-user": "root"
             },
             "default": true,
             "gateway": null,
@@ -488,8 +488,8 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "somepasswd",
-              "user": "root"
+              "admin-password": "somepasswd",
+              "admin-user": "root"
             },
             "default": true,
             "gateway": null,
@@ -503,8 +503,8 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "kvmpasswd",
-              "user": "root"
+              "admin-password": "kvmpasswd",
+              "admin-user": "root"
             },
             "default": true,
             "gateway": null,
@@ -518,8 +518,8 @@
         {
             "cpu": 15,
             "credentials": {
-              "passwd": "zvm",
-              "user": "zvm"
+              "admin-password": "zvm",
+              "admin-user": "zvm"
             },
             "default": true,
             "gateway": null,
@@ -533,12 +533,10 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "root",
-              "user": "mypasswd",
-              "host_zvm": {
-                  "passwd": "zvmpasswd",
-                  "byuser": "vmadmin"
-              }
+              "admin-password": "root",
+              "admin-user": "mypasswd",
+              "zvm-password": "zvmpasswd",
+              "zvm-logonby": "vmadmin"
             },
             "default": true,
             "gateway": null,
@@ -552,11 +550,9 @@
         {
             "cpu": 5,
             "credentials": {
-              "passwd": "root",
-              "user": "mypasswd",
-              "host_zvm": {
-                  "passwd": "anotherzvmpasswd"
-              }
+              "admin-password": "root",
+              "admin-user": "mypasswd",
+              "zvm-password": "anotherzvmpasswd"
             },
             "default": false,
             "gateway": null,

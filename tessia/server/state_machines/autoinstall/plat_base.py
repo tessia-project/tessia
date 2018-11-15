@@ -88,8 +88,8 @@ class PlatBase(metaclass=abc.ABCMeta):
             self._hyp_type,
             self._hyp_system.name,
             self._hyp_system.hostname,
-            self._hyp_prof.credentials['user'],
-            self._hyp_prof.credentials['passwd'],
+            self._hyp_prof.credentials['admin-user'],
+            self._hyp_prof.credentials['admin-password'],
             None)
     # _create_hyp()
 
@@ -133,8 +133,8 @@ class PlatBase(metaclass=abc.ABCMeta):
         self._logger.info('rebooting the system now')
 
         hostname = system_profile.system_rel.hostname
-        user = system_profile.credentials['user']
-        password = system_profile.credentials['passwd']
+        user = system_profile.credentials['admin-user']
+        password = system_profile.credentials['admin-password']
 
         ssh_client = SshClient()
         ssh_client.login(hostname, user=user, passwd=password,

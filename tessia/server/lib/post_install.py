@@ -112,8 +112,8 @@ class PostInstallChecker(object):
         # parse target connection information
         self._hostname = profile_obj.system_rel.hostname
         try:
-            self._user = profile_obj.credentials['user']
-            self._passwd = profile_obj.credentials['passwd']
+            self._user = profile_obj.credentials['admin-user']
+            self._passwd = profile_obj.credentials['admin-password']
         except (AttributeError, TypeError):
             raise ValueError('Credentials in profile are missing')
 

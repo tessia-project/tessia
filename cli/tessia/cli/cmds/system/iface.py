@@ -296,9 +296,6 @@ def iface_edit(system, cur_name, **kwargs):
 
         # option was not specified: skip it
         if value is None:
-            # remove from object to prevent being part of request
-            if hasattr(item, key):
-                del item[key]
             continue
 
         # process attribute arg

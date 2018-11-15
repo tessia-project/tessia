@@ -242,8 +242,8 @@
         {
             "cpu": 2,
             "credentials": {
-                "user": "root",
-                "passwd": "somepasswd"
+                "admin-user": "root",
+                "admin-password": "somepasswd"
             },
             "name": "default lpar0",
             "default": true,

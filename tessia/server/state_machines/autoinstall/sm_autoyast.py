@@ -110,7 +110,7 @@ class SmAutoyast(SmBase):
         # collect repos, volumes, ifaces
         super().collect_info()
         self._logger.info('auto-generated password for VNC is %s',
-                          self._info['credentials']['vncpasswd'])
+                          self._info['credentials']['vnc-password'])
     # collect_info()
 
     def target_reboot(self):

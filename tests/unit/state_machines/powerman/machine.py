@@ -111,7 +111,7 @@ class TestPowerManagerMachine(TestCase):
                                         hyp_type is zvm
         """
         if hyp_type == 'zvm':
-            byuser = guest_prof.credentials['host_zvm'].get('byuser')
+            byuser = guest_prof.credentials.get('zvm-logonby')
             init_params = {}
             if byuser:
                 init_params['byuser'] = byuser
@@ -119,14 +119,14 @@ class TestPowerManagerMachine(TestCase):
                 hyp_type, hyp_prof_obj.system_rel.name,
                 hyp_prof_obj.system_rel.hostname,
                 guest_obj.name,
-                guest_prof.credentials['host_zvm']['passwd'],
+                guest_prof.credentials['zvm-password'],
                 init_params)
         else:
             hyp_args = (
                 hyp_type, hyp_prof_obj.system_rel.name,
                 hyp_prof_obj.system_rel.hostname,
-                hyp_prof_obj.credentials['user'],
-                hyp_prof_obj.credentials['passwd'], None)
+                hyp_prof_obj.credentials['admin-user'],
+                hyp_prof_obj.credentials['admin-password'], None)
         self.assertEqual(
             self._mock_hyp_cls.call_args_list[hyp_index], call(*hyp_args))
         self.assertEqual(
@@ -158,21 +158,21 @@ class TestPowerManagerMachine(TestCase):
         if (hyp_type != 'hmc' and os_obj and
                 os_obj.type.lower() in ('cms', 'zcms')):
             params = None
-            byuser = guest_prof_obj.credentials['host_zvm'].get('byuser')
+            byuser = guest_prof_obj.credentials.get('zvm-logonby')
             if byuser:
                 params = {'byuser': byuser}
             hyp_args = (
                 'zvm', hyp_prof_obj.system_rel.name,
                 hyp_prof_obj.system_rel.hostname,
                 guest_prof_obj.system_rel.name,
-                guest_prof_obj.credentials['host_zvm']['passwd'],
+                guest_prof_obj.credentials['zvm-password'],
                 params)
         else:
             hyp_args = (
                 hyp_type, hyp_prof_obj.system_rel.name,
                 hyp_prof_obj.system_rel.hostname,
-                hyp_prof_obj.credentials['user'],
-                hyp_prof_obj.credentials['passwd'], None)
+                hyp_prof_obj.credentials['admin-user'],
+                hyp_prof_obj.credentials['admin-password'], None)
 
         self.assertEqual(self._mock_hyp_cls.call_args_list[mock_index],
                          call(*hyp_args))
@@ -275,14 +275,14 @@ class TestPowerManagerMachine(TestCase):
                 call()
             )
             params = {'noipl': True, 'here': True}
-            byuser = guest_prof.credentials['host_zvm'].get('byuser')
+            byuser = guest_prof.credentials.get('zvm-logonby')
             if byuser:
                 params['byuser'] = byuser
             self.assertEqual(
                 self._mock_term_obj.login.call_args_list[mock_index],
                 call(system_prof.system_rel.hostname,
                      guest_prof.system_rel.name,
-                     guest_prof.credentials['host_zvm']['passwd'],
+                     guest_prof.credentials['zvm-password'],
                      params, timeout=15)
             )
             return
@@ -290,8 +290,8 @@ class TestPowerManagerMachine(TestCase):
         init_args = (
             'linux',
             system_prof.system_rel.name, system_prof.system_rel.hostname,
-            system_prof.credentials['user'],
-            system_prof.credentials['passwd'], None)
+            system_prof.credentials['admin-user'],
+            system_prof.credentials['admin-password'], None)
         self.assertEqual(
             self._mock_guest_cls.call_args_list[mock_index],
             call(*init_args)

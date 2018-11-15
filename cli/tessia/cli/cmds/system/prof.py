@@ -90,7 +90,8 @@ def prof_add(**kwargs):
             click.prompt(PASSWORD_PROMPT, hide_input=True,
                          confirmation_prompt=True, type=TEXT)
         )
-    kwargs['credentials'] = {'user': login[0], 'passwd': login[1]}
+    kwargs['credentials'] = {
+        'admin-user': login[0], 'admin-password': login[1]}
 
     zvm_pass = kwargs.pop('zvm_pass')
     zvm_by = kwargs.pop('zvm_by')
@@ -103,9 +104,9 @@ def prof_add(**kwargs):
         if not zvm_pass:
             zvm_pass = click.prompt(ZVM_PROMPT, hide_input=True,
                                     confirmation_prompt=True, type=TEXT)
-        kwargs['credentials']['host_zvm'] = {'passwd': zvm_pass}
+        kwargs['credentials']['zvm-password'] = zvm_pass
         if zvm_by:
-            kwargs['credentials']['host_zvm']['byuser'] = zvm_by
+            kwargs['credentials']['zvm-logonby'] = zvm_by
     elif zvm_pass or zvm_by:
         raise click.ClickException(
             'zVM credentials should be provided for zVM guests only')
@@ -193,74 +194,30 @@ def prof_edit(system, cur_name, **kwargs):
         zvm_pass = click.prompt(ZVM_PROMPT, hide_input=True,
                                 confirmation_prompt=True, type=TEXT)
     zvm_by = kwargs.pop('zvm_by')
-    # no credentials updated: nothing more to check, perform update
-    if not login and not zvm_pass and (zvm_by is None):
-        fetch_and_update(
-            client.SystemProfiles,
-            {'system': system, 'name': cur_name},
-            'system profile not found.',
-            kwargs)
-        click.echo('Item successfully updated.')
-        return
 
-    # to update the credentials field the existing data must be merged with
-    # new data
-    item = fetch_item(
+    creds = {}
+    # handle admin credentials
+    if login:
+        creds['admin-user'] = login[0]
+        creds['admin-password'] = login[1]
+    # handle zvm password
+    if zvm_pass:
+        creds['zvm-password'] = zvm_pass
+    # handle zvm logonby
+    if zvm_by:
+        creds['zvm-logonby'] = zvm_by
+    # allow unsetting logonby
+    elif isinstance(zvm_by, str):
+        creds['zvm-logonby'] = None
+    # a credential is updated: add to request
+    if creds:
+        kwargs['credentials'] = creds
+
+    fetch_and_update(
         client.SystemProfiles,
         {'system': system, 'name': cur_name},
-        'system profile not found.')
-    if item.credentials:
-        merged_creds = item.credentials.copy()
-    else:
-        merged_creds = {}
-
-    # login provided: parse it to json format expected by API
-    if login:
-        merged_creds['user'] = login[0]
-        merged_creds['passwd'] = login[1]
-
-    # process the zvm specific credentials
-    host_zvm = merged_creds.get('host_zvm', {})
-    if zvm_pass:
-        host_zvm['passwd'] = zvm_pass
-    # empty value: unset byuser parameter
-    if not zvm_by and isinstance(zvm_by, str):
-        try:
-            host_zvm.pop('byuser')
-        except KeyError:
-            pass
-    # byuser specified: add to credentials
-    elif zvm_by:
-        host_zvm['byuser'] = zvm_by
-
-    # zvm byuser specified but passwd not present: invalid combination
-    if host_zvm.get('byuser') and not host_zvm.get('passwd'):
-        raise click.ClickException('--zvm-by requires a zvm password to '
-                                   'be set (use --zvm-pass)')
-
-    # zvm information was specified but os wasn't: invalid combination
-    if host_zvm and not merged_creds.get('user'):
-        raise click.ClickException('OS login is required when zvm credentials '
-                                   'are specified (use --login)')
-
-    if host_zvm:
-        merged_creds['host_zvm'] = host_zvm
-    kwargs['credentials'] = merged_creds
-
-    # remove fields not set before sending the update request
-    parsed_dict = {}
-    for key, value in kwargs.items():
-        if value is not None:
-            if value:
-                parsed_dict[key] = value
-            # allow unsetting parameter when value is an empty string
-            else:
-                parsed_dict[key] = None
-        # value not being updated: remove from object to prevent being part of
-        # request
-        elif hasattr(item, key):
-            del item[key]
-    item.update(parsed_dict)
+        'system profile not found.',
+        kwargs)
     click.echo('Item successfully updated.')
 # prof_edit()
 
@@ -308,38 +265,7 @@ def prof_list(**kwargs):
         return ', '.join(parsed_ifaces)
     # parse_ifaces()
 
-    def translate_credentials(credentials):
-        """
-        Helper function to rename credentials fields to meaningful names
-        """
-        if not credentials:
-            return ''
-        elif isinstance(credentials, str):
-            return credentials
-
-        zvm_map = {'passwd': 'password', 'byuser': 'logonby'}
-        for key in zvm_map:
-            try:
-                credentials['host_zvm'][zvm_map[key]] = (
-                    credentials['host_zvm'].pop(key))
-            except KeyError:
-                pass
-
-        trans_map = {
-            'host_zvm': 'zvm-credentials',
-            'user': 'admin-user',
-            'passwd': 'admin-password'
-        }
-        for key in trans_map:
-            try:
-                credentials[trans_map[key]] = credentials.pop(key)
-            except KeyError:
-                pass
-        return credentials
-    # translate_credentials()
-
     parser_map = {
-        'credentials': translate_credentials,
         'memory': size_to_str,
         'storage_volumes': lambda vols: ', '.join(
             ['[{}/{}]'.format(vol.server, vol.volume_id) for vol in vols]),

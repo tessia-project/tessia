@@ -128,7 +128,7 @@ class TestPlatZvm(TestCase):
         """
         orig_cred = self._prof_entry.credentials
         new_cred = orig_cred.copy()
-        new_cred.pop('host_zvm')
+        new_cred.pop('zvm-password')
         self._prof_entry.credentials = new_cred
         self.db.session.add(self._prof_entry)
         self.db.session.commit()

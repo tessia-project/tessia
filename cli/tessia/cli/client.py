@@ -20,6 +20,7 @@ Extend the potion client with custom functionality
 # IMPORTS
 #
 from potion_client import Client as PotionClient
+from potion_client import resource as potion_resource
 from requests.auth import AuthBase
 from tessia.cli.config import CONF
 from tessia.cli.utils import build_expect_header
@@ -69,6 +70,41 @@ class Client(PotionClient):
         # __call__()
     # XKeyAuth
 
+    @staticmethod
+    def _patch_update():
+        """
+        Patch the Resource.update method in potion client
+        """
+        def patched_update(self, *args, **kwargs):
+            """
+            Patched version of Resource.update which send update requests
+            containing only the properties specified as arguments to the
+            method. If no properties are specified all of them are sent in the
+            request.
+            """
+            # pylint: disable=protected-access
+            orig_props = self._properties
+
+            # user specified which properties to update: set properties dict
+            # to contain only them so that the update request do not update
+            # unwanted fields
+            if args or kwargs:
+                self._properties = dict()
+                if '$uri' in orig_props:
+                    self._properties['$uri'] = orig_props['$uri']
+
+            # perform the request
+            self._properties.update(*args, **kwargs)
+            self.save()
+
+            # restore all properties
+            if args or kwargs:
+                orig_props.update(self._properties)
+                self._properties = orig_props
+        # patched_update()
+        potion_resource.Resource.update = patched_update
+    # _patch_update()
+
     def __init__(self, *args, **kwargs):
         """
         Constructor, initialize authentication information and default headers
@@ -86,6 +122,8 @@ class Client(PotionClient):
             RuntimeError: in case server url is missing from tessia client's
                           configuration
         """
+        self._patch_update()
+
         # basic_auth tuple (user, passwd) specified: use it as the credentials
         # for basic authorization for potion's client
         if kwargs.get('basic_auth') is not None:

@@ -430,8 +430,8 @@ class AnsibleMachine(BaseMachine):
                 entry = {
                     'name': system['name'],
                     'hostname': system_obj.hostname,
-                    'user': profile_obj.credentials['user'],
-                    'pass': profile_obj.credentials['passwd'],
+                    'user': profile_obj.credentials['admin-user'],
+                    'pass': profile_obj.credentials['admin-password'],
                 }
                 groups.setdefault(group, []).append(entry)
 

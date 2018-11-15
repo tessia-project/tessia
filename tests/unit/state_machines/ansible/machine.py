@@ -311,8 +311,8 @@ class TestAnsibleMachine(TestCase):
                         'ansible_ssh_pass={pwd}\n'.format(
                             name=system_obj.name,
                             hostname=system_obj.hostname,
-                            user=prof_obj.credentials['user'],
-                            pwd=prof_obj.credentials['passwd']),
+                            user=prof_obj.credentials['admin-user'],
+                            pwd=prof_obj.credentials['admin-password']),
                     )
                 ]
                 self._mock_open_fd.write.assert_has_calls(
@@ -362,8 +362,8 @@ class TestAnsibleMachine(TestCase):
                         'ansible_ssh_pass={pwd}\n'.format(
                             name=system_obj.name,
                             hostname=system_obj.hostname,
-                            user=prof_obj.credentials['user'],
-                            pwd=prof_obj.credentials['passwd']),
+                            user=prof_obj.credentials['admin-user'],
+                            pwd=prof_obj.credentials['admin-password']),
                     )
                 ]
                 self._mock_open_fd.write.assert_has_calls(

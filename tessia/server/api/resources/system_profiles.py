@@ -19,6 +19,7 @@ Resource definition
 #
 # IMPORTS
 #
+from copy import deepcopy
 from flask import g as flask_global
 from flask_potion import fields
 from flask_potion.routes import Route
@@ -215,7 +216,8 @@ class SystemProfileResource(SecureResource):
         return item, system
     # _fetch_and_assert_item()
 
-    def _strip_secrets(self, credentials):
+    @staticmethod
+    def _strip_secrets(credentials):
         """
         Strip all secrets from a credentials field
 
@@ -226,11 +228,44 @@ class SystemProfileResource(SecureResource):
             return
 
         for key in credentials:
-            if isinstance(credentials[key], dict):
-                self._strip_secrets(credentials[key])
+            if key in ('admin-user', 'zvm-logonby'):
                 continue
             credentials[key] = MARKER_STRIPPED_SECRET
     # _strip_secrets()
+
+    @staticmethod
+    def _verify_cred(target_system, cred_dict):
+        """
+        Verifies the correctness of the credentials dictionary.
+
+        Args:
+            target_system (System): db object
+            cred_dict (dict): credentials dict in format defined by schema
+
+        Raises:
+            BaseHttpError: if dict content is invalid
+        """
+        if not cred_dict.get('admin-user'):
+            raise BaseHttpError(
+                422, msg='Credentials must contain OS admin username')
+        if not cred_dict.get('admin-password'):
+            raise BaseHttpError(
+                422, msg='Credentials must contain OS admin password')
+
+        if target_system.type == 'ZVM':
+            # zvm guest missing hypervisor password: report as required
+            if 'zvm-password' not in cred_dict:
+                msg = 'For zVM guests the zVM password must be specified'
+                raise BaseHttpError(422, msg=msg)
+            # None means unset the value, so we remove the key
+            if 'zvm-logonby' in cred_dict and cred_dict['zvm-logonby'] is None:
+                cred_dict.pop('zvm-logonby')
+        # not a zvm guest but zvm information entered: report as invalid
+        elif (target_system.type != 'ZVM' and (
+                'zvm-password' in cred_dict or 'zvm-logonby' in cred_dict)):
+            msg = 'zVM credentials should be provided for zVM guests only'
+            raise BaseHttpError(422, msg=msg)
+    # _verify_cred()
 
     def do_create(self, properties):
         """
@@ -270,17 +305,7 @@ class SystemProfileResource(SecureResource):
             # target profile to make it an atomic operation
             API_DB.db.session.add(def_profile)
 
-        # zvm guest missing hypervisor password: report as required
-        if (target_system.type == 'ZVM' and
-                'host_zvm' not in properties['credentials']):
-            raise BaseHttpError(
-                422, msg='For zVM guests the zVM password must be specified')
-        # not a zvm guest but zvm information entered: report as invalid
-        elif (target_system.type != 'ZVM' and
-              'host_zvm' in properties['credentials']):
-            raise BaseHttpError(
-                422,
-                msg='zVM credentials should be provided for zVM guests only')
+        self._verify_cred(target_system, properties['credentials'])
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
@@ -462,18 +487,10 @@ class SystemProfileResource(SecureResource):
                 422, msg='Profiles cannot change their associated system')
 
         if 'credentials' in properties:
-            # zvm guest missing hypervisor password: report as required
-            if (item.system_rel.type == 'ZVM' and
-                    'host_zvm' not in properties['credentials']):
-                raise BaseHttpError(
-                    422, msg='For zVM guests the zVM password must be '
-                             'specified')
-            # not a zvm guest but zvm information entered: report as invalid
-            elif (item.system_rel.type != 'ZVM' and
-                  'host_zvm' in properties['credentials']):
-                raise BaseHttpError(
-                    422, msg='zVM credentials should be provided for zVM '
-                             'guests only')
+            update_creds = deepcopy(item.credentials)
+            update_creds.update(properties['credentials'])
+            self._verify_cred(item.system_rel, update_creds)
+            properties['credentials'] = update_creds
 
         # profile set as default: unset the current one
         if properties.get('default'):

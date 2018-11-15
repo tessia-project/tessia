@@ -1175,8 +1175,8 @@
         {
             "cpu": 4,
             "credentials": {
-                "passwd": "hmcpasswd",
-                "user": "hmcuser"
+                "admin-password": "hmcpasswd",
+                "admin-user": "hmcuser"
             },
             "default": true,
             "memory": 4096,
@@ -1186,8 +1186,8 @@
         {
             "cpu": 2,
             "credentials": {
-                "passwd": "somepasswd",
-                "user": "root"
+                "admin-password": "somepasswd",
+                "admin-user": "root"
             },
             "default": true,
             "hypervisor_profile": "CPC3/default CPC3",
@@ -1197,11 +1197,11 @@
             "parameters": {},
             "system": "CPC3LP55"
         },
-		{
+        {
             "cpu": 2,
             "credentials": {
-                "password": "somepasswd",
-                "username": "root"
+                "admin-password": "somepasswd",
+                "admin-user": "root"
             },
             "default": false,
             "hypervisor_profile": "CPC3/default CPC3",
@@ -1213,11 +1213,11 @@
             },
             "system": "CPC3LP55"
         },
-		{
+        {
             "cpu": 2,
             "credentials": {
-                "password": "somepasswd",
-                "username": "root"
+                "admin-password": "somepasswd",
+                "admin-user": "root"
             },
             "default": false,
             "hypervisor_profile": "CPC3/default CPC3",
@@ -1232,8 +1232,8 @@
         {
             "cpu": 2,
             "credentials": {
-                "passwd": "somepasswd",
-                "user": "root"
+                "admin-password": "somepasswd",
+                "admin-user": "root"
             },
             "default": false,
             "hypervisor_profile": "CPC3/default CPC3",
@@ -1246,8 +1246,8 @@
         {
             "cpu": 2,
             "credentials": {
-                "passwd": "somepasswd",
-                "user": "root"
+                "admin-password": "somepasswd",
+                "admin-user": "root"
             },
             "default": true,
             "hypervisor_profile": "CPC3/default CPC3",
@@ -1260,12 +1260,10 @@
         {
             "cpu": 2,
             "credentials": {
-                "passwd": "somepasswd",
-                "user": "root",
-                "host_zvm": {
-                    "passwd": "vmpasswd",
-                    "byuser": "vmadmin"
-                }
+                "admin-password": "somepasswd",
+                "admin-user": "root",
+                "zvm-password": "vmpasswd",
+                "zvm-logonby": "vmadmin"
             },
             "default": true,
             "hypervisor_profile": "CPC3LP54/lpar_cpc3lp54_install",
@@ -1278,8 +1276,8 @@
         {
             "cpu": 2,
             "credentials": {
-                "passwd": "somepasswd",
-                "user": "root"
+                "admin-password": "somepasswd",
+                "admin-user": "root"
             },
             "default": true,
             "hypervisor_profile": "CPC3LP55/default_CPC3LP55",
@@ -1289,11 +1287,11 @@
             "parameters": {},
             "system": "kvm054"
         },
-		{
+        {
             "cpu": 2,
             "credentials": {
-                "password": "somepasswd",
-                "username": "root"
+                "admin-password": "somepasswd",
+                "admin-user": "root"
             },
             "default": false,
             "hypervisor_profile": "CPC3LP55/default_CPC3LP55",
@@ -1308,8 +1306,8 @@
         {
             "cpu": 2,
             "credentials": {
-                "passwd": "somepasswd",
-                "user": "root"
+                "admin-password": "somepasswd",
+                "admin-user": "root"
             },
             "default": false,
             "hypervisor_profile": "CPC3LP55/default_CPC3LP55",

@@ -327,7 +327,7 @@ tasks:
         - myzvmpasswd
       - 'Item added successfully.'
     - - system prof-list --name=login_int --system=vmguest01
-      - "Credentials *: .*'zvm-credentials': {'password': '\\*\\*\\*\\*'"
+      - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
         # no login and no zvm specified
     - - - system prof-add --name=login_int2 --system=vmguest01
         # enter admin username
@@ -342,41 +342,41 @@ tasks:
         - myzvmpasswd
       - 'Item added successfully.'
     - - system prof-list --name=login_int2 --system=vmguest01
-      - "Credentials *: .*'zvm-credentials': {'password': '\\*\\*\\*\\*'"
+      - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
     - - system prof-add --name=default --system=vmguest01 --login=root:passwd --zvm-pass=vmpassword --zvm-by=vmadmin
       - 'Item added successfully.'
     - - system prof-list --name=default --system=vmguest01
-      - - "Credentials *: .*'zvm-credentials': {[^}]*'password': '\\*\\*\\*\\*'"
-        - "Credentials *: .*'zvm-credentials': {[^}]*'logonby': '\\*\\*\\*\\*'"
+      - - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'zvm-logonby': 'vmadmin'"
     - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword2 --zvm-by=
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'zvm-credentials': {'password': '\\*\\*\\*\\*'}"
+      - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
     # set zvm-by again
-    - - system prof-edit --name=default --system=vmguest01 --zvm-by=vmadmin
+    - - system prof-edit --name=default --system=vmguest01 --zvm-by=vmadmin2
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'zvm-credentials': {.*logonby': '\\*\\*\\*\\*'"
+      - "Credentials *: .*'zvm-logonby': 'vmadmin2'"
     # unset zvm-by without setting password
     - - system prof-edit --name=default --system=vmguest01 --zvm-by=
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'zvm-credentials': {'password': '\\*\\*\\*\\*'}"
+      - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
     # upate zvm password
     - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword3
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - "Credentials *: .*'zvm-credentials': {.*'password': '\\*\\*\\*\\*'"
+      - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
     # ask to update zvm password
     - - - system prof-edit --name=default --system=vmguest01 --ask-zvm-pass
         - myzvmpass
         - myzvmpass
       - 'Item successfully updated'
-    - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword4 --zvm-by=vmadmin2
+    - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword4 --zvm-by=vmadmin3
       - 'Item successfully updated'
     - - system prof-list --name=default --system=vmguest01
-      - - "Credentials *: .*'zvm-credentials': {[^}]*'password': '\\*\\*\\*\\*'"
-        - "Credentials *: .*'zvm-credentials': {[^}]*'logonby': '\\*\\*\\*\\*'"
+      - - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
+        - "Credentials *: .*'zvm-logonby': 'vmadmin3'"
   system_model:
     - - system model-list
       - 'Model name identifier    : ZGENERIC'
@@ -728,7 +728,7 @@ tasks:
         - mypasswd
       - Item added successfully.
     - - system prof-list --system=cpc3lp52 --name='login_int'
-      - - "Credentials *: .*'admin-user': '\\*\\*\\*\\*'"
+      - - "Credentials *: .*'admin-user': 'root'"
         - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
     - - system prof-add --system=cpc3lp52 --name='DASD5' --cpu=4 --memory= --login='root:mypasswd'
       - invalid memory size specified.
@@ -755,7 +755,7 @@ tasks:
         - mypasswd
       - Item successfully updated.
     - - system prof-list --system=cpc3lp52 --name='login_int'
-      - - "Credentials *: .*'admin-user': '\\*\\*\\*\\*'"
+      - - "Credentials *: .*'admin-user': 'root'"
         - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
       # The next default profile changes the status of the existing default profile to 'not default'
     - - system prof-add --system=cpc3lp52 --name='DASD10' --default --cpu=4 --login='root:mypasswd'

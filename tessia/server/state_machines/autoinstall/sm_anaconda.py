@@ -93,7 +93,7 @@ class SmAnaconda(SmBase):
         super().collect_info()
 
         self._logger.info('auto-generated password for VNC is %s',
-                          self._info['credentials']['vncpasswd'])
+                          self._info['credentials']['vnc-password'])
 
         for iface in self._info["ifaces"] + [self._gw_iface]:
             if iface["type"] == "OSA":

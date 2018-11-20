@@ -26,7 +26,7 @@ from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
 from xml.etree import ElementTree
 
-from time import sleep
+from time import time, sleep
 import logging
 
 #
@@ -62,7 +62,7 @@ class PlatKvm(PlatBase):
         # determine the type of devpath prefix used for devices, certain
         # distros use virtio-pci-* naming
         p_name = self._os.pretty_name
-        if p_name.startswith(UBUNTU_ID) or (
+        if (p_name.startswith(UBUNTU_ID) and self._os.major <= 1610) or (
                 p_name.startswith(RHEL_ID) and self._os.major == 7
                 and self._os.minor == 4):
             self._devpath_prefix = '/dev/disk/by-path/virtio-pci-0.{}.{}'
@@ -434,6 +434,9 @@ class PlatKvm(PlatBase):
 
         Args:
             system_profile (SystemProfile): db's entry
+
+        Raises:
+            TimeoutError: if guest takes more than 120 seconds to shutdown
         """
         # On kvm a soft reboot does not work as it only starts the distro
         # installer again. Instead we do a shutdown and then boot from
@@ -452,15 +455,40 @@ class PlatKvm(PlatBase):
         # get written to disk if we don't call sync before rebooting
         shell.run('sync')
         try:
-            shell.run('nohup shutdown; nohup killall sshd', timeout=1)
+            shell.run('nohup poweroff; nohup killall sshd', timeout=1)
         except TimeoutError:
             pass
         shell.close()
         ssh_client.logoff()
 
-        # TODO: when baselib has support to provide guest status, replace this
-        # sleep by polling until guest is off
-        sleep(5)
+        # TODO: use baselib when support to provide guest status is implemented
+        hyp_ssh_client = SshClient()
+        hyp_ssh_client.login(
+            self._hyp_system.hostname,
+            user=self._hyp_prof.credentials['admin-user'],
+            passwd=self._hyp_prof.credentials['admin-password'],
+            timeout=10)
+        hyp_shell = hyp_ssh_client.open_shell()
+        state_cmd = 'virsh domstate {}'.format(system_profile.system_rel.name)
+        cur_state = 'running'
+        timeout_wait = time() + 120
+        while time() <= timeout_wait:
+            ret, cur_state = hyp_shell.run(state_cmd)
+            if ret:
+                self._logger.warning(
+                    'failed to check guest state, got error: %s', cur_state)
+                continue
+            # any other state we assume it's suitable for rebooting
+            if cur_state not in ('running', 'shutdown', 'dying'):
+                cur_state = 'shut off'
+                break
+            sleep(0.5)
+
+        hyp_shell.close()
+        hyp_ssh_client.logoff()
+        if cur_state != 'shut off':
+            raise TimeoutError('Reboot timeout: the guest is taking too long '
+                               'to poweroff')
 
         self._hyp_obj.reboot(system_profile.system_rel.name, None)
     # reboot()

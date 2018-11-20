@@ -417,7 +417,7 @@ cpc3lp52.domain.com | SUCCESS => {
         "ansible_distribution_version": "16.04",
         "ansible_dns": {
             "nameservers": [
-                "192.168.200.241"
+                "127.0.0.53"
             ],
             "search": [
                 "domain.com"

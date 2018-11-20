@@ -247,8 +247,8 @@ class TestPlatKvm(TestCase):
         plat.reboot(self._profile_entry)
 
         hostname = self._profile_entry.system_rel.hostname
-        user = self._profile_entry.credentials['user']
-        password = self._profile_entry.credentials['passwd']
+        user = self._profile_entry.credentials['admin-user']
+        password = self._profile_entry.credentials['admin-password']
 
         # Makes sure the reboot procedure was properly executed.
         mock_ssh_client.login.assert_called_with(hostname, user=user,

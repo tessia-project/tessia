@@ -170,7 +170,7 @@ class PowerManagerMachine(BaseMachine):
         profile_obj.root_vol = root_vol
 
         if (profile_obj.system_rel.type.lower() == 'zvm' and
-                ('host_zvm' not in profile_obj.credentials)):
+                ('zvm-password' not in profile_obj.credentials)):
             raise ValueError('z/VM guest {} has no z/VM credentials '
                              'defined'.format(profile_obj.system_rel.name))
     # _check_profile()
@@ -341,7 +341,8 @@ class PowerManagerMachine(BaseMachine):
 
         init_params = (
             'hmc', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
-            hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
+            hyp_prof.credentials['admin-user'],
+            hyp_prof.credentials['admin-password'], None)
         start_params = (guest_prof.system_rel.name, guest_prof.cpu,
                         guest_prof.memory, params)
         return (init_params, start_params)
@@ -400,7 +401,8 @@ class PowerManagerMachine(BaseMachine):
         }
         init_params = (
             'kvm', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
-            hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
+            hyp_prof.credentials['admin-user'],
+            hyp_prof.credentials['admin-password'], None)
         start_params = (guest_prof.system_rel.name, guest_prof.cpu,
                         guest_prof.memory, params)
         return (init_params, start_params)
@@ -450,17 +452,15 @@ class PowerManagerMachine(BaseMachine):
             ifaces.append(result)
 
         # define args for the class constructor
-        # presence of 'host_zvm' was already validated by _check_profile
-        byuser = guest_prof.credentials['host_zvm'].get('byuser')
-        if byuser:
-            init_params = {'byuser': byuser}
+        if guest_prof.credentials.get('zvm-logonby'):
+            init_params = {'byuser': guest_prof.credentials['zvm-logonby']}
         else:
             init_params = None
 
         init_args = (
             'zvm', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             guest_prof.system_rel.name,
-            guest_prof.credentials['host_zvm']['passwd'],
+            guest_prof.credentials['zvm-password'],
             init_params)
 
         # define args for the start call
@@ -498,8 +498,8 @@ class PowerManagerMachine(BaseMachine):
             try:
                 guest_obj = Guest(
                     'linux', system_obj.name, system_obj.hostname,
-                    system_prof.credentials['user'],
-                    system_prof.credentials['passwd'], None)
+                    system_prof.credentials['admin-user'],
+                    system_prof.credentials['admin-password'], None)
                 # small timeout, we don't want to wait for long if the system
                 # is down
                 guest_obj.login(timeout=15)
@@ -515,18 +515,17 @@ class PowerManagerMachine(BaseMachine):
             raise ValueError(
                 'Cannot login to CMS on {}: no z/VM guest defined with '
                 'credentials'.format(system_obj.name))
-        if 'host_zvm' not in guest_prof.credentials:
+        if 'zvm-password' not in guest_prof.credentials:
             raise ValueError('z/VM guest {} has no z/VM credentials '
                              'defined'.format(guest_prof.system_rel.name))
         term_obj = Terminal()
         guest_params = {'here': True, 'noipl': True}
-        byuser = guest_prof.credentials['host_zvm'].get('byuser')
-        if byuser:
-            guest_params['byuser'] = byuser
+        if guest_prof.credentials.get('zvm-logonby'):
+            guest_params['byuser'] = guest_prof.credentials['zvm-logonby']
         try:
             term_obj.login(
                 system_obj.hostname, guest_prof.system_rel.name,
-                guest_prof.credentials['host_zvm']['passwd'],
+                guest_prof.credentials['zvm-password'],
                 # small timeout, we don't want to wait for long if the
                 # system is down
                 guest_params, timeout=15)
@@ -683,7 +682,8 @@ class PowerManagerMachine(BaseMachine):
 
         baselib_hyp = Hypervisor(
             hyp_type, hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
-            hyp_prof.credentials['user'], hyp_prof.credentials['passwd'], None)
+            hyp_prof.credentials['admin-user'],
+            hyp_prof.credentials['admin-password'], None)
         baselib_hyp.login()
         for guest_prof in guests:
             system_name = guest_prof.system_rel.name
@@ -703,17 +703,17 @@ class PowerManagerMachine(BaseMachine):
         """
         guest_name = guest_prof.system_rel.name
 
-        # presence of 'host_zvm' was already validated by _check_profile
-        byuser = guest_prof.credentials['host_zvm'].get('byuser')
         init_params = {}
-        if byuser:
-            init_params['byuser'] = byuser
+        try:
+            init_params['byuser'] = guest_prof.credentials['zvm-logonby']
+        except KeyError:
+            pass
 
         baselib_hyp = Hypervisor(
             'zvm', hyp_prof.system_rel.name,
             hyp_prof.system_rel.hostname,
             guest_name,
-            guest_prof.credentials['host_zvm']['passwd'],
+            guest_prof.credentials['zvm-password'],
             init_params)
         baselib_hyp.login()
         baselib_hyp.stop(guest_name, {})

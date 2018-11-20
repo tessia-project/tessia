@@ -41,8 +41,8 @@
         {
             "cpu": 32,
             "credentials": {
-                "passwd": "passwd",
-                "user": "user"
+                "admin-password": "passwd",
+                "admin-user": "user"
             },
             "default": true,
             "memory": 1136000,
@@ -52,8 +52,8 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "mypasswd",
-              "user": "root"
+              "admin-password": "mypasswd",
+              "admin-user": "root"
             },
             "default": true,
             "gateway": null,
@@ -67,8 +67,8 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "mypasswd",
-              "user": "root"
+              "admin-password": "mypasswd",
+              "admin-user": "root"
             },
             "default": false,
             "gateway": null,
@@ -82,8 +82,8 @@
         {
             "cpu": 2,
             "credentials": {
-              "passwd": "kvmpasswd",
-              "user": "root"
+              "admin-password": "kvmpasswd",
+              "admin-user": "root"
             },
             "default": true,
             "gateway": null,

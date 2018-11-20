@@ -107,6 +107,7 @@ def fetch_and_update(resource, search_fields, error_msg, update_dict):
         ClickException: in case update dict is empty
     """
     item = fetch_item(resource, search_fields, error_msg)
+
     parsed_dict = {}
     for key, value in update_dict.items():
         # allow unsetting parameter
@@ -114,11 +115,7 @@ def fetch_and_update(resource, search_fields, error_msg, update_dict):
             parsed_dict[key] = None
         elif value is not None:
             parsed_dict[key] = value
-        # value not being updated: remove from object to prevent being part of
-        # request
-        elif hasattr(item, key):
-            del item[key]
-    if len(parsed_dict) == 0:
+    if not parsed_dict:
         raise click.ClickException('no update criteria provided.')
 
     item.update(**parsed_dict)

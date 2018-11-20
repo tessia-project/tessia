@@ -57,16 +57,18 @@ class PlatZvm(PlatBase):
             ValueError: in case profile has no zVM password specified
         """
         try:
-            host_zvm = self._guest_prof.credentials['host_zvm']
+            zvm_pass = self._guest_prof.credentials['zvm-password']
         except KeyError:
             raise ValueError('zVM password not available in profile')
         params = {}
-        if 'byuser' in host_zvm:
-            params['byuser'] = host_zvm['byuser']
+        try:
+            params['byuser'] = self._guest_prof.credentials['zvm-logonby']
+        except KeyError:
+            pass
         hyp = Hypervisor(
             self._hyp_type, self._guest_prof.system_rel.name,
             self._hyp_system.hostname, self._guest_prof.system_rel.name,
-            host_zvm['passwd'], params)
+            zvm_pass, params)
         return hyp
     # _create_hyp()
 

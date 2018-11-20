@@ -246,8 +246,8 @@ class SmBase(metaclass=abc.ABCMeta):
         being installed.
         """
         hostname = self._profile.system_rel.hostname
-        user = self._profile.credentials['user']
-        password = self._profile.credentials['passwd']
+        user = self._profile.credentials['admin-user']
+        password = self._profile.credentials['admin-password']
 
         conn_timeout = time() + CONNECTION_TIMEOUT
         self._logger.info('Waiting for connection to be available (%s secs)',
@@ -435,7 +435,8 @@ class SmBase(metaclass=abc.ABCMeta):
             'server_hostname': urlsplit(self._autofile_url).hostname,
             'system_type': self._system.type,
             'credentials': self._profile.credentials,
-            'sha512rootpwd': crypt.crypt(self._profile.credentials["passwd"]),
+            'sha512rootpwd': (
+                crypt.crypt(self._profile.credentials["admin-password"])),
             'hostname': self._system.hostname,
             'autofile': self._autofile_url,
             'gw_iface': self._gw_iface,
@@ -452,7 +453,7 @@ class SmBase(metaclass=abc.ABCMeta):
             info['repos'].append(repo)
 
         # generate pseudo-random password for vnc session
-        info['credentials']['vncpasswd'] = ''.join(
+        info['credentials']['vnc-password'] = ''.join(
             random.sample(string.ascii_letters + string.digits, 8))
 
         # iterate over all available volumes and ifaces and filter data for

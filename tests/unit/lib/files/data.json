@@ -280,8 +280,8 @@
         {
             "cpu": 32,
             "credentials": {
-                "passwd": "passwd",
-                "user": "user"
+                "admin-password": "passwd",
+                "admin-user": "user"
             },
             "default": true,
             "memory": 1136000,
@@ -291,8 +291,8 @@
         {
             "cpu": 10,
             "credentials": {
-              "passwd": "mypasswd",
-              "user": "root"
+              "admin-password": "mypasswd",
+              "admin-user": "root"
             },
             "default": true,
             "gateway": null,
@@ -306,8 +306,8 @@
         {
             "cpu": 10,
             "credentials": {
-              "passwd": "mypasswd",
-              "user": "root"
+              "admin-password": "mypasswd",
+              "admin-user": "root"
             },
             "default": true,
             "gateway": null,

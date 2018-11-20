@@ -10,12 +10,12 @@
 
 # System authorization information
 auth --enableshadow --passalgo=sha512
-sshpw --username=root {{config["credentials"]["passwd"]}} --plaintext
+sshpw --username=root {{config["sha512rootpwd"]}} --iscrypted
 # Use network installation
 url --url="{{config["repos"][0]['url']}}"
 # Use graphical install
 graphical
-vnc --password={{config["credentials"]["vncpasswd"]}}
+vnc --password={{config["credentials"]["vnc-password"]}}
 # Run the Setup Agent on first boot
 firstboot --enable
 

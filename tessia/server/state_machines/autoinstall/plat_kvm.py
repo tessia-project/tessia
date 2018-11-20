@@ -441,8 +441,8 @@ class PlatKvm(PlatBase):
         self._logger.info('rebooting the system now')
 
         hostname = system_profile.system_rel.hostname
-        user = system_profile.credentials['user']
-        password = system_profile.credentials['passwd']
+        user = system_profile.credentials['admin-user']
+        password = system_profile.credentials['admin-password']
 
         ssh_client = SshClient()
         ssh_client.login(hostname, user=user, passwd=password,

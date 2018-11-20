@@ -129,8 +129,8 @@ class TestPlatBase(TestCase):
         self._mock_hypervisor.assert_called_with(
             "hmc", self._hyper_profile_entry.system_rel.name,
             self._hyper_profile_entry.system_rel.hostname,
-            self._hyper_profile_entry.credentials["user"],
-            self._hyper_profile_entry.credentials["passwd"],
+            self._hyper_profile_entry.credentials["admin-user"],
+            self._hyper_profile_entry.credentials["admin-password"],
             None)
         hyper.login.assert_called_with()
 
@@ -138,8 +138,8 @@ class TestPlatBase(TestCase):
         plat.reboot(self._profile_entry)
 
         hostname = self._profile_entry.system_rel.hostname
-        user = self._profile_entry.credentials['user']
-        password = self._profile_entry.credentials['passwd']
+        user = self._profile_entry.credentials['admin-user']
+        password = self._profile_entry.credentials['admin-password']
 
         # make sure the reboot procedure was properly executed
         mock_ssh_client = self._mock_ssh_client_cls.return_value

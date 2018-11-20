@@ -59,6 +59,18 @@ tasks:
       - Item added successfully.
   lpar:
     - - - system wizard
+      # wrong system type by purpose
+        # system name
+        - cp1lp10
+        # system type
+        - lparr
+        # hypervisor name
+        - cpc1
+        # system's hostname
+        - cp1lp10.example._com
+        # system's description
+        - a system to perform testing
+      # correct system type
         # system name
         - cp1lp10
         # system type
@@ -180,7 +192,43 @@ tasks:
         # choose subnet
         - "2"
         # ip description
-        - ip beloging to external iface of system cp1lp10
+        - ip belonging to external iface of system cp1lp10
+        # add more ifaces?
+        - y
+        # os name
+        - gw1-iface
+        # create new iface?
+        - y
+        # iface type, 1 = OSA
+        - "1"
+        # os name
+        - encf500
+        # layer2
+        - n
+        # ccwgroup
+        - f500,f501,f502
+        # require portno 1?
+        - n
+        # iface description
+        - external osa interface
+        # assign ip?
+        - y
+        # ip address (incorrect new one)
+        - 192.166.0.10
+        # not found, create new?
+        - y
+        # choose subnet
+        - "2"
+        # ip description
+        - ip belonging to external iface of system cp1lp10
+        # ip address (existing one)
+        - 192.168.0.10
+        # choose existing one?
+        - ""
+        # ip address (existing one)
+        - 192.168.0.10
+        # choose existing one?
+        - "1"
         # add more ifaces?
         - n
         # install now?
@@ -230,7 +278,7 @@ tasks:
         - 'MAC address *: aa:bb:cc:dd:ee:ff'
         - 'Description *: external osa interface'
     - - net ip-list --ip=192.168.0.10 --subnet=zone-b-s1920
-      - 'Description *: ip beloging to external iface of system cp1lp10'
+      - 'Description *: ip belonging to external iface of system cp1lp10'
     # create another profile reusing stuff
     - - - system wizard
         # system name

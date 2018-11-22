@@ -22,6 +22,7 @@ Module for the prof (system activation profiles) commands
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import CustomIntRange
 from tessia.cli.types import LOGIN, NAME, TEXT, USER_PASSWD
 from tessia.cli.utils import fetch_and_delete
@@ -40,6 +41,12 @@ PROFILE_FIELDS = (
     'cpu', 'memory', 'parameters', 'credentials', 'storage_volumes',
     'system_ifaces', 'gateway'
 )
+
+PROFILE_FIELDS_TABLE = (
+    'name', 'system', 'operating_system', 'cpu', 'memory', 'storage_volumes',
+    'system_ifaces', 'hypervisor_profile'
+)
+
 USERNAME_PROMPT = "OS admin's username"
 PASSWORD_PROMPT = "OS admin's password"
 ZVM_PROMPT = 'z/VM password'
@@ -222,6 +229,8 @@ def prof_edit(system, cur_name, **kwargs):
 # prof_edit()
 
 @click.command(name='prof-list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--system', required=True, type=NAME, help="the system to list")
 @click.option('--name', type=NAME, help="filter by profile-name")
 @click.option('--cpu', type=CustomIntRange(min=1),
@@ -248,6 +257,7 @@ def prof_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.SystemProfiles.instances(**parsed_filter)
@@ -273,9 +283,12 @@ def prof_list(**kwargs):
     }
 
     # present results
-    print_items(
-        PROFILE_FIELDS, client.SystemProfiles, parser_map, entries)
-
+    if long_info:
+        print_items(PROFILE_FIELDS, client.SystemProfiles, parser_map, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(PROFILE_FIELDS_TABLE, client.SystemProfiles, parser_map, entries,
+                    PrintMode.TABLE)
 # prof_list()
 
 CMDS = [prof_add, prof_del, prof_edit, prof_list]

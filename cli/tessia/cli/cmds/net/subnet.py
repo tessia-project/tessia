@@ -22,6 +22,7 @@ Module for the subnet command
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import SUBNET
 from tessia.cli.types import TEXT
 from tessia.cli.utils import fetch_and_delete
@@ -35,6 +36,11 @@ import click
 FIELDS = (
     'name', 'zone', 'address', 'gateway', 'dns_1', 'dns_2', 'vlan',
     'search_list', 'owner', 'project', 'modified', 'modifier', 'desc'
+)
+
+FIELDS_TABLE = (
+    'name', 'zone', 'address', 'gateway', 'dns_1', 'vlan', 'owner', 'project',
+    'desc'
 )
 
 #
@@ -117,13 +123,15 @@ def subnet_edit(zone, cur_name, **kwargs):
 # subnet_edit()
 
 @click.command(name='subnet-list')
-@click.option('--zone', help='the network zone to list')
+@click.option('--address', help="filter by specified address")
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--name', type=SUBNET,
               help='filter by subnet name')
-@click.option('--address', help="filter by specified address")
-@click.option('--vlan', type=click.INT, help="filter by specified vlan")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
+@click.option('--vlan', type=click.INT, help="filter by specified vlan")
+@click.option('--zone', help='the network zone to list')
 def subnet_list(**kwargs):
     """
     list the registered subnets
@@ -138,13 +146,17 @@ def subnet_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.Subnets.instances(**parsed_filter)
 
     # present results
-    print_items(
-        FIELDS, client.Subnets, None, entries)
+    if long_info:
+        print_items(FIELDS, client.Subnets, None, entries, PrintMode.LONG)
+    else:
+        print_items(FIELDS_TABLE, client.Subnets, None, entries,
+                    PrintMode.TABLE)
 # subnet_list()
 
 CMDS = [subnet_add, subnet_del, subnet_edit, subnet_list]

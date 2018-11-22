@@ -44,7 +44,7 @@ First of all let's create our project `Testing`:
 ```
 $ tess perm project-add --name='Testing' --desc='Client testing'
 Item added successfully.
-$ tess perm project-list
+$ tess perm project-list --long
 
 Name        : Admins
 Description : Group for built-in resources and admin users
@@ -58,7 +58,7 @@ Description : Client testing
 First look at the supported system types:
 
 ```
-$ tess system types
+$ tess system types --long
 
 Type name    : KVM
 Architecture : s390x
@@ -85,7 +85,7 @@ We are going to create a system for a new KVM guest on the LPAR `lpar68`.
 Let's check if our hypervisor system `lpar68` is already present in the tool:
 
 ```
-$ tess system list --type=LPAR
+$ tess system list --long --type=LPAR
 
 Name            : lpar68
 Hostname        : lpar68.domain.com
@@ -112,7 +112,7 @@ For more details see [here](getting_started.md#target-system-lpar).
 And what about KVM systems?
 
 ```
-$ tess system list --type=KVM
+$ tess system list --long --type=KVM
 No results were found.
 ```
 
@@ -122,7 +122,7 @@ The necessary options for the command can be seen in the help menu with `--help`
 ```
 $ tess system add --name=kvm25 --type=KVM --hostname=192.168.0.25 --desc='KVM for Testing' --project=Testing
 Item added successfully.
-$ tess system list --type=KVM
+$ tess system list --long --type=KVM
 
 Name            : kvm25
 Hostname        : 192.168.0.25
@@ -142,7 +142,7 @@ The field `Hypervisor name` is empty. It makes sense to associate the created sy
 ```
 $ tess system edit --name=kvm25 --hyp=lpar68
 Item successfully updated.
-$ tess system list --type=KVM
+$ tess system list --long --type=KVM
 
 Name            : kvm25
 Hostname        : 192.168.0.25
@@ -175,7 +175,7 @@ WWPN: `0x50050555050555e3`, `0x50050555051555e3`.
 Let's check first if such storage server is available in the tool:
 
 ```
-$ tess storage server-list
+$ tess storage server-list --long
 
 Name           : DS8K22
 Hostname       :
@@ -198,7 +198,7 @@ tess storage server-add --name=DS8K22 --model=DS8800 --type=DASD-FCP --project=T
 Let's see if perhaps our disk is already registered:
 
 ```
-$ tess storage vol-list --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --long --server=DS8K22 --id=1020304500000000
 No results were found.
 ```
 
@@ -234,7 +234,7 @@ In our case we will use multipathing enabled, and we will define two FCP paths:
 ```
 $ tess storage vol-add --server=DS8K22 --type=FCP --id=1020304500000000 --size=20gb --project=Testing --path 1900,0x50050555050555e3 --path 1940,0x50050555051555e3 --mpath=true --wwid=33005566777fff5f30000000000008888
 Item added successfully.
-$ tess storage vol-list --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --long --server=DS8K22 --id=1020304500000000
 
 Volume id                  : 1020304500000000
 Storage server             : DS8K22
@@ -288,7 +288,7 @@ We were provided with IP address `192.168.0.25` for our `kvm25` system. Let's ch
 First let's check available network zones and subnets with `net zone-list` and `net subnet-list` commands:
 
 ```
-$ tess net zone-list
+$ tess net zone-list --long
 
 Zone name     : Production zone
 Owner         : admin
@@ -309,7 +309,7 @@ Description   : Network zone for testing systems
 Assume we already know that our lpar68 is located in the `Testing zone` zone, so check subnets in it:
 
 ```
-$ tess net subnet-list --zone='Testing zone'
+$ tess net subnet-list --long --zone='Testing zone'
 
 Subnet name     : CPC50 shared
 Network zone    : Testing zone
@@ -338,7 +338,7 @@ For more details see [here](getting_started.md#network-zone).
 Let's check if IP address `192.168.0.25` is registered in the subnet:
 
 ```
-$ tess net ip-list --subnet='CPC50 shared' --ip=192.168.0.25
+$ tess net ip-list --long --subnet='CPC50 shared' --ip=192.168.0.25
 
 IP address        : 192.168.0.25
 Part of subnet    : CPC50 shared
@@ -393,7 +393,7 @@ The provided IP address may be assigned to the interface at once. Don't forget t
 ```
 $ tess system iface-add --system=kvm25 --name='KVM macvtap' --type=MACVTAP --desc='KVM macvtap interface' --osname=eth0 --hostiface='enccw0.0.f500' --mac=aa:bb:cc:dd:ee:11 --subnet='CPC50 shared' --ip=192.168.0.25 --system=kvm25
 Item added successfully.
-$ tess system iface-list --system=kvm25
+$ tess system iface-list --long --system=kvm25
 
 Interface name             : KVM macvtap
 Operating system name      : eth0
@@ -409,7 +409,7 @@ Description                : KVM macvtap interface
 We can see that the interface is associated with the IP address. And we can also see that the IP address is already associated with the `kvm25` system:
 
 ```
-$ tess net ip-list --subnet='CPC50 shared' --ip=192.168.0.25
+$ tess net ip-list --long --subnet='CPC50 shared' --ip=192.168.0.25
 
 IP address        : 192.168.0.25
 Part of subnet    : CPC50 shared
@@ -460,7 +460,7 @@ Let's first create a profile for `lpar68`:
 ```
 $ tess system prof-add --system=lpar68 --name='profile1' --cpu=4 --memory=2gib --login='root:hyp_passwd'
 Item added successfully.
-$ tess system prof-list --system=lpar68
+$ tess system prof-list --long --system=lpar68
 
 Profile name                : profile1
 System                      : lpar68
@@ -483,7 +483,7 @@ Let's define the activation profile for `kvm25` with the name `profile2`:
 ```
 $ tess system prof-add --system=kvm25 --name='profile2' --cpu=2 --memory=1gib --login='root:mypasswd' --hyp=profile1
 Item added successfully.
-$ tess system prof-list --system=kvm25
+$ tess system prof-list --long --system=kvm25
 
 Profile name                : profile2
 System                      : kvm25
@@ -504,7 +504,7 @@ Now let's attach our network interface to the `kvm25` system profile:
 ```
 $ tess system iface-attach --system=kvm25 --profile='profile2' --iface='KVM macvtap'
 Network interface attached successfully.
-$ tess system iface-list --system=kvm25
+$ tess system iface-list --long --system=kvm25
 
 Interface name             : KVM macvtap
 Operating system name      : eth0
@@ -522,7 +522,7 @@ Let's also attach the FCP disk to the system profile:
 ```
 $ tess system vol-attach --system=kvm25 --profile=profile2 --server=DS8K22 --vol=1020304500000000
 Volume attached successfully.
-$ tess storage vol-list --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --long --server=DS8K22 --id=1020304500000000
 
 Volume id                  : 1020304500000000
 Storage server             : DS8K22
@@ -543,7 +543,7 @@ Description                :
 Check the profile for the `kvm25` system now:
 
 ```
-$ tess system prof-list --system=kvm25
+$ tess system prof-list --long --system=kvm25
 
 Profile name                : profile2
 System                      : kvm25
@@ -568,7 +568,7 @@ A package repository must be available for the installation. Let's create a repo
 ```
 $ tess repo add --name=RHEL7.4-GA --url=http://distro.domain.com/redhat/s390x/RHEL7.4/DVD/ --os=rhel7.4 --kernel=images/kernel.img --initrd=images/initrd.img --project=Testing
 Item added successfully.
-$ tess repo list
+$ tess repo list --long
 
 Repository name : RHEL7.4-GA
 Installable OS  : rhel7.4

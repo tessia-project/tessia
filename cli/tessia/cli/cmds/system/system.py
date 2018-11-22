@@ -23,6 +23,7 @@ from tessia.cli.client import Client
 from tessia.cli.cmds.job.job import cancel, output
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import CONSTANT, CustomIntRange, HOSTNAME, \
     VERBOSITY_LEVEL, NAME, NAME_URL
 from tessia.cli.utils import fetch_and_delete
@@ -46,6 +47,10 @@ STATE_FIELDS = (
 SYSTEM_FIELDS = (
     'name', 'hostname', 'hypervisor', 'type', 'model', 'state', 'owner',
     'project', 'modified', 'modifier', 'desc'
+)
+
+SYSTEM_FIELDS_TABLE = (
+    'name', 'hostname', 'type', 'model', 'state', 'owner', 'project'
 )
 
 #
@@ -162,6 +167,8 @@ def edit(cur_name, **kwargs):
 @click.option('--name', type=NAME, help="filter by system name")
 @click.option('hypervisor', '--hyp', type=NAME,
               help="filter by specified hypervisor")
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--model', type=CONSTANT, help="filter by specified model")
 @click.option('--type', type=CONSTANT, help="filter by specified type")
 @click.option('--state', type=CONSTANT, help="filter by specified state")
@@ -174,13 +181,18 @@ def list_(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.Systems.instances(**parsed_filter)
 
     # present results
-    print_items(
-        SYSTEM_FIELDS, client.Systems, None, entries)
+    if long_info:
+        print_items(SYSTEM_FIELDS, client.Systems, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(SYSTEM_FIELDS_TABLE, client.Systems, None, entries,
+                    PrintMode.TABLE)
 # list_()
 
 @click.command(name='poweroff')
@@ -300,7 +312,9 @@ def poweron(ctx, name, **kwargs):
 # poweron()
 
 @click.command(name='types')
-def types():
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
+def types(**kwargs):
     """
     list the supported system types
     """
@@ -310,12 +324,18 @@ def types():
     entries = client.SystemTypes.instances()
 
     # present results
-    print_items(
-        TYPE_FIELDS, client.SystemTypes, None, entries)
+    if kwargs.pop('long_info'):
+        print_items(TYPE_FIELDS, client.SystemTypes, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(TYPE_FIELDS, client.SystemTypes, None, entries,
+                    PrintMode.TABLE)
 # types()
 
 @click.command(name='states')
-def states():
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
+def states(**kwargs):
     """
     list the supported system states
     """
@@ -325,8 +345,12 @@ def states():
     entries = client.SystemStates.instances()
 
     # present results
-    print_items(
-        STATE_FIELDS, client.SystemStates, None, entries)
+    if kwargs.pop('long_info'):
+        print_items(STATE_FIELDS, client.SystemStates, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(STATE_FIELDS, client.SystemStates, None, entries,
+                    PrintMode.TABLE)
 # states()
 
 CMDS = [add, del_, edit, autoinstall, list_, poweroff, poweron, types, states]

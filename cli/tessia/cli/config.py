@@ -66,7 +66,7 @@ DEFAULT_CONF = {
 # CODE
 #
 
-class Config(object):
+class Config():
     """Handles parsing of the configuration file"""
 
     # global cfg file path

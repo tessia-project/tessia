@@ -24,6 +24,7 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
+from tessia.cli.output import PrintMode
 from tessia.cli.types import CustomIntRange, FCP_PATH, MIB_SIZE, NAME, \
     SCSI_WWID, VOLUME_ID
 from tessia.cli.utils import fetch_and_delete
@@ -45,9 +46,16 @@ FIELDS = (
     'system_attributes', 'system_profiles', 'pool', 'owner', 'project',
     'modified', 'modifier', 'desc'
 )
+
+FIELDS_TABLE = (
+    'volume_id', 'server', 'size', 'type', 'system', 'owner', 'project',
+    'system_profiles'
+)
+
 PART_FIELDS = (
     'number', 'size', 'type', 'filesystem', 'mount point', 'mount options'
 )
+
 TYPE_FIELDS = (
     'name', 'desc'
 )
@@ -271,7 +279,7 @@ def part_init(server, volume_id, label):
               help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
-def part_list(server, volume_id, **kwargs):
+def part_list(server, volume_id):
     """
     print the volume's partition table
     """
@@ -534,6 +542,8 @@ def vol_edit(server, cur_id, **kwargs):
 # vol_edit()
 
 @click.command(name='vol-list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 # set the parameter name after the model's attribute name to save on typing
 @click.option('--server', help='the storage server to list')
 @click.option('volume_id', '--id', type=VOLUME_ID, help='filter by volume id')
@@ -556,26 +566,30 @@ def vol_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'volume_id': False}
     entries = client.StorageVolumes.instances(**parsed_filter)
-
+    parser_map = {'size': size_to_str,
+                  'system_profiles':
+                  lambda prof_list: ', '.join(
+                      ['[{}]'.format(prof.name) for prof in prof_list]),
+                 }
     # present results
-    print_items(
-        FIELDS,
-        client.StorageVolumes,
-        {'size': size_to_str,
-         'system_profiles':
-         lambda prof_list: ', '.join(
-             ['[{}]'.format(prof.name) for prof in prof_list]),
-        },
-        entries
-    )
+    if long_info:
+        print_items(FIELDS, client.StorageVolumes, parser_map, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(FIELDS_TABLE, client.StorageVolumes, parser_map, entries,
+                    PrintMode.TABLE)
 
 # vol_list()
 
 @click.command(name='vol-types')
-def vol_types():
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
+def vol_types(**kwargs):
     """
     list the supported volume types
     """
@@ -584,8 +598,12 @@ def vol_types():
     entries = client.VolumeTypes.instances()
 
     # present results
-    print_items(
-        TYPE_FIELDS, client.VolumeTypes, None, entries)
+    if kwargs.pop('long_info'):
+        print_items(TYPE_FIELDS, client.VolumeTypes, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(TYPE_FIELDS, client.VolumeTypes, None, entries,
+                    PrintMode.TABLE)
 
 # vol_types()
 

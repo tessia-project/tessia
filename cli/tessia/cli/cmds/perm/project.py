@@ -22,6 +22,7 @@ Module for the project subcommands
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import NAME
 from tessia.cli.types import TEXT
 from tessia.cli.utils import fetch_and_delete
@@ -93,6 +94,8 @@ def project_edit(cur_name, **kwargs):
 # project_edit()
 
 @click.command(name='project-list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--name', type=NAME, help="list specified project only")
 def project_list(**kwargs):
     """
@@ -101,13 +104,16 @@ def project_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.Projects.instances(**parsed_filter)
 
     # present results
-    print_items(
-        FIELDS, client.Projects, None, entries)
+    if long_info:
+        print_items(FIELDS, client.Projects, None, entries, PrintMode.LONG)
+    else:
+        print_items(FIELDS, client.Projects, None, entries, PrintMode.TABLE)
 
 # project_list()
 

@@ -22,6 +22,7 @@ Module for the zone (network zones) command
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import NAME
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
@@ -33,6 +34,10 @@ import click
 #
 FIELDS = (
     'name', 'owner', 'project', 'modified', 'modifier', 'desc'
+)
+
+FIELDS_TABLE = (
+    'name', 'owner', 'project', 'desc'
 )
 
 #
@@ -98,6 +103,8 @@ def zone_edit(cur_name, **kwargs):
 # zone_edit()
 
 @click.command(name='zone-list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--name', type=NAME, help="filter by zone name")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
@@ -108,14 +115,16 @@ def zone_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.NetZones.instances(**parsed_filter)
 
     # present results
-    print_items(
-        FIELDS, client.NetZones, None, entries)
-
+    if long_info:
+        print_items(FIELDS, client.NetZones, None, entries, PrintMode.LONG)
+    else:
+        print_items(FIELDS_TABLE, client.NetZones, None, entries, PrintMode.TABLE)
 # zone_list()
 
 CMDS = [zone_add, zone_del, zone_edit, zone_list]

@@ -79,12 +79,6 @@ def fetch_and_delete(resource, search_fields, error_msg):
         resource (Client.Resource): rest resource model
         search_fields (dict): filters for search criteria
         error_msg (str): error message in case of error
-
-    Returns:
-        None
-
-    Raises:
-        None
     """
     item = fetch_item(resource, search_fields, error_msg)
     item.destroy()
@@ -194,9 +188,6 @@ def size_to_str(size):
 
     Returns:
         str: formatted size with its unit
-
-    Raises:
-        None
     """
     units = ['MiB', 'GiB', 'TiB']
     max_units = len(units) - 1
@@ -243,12 +234,12 @@ def str_to_size(size_str):
 
     # decimal units are converted to bytes and then to mebibytes
     dec_units = ('KB', 'MB', 'GB', 'TB')
-    for i in range(0, len(dec_units)):
+    for index, unit in enumerate(dec_units):
         # unit used is different: try next
-        if not size_str.endswith(dec_units[i]):
+        if not size_str.endswith(unit):
             continue
         try:
-            size_int = int(size_str[:-2]) * pow(1000, i+1)
+            size_int = int(size_str[:-2]) * pow(1000, index+1)
         except ValueError:
             raise ValueError(
                 'Invalid size format: {}'.format(size_str)) from None
@@ -257,12 +248,12 @@ def str_to_size(size_str):
 
     # binary units are just divided/multipled by powers of 2
     bin_units = ('KIB', 'MIB', 'GIB', 'TIB')
-    for i in range(0, len(bin_units)):
+    for index, unit in enumerate(bin_units):
         # unit used is different: try next
-        if not size_str.endswith(bin_units[i]):
+        if not size_str.endswith(unit):
             continue
         try:
-            size_int = int(int(size_str[:-3]) * pow(1024, i-1))
+            size_int = int(int(size_str[:-3]) * pow(1024, index-1))
         except ValueError:
             raise ValueError(
                 'Invalid size format: {}'.format(size_str)) from None
@@ -280,9 +271,6 @@ def version_verify(logger, response):
     Args:
         logger (logging.Logger): logger instance
         response (requests.Response): response to be evaluated
-
-    Returns:
-        None
 
     Raises:
         ClickException: in case validation fails

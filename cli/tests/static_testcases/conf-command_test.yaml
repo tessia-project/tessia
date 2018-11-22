@@ -63,11 +63,14 @@ tasks:
     - - conf key-gen --login=dev1@example.com --password=password1 --desc='auth token for dev1'
       - Key successfully created and added to client configuration.
     - - - conf key-gen --login=dev1@example.com --desc='auth token for dev1'
-        - password    
+        - password
       - Key successfully created and added to client configuration.
     - - conf show
       - 'Authentication key in use :'
     - - conf key-list
+      - - ' *Key Owner *| *Key ID *| *Date created *| *Last used *| *Description'
+        - ' *dev1@example.com *|'
+    - - conf key-list --long
       - 'Key Owner    : dev1@example.com'
     - - - conf key-del
         - dev1@example.com

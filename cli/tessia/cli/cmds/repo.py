@@ -22,6 +22,7 @@ Module for package repositories commands
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import NAME
 from tessia.cli.types import URL
 from tessia.cli.utils import fetch_and_delete
@@ -35,6 +36,11 @@ import click
 MODEL_FIELDS = (
     'name', 'operating_system', 'url', 'kernel', 'initrd', 'owner',
     'project', 'modified', 'modifier', 'desc'
+)
+
+MODEL_FIELDS_TABLE = (
+    'name', 'operating_system', 'url', 'kernel', 'initrd', 'owner',
+    'project'
 )
 
 #
@@ -116,24 +122,31 @@ def edit(cur_name, **kwargs):
 # edit()
 
 @repo.command(name='list')
-@click.option('--name', type=NAME, help="filter by repository name")
-@click.option('--url', type=URL, help="filter by network url")
-@click.option('operating_system', '--os', help="filter by operating system")
-@click.option('--kernel', help="filter by kernel path")
 @click.option('--initrd', help="filter by initrd path")
+@click.option('--kernel', help="filter by kernel path")
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
+@click.option('--name', type=NAME, help="filter by repository name")
+@click.option('operating_system', '--os', help="filter by operating system")
 @click.option('--owner', help="filter by owner")
 @click.option('--project', help="filter by project")
+@click.option('--url', type=URL, help="filter by network url")
 def list_(**kwargs):
     """
     list the available repositories
     """
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     # fetch data from server
     entries = client.Repositories.instances(**parsed_filter)
     # present results
-    print_items(
-        MODEL_FIELDS, client.Repositories, None, entries)
+    if long_info:
+        print_items(MODEL_FIELDS, client.Repositories, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(MODEL_FIELDS_TABLE, client.Repositories, None, entries,
+                    PrintMode.TABLE)
 # list_()

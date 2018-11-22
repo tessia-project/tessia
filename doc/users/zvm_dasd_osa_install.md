@@ -44,7 +44,7 @@ First of all let's create our project `Testing`:
 ```
 $ tess perm project-add --name='Testing' --desc='Client testing'
 Item added successfully.
-$ tess perm project-list
+$ tess perm project-list --long
 
 Name        : Admins
 Description : Group for built-in resources and admin users
@@ -58,7 +58,7 @@ Description : Client testing
 First look at the supported system types:
 
 ```
-$ tess system types
+$ tess system types --long
 
 Type name    : KVM
 Architecture : s390x
@@ -85,7 +85,7 @@ We are going to create a system for zVM guest `vm70002`. The zVM hypervisor is a
 Let's check if our hypervisor system `lpar70` is already present in the tool:
 
 ```
-$ tess system list --name lpar70
+$ tess system list --long --name lpar70
 No results were found.
 ```
 
@@ -95,7 +95,7 @@ The necessary options for the command can be seen in the help menu with `--help`
 ```
 $ tess system add --name=lpar70 --type=LPAR --hostname=lpar70.domain.com --desc='ZVMs in Testing zone' --project=Testing
 Item added successfully.
-$ tess system list --name lpar70
+$ tess system list --long --name lpar70
 
 Name            : lpar70
 Hostname        : lpar70.domain.com
@@ -115,7 +115,7 @@ Let's create zVM system `vm70002` using the host system `lpar70` as its hypervis
 ```
 $ tess system add --name=vm70002 --hyp=lpar70 --type=ZVM --hostname=vm70002.domain.com --desc='zVM for testing' --project=Testing
 Item added successfully.
-$ tess system list --type=ZVM
+$ tess system list --long --type=ZVM
 Name            : vm70002
 Hostname        : vm70002.domain.com
 Hypervisor name : lpar70
@@ -138,7 +138,7 @@ We were provided with IP address `192.168.0.30` for our `vm70002` system. Let's 
 First let's check available network zones and subnets with `net zone-list` and `net subnet-list` commands:
 
 ```
-$ tess net zone-list
+$ tess net zone-list --long
 
 Zone name     : Production zone
 Owner         : admin
@@ -159,7 +159,7 @@ Description   : Network zone for testing systems
 Assume we already know that `lpar70` is located in the `Testing zone`, so check subnets in it:
 
 ```
-$ tess net subnet-list --zone='Testing zone'
+$ tess net subnet-list --long --zone='Testing zone'
 
 Subnet name     : CPC50 shared
 Network zone    : Testing zone
@@ -188,7 +188,7 @@ For more details see [here](getting_started.md#network-zone).
 Let's check if IP address `192.168.0.30` is registered in the subnet:
 
 ```
-$ tess net ip-list --subnet='CPC50 shared' --ip=192.168.0.30
+$ tess net ip-list --long --subnet='CPC50 shared' --ip=192.168.0.30
 
 IP address        : 192.168.0.30
 Part of subnet    : CPC50 shared
@@ -244,7 +244,7 @@ The provided IP address may be assigned to the interface at once. Don't forget t
 ```
 $ tess system iface-add --system=vm70002 --name='default osa' --type=OSA --osname=enccw0.0.f500 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --subnet='CPC50 shared' --ip=192.168.0.30 --desc='default gateway interface'
 Item added successfully.
-$ tess system iface-list --system=vm70002
+$ tess system iface-list --long --system=vm70002
 
 Interface name             : default osa
 Operating system name      : enccw0.0.f500
@@ -260,7 +260,7 @@ Description                : default gateway interface
 We can see that the interface is associated with the IP address. And we can also see that the IP address is already associated with the `vm70002` system:
 
 ```
-$ tess net ip-list --subnet='CPC50 shared' --ip=192.168.0.30
+$ tess net ip-list --long --subnet='CPC50 shared' --ip=192.168.0.30
 
 IP address        : 192.168.0.30
 Part of subnet    : CPC50 shared
@@ -283,7 +283,7 @@ Assume that we plan to install linux on the following DASD volumes:
 Let's check first if such storage server is available in the tool:
 
 ```
-$ tess storage server-list
+$ tess storage server-list --long
 
 Name           : DS8K22
 Hostname       :
@@ -306,9 +306,9 @@ tess storage server-add --name=DS8K22 --model=DS8800 --type=DASD-FCP --project=T
 Let's see if perhaps our disks are already registered:
 
 ```
-$ tess storage vol-list --server=DS8K22 --id=e1ab
+$ tess storage vol-list --long --server=DS8K22 --id=e1ab
 No results were found.
-$ tess storage vol-list --server=DS8K22 --id=e1ac
+$ tess storage vol-list --long --server=DS8K22 --id=e1ac
 No results were found.
 ```
 
@@ -322,7 +322,7 @@ $ tess storage vol-add --server=DS8K22 --type=DASD --id=e1ab --size=20gb --proje
 Item added successfully.
 $ tess storage vol-add --server=DS8K22 --type=DASD --id=e1ac --size=20gb --project=Testing --desc='belongs to zVM guest vm70002'
 Item added successfully.
-$ tess storage vol-list --server=DS8K22 --id=e1ab
+$ tess storage vol-list --long --server=DS8K22 --id=e1ab
 
 Volume id                  : e1ab
 Storage server             : DS8K22
@@ -338,7 +338,7 @@ Project                    : Testing
 Last modified              : 2018-03-23 09:27:17
 Modified by                : admin
 Description                : belongs to zVM guest vm70002
-$ tess storage vol-list --server=DS8K22 --id=e1ac
+$ tess storage vol-list --long --server=DS8K22 --id=e1ac
 
 Volume id                  : e1ac
 Storage server             : DS8K22
@@ -431,7 +431,7 @@ Please pay attention that the option `--os=cms` is required in this case for the
 ```
 $ tess system prof-add --system=lpar70 --os=cms --name=cms_profile --login=zvm:zvm
 Item added successfully.
-$ tess system prof-list --system=lpar70
+$ tess system prof-list --long --system=lpar70
 
 Profile name                : cms_profile
 System                      : lpar70
@@ -452,7 +452,7 @@ So, `cms_profile` may be used as a hypervisor profile required for the zVM syste
 ```
 $ tess system prof-add --system=vm70002 --name='vm_profile' --cpu=1 --memory=1024mib --hyp=cms_profile --login='root:mypasswd' --zvm-pass=zvmpasswd
 Item added successfully.
-$ tess system prof-list --system=vm70002
+$ tess system prof-list --long --system=vm70002
 
 Profile name                : vm_profile
 System                      : vm70002
@@ -473,7 +473,7 @@ Now let's attach our network interface to the `vm70002` system profile:
 ```
 $ tess system iface-attach --system=vm70002 --profile='vm_profile' --iface='default osa'
 Network interface attached successfully.
-$ tess system iface-list --system=vm70002
+$ tess system iface-list --long --system=vm70002
 
 Interface name             : default osa
 Operating system name      : enccw0.0.f500
@@ -493,7 +493,7 @@ $ tess system vol-attach --system=vm70002 --profile=vm_profile --server=DS8K22 -
 Volume attached successfully.
 $ tess system vol-attach --system=vm70002 --profile=vm_profile --server=DS8K22 --vol=e1ac
 Volume attached successfully.
-$ tess storage vol-list --server=DS8K22 --id=e1ab
+$ tess storage vol-list --long --server=DS8K22 --id=e1ab
 
 Volume id                  : e1ab
 Storage server             : DS8K22
@@ -509,7 +509,7 @@ Project                    : Testing
 Last modified              : 2018-03-23 13:50:37
 Modified by                : admin
 Description                : belongs to zVM guest vm70002
-$ tess storage vol-list --server=DS8K22 --id=e1ac
+$ tess storage vol-list --long --server=DS8K22 --id=e1ac
 
 Volume id                  : e1ac
 Storage server             : DS8K22
@@ -530,7 +530,7 @@ Description                : belongs to zVM guest vm70002
 Check the profile for the `vm70002` system now:
 
 ```
-$ tess system prof-list --system=vm70002
+$ tess system prof-list --long --system=vm70002
 
 Profile name                : vm_profile
 System                      : vm70002
@@ -554,7 +554,7 @@ A package repository must be available for the installation. Let's create a repo
 ```
 $ tess repo add --name=SLES12.3-GA --url=http://distro.domain.com/suse/s390x/SLES12.3/DVD/ --os=sles12.3 --kernel='/boot/s390x/linux' --initrd='/boot/s390x/initrd' --project=Testing
 Item added successfully.
-$ tess repo list
+$ tess repo list --long
 
 Repository name : SLES12.3-GA
 Installable OS  : sles12.3

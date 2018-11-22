@@ -27,7 +27,7 @@ operations when none is specified.
 Let's see how this works in practice. Assume a given LPAR system with the following two profiles:
 
 ```
-user@tessia-cli:~$ tess system prof-list --system=cpc3lp52
+user@tessia-cli:~$ tess system prof-list --long --system=cpc3lp52
 
 Profile name                : fcp1
 System                      : cpc3lp52

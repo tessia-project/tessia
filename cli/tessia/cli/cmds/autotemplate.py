@@ -21,6 +21,7 @@ Module for the os installation template (autotemplate) commands
 #
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
+from tessia.cli.output import PrintMode
 from tessia.cli.output import print_items
 from tessia.cli.types import AUTO_TEMPLATE
 from tessia.cli.types import NAME
@@ -35,6 +36,10 @@ import click
 #
 MODEL_FIELDS = (
     'name', 'owner', 'project', 'modified', 'modifier', 'desc'
+)
+
+MODEL_FIELDS_TABLE = (
+    'name', 'owner', 'project', 'desc'
 )
 
 #
@@ -108,6 +113,8 @@ def template_edit(cur_name, **kwargs):
 # template_edit()
 
 @autotemplate.command(name='list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--name', type=NAME, help="filter by template name")
 @click.option('--owner', help="filter by owner")
 @click.option('--project', help="filter by project")
@@ -118,13 +125,20 @@ def template_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    # remove options from kwargs
+    long_info = kwargs.pop('long_info')
+
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.AutoTemplates.instances(**parsed_filter)
 
     # present results
-    print_items(
-        MODEL_FIELDS, client.AutoTemplates, None, entries)
+    if long_info:
+        print_items(MODEL_FIELDS, client.AutoTemplates, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(MODEL_FIELDS_TABLE, client.AutoTemplates, None, entries,
+                    PrintMode.TABLE)
 # template_list()
 
 @autotemplate.command(name='print')

@@ -237,12 +237,12 @@ tasks:
         - "1"
       - No install repository available for the specified OS
       # verification section - make sure all resources were correctly created
-    - - system list --name=cp1lp10
+    - - system list --name=cp1lp10 --long
       - - 'Hostname *: cp1lp10\.example\._com'
         - 'Hypervisor name *: cpc1'
         - 'Type *: LPAR'
         - 'Description *: a system to perform testing'
-    - - system prof-list --system=cp1lp10
+    - - system prof-list --system=cp1lp10 --long
       - - 'Profile name *: wizard-profile1'
         - 'CPU\(s\) *: 2'
         - 'Memory *: 2.0 GiB'
@@ -252,14 +252,14 @@ tasks:
         - 'Storage volumes *: .*ds8k15/0abc'
         - 'Storage volumes *: .*ds8k10/123456789abcdef'
         - 'Network interfaces *: .*gw-iface/192\.168\.0\.10'
-    - - storage vol-list --server=ds8k15 --id=0abc
+    - - storage vol-list --server=ds8k15 --id=0abc --long
       - - 'Volume size *: 10.0 GiB'
         - 'Volume type *: DASD'
         - 'Description *: root disk for system cp1lp10'
     - - storage part-list --server=ds8k15 --id=0abc
       - - '\n *1 *\| *5\.0 GiB *\| *primary *\| *ext3 *\| */ *\| *\n'
         - '\n *2 *\| *5\.0 GiB *\| *primary *\| *swap *\| *\| *\n'
-    - - storage vol-list --server=ds8k10 --id=123456789abcdef
+    - - storage vol-list --server=ds8k10 --id=123456789abcdef --long
       - - 'Volume size *: 15.0 GiB'
         - 'Volume type *: FCP'
         - "Volume specifications *: .*'devno': '0\\.0\\.1900'"
@@ -270,14 +270,14 @@ tasks:
         - 'Description *: *\n'
     - - storage part-list --server=ds8k10 --id=123456789abcdef
       - '\n *1 *\| *15\.0 GiB *\| *primary *\| *btrfs *\| */var/log *\| *\n'
-    - - system iface-list --system=cp1lp10 --name=gw-iface
+    - - system iface-list --system=cp1lp10 --name=gw-iface --long
       - - 'Operating system name *: encf500'
         - 'Interface type *: OSA'
         - "Attributes *: .*'layer2': True"
         - "Attributes *: .*'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'"
         - 'MAC address *: aa:bb:cc:dd:ee:ff'
         - 'Description *: external osa interface'
-    - - net ip-list --ip=192.168.0.10 --subnet=zone-b-s1920
+    - - net ip-list --ip=192.168.0.10 --subnet=zone-b-s1920 --long
       - 'Description *: ip belonging to external iface of system cp1lp10'
     # create another profile reusing stuff
     - - - system wizard
@@ -341,7 +341,7 @@ tasks:
         - n
       - Wizard finished
       # verification section
-    - - system prof-list --system=cp1lp10 --name=wizard-profile2
+    - - system prof-list --system=cp1lp10 --name=wizard-profile2 --long
       - - 'Profile name *: wizard-profile2'
         - 'CPU\(s\) *: 1'
         - 'Memory *: 1.0 GiB'
@@ -350,7 +350,7 @@ tasks:
         - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
         - 'Storage volumes *: .*\[ds8k15/0abc\]'
         - 'Network interfaces *: .*\[vlan100-iface\]'
-    - - system iface-list --system=cp1lp10 --name=vlan100-iface
+    - - system iface-list --system=cp1lp10 --name=vlan100-iface --long
       - - 'Operating system name *: encf600'
         - 'Interface type *: OSA'
         - "Attributes *: .*'layer2': True"
@@ -451,7 +451,7 @@ tasks:
         - n
       - Wizard finished
       # verification section
-    - - system prof-list --system=zvm01 --name=wizard-profile1
+    - - system prof-list --system=zvm01 --name=wizard-profile1 --long
       - - 'Profile name *: wizard-profile1'
         - 'CPU\(s\) *: 3'
         - 'Memory *: 2.0 GiB'
@@ -464,14 +464,14 @@ tasks:
         - 'Network interfaces *: .*\[internal-iface/192\.168\.0\.12\]'
     - - storage part-list --server=ds8k10 --id=0123
       - '\n *1 *\| *7\.0 GiB *\| *primary *\| *ext4 *\| */ *\| *\n'
-    - - system iface-list --system=zvm01 --name=internal-iface
+    - - system iface-list --system=zvm01 --name=internal-iface --long
       - - 'Operating system name *: osa01'
         - 'Interface type *: OSA'
         - "Attributes *: .*'layer2': True"
         - "Attributes *: .*'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'"
         - 'MAC address *: *\n'
         - 'Description *: internal osa interface'
-    - - net ip-list --ip=192.168.0.12 --subnet=zone-a-s1920
+    - - net ip-list --ip=192.168.0.12 --subnet=zone-a-s1920 --long
       - 'Description *: *\n'
   kvm:
     - - - system wizard
@@ -557,12 +557,12 @@ tasks:
         # install now?
         - n
       - Wizard finished
-    - - system list --name=kvm01
+    - - system list --name=kvm01 --long
       - - 'Hostname *: kvm01\.example\._com'
         - 'Hypervisor name *: cp1lp02'
         - 'Type *: KVM'
         - 'Description *: *\n'
-    - - system prof-list --system=kvm01 --name=kvm-profile1
+    - - system prof-list --system=kvm01 --name=kvm-profile1 --long
       - - 'Profile name *: kvm-profile1'
         - 'CPU\(s\) *: 5'
         - 'Memory *: 3.0 GiB'
@@ -574,7 +574,7 @@ tasks:
     - - storage part-list --server=ds8k15 --id=abcd
       - - '\n *1 *\| *5\.0 GiB *\| *primary *\| *ext3 *\| */ *\| *\n'
         - '\n *2 *\| *2\.0 GiB *\| *primary *\| *xfs *\| *\| *\n'
-    - - system iface-list --system=kvm01 --name=macvtap-iface
+    - - system iface-list --system=kvm01 --name=macvtap-iface --long
       - - 'Operating system name *: en0 *\n'
         - 'Interface type *: MACVTAP'
         - "Attributes *: .*'hostiface': 'encf300'"

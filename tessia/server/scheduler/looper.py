@@ -346,6 +346,13 @@ class Looper(object):
             timeout=request.timeout
         )
 
+        if new_job.start_date and new_job.timeout == 0:
+            request.state = SchedulerRequest.STATE_FAILED
+            request.result = (
+                'Job with a start date must have a timeout defined.')
+            self._session.commit()
+            return
+
         if not self._resources_man.can_enqueue(new_job):
             request.state = SchedulerRequest.STATE_FAILED
             request.result = (

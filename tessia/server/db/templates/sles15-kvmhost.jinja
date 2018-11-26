@@ -1,0 +1,382 @@
+<?xml version="1.0"?>
+<!DOCTYPE profile>
+<profile xmlns="http://www.suse.com/1.0/yast2ns" xmlns:config="http://www.suse.com/1.0/configns">
+  <add-on>
+    <add_on_products config:type="list">
+      <listentry>
+        <media_url><![CDATA[{{config["repos"][0]['url'].replace('/INST', '/Packages/Module-Basesystem')}}]]></media_url>
+        <product>sle-module-basesystem</product>
+        <product_dir>/</product_dir>
+      </listentry>
+      <listentry>
+        <media_url><![CDATA[{{config["repos"][0]['url'].replace('/INST', '/Packages/Module-Server-Applications')}}]]></media_url>
+        <product>sle-module-server-applications</product>
+        <product_dir>/</product_dir>
+      </listentry>
+    </add_on_products>
+  </add-on>
+  <bootloader>
+    <global>
+      <gfxmode>auto</gfxmode>
+      <os_prober>false</os_prober>
+      <terminal>console</terminal>
+      <timeout config:type="integer">1</timeout>
+    </global>
+    <loader_type>grub2</loader_type>
+  </bootloader>
+{% if config["system_type"] != "KVM" -%}
+  <dasd>
+    <devices config:type="list">
+      {% for volume in config["svols"] %}
+        {% if volume["type"] == "DASD" and volume['part_table'] %}
+          <listentry>
+            <channel>0.0.{{ volume["volume_id"] }}</channel>
+            <diag config:type="boolean">false</diag>
+          </listentry>
+        {% endif %}
+      {% endfor %}
+    </devices>
+    <format_unformatted config:type="boolean">true</format_unformatted>
+  </dasd>
+{% endif -%}
+  <scripts>
+    <postpartitioning-scripts config:type="list">
+      <script>
+        <filename>empty_disks.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Creating partition tables for empty disks..."
+{% for volume in config["svols"] -%}
+  {% if volume['part_table'] and not volume['part_table']['table'] -%}
+parted -s {{volume['system_attributes']['device']}} mklabel {{volume['part_table']['type']}}
+  {% endif -%}
+{% endfor -%}
+]]>
+        </source>
+      </script>
+    </postpartitioning-scripts>
+{% if config["system_type"] != "KVM" -%}
+    <pre-scripts config:type="list">
+      <script>
+        <filename>dasd.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Activating DASDs without partition table defined..."
+{% for volume in config["svols"] -%}
+  {% if volume["type"] == "DASD" and not volume['part_table'] -%}
+/sbin/dasd_configure '0.0.{{ volume["volume_id"] }}' 1 0
+  {% endif -%}
+{% endfor -%}
+]]>
+        </source>
+      </script>
+    </pre-scripts>
+{% endif -%}
+{% if config["system_type"] != "KVM" -%}
+    <chroot-scripts config:type="list">
+      <script>
+        <filename>portno.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Adjusting OSA cards portno configuration..."
+  {% for iface in config["ifaces"] %}
+    {% if iface['attributes']['portno'] == "1" -%}
+# autoyast provides no option to set portno therefore we do it here
+chzdev -p qeth {{iface['attributes']['ccwgroup']}} portno=1
+    {% endif -%}
+  {% endfor -%}
+]]>
+        </source>
+      </script>
+    </chroot-scripts>
+{% endif -%}
+    <init-scripts config:type="list">
+      <script>
+        <filename>repos.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Adding additional repositories..."
+{% for repo in config["repos"][1:] %}
+zypper ar -C -G -n '{{repo['desc']}}' {{repo['url']}} {{repo['name']}}
+{% endfor %}
+]]>
+        </source>
+      </script>
+{% if config["system_type"] != "KVM" -%}
+      <script>
+        <filename>osname.sh</filename>
+        <interpreter>shell</interpreter>
+        <source><![CDATA[
+#!/bin/bash
+echo "Adjusting OSA cards osname configuration..."
+  {% for iface in config["ifaces"] %}
+    {% if iface['type'] == 'OSA' -%}
+# autoyast can't generate rules correctly when multiple interfaces are installed;
+# therefore we do it here
+echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", NAME="{{iface['osname']}}"' >> /etc/udev/rules.d/70-persistent-net.rules
+    {% endif -%}
+  {% endfor -%}
+]]>
+        </source>
+      </script>
+{% endif -%}
+    </init-scripts>
+  </scripts>
+  <general>
+    <ask-list config:type="list"/>
+    <cio_ignore config:type="boolean">false</cio_ignore>
+    <mode>
+      <confirm config:type="boolean">false</confirm>
+      <halt config:type="boolean">false</halt>
+      <forceboot config:type="boolean">false</forceboot>
+      <final_reboot config:type="boolean">true</final_reboot>
+      <final_halt config:type="boolean">false</final_halt>
+      <final_restart_services>false</final_restart_services>
+    </mode>
+    <proposals config:type="list"/>
+    <storage>
+      <partition_alignment config:type="symbol">align_optimal</partition_alignment>
+    {% set multipath = [] %}
+    {% for volume in config["svols"] %}
+      {% if volume["specs"]["multipath"] %}
+        {% set _ = multipath.append(volume["specs"]["multipath"]) %}
+      {% endif %}
+    {% endfor %}
+    {% if multipath %}
+      <start_multipath config:type="boolean">true</start_multipath>
+    {% else %}
+      <start_multipath config:type="boolean">false</start_multipath>
+    {% endif %}
+    </storage>
+  </general>
+   <kdump>
+    <add_crash_kernel config:type="boolean">true</add_crash_kernel>
+    <crash_kernel>1G-:128M</crash_kernel>
+    <general>
+      <KDUMP_COMMANDLINE/>
+      <KDUMP_COMMANDLINE_APPEND/>
+      <KDUMP_COPY_KERNEL>yes</KDUMP_COPY_KERNEL>
+      <KDUMP_DUMPFORMAT>lzo</KDUMP_DUMPFORMAT>
+      <KDUMP_DUMPLEVEL>31</KDUMP_DUMPLEVEL>
+      <KDUMP_FREE_DISK_SIZE>64</KDUMP_FREE_DISK_SIZE>
+      <KDUMP_IMMEDIATE_REBOOT>no</KDUMP_IMMEDIATE_REBOOT>
+      <KDUMP_KEEP_OLD_DUMPS>5</KDUMP_KEEP_OLD_DUMPS>
+      <KDUMP_KERNELVER/>
+      <KDUMP_NOTIFICATION_CC/>
+      <KDUMP_NOTIFICATION_TO/>
+      <KDUMP_SAVEDIR>/var/crash</KDUMP_SAVEDIR>
+      <KDUMP_SMTP_PASSWORD/>
+      <KDUMP_SMTP_SERVER/>
+      <KDUMP_SMTP_USER/>
+      <KDUMP_TRANSFER/>
+      <KDUMP_VERBOSE>3</KDUMP_VERBOSE>
+      <KEXEC_OPTIONS/>
+    </general>
+  </kdump>
+  <language>
+    <language>en_US</language>
+    <languages/>
+  </language>
+  <login_settings/>
+  <networking>
+    <dhcp_options>
+      <dhclient_client_id/>
+      <dhclient_hostname_option>AUTO</dhclient_hostname_option>
+    </dhcp_options>
+    <dns>
+      <dhcp_hostname config:type="boolean">false</dhcp_hostname>
+      {% for iface in config["ifaces"] %}
+        {% if iface["is_gateway"] %}
+        {% set host_domain = config["hostname"].split('.', 1) %}
+        <domain>{{ host_domain[1] }}</domain>
+        <hostname>{{ host_domain[0] }}</hostname>
+        <nameservers config:type="list">
+          <nameserver>{{ iface["dns_1"] }}</nameserver>
+        </nameservers>
+        {% if iface["search_list"] -%}
+          <searchlist config:type="list">
+            {% for search_entry in iface["search_list"].split() -%}
+              <search>{{ search_entry }}</search>
+            {% endfor -%}
+          </searchlist>
+        {% endif -%}
+        {% endif %}
+      {% endfor %}
+      <resolv_conf_policy>auto</resolv_conf_policy>
+      <write_hostname config:type="boolean">false</write_hostname>
+    </dns>
+    <interfaces config:type="list">
+    {% for iface in config["ifaces"] %}
+      <interface>
+        <bootproto>static</bootproto>
+        <device>{{ iface["osname"] }}</device>
+        <ipaddr>{{ iface["ip"] }}</ipaddr>
+        {% if iface["mac_addr"] %}
+        <lladdr>{{ iface["mac_addr"] }}</lladdr>
+        {% endif %}
+        <netmask>{{ iface["mask"] }}</netmask>
+        <prefixlen>{{ iface["mask_bits"] }}</prefixlen>
+        <startmode>auto</startmode>
+      </interface>
+    {% endfor %}
+    </interfaces>
+    <ipv6 config:type="boolean">true</ipv6>
+    <keep_install_network config:type="boolean">false</keep_install_network>
+    <managed config:type="boolean">false</managed>
+    <net-udev config:type="list">
+      {% for iface in config["ifaces"] %}
+      <rule>
+        <name>{{iface["osname"]}}</name>
+        {% if config["system_type"] != "KVM" %}
+        <rule>KERNELS</rule>
+        <value>{{ iface["attributes"]["ccwgroup"].split(',')[0] }}</value>
+        {% else %}
+        <rule>ATTR{address}</rule>
+        <value>{{ iface["mac_addr"] }}</value>
+        {% endif %}
+      </rule>
+      {% endfor %}
+    </net-udev>
+    {% if config["system_type"] != "KVM" %}
+    <s390-devices config:type="list">
+      {% for iface in config["ifaces"] %}
+      <listentry>
+        <chanids>{{ iface["attributes"]["ccwgroup"].replace(',', ' ') }}</chanids>
+        <type>qeth</type>
+        {% if iface["attributes"]["layer2"] %}
+        <layer2 config:type="boolean">true</layer2>
+        {% else %}
+        <layer2 config:type="boolean">false</layer2>
+        {% endif %}
+      </listentry>
+      {% endfor %}
+    </s390-devices>
+    {% endif %}
+    <routing>
+      <ipv4_forward config:type="boolean">false</ipv4_forward>
+      <ipv6_forward config:type="boolean">false</ipv6_forward>
+      <routes config:type="list">
+        <route>
+          <destination>default</destination>
+          {% for iface in config["ifaces"] %}
+            {% if iface["is_gateway"] %}
+            <device>{{ iface["osname"] }}</device>
+            <gateway>{{ iface["gateway"] }}</gateway>
+            {% endif %}
+          {% endfor %}
+          <netmask>-</netmask>
+        </route>
+      </routes>
+    </routing>
+  </networking>
+  <partitioning config:type="list">
+  {% for volume in config["svols"] if volume["part_table"]["table"] %}
+    <drive>
+    <device>{{ volume["system_attributes"]["device"] }}</device>
+      <enable_snapshots config:type="boolean">true</enable_snapshots>
+      <initialize config:type="boolean">true</initialize>
+      <partitions config:type="list">
+    {% for entry in volume["part_table"]["table"] %}
+        {% set primary_nr = [1] %}
+        {% set logical_nr = [5] %}
+        <partition>
+          <create config:type="boolean">true</create>
+          <crypt_fs config:type="boolean">false</crypt_fs>
+          <filesystem config:type="symbol">{{ entry["fs"] }}</filesystem>
+          <format config:type="boolean">true</format>
+          {% if entry['mo'] -%}
+          <fstopt>{{ entry['mo'] }}</fstopt>
+          {% endif -%}
+          <mount>{% if entry["fs"] == "swap" %}swap{% else %}{{ entry["mp"] }}{% endif %}</mount>
+          <mountby config:type="symbol">path</mountby>
+          <partition_id config:type="integer">{% if entry["fs"] == "swap" %}130{% else %}131{% endif %}</partition_id>
+          <resize config:type="boolean">false</resize>
+          <size>{{ entry["size"] ~ 'M' }}</size>
+        </partition>
+    {% endfor %}
+      </partitions>
+      <type config:type="symbol">CT_DISK</type>
+      <use>all</use>
+    </drive>
+  {% endfor %}
+  </partitioning>
+  <!-- the timeouts are important to prevent autoyast from being stuck in a pop-up waiting for input -->
+  <report>
+    <errors>
+      <log config:type="boolean">true</log>
+      <show config:type="boolean">true</show>
+      <timeout config:type="integer">0</timeout>
+    </errors>
+    <messages>
+      <log config:type="boolean">true</log>
+      <show config:type="boolean">true</show>
+      <timeout config:type="integer">5</timeout>
+    </messages>
+    <warnings>
+      <log config:type="boolean">true</log>
+      <show config:type="boolean">true</show>
+      <timeout config:type="integer">5</timeout>
+    </warnings>
+    <yesno_messages>
+      <log config:type="boolean">true</log>
+      <show config:type="boolean">true</show>
+      <timeout config:type="integer">5</timeout>
+    </yesno_messages>
+  </report>
+  <services-manager>
+    <default_target>multi-user</default_target>
+    <services>
+      <disable config:type="list"/>
+      <enable config:type="list">
+        <service>sshd</service>
+      </enable>
+    </services>
+  </services-manager>
+  <software>
+    <install_recommended config:type="boolean">false</install_recommended>
+    <packages config:type="list">
+      <package>python</package>
+      <!-- provides ping utility -->
+      <package>iputils</package>
+      <package>qemu-kvm</package>
+    </packages>
+    <patterns config:type="list">
+      <pattern>base</pattern>
+      <pattern>kvm_server</pattern>
+      <pattern>kvm_tools</pattern>
+    </patterns>
+  </software>
+  <users config:type="list">
+    <user>
+      <encrypted config:type="boolean">true</encrypted>
+      <user_password>{{config["sha512rootpwd"]}}</user_password>
+      <username>root</username>
+    </user>
+  </users>
+  <timezone>
+    <hwclock>UTC</hwclock>
+    <timezone>Europe/Berlin</timezone>
+  </timezone>
+  <zfcp>
+    <devices config:type="list">
+      {% for volume in config["svols"] %}
+        {% if config["system_type"] != "KVM" and volume["type"] == "FCP" %}
+          {% for adapter in volume["specs"]["adapters"] %}
+            {% for wwpn in adapter["wwpns"] %}
+              <listentry>
+                <controller_id>{{ adapter["devno"] }}</controller_id>
+                <fcp_lun>0x{{ volume["volume_id"] }}</fcp_lun>
+                <wwpn>0x{{ wwpn }}</wwpn>
+              </listentry>
+            {% endfor %}
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+    </devices>
+  </zfcp>
+</profile>
+

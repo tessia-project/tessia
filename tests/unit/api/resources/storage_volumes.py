@@ -30,6 +30,7 @@ from tessia.server.db import models
 from tests.unit.api.resources.secure_resource import TestSecureResource
 
 import json
+import time
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -92,19 +93,21 @@ class TestStorageVolume(TestSecureResource):
             yield data
     # _entry_gen()
 
-    def _assert_bad_request(self, resp, msg):
+    def _assert_failed_req(self, resp, http_code, msg=None):
         """
-        Help assert that a given request failed with 'bad request' and the
-        specified message.
+        Help assert that a given request failed with the specified http code
+        and the specified message.
 
         Args:
             resp (Response): flask response object
-            msg (str): specified message in response
+            http_code (int): HTTP error code expected
+            msg (str): expected message in response
         """
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, http_code)
         body = json.loads(resp.get_data(as_text=True))
-        self.assertEqual(msg, body['message'])
-    # _assert_bad_request()
+        if msg:
+            self.assertEqual(msg, body['message'])
+    # _assert_failed_req()
 
     def test_add_all_fields_many_roles(self):
         """
@@ -116,7 +119,32 @@ class TestStorageVolume(TestSecureResource):
             'user_admin@domain.com'
         ]
 
+        # create disk without system, user has permission to disk
         self._test_add_all_fields_many_roles(logins)
+
+        system = models.System(
+            name='New system',
+            hostname='new_system.domain.com',
+            type='LPAR',
+            model='ZGENERIC',
+            state='AVAILABLE',
+            owner='admin',
+            modifier='user_hw_admin@domain.com',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(system)
+        self.db.session.commit()
+        # create disk with system, user has permission to both
+        vol_new = next(self._get_next_entry)
+        vol_new['system'] = 'New system'
+        created_id = self._request_and_assert(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), vol_new)
+
+        # clean up
+        self.db.session.query(self.RESOURCE_MODEL).filter_by(
+            id=created_id).delete()
+        self.db.session.delete(system)
+        self.db.session.commit()
     # test_add_all_fields_many_roles()
 
     def test_add_all_fields_no_role(self):
@@ -131,7 +159,64 @@ class TestStorageVolume(TestSecureResource):
             'user_restricted@domain.com',
         ]
 
+        # create disk without system, user has no permission to disk
         self._test_add_all_fields_no_role(logins)
+
+        sys_name = 'New system for test_add_all_fields_no_role'
+        system = models.System(
+            name=sys_name,
+            hostname='new_system.domain.com',
+            type='LPAR',
+            model='ZGENERIC',
+            state='AVAILABLE',
+            owner='admin',
+            modifier='user_hw_admin@domain.com',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(system)
+        self.db.session.commit()
+        # create disk with system, user has permission to system but not to
+        # disk
+        for login in logins:
+            system.owner = login
+            self.db.session.add(system)
+            self.db.session.commit()
+            data = next(self._get_next_entry)
+            data['owner'] = login
+            data['system'] = sys_name
+            resp = self._do_request('create', '{}:a'.format(login), data)
+            # validate the response received, should be forbidden
+            self._assert_failed_req(
+                resp, 403,
+                'User has no CREATE permission for the specified project'
+            )
+            # try without specifying project
+            data['project'] = None
+            resp = self._do_request('create', '{}:a'.format(login), data)
+            self._assert_failed_req(
+                resp, 403,
+                'No CREATE permission found for the user in any project'
+            )
+
+        # create disk with system, user has permission to disk but not to
+        # system
+        system.owner = 'user_admin@domain.com'
+        system.project = self._db_entries['Project'][1]['name']
+        self.db.session.add(system)
+        self.db.session.commit()
+        for login in logins + ['user_hw_admin@domain.com']:
+            data = next(self._get_next_entry)
+            data['owner'] = login
+            data['system'] = sys_name
+            resp = self._do_request('create', '{}:a'.format(login), data)
+            # validate the response received, should be forbidden
+            msg = 'User has no UPDATE permission for the specified system'
+            self._assert_failed_req(resp, 403, msg)
+            # try without specifying project
+            data['project'] = None
+            self._assert_failed_req(resp, 403, msg)
+
+        self.db.session.delete(system)
     # test_add_all_fields_no_role()
 
     def test_add_update_allowed_chars(self):
@@ -155,7 +240,22 @@ class TestStorageVolume(TestSecureResource):
 
         # cleanup
         self._request_and_assert('delete', user_pass, created_id)
-    # test_add_same_volid_other_server()
+    # test_add_update_allowed_chars()
+
+    def test_add_update_assoc_error(self):
+        """
+        Try creation and edit while setting a FK field to a value that has no
+        entry in the associated table.
+        """
+        wrong_fields = [
+            ('project', 'some_project'),
+            ('owner', 'some_owner'),
+            ('server', 'some_server'),
+            ('system', 'some_system'),
+        ]
+        self._test_add_update_assoc_error(
+            'user_hw_admin@domain.com', wrong_fields)
+    # test_add_update_assoc_error()
 
     def test_add_mandatory_fields(self):
         """
@@ -278,7 +378,8 @@ class TestStorageVolume(TestSecureResource):
             ('unique_id', 'something'),
             ('modified', 'something'),
             ('pool', 'something'),
-            ('system', 'something'),
+            ('system', False),
+            ('system', {'invalid': 'something'}),
             ('system_profiles', 'something'),
             ('system_attributes', {'invalid': 'something'}),
             ('system_attributes', "invalid_something"),
@@ -296,8 +397,8 @@ class TestStorageVolume(TestSecureResource):
 
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        self._assert_bad_request(
-            resp, MSG_INVALID_TYPE.format(data['type'], orig_server_type))
+        self._assert_failed_req(
+            resp, 400, MSG_INVALID_TYPE.format(data['type'], orig_server_type))
 
         # exercise update, create an item with good values first
         item = self._create_many_entries('user_hw_admin@domain.com', 1)[0][0]
@@ -321,8 +422,8 @@ class TestStorageVolume(TestSecureResource):
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        self._assert_bad_request(
-            resp,
+        self._assert_failed_req(
+            resp, 400,
             MSG_INVALID_TYPE.format(update_fields['type'], orig_server_type))
 
         # 2- update type and server
@@ -330,8 +431,8 @@ class TestStorageVolume(TestSecureResource):
         update_fields['server'] = 'iSCSI Server'
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        self._assert_bad_request(
-            resp,
+        self._assert_failed_req(
+            resp, 400,
             MSG_INVALID_TYPE.format(update_fields['type'], iscsi_server_type))
 
         # 3- only update the server
@@ -339,8 +440,8 @@ class TestStorageVolume(TestSecureResource):
         update_fields['server'] = 'iSCSI Server'
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        self._assert_bad_request(
-            resp,
+        self._assert_failed_req(
+            resp, 400,
             MSG_INVALID_TYPE.format(item['type'], iscsi_server_type))
 
         # cleanup
@@ -392,7 +493,7 @@ class TestStorageVolume(TestSecureResource):
         # perform create request and validate response
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        self._assert_bad_request(resp, MSG_PTABLE_DASD_PARTS)
+        self._assert_failed_req(resp, 400, MSG_PTABLE_DASD_PARTS)
 
         # try an update, prepare an existing entry
         entry = self._create_many_entries(
@@ -405,7 +506,7 @@ class TestStorageVolume(TestSecureResource):
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        self._assert_bad_request(resp, MSG_PTABLE_DASD_PARTS)
+        self._assert_failed_req(resp, 400, MSG_PTABLE_DASD_PARTS)
     # test_add_update_wrong_ptable_dasd_primary()
 
     def test_add_update_wrong_ptable_msdos_primary(self):
@@ -459,7 +560,7 @@ class TestStorageVolume(TestSecureResource):
         # perform create request and validate response
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        self._assert_bad_request(resp, MSG_PTABLE_MANY_PARTS)
+        self._assert_failed_req(resp, 400, MSG_PTABLE_MANY_PARTS)
 
         # try an update, prepare an existing entry
         entry = self._create_many_entries(
@@ -472,7 +573,7 @@ class TestStorageVolume(TestSecureResource):
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        self._assert_bad_request(resp, MSG_PTABLE_MANY_PARTS)
+        self._assert_failed_req(resp, 400, MSG_PTABLE_MANY_PARTS)
     # test_add_update_wrong_ptable_msdos_primary()
 
     def test_add_update_wrong_ptable_msdos_sparsed_logicals(self):
@@ -519,7 +620,7 @@ class TestStorageVolume(TestSecureResource):
         # perform create request and validate response
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        self._assert_bad_request(resp, MSG_PTABLE_BAD_PLACE)
+        self._assert_failed_req(resp, 400, MSG_PTABLE_BAD_PLACE)
 
         # try different combination with logical as first partition
         orig_ptable = data['part_table'].copy()
@@ -527,7 +628,7 @@ class TestStorageVolume(TestSecureResource):
         data['part_table']['table'][1]['type'] = 'primary'
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        self._assert_bad_request(resp, MSG_PTABLE_BAD_PLACE)
+        self._assert_failed_req(resp, 400, MSG_PTABLE_BAD_PLACE)
 
         # try updates, prepare an existing entry
         entry = self._create_many_entries(
@@ -542,7 +643,7 @@ class TestStorageVolume(TestSecureResource):
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        self._assert_bad_request(resp, MSG_PTABLE_BAD_PLACE)
+        self._assert_failed_req(resp, 400, MSG_PTABLE_BAD_PLACE)
 
         # second variant, logical as first partition
         entry['part_table'] = data['part_table']
@@ -553,7 +654,7 @@ class TestStorageVolume(TestSecureResource):
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        self._assert_bad_request(resp, MSG_PTABLE_BAD_PLACE)
+        self._assert_failed_req(resp, 400, MSG_PTABLE_BAD_PLACE)
     # test_add_update_wrong_ptable_msdos_sparsed_logicals()
 
     def test_add_update_wrong_ptable_size(self):
@@ -587,8 +688,9 @@ class TestStorageVolume(TestSecureResource):
         # perform create request and validate response
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
-        self._assert_bad_request(
-            resp, MSG_PTABLE_SIZE_MISMATCH.format(parts_size, data['size']))
+        self._assert_failed_req(
+            resp, 400,
+            MSG_PTABLE_SIZE_MISMATCH.format(parts_size, data['size']))
 
         # prepare an existing entry for update
         entry = self._create_many_entries(
@@ -607,8 +709,9 @@ class TestStorageVolume(TestSecureResource):
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-        self._assert_bad_request(
-            resp, MSG_PTABLE_SIZE_MISMATCH.format(parts_size, entry['size']))
+        self._assert_failed_req(
+            resp, 400,
+            MSG_PTABLE_SIZE_MISMATCH.format(parts_size, entry['size']))
     # test_add_update_wrong_ptable_size()
 
     def test_del_many_roles(self):
@@ -685,22 +788,136 @@ class TestStorageVolume(TestSecureResource):
         ]
 
         self._test_list_and_read('user_hw_admin@domain.com', logins)
+
     # test_list_and_read()
 
     def test_list_and_read_restricted_no_role(self):
         """
         List entries with a restricted user without role in any project
         """
+        user_res = 'user_restricted@domain.com'
+
+        # disks without system, restricted user without role on project
         self._test_list_and_read_restricted_no_role(
-            'user_hw_admin@domain.com', 'user_restricted@domain.com')
+            'user_hw_admin@domain.com', user_res)
+
+        # list/read disks with system, restricted user has no role in system's
+        # project
+        sys_name = 'New system for test_list_and_read_restricted_no_role'
+        sys_obj = models.System(
+            name=sys_name,
+            hostname='new_system.domain.com',
+            type='LPAR',
+            model='ZGENERIC',
+            state='AVAILABLE',
+            owner='admin',
+            modifier='admin',
+            # IMPORTANT: project where user has no role
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(sys_obj)
+        self.db.session.commit()
+
+        # create the entries with system assigned
+        time_range = [int(time.time() - 5)]
+        entries = []
+        for _ in range(0, 5):
+            data = next(self._get_next_entry)
+            data['project'] = self._db_entries['Project'][0]['name']
+            data['system'] = sys_name
+            entries.append(
+                self._request_and_assert('create', 'admin:a', data))
+
+        # retrieve list - should be empty
+        resp = self._do_request('list', '{}:a'.format(user_res), None)
+        self._assert_listed_or_read(resp, [], time_range)
+
+        # perform a read - expected a 403 forbidden
+        for entry_id in entries:
+            resp = self._do_request('get', '{}:a'.format(user_res), entry_id)
+            self.assertEqual(resp.status_code, 403)
+            # clean up
+            self.db.session.query(self.RESOURCE_MODEL).filter_by(
+                id=entry_id).delete()
+            self.db.session.commit()
+
+        self.db.session.delete(sys_obj)
+        self.db.session.commit()
     # test_list_and_read_restricted_no_role()
 
     def test_list_and_read_restricted_with_role(self):
         """
         List entries with a restricted user who has a role in a project
         """
+        user_res = 'user_restricted@domain.com'
+        time_range = [int(time.time() - 5)]
+
         self._test_list_and_read_restricted_with_role(
             'user_hw_admin@domain.com', 'user_restricted@domain.com')
+
+        # store the existing entries and add them to the new ones for
+        # later validation
+        resp = self._do_request(
+            'list', 'admin:a',
+            'where={}'.format(json.dumps(
+                {'project': self._db_entries['Project'][0]['name']}))
+        )
+        entries = json.loads(resp.get_data(as_text=True))
+        # adjust id field to make the http response look like the same as the
+        # dict from the _create_many_entries return
+        for entry in entries:
+            entry['id'] = entry.pop('$uri').split('/')[-1]
+
+        # list/read disks with system, restricted user has role in system's
+        # project
+        sys_name = 'New system for test_list_and_read_restricted_with_role'
+        sys_obj = models.System(
+            name=sys_name,
+            hostname='new_system.domain.com',
+            type='LPAR',
+            model='ZGENERIC',
+            state='AVAILABLE',
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(sys_obj)
+        # add the role for the restricted user
+        role = models.UserRole(
+            project=self._db_entries['Project'][0]['name'],
+            user=user_res,
+            role="USER"
+        )
+        self.db.session.add(role)
+        self.db.session.commit()
+
+        # create the entries with system assigned
+        for _ in range(0, 5):
+            data = next(self._get_next_entry)
+            data['project'] = self._db_entries['Project'][0]['name']
+            data['system'] = sys_name
+            created_id = self._request_and_assert('create', 'admin:a', data)
+            data['id'] = created_id
+            entries.append(data)
+        time_range.append(int(time.time() + 5))
+
+        # retrieve list
+        resp = self._do_request('list', '{}:a'.format(user_res), None)
+        self._assert_listed_or_read(resp, entries, time_range)
+
+        # perform a read
+        for entry in entries:
+            resp = self._do_request(
+                'get', '{}:a'.format(user_res), entry['id'])
+            self._assert_listed_or_read(
+                resp, [entry], time_range, read=True)
+            # clean up
+            self.db.session.query(self.RESOURCE_MODEL).filter_by(
+                id=entry['id']).delete()
+            self.db.session.commit()
+
+        self.db.session.delete(sys_obj)
+        self.db.session.commit()
     # test_list_and_read_restricted_with_role()
 
     def test_list_filtered(self):
@@ -767,6 +984,316 @@ class TestStorageVolume(TestSecureResource):
         self._test_update_project()
     # test_update_project()
 
+    def test_update_has_role(self):
+        """
+        Exercise different update scenarios
+        """
+        sys_name = 'New system for test_update_has_role'
+        sys_obj = models.System(
+            name=sys_name,
+            hostname='new_system.domain.com',
+            type='LPAR',
+            model='ZGENERIC',
+            state='AVAILABLE',
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(sys_obj)
+        prof_obj = models.SystemProfile(
+            name='profile for test_update_has_role',
+            system=sys_name,
+            default=True,
+        )
+        self.db.session.add(prof_obj)
+        sys_name_2 = 'New system for test_update_has_role 2'
+        sys_obj_2 = models.System(
+            name=sys_name_2,
+            hostname='new_system_2.domain.com',
+            type='LPAR',
+            model='ZGENERIC',
+            state='AVAILABLE',
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(sys_obj_2)
+        self.db.session.commit()
+        prof_id = prof_obj.id
+
+        logins = [
+            'user_restricted@domain.com',
+            'user_user@domain.com',
+            'user_privileged@domain.com',
+            'user_project_admin@domain.com',
+            'user_hw_admin@domain.com',
+            'user_admin@domain.com',
+        ]
+        for login in logins:
+            data = next(self._get_next_entry)
+            data['owner'] = login
+            vol_id = self._request_and_assert(
+                'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+            # exercise case where user is system owner
+            if login in ('user_restricted@domain.com', 'user_user@domain.com'):
+                sys_obj.owner = login
+            # exercise case where user has permission through a role
+            else:
+                sys_obj.owner = 'admin'
+            sys_obj.project = self._db_entries['Project'][0]['name']
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+
+            # update disk assign system, user has permission to both disk and
+            # system
+            data = {'id': vol_id, 'system': sys_name}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+            self.assertEqual(
+                self.RESOURCE_MODEL.query.filter_by(id=vol_id).one().system,
+                sys_name, 'System was not assigned to disk')
+
+            # update disk withdraw system, user has permission to disk and
+            # system
+            # associate to a profile
+            assoc_obj = models.StorageVolumeProfileAssociation(
+                profile_id=prof_id, volume_id=vol_id)
+            self.db.session.add(assoc_obj)
+            self.db.session.commit()
+            data = {'id': vol_id, 'system': None}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+            self.assertEqual(
+                self.RESOURCE_MODEL.query.filter_by(id=vol_id).one().system,
+                None, 'System was not withdrawn')
+            # validate that profile association was removed
+            self.assertEqual(
+                models.StorageVolumeProfileAssociation.query.filter_by(
+                    profile_id=prof_id, volume_id=vol_id).one_or_none(),
+                None, 'Association was not removed'
+            )
+
+            # update disk allowed attributes, user has permission to system but
+            # not to disk (derived permission)
+            # first, prepare the disk's permissions
+            data = {'id': vol_id, 'system': sys_name, 'owner': 'admin',
+                    'project': self._db_entries['Project'][1]['name']}
+            self._request_and_assert('update', 'admin:a', data)
+            # perform request
+            data = {'id': vol_id, 'size': 10000, 'part_table': None,
+                    'specs': {}, 'system_attributes': {}}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+
+            # update disk (no system update), user has permission to disk but
+            # not to system
+            # first, prepare the disk's permissions
+            data = {'id': vol_id,
+                    'project': self._db_entries['Project'][0]['name']}
+            # exercise case where user has permission through a role
+            if login in ('user_hw_admin@domain.com', 'user_admin@domain.com'):
+                data['owner'] = 'admin'
+            # exercise case where user is disk owner
+            else:
+                data['owner'] = login
+            self._request_and_assert('update', 'admin:a', data)
+            # prepare system's permissions
+            sys_obj.owner = 'admin'
+            sys_obj.project = self._db_entries['Project'][1]['name']
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+            # perform request
+            data = {'id': vol_id, 'size': 10000, 'part_table': None,
+                    'specs': {}, 'system_attributes': {}}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+
+            # update disk re-assign system, user has permission to all
+            # prepare disk's permissions
+            if login not in ('user_hw_admin@domain.com',
+                             'user_admin@domain.com'):
+                data = {'id': vol_id, 'owner': login}
+            # exercise case where user has permission through a role
+            else:
+                data = {'id': vol_id, 'owner': 'admin'}
+            self._request_and_assert('update', 'admin:a', data)
+            # prepare systems' permissions
+            if login in ('user_restricted@domain.com', 'user_user@domain.com'):
+                sys_obj.owner = login
+                sys_obj_2.owner = login
+            # exercise case where user has permission through a role
+            else:
+                sys_obj.owner = 'admin'
+                sys_obj_2.owner = 'admin'
+            sys_obj.project = self._db_entries['Project'][0]['name']
+            self.db.session.add(sys_obj)
+            self.db.session.add(sys_obj_2)
+            self.db.session.commit()
+            # perform request
+            data = {'id': vol_id, 'system': sys_name_2}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+            self.assertEqual(
+                self.RESOURCE_MODEL.query.filter_by(id=vol_id).one().system,
+                sys_name_2, 'System was not assigned to disk')
+
+            # clean up
+            self.RESOURCE_MODEL.query.filter_by(id=vol_id).delete()
+            self.db.session.commit()
+
+        # clean up
+        self.db.session.delete(prof_obj)
+        self.db.session.delete(sys_obj)
+        self.db.session.delete(sys_obj_2)
+        self.db.session.commit()
+    # test_update_has_role()
+
+    def test_update_no_role(self):
+        """
+        Try to update a volume without an appropriate role to do so.
+        """
+        hw_admin = 'user_hw_admin@domain.com'
+        update_fields = {
+            'owner': 'user_user@domain.com',
+            'desc': 'some_desc',
+            'volume_id': '1500',
+            'type': 'DASD',
+            'part_table': {'type': 'msdos', 'table': []},
+            'specs': {},
+            'size': 5000,
+            'server': 'storage_server',
+        }
+        logins = [
+            'user_restricted@domain.com',
+            'user_user@domain.com',
+            'user_privileged@domain.com',
+            'user_project_admin@domain.com'
+        ]
+        # update disk without system, user has no permission to disk
+        self._test_update_no_role(hw_admin, logins, update_fields)
+
+        sys_name = 'New system for test_update_no_role'
+        sys_obj = models.System(
+            name=sys_name,
+            hostname='new_system.domain.com',
+            type='LPAR',
+            model='ZGENERIC',
+            state='AVAILABLE',
+            owner='admin',
+            modifier=hw_admin,
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(sys_obj)
+        sys_name_2 = 'New system for test_update_no_role 2'
+        sys_obj_2 = models.System(
+            name=sys_name_2,
+            hostname='new_system.domain.com',
+            type='LPAR',
+            model='ZGENERIC',
+            state='AVAILABLE',
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][1]['name'],
+        )
+        self.db.session.add(sys_obj_2)
+        self.db.session.commit()
+
+        def assert_update(error_msg, update_user, disk_owner, sys_cur,
+                          sys_target):
+            """
+            Helper function to validate update action is forbidden
+
+            Args:
+                update_user (str): login performing the update action
+                disk_owner (str): set this login as owner of the volume
+                sys_cur (str): name and owner of the current system
+                sys_target (str): name and owner of target system
+                error_msg (str): expected error message
+            """
+            data = next(self._get_next_entry)
+            data['owner'] = disk_owner
+            if sys_cur:
+                data['system'] = sys_cur['name']
+                sys_obj = models.System.query.filter_by(
+                    name=sys_cur['name']).one()
+                sys_obj.owner = sys_cur['owner']
+                self.db.session.add(sys_obj)
+                self.db.session.commit()
+            vol_id = self._request_and_assert('create', 'admin:a', data)
+
+            if sys_target:
+                sys_obj = models.System.query.filter_by(
+                    name=sys_target['name']).one()
+                sys_obj.owner = sys_target['owner']
+                self.db.session.add(sys_obj)
+                self.db.session.commit()
+                sys_tgt_name = sys_target['name']
+            else:
+                sys_tgt_name = None
+
+            data = {'id': vol_id, 'system': sys_tgt_name}
+            resp = self._do_request('update', '{}:a'.format(update_user), data)
+            # validate the response received, should be forbidden
+            self._assert_failed_req(resp, 403, error_msg)
+            # clean up
+            self.db.session.query(self.RESOURCE_MODEL).filter_by(
+                id=vol_id).delete()
+        # assert_update()
+
+        for login in logins:
+            # update disk assign system, user has permission to system but
+            # not to disk
+            msg = 'User has no UPDATE permission for the specified volume'
+            assert_update(msg, login, hw_admin,
+                          None, {'name': sys_name, 'owner': login})
+
+            # update disk withdraw system, user has permission to system but
+            # not to disk
+            assert_update(msg, login, hw_admin,
+                          {'name': sys_name, 'owner': login}, None)
+
+            # update disk re-assign system, user has permission to disk and
+            # target system but not to current system
+            msg = ('User has no UPDATE permission for the system '
+                   'currently holding the volume')
+            assert_update(msg, login, login,
+                          {'name': sys_name_2, 'owner': 'admin'},
+                          {'name': sys_name, 'owner': login})
+
+            # update disk re-assign system, user has permission to disk and
+            # current system but not to target system
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_update(msg, login, login,
+                          {'name': sys_name, 'owner': login},
+                          {'name': sys_name_2, 'owner': 'admin'})
+
+        for login in ('user_restricted@domain.com', 'user_user@domain.com'):
+            # update disk assign system, user has permission to disk but not
+            # to system
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_update(msg, login, login,
+                          None, {'name': sys_name, 'owner': hw_admin})
+
+            # update disk assign system, user has no permission to disk nor
+            # system
+            msg = 'User has no UPDATE permission for the specified volume'
+            assert_update(msg, login, hw_admin,
+                          None, {'name': sys_name, 'owner': hw_admin})
+
+            # update disk withdraw system, user has permission to disk but
+            # not to assigned system
+            msg = ('User has no UPDATE permission for the system currently '
+                   'holding the volume')
+            assert_update(msg, login, login,
+                          {'name': sys_name, 'owner': hw_admin}, None)
+
+            # update disk withdraw system, user has no permission to disk nor
+            # system
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_update(msg, login, hw_admin,
+                          {'name': sys_name, 'owner': hw_admin}, None)
+
+        # clean up
+        self.db.session.delete(sys_obj)
+        self.db.session.delete(sys_obj_2)
+        self.db.session.commit()
+    # test_update_no_role()
+
     def test_update_valid_fields(self):
         """
         Exercise the update of existing objects when correct format and
@@ -804,6 +1331,8 @@ class TestStorageVolume(TestSecureResource):
         self.db.session.add(pool)
         self.db.session.commit()
 
+        # fields 'project' and 'system' are tested separately due to special
+        # permission handling
         update_fields = {
             'owner': 'user_user@domain.com',
             'desc': 'some_desc',
@@ -830,54 +1359,10 @@ class TestStorageVolume(TestSecureResource):
         self._test_update_valid_fields(
             'user_hw_admin@domain.com', combos, update_fields)
 
-        # in order to test caching in update do a request to update server and
-        # part_table at the same time
-        item = self._create_many_entries('user_hw_admin@domain.com', 1)[0][0]
-        update_fields = {
-            'id': item['id'],
-            'server': update_fields['server'],
-            'part_table': {'type': 'msdos', 'table': []}
-        }
-        self._request_and_assert(
-            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
-
         # clean up
-        self.db.session.query(self.RESOURCE_MODEL).filter_by(
-            id=item['id']).delete()
         self.db.session.delete(system)
         self.db.session.delete(storage_server)
         self.db.session.delete(pool)
         self.db.session.commit()
     # test_update_valid_fields()
-
-    def test_add_update_assoc_error(self):
-        """
-        Try creation and edit while setting a FK field to a value that has no
-        entry in the associated table.
-        """
-        wrong_fields = [
-            ('project', 'some_project'),
-            ('owner', 'some_owner'),
-            ('server', 'some_server'),
-        ]
-        self._test_add_update_assoc_error(
-            'user_hw_admin@domain.com', wrong_fields)
-    # test_add_update_assoc_error()
-
-    def test_update_no_role(self):
-        """
-        Try to update with a user without an appropriate role to do so.
-        """
-        update_fields = {
-            'volume_id': 'this_should_not_work',
-        }
-        logins = [
-            'user_restricted@domain.com',
-            'user_user@domain.com',
-            'user_privileged@domain.com',
-            'user_project_admin@domain.com'
-        ]
-        self._test_update_no_role(
-            'user_hw_admin@domain.com', logins, update_fields)
-    # test_update_no_role()
 # TestStorageVolume

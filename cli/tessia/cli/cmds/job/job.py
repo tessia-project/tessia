@@ -233,6 +233,8 @@ def list_(job_id, params, **kwargs):
 
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    # sort the result
+    parsed_filter['sort'] = {'job_id': True}
     # the result is paginated so we can iterate on it later
     entries = client.Jobs.instances(**parsed_filter)
 

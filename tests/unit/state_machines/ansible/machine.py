@@ -241,7 +241,6 @@ class TestAnsibleMachine(TestCase):
         This test also executes parse which executes _get_url_type,
         _parse_source and _get_resources in the process.
         """
-
         # Prepare parameters to create an AnsibleMachine object
         # The params are the actual request parameters which were sent
         # by the tessia client.
@@ -257,10 +256,48 @@ class TestAnsibleMachine(TestCase):
         request = {
             'source': 'https://user:pwd@example._com/dir/ansible-example.git',
             'playbook': 'something/playbook.yml',
+            'vars': {
+                'globalint': 1,
+                'globalstr': 'globalstr',
+                'globalarr': ['item1', 'item2'],
+                'globalobj': {
+                    'nestedvar': 'nestedvar'
+                }
+            },
+            'groups': {
+                'ioclient': {
+                    'vars': {
+                        'groupint': 1,
+                        'groupstr': 'groupstr',
+                        'grouparr': ['item1', 'item2'],
+                        'groupobj': {
+                            'nestedvar': 'nestedvar'
+                        }
+                    }
+                },
+                'all': {
+                    'vars': {
+                        'globalgroupint': 1,
+                        'globalgroupstr': 'globalgroupstr',
+                        'globalgrouparr': ['item1', 'item2'],
+                        'globalgroupobj': {
+                            'nestedvar': 'nestedvar'
+                        }
+                    }
+                }
+            },
             'systems': [
                 {
                     'name': kvm_system,
                     'groups': ['ioclient'],
+                    'vars': {
+                        'systemint': 1,
+                        'systemstr': 'systemstr',
+                        'systemarr': ['item1', 'item2'],
+                        'systemobj': {
+                            'nestedvar': 'nestedvar'
+                        }
+                    },
                 },
                 {
                     'name': lpar_system,
@@ -299,6 +336,12 @@ class TestAnsibleMachine(TestCase):
             len(self._mock_env_docker.return_value.build.mock_calls) == 1)
 
         # validate stage create config
+        # get temp dir from temp_dir_file.write(self._temp_dir) call
+        temp_dir_path = self._mock_open_fd.write.call_args_list[0][0][0]
+
+        # collect var files
+        exp_var_files = []
+
         # validate inventory file creation
         for system in request['systems']:
             if system['name'] == kvm_system:
@@ -321,6 +364,29 @@ class TestAnsibleMachine(TestCase):
                 ]
                 self._mock_open_fd.write.assert_has_calls(
                     inv_calls, any_order=True)
+
+            # add to validate system vars file creation
+            exp_var_files.append(
+                os.path.join(temp_dir_path, 'host_vars', kvm_system + '.yml'))
+
+        # add to validate groups var file creation
+        for group_name, _ in request['groups'].items():
+            if group_name == 'all':
+                exp_var_files.append(
+                    os.path.join(temp_dir_path, 'group_vars', 'all',
+                                 'all_2.yml'))
+            else:
+                exp_var_files.append(
+                    os.path.join(temp_dir_path, 'group_vars',
+                                 group_name + '.yml'))
+
+        # add to validate global var file creation
+        exp_var_files.append(
+            os.path.join(temp_dir_path, 'group_vars', 'all', 'all_1.yml'))
+
+        # validate var file creation
+        for exp_var_file in exp_var_files:
+            self._mock_open.assert_has_calls([mock.call(exp_var_file, 'w')])
 
         # TODO: validate stage_activate_systems
 

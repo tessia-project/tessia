@@ -36,6 +36,8 @@ IMAGE_NAME = 'tessia_ansible_docker'
 
 CONTAINER_NAME_FILE = '.docker_container_name'
 
+INVENTORY_DIR = '/home/ansible'
+
 PLAYBOOK_DIR = '/home/ansible/playbook'
 
 #
@@ -191,7 +193,7 @@ class EnvDocker(EnvBase):
 
             # put_archive is used because docker py doesn't have the
             # copy command in the current version of the API.
-            container_obj.put_archive(PLAYBOOK_DIR, temp_fd)
+            container_obj.put_archive(INVENTORY_DIR, temp_fd)
 
         # Start ansible playbook
         exec_id = self._client.api.exec_create(

@@ -23,13 +23,14 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
-from tessia.cli.types import ACTION_TYPE, JOB_PRIO, JOB_TYPE, \
+from tessia.cli.types import ACTION_TYPE, DATE_TIME, JOB_PRIO, JOB_TYPE, \
     JOB_STATE, REQUEST_STATE
 from tessia.cli.utils import fetch_item
 from tessia.cli.utils import wait_job_exec, wait_scheduler
 from time import sleep
 
 import click
+import datetime
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -160,12 +161,13 @@ def output(job_id):
 @click.option('--parmfile', type=click.File('r'), required=True,
               help="parameter file for the execution machine")
 @click.option('--timeout', type=int,
-              help="period in seconds after job times out")
-@click.option('--startdate', help="date when the job should be started")
+              help="period in seconds to wait for job to complete")
+@click.option('--startdate', type=DATE_TIME,
+              help="date (UTC timezone) when the job should be started")
 @click.option('priority', '--prio', type=JOB_PRIO,
               help="job priority, higher starts first")
-@click.option('--detach', is_flag=True,
-              help="do not wait for output after submit")
+@click.option('--bg', is_flag=True,
+              help="do not wait for output after submitting")
 def submit(ctx, job_type, parmfile, **kwargs):
     """
     send a request to the scheduler to submit a new job
@@ -180,13 +182,23 @@ def submit(ctx, job_type, parmfile, **kwargs):
     if kwargs['timeout'] is not None:
         request['timeout'] = kwargs['timeout']
     if kwargs['startdate'] is not None:
-        request['startdate'] = kwargs['startdate']
+        if not kwargs['timeout']:
+            raise click.ClickException(
+                'jobs with start date must have --timeout specified')
+        request['start_date'] = {'$date': int(
+            kwargs['startdate'].replace(
+                tzinfo=datetime.timezone.utc).timestamp()) * 1000}
 
     client = Client()
     job_id = wait_scheduler(client, request)
-    # detach flag: do not wait for output, just return to prompt
-    if kwargs['detach']:
+    # bg flag: do not wait for output, just return to prompt
+    if kwargs['bg']:
         return
+    if kwargs['startdate']:
+        click.echo("To see the output after the job starts, type 'tess job "
+                   "output --id={}'".format(job_id))
+        return
+
     try:
         wait_job_exec(client, job_id)
         ctx.invoke(output, job_id=job_id)

@@ -19,6 +19,7 @@ Custom types for usage in command options
 #
 # IMPORTS
 #
+from datetime import datetime
 from tessia.cli.utils import str_to_size
 import click
 import ipaddress
@@ -106,6 +107,33 @@ class CustomIntRange(click.IntRange):
     """
     name = 'integer'
 # CustomIntRange
+
+class DateTime(click.ParamType):
+    """
+    Represents a date
+    """
+    ALLOWED_FORMAT = '%Y-%m-%d %H:%M:%S'
+    name = 'datetime'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure the value can be converted to a datetime object
+        """
+        try:
+            ret = datetime.strptime(value, self.ALLOWED_FORMAT)
+        except ValueError:
+            self.fail("{} does not match expected format '{}'".format(
+                value, self.ALLOWED_FORMAT), param, ctx)
+
+        return ret
+    # convert()
+
+    def get_metavar(self, param):
+        """How the value for this type will look at the help page"""
+        return '[{}]'.format(self.ALLOWED_FORMAT)
+# DateTime
+
+DATE_TIME = DateTime()
 
 class FcpPath(click.ParamType):
     """

@@ -106,10 +106,13 @@ def del_(name):
                    'or install repository to use for installation')
 @click.option('--verbosity', type=VERBOSITY_LEVEL,
               help='output verbosity level')
+@click.option('--bg', is_flag=True,
+              help="do not wait for output after submitting")
 def autoinstall(ctx, **kwargs):
     """
     install a system using an autofile template
     """
+    bg_flag = kwargs.pop('bg')
     request = {'action_type': 'SUBMIT', 'job_type': 'autoinstall'}
     for key in ('profile', 'template', 'verbosity'):
         if kwargs[key] is None:
@@ -119,6 +122,9 @@ def autoinstall(ctx, **kwargs):
     request['parameters'] = json.dumps(kwargs)
     client = Client()
     job_id = wait_scheduler(client, request)
+    # bg flag: do not wait for output, just return to prompt
+    if bg_flag:
+        return
     try:
         wait_job_exec(client, job_id)
         ctx.invoke(output, job_id=job_id)

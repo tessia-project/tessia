@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """
-Module containing entry point for client execution
+Module containing main method for client execution
 """
 
 #

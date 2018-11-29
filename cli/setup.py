@@ -253,7 +253,7 @@ if __name__ == '__main__':
         # installation information
         entry_points={
             'console_scripts': [
-                'tess = tessia.cli.main:main'
+                'tess = tessia.cli.__main__:main'
             ]
         },
         install_requires=_find_requirements(),

@@ -19,7 +19,7 @@ Root group to which all commands are attached
 #
 # IMPORTS
 #
-from pkg_resources import get_distribution
+from pkg_resources import get_distribution, DistributionNotFound
 from tessia.cli.client import Client
 from tessia.cli.cmds.os import _os
 from tessia.cli.cmds.autotemplate import autotemplate
@@ -88,7 +88,10 @@ MSG_URL_INVALID_ANSWER = (
     'valid server or press Ctrl+C to cancel.'
 )
 
-PKG_DIST = get_distribution('tessia-cli')
+try:
+    __version__ = get_distribution('tessia-cli').version
+except DistributionNotFound:
+    __version__ = '(local)'
 
 #
 # CODE
@@ -155,7 +158,7 @@ def _config_server():
 
 @click.group(context_settings=CONTEXT_SETTINGS)
 @click.version_option(
-    prog_name='tessia command line client', version=PKG_DIST.version)
+    prog_name='tessia command line client', version=__version__)
 @click.pass_context
 def root(ctx=None):
     """

@@ -132,9 +132,9 @@ EOF
 {% for volume in config["svols"] %}
 {% if volume['type'] == 'FCP' -%}
 {% for adapter in volume['specs']['adapters'] -%}
-chzdev -e {{adapter['devno']}}
+chzdev -e {{adapter['devno']}} -y
 {% for wwpn in adapter['wwpns'] -%}
-chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}}
+chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}} -y
 {% endfor -%}
 {% endfor -%}
 {% endif -%}

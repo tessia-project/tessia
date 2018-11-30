@@ -353,6 +353,10 @@ class AnsibleMachine(BaseMachine):
                     shared_res.add(system_obj.name)
                     system_obj = system_obj.hypervisor_rel
 
+        # remove potential duplication of resources marked as shared and
+        # exclusive at the same time
+        shared_res -= exclusive_res
+
         resources = {
             'shared': list(shared_res),
             'exclusive': list(exclusive_res)

@@ -266,13 +266,13 @@ class TestAnsibleMachine(TestCase):
         }
         exp_url_obs = 'https://****@example._com/dir/ansible-example.git'
 
-        # check that parse works
+        # check that parse works without duplication of resources
         parsed_resp = machine.AnsibleMachine.parse(str(request))
 
         self.assertEqual(parsed_resp['repo_info']['url_obs'], exp_url_obs)
         self.assertSetEqual(
             set(parsed_resp['resources']['shared']),
-            {lpar_system, lpar_obj.hypervisor}
+            {lpar_obj.hypervisor}
         )
         self.assertSetEqual(
             set(parsed_resp['resources']['exclusive']),
@@ -386,6 +386,5 @@ class TestAnsibleMachine(TestCase):
     # test_start_web()
 
     # TODO: simulate a signal kill and verify cleanup
-
 
 # TestAnsibleMachine

@@ -1,0 +1,314 @@
+{%- macro mib_to_mb(size) -%}
+{%- set size_mb = ((size * 1024 * 1024) / 1000 / 1000) | int -%}
+{{- size_mb -}}
+{%- endmacro -%}
+
+{%- macro partition_disk(svol) -%}
+{%- set device=svol['system_attributes']['device'] -%}
+    while [ ! -e {{device}} ]; do sleep 1; done ; \
+{% if config['system_type'] != 'KVM' and svol['type'] == 'DASD' -%}
+    chroot /target grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{ svol['volume_id'] }}/status && \
+    chroot /target /sbin/dasdfmt -y -d cdl -b 4096 {{ device }}; \
+{% endif -%}
+    chroot /target parted -s {{device}} mklabel {{svol['part_table']['type']}} && kpartx -us {{device}} ; \
+{% for part in svol['part_table']['table'] -%}
+    {%- set start_mb = mib_to_mb(part['start']) -%}
+    {%- set end_mb = mib_to_mb(part['end']) -%}
+    chroot /target parted -s {{device}} unit MB mkpart {{part['type']}} {{part['parted_fs']}} {{start_mb}} {{end_mb}} ; \
+{% endfor -%}
+    chroot /target partprobe {{device}}  ; \
+{% endmacro -%}
+
+{%- macro format_partitions(svol) -%}
+  {%- set FS_TO_MKFS = {'ext2': 'mkfs.ext2 -q ', 'ext3': 'mkfs.ext3 -q ', 'ext4': 'mkfs.ext4 -q ', 'swap': 'mkswap ', 'reiserfs': 'mkfs.reiserfs -q ', 'btrfs': 'mkfs.btrfs -qf ', 'xfs': 'mkfs.xfs -qf '} -%}
+  {%- for part in svol['part_table']['table'] -%}
+  {%- if part['type'] != 'extended' -%}
+    while [ ! -e {{part['device']}} ]; do sleep 1; done ; \
+    {{FS_TO_MKFS[part['fs']]}} {{part['device']}} ; \
+  {% endif -%}
+  {%- endfor -%}
+{%- endmacro -%}
+
+{%- macro populate_fstab(svol) -%}
+  {%- for part in svol['part_table']['table'] -%}
+  {%- if part['type'] != 'extended' -%}
+    mkdir -p /target/{{part['mp']}}  ; \
+    echo "{{part['device']}}   {{part['mp']}}   {{part['fs']}}   {{'defaults' if not part['mo'] else part['mo']}} 0   0" >> /target/etc/fstab ; \
+  {% endif -%}
+  {%- endfor -%}
+{%- endmacro -%}
+
+{%- macro enable_storage_device(svol) -%}
+{%- if svol['type'] == 'DASD' -%}
+    chzdev -e --base /etc=/target/etc dasd {{svol['volume_id']}} ; \
+{% elif svol['type'] == 'FCP' -%}
+    {% for adapter in svol['specs']['adapters'] -%}
+        chzdev --base /etc=/target/etc -e {{adapter['devno']}} ; \
+	sleep 5 ; \
+    {% for wwpn in adapter['wwpns'] -%}
+        chzdev -e --base /etc=/target/etc zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{svol['volume_id']}} ; \
+    {% endfor -%}
+    {% endfor -%}
+{% endif -%}
+{%- endmacro -%}
+
+{%- macro create_path(svol) -%}
+{% set paths = [] -%}
+{% for adapter in svol['specs']['adapters'] -%}
+   {% for wwpn in adapter['wwpns'] -%}
+      {% set  _ = paths.append("{}:0x{}:0x{}".format(adapter['devno'], wwpn, svol['volume_id'])) -%}
+   {% endfor -%}
+{% endfor -%}
+{{ paths | join(',\\\n') }}
+{%- endmacro -%}
+
+{% macro enable_osa(iface) -%}
+   chzedev --enable --base /etc=/target/etc qeth {{iface['attributes']['ccwgroup']}} ;\
+   {% if iface['attributes']['layer2'] -%}
+   chzdev --base /etc=/target/etc qeth {{iface['attributes']['ccwgroup']}} layer2=1 ; \
+   {% else -%}
+   chzdev --base /etc=/target/etc qeth {{iface['attributes']['ccwgroup']}} layer2=0 ; \
+   {% endif -%}
+   {% if iface['attributes']['portno'] == "1" -%}
+   chzdev --base /etc=/target/etc -p qeth {{iface['attributes']['ccwgroup']}} portno=1 ; \
+   {% endif -%}
+   chzdev --base /etc=/target/etc qeth {{iface['attributes']['ccwgroup']}} online=1 ; \
+   echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", KERNEL=="eth*", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
+{%- endmacro -%}
+
+{% macro iface_add_ip(iface) -%}
+   echo -e 'network:' > /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '  version: 2' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '  renderer: networkd' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '  ethernets:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '    {{iface['osname']}}:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '      addresses: [ {{iface['ip']}}/{{iface['mask_bits']}} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+{%- endmacro -%}
+
+{% macro iface_append_hwaddress(iface) -%}
+   {% if iface['mac_addr'] -%}
+    mkdir -p /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d; \
+    echo -e '[Match]\nName={{iface['osname']}}\n\n[Link]\nMACAddress={{iface['mac_addr']}}\n' > /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d/10-netplan-{{iface['osname']}}.conf; \
+   {% endif -%}
+{%- endmacro -%}
+
+{% macro change_ipl_device(system_type, svol) -%}
+{% if system_type != 'KVM' and svol['type'] == 'FCP' -%}
+    /target/usr/sbin/chreipl fcp -l {{svol['volume_id']}} -d {{svol['specs']['adapters'][0]['devno']}} -w {{svol['specs']['adapters'][0]['wwpns'][0]}} ; \
+{%- elif system_type != 'KVM' and svol['type'] == 'DASD' -%}
+    /target/usr/sbin/chreipl ccw {{svol['volume_id']}} ; \
+{%- endif -%}
+{%- endmacro -%}
+
+{% macro iface_add_udev_file(iface) -%}
+    echo -e 'SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="{{iface['mac_addr']}}", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
+{%- endmacro -%}
+
+{% macro configure_gw_iface(iface) -%}
+{% if iface['type'] == "OSA" -%}
+    echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", KERNEL=="eth*", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
+    sed -i 's/enc{{iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}}:/{{iface['osname']}}:/g' /target/etc/netplan/01-netcfg.yaml; \
+    {{iface_append_hwaddress(iface)}}
+{%- elif iface['type'] == 'MACVTAP' -%}
+    {{iface_add_udev_file(iface)}}
+    sed -E -i 's/^    [a-zA-Z0-9_-]+:/    {{iface['osname']}}:/g' /target/etc/netplan/01-netcfg.yaml; \
+    {#- workaround for https://github.com/systemd/systemd/issues/7293 -#}
+    mkdir -p /target/etc/systemd/system/systemd-networkd.service.d; \
+    echo -e '[Service]\nExecStartPre=/sbin/udevadm settle\n' > /target/etc/systemd/system/systemd-networkd.service.d/01-after-udev.conf; \
+{%- endif -%}
+{% endmacro %}
+
+{# replace internal mirror entries by the external ports repository #}
+{% macro configure_repos() -%}
+{% set repo_mirror = config['repos'][0]['url'] -%}
+{# make sure we don't cause a syntax error due to a double quote in the url #}
+{% set repo_mirror = repo_mirror | replace('"', '\"') -%}
+    in-target python -c "fd = open('/etc/apt/sources.list'); \
+lines = fd.read(); \
+fd.close(); \
+repo_mirror = r'''{{repo_mirror}}'''; \
+repo_ports = 'http://ports.ubuntu.com/ubuntu-ports'; \
+lines = lines.replace(repo_mirror, repo_ports); \
+fd = open('/etc/apt/sources.list', 'w'); \
+fd.write(lines); \
+fd.close()"; \
+{# include additional repositories -#}
+{% for repo in config["repos"][1:] -%}
+    echo -e 'deb {{repo['apt_url']}}' >> /target/etc/apt/sources.list; \
+{% endfor -%}
+{% endmacro %}
+
+{# Since only one disk and one network interface is supported during
+installation we create these auxiliary variables #}
+{% set root_svol = config['root_disk'] -%}
+{% set gw_iface = config['gw_iface'] -%}
+{% set system_type = config['system_type'] -%}
+d-i debian-installer/locale string en_US
+d-i preseed/early_command string set -x; \
+    {% if gw_iface['type'] == "OSA" and gw_iface['mac_addr'] -%}
+    {# s390-netdevice does not provide a way to set mac address in layer2 mode so
+    we do it manually here #}
+    ip link set addr {{gw_iface['mac_addr']}} dev enc{{gw_iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}} ; \
+    {% endif -%}
+    {# in case server is in same subnet update its arp cache to avoid losing connectivity #}
+    ping -c1 -w 90 {{config['server_hostname']}} ; \
+    sed -i s,/bin/network-console,/bin/sh,g /etc/passwd; \
+    cat /etc/shadow | sed 's/installer/root/' >> /etc/shadow ;
+
+{% if system_type == "KVM" %}
+# Selects the disk that will be used by partman.
+d-i partman/early_command \
+       string debconf-set partman-auto/disk "$(readlink -f {{root_svol['system_attributes']['device']}})"
+{% endif %}
+
+
+# Localization
+d-i localechooser/countrylist/Europe	     select	DE
+d-i localechooser/supported-locales multiselect	en_US.UTF-8
+
+# Repository configuration
+d-i mirror/protocol string {{config['repos'][0]['debian_protocol']}}
+d-i mirror/country string manual
+d-i mirror/http/hostname string {{config['repos'][0]['debian_netloc']}}
+d-i mirror/http/directory string {{config['repos'][0]['debian_path']}}
+d-i mirror/http/proxy string
+
+# Root password configuration
+d-i passwd/root-password-crypted password {{config['sha512rootpwd']}}
+# enable shadow passwords
+d-i passwd/shadow boolean true
+
+# User setup
+d-i passwd/user-fullname string Ubuntu 18.04 test user
+d-i passwd/username string ubuntu
+d-i passwd/user-password password ubuntu
+d-i passwd/user-password-again password ubuntu
+d-i user-setup/allow-password-weak boolean true
+d-i user-setup/encrypt-home boolean false
+
+d-i passwd/root-login boolean true
+# Controls whether or not the hardware clock is set to UTC.
+d-i clock-setup/utc boolean true
+
+# do not enable live installer, use normal instead
+d-i live-installer/enable boolean false
+
+# HW clock
+d-i clock-setup/utc boolean true
+# time zone
+d-i time/zone string Europe/Berlin
+
+# Activation of the disks, only available if not KVM.
+{% if system_type != "KVM" and root_svol['type'] == "FCP" %}
+# zfcp configuration
+d-i s390-zfcp/zfcp string \
+{{create_path(root_svol)}}{% elif system_type != "KVM" and root_svol['type'] == "DASD" %}
+d-i s390-dasd/dasd string 0.0.{{root_svol['volume_id']}}
+d-i s390-dasd/auto-format boolean true
+d-i s390-dasd/force-format boolean false
+{% endif %}
+
+# optional lines to overwrite old RAIDs and LVMs ....
+d-i partman-md/device_remove_md boolean true
+d-i partman-lvm/device_remove_lvm boolean true
+d-i partman-lvm/device_remove_lvm_span boolean true
+d-i partman-lvm/confirm boolean true
+d-i partman-lvm/confirm_nooverwrite boolean true
+
+# ignore installations without swap
+d-i partman-basicfilesystems/no_swap boolean false
+
+# Configure the partitioning scheme
+d-i partman-auto/method string regular
+d-i partman-auto/expert_recipe string                                    \
+      part-table ::                                                      \
+{% for part in root_svol['part_table']['table'] -%}
+{%- set size_mb = mib_to_mb(part['size']) -%}
+{% if part['fs'] == 'swap' -%}
+  {{size_mb}} {{size_mb}} {{size_mb}} linux-swap                         \
+      method{ swap } format{ }                                           \
+      .                                                                  \
+{% else -%}
+{{size_mb}} {{size_mb}} {{size_mb}} {{part['fs']}}                       \
+                      method{ format } format{ }                         \
+                      use_filesystem{ } filesystem{ {{part['fs']}} }     \
+                      mountpoint{ {{part['mp']}} }                       \
+  {% if part['mo'] -%}
+    {% for option in part['mo'].split(',') -%}
+                      options/{{option}}{ {{option}} }                   \
+    {% endfor -%}
+  {% endif -%}
+              .                                                          \
+{% endif %}
+{%- endfor %}
+
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+
+# Use restricted software?
+d-i apt-setup/restricted    boolean true
+# Use software from the "universe" component?
+d-i apt-setup/universe      boolean true
+# Use software from the "multiverse" component?
+d-i apt-setup/multiverse    boolean true
+# Use backported software?
+d-i apt-setup/backports     boolean false
+# Use software from the "partner" repository?
+d-i apt-setup/partner       boolean false
+# Enable source repositories in APT?
+d-i apt-setup/source        boolean true
+
+# Software selection
+d-i tasksel/first multiselect standard system utilities, OpenSSH server, Basic Ubuntu server
+# needed for ansible
+d-i pkgsel/include string python
+
+# tasksel tasksel/first multiselect standard
+  # d-i finish-install/reboot_in_progress note
+# d-i debian-installer/exit/poweroff boolean true
+
+d-i preseed/late_command string \
+    apt-install screen vim build-essential multipath-tools lsscsi lvm2 ; \
+    set -x ; \
+    {% if system_type != "KVM" -%}
+       {{change_ipl_device(system_type, root_svol)}}
+    {% endif -%}
+    {{configure_gw_iface(gw_iface)}}
+{% for sv in config['svols'] -%}
+ {%- if not sv['is_root'] -%}
+  {%- if system_type != "KVM" -%}
+    {{enable_storage_device(sv)}}
+  {%- endif-%}
+ {%- endif -%}
+{%- endfor -%}
+    /target/sbin/partprobe ; multipath -r ; \
+    mount -o bind /dev /target/dev ; \
+    mount sysfs /target/sys -t sysfs -o rw,nosuid,nodev,noexec,relatime ; \
+{% for sv in config['svols'] if sv['part_table'] -%}
+ {%- if not sv['is_root'] -%}
+    {{partition_disk(sv)}} {{format_partitions(sv)}} {{populate_fstab(sv)}}
+ {%- endif -%}
+{%- endfor -%}
+{% for iface in config['ifaces'] -%}
+   {% if not iface['is_gateway'] -%}
+    {% if iface['type'] == "OSA" -%}
+     {{enable_osa(iface)}}
+    {% endif -%}
+     {{iface_add_ip(iface)}}
+    {% if iface['type'] == "OSA" -%}
+      {{iface_append_hwaddress(iface)}}
+    {% elif iface['type'] == 'MACVTAP' -%}
+      {{iface_add_udev_file(iface)}}
+    {% endif -%}
+   {% endif -%}
+{% endfor -%}
+    echo 'sclp_line0' >> /target/etc/securetty ; \
+    sed -i 's/^[# ]*PermitRootLogin .*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config ; \
+    {{configure_repos()}}
+    rm -f /bin/nohup ; ln -s /target/usr/bin/nohup /bin/nohup; sync; \
+    chroot /target apt-get update && apt-install qemu qemu-kvm libvirt-bin libvirt-doc && \
+    chroot /target ln -s /usr/bin/qemu-system-s390x /usr/bin/qemu-kvm && \
+    chroot /target usermod -a -G kvm root && \
+    echo "/usr/bin/qemu-kvm rmix" >> /target/etc/apparmor.d/local/usr.sbin.libvirtd

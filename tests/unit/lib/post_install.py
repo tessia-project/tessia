@@ -278,9 +278,23 @@ Total online memory:     4294967296
 Total offline memory:            0
 """
         )
+
+        # systemd dns config
+        realp_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+/run/systemd/resolve/stub-resolv.conf
+""")
+        resolv_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+# This file is managed by man:systemd-resolved(8). Do not edit.
+#
+
+nameserver 192.168.200.241
+search domain.com
+""")
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
-            lscpu_output, lsmem_output]
+            lscpu_output, lsmem_output, realp_output, resolv_output]
     # _set_mocks_lpar_fcp()
 
     def _set_mocks_lpar_dasd(self, prof_obj):
@@ -412,9 +426,15 @@ Total offline memory: 0 MB
 """
         )
 
+        # systemd dns config
+        realp_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+/etc/resolv.conf
+""")
+
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
-            lscpu_output, RuntimeError(), lsmem_output]
+            lscpu_output, RuntimeError(), lsmem_output, realp_output]
     # _set_mocks_lpar_dasd()
 
     def test_facts_fail(self):
@@ -486,7 +506,7 @@ some_output
 
         # simulate invalid lsmem output
         test_outputs = orig_outputs[:]
-        test_outputs[-1] = test_outputs[-1].replace(
+        test_outputs[9] = test_outputs[9].replace(
             'Total online memory : 4096 MB',
             'Total online memory:       unknown')
         self._mock_check_output.side_effect = test_outputs
@@ -536,9 +556,9 @@ some_output
         self._set_mocks_lpar_dasd(profile_entry)
         # set mock to simulate lscpu not found
         check_outputs = list(self._mock_check_output.side_effect)
-        check_outputs[-2] = subprocess.CalledProcessError(
+        check_outputs[7] = subprocess.CalledProcessError(
             returncode=2, cmd='lscpu')
-        check_outputs[-2].output = (
+        check_outputs[7].output = (
             """cpc3lp52.domain.com | FAILED | rc=3 >>
 [Errno 2] No such file or directory
 """
@@ -642,7 +662,7 @@ some_output
         # add the failure to the list of outputs
         test_outputs = self._mock_check_output.side_effect[:]
         test_outputs[8] = RuntimeError()
-        test_outputs.append(exc)
+        test_outputs.insert(9, exc)
         self._mock_check_output.side_effect = test_outputs
         # expected error message
         error_msg = self._mismatch_msg.format(
@@ -672,7 +692,7 @@ some_output
         self._set_mocks_lpar_fcp(fcp_prof_entry)
         check_outputs = list(self._mock_check_output.side_effect)
         wrong_os = 'SUSE Linux 12.2'
-        check_outputs[-3] = (
+        check_outputs[6] = (
             """cpc3lp52.domain.com | SUCCESS | rc=0 >>
 NAME=xxxx
 VERSION=xxxx
@@ -787,6 +807,56 @@ ID=xxxxx
                 fcp_prof_entry, permissive=True)
             checker.verify(areas=['network'])
             self._mock_logger.warning.assert_called_with(error_msg)
+
+        # no resolv.conf available
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        test_outputs = list(self._mock_check_output.side_effect)
+        test_outputs[9] = RuntimeError(
+            'Command failed, output: cpc3lp52.domain.com | FAILED!')
+        self._mock_check_output.side_effect = test_outputs
+        error_msg = self._mismatch_msg.format(
+            'iface enccw0.0.f500 nameservers', '192.168.200.241',
+            '<not found>')
+        checker = post_install.PostInstallChecker(fcp_prof_entry)
+        with self.assertRaisesRegex(
+            post_install.Misconfiguration, error_msg):
+            checker.verify(areas=['network'])
+
+        # permissive - only logging occurs
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        test_outputs = list(self._mock_check_output.side_effect)
+        test_outputs[9] = RuntimeError(
+            'Command failed, output: cpc3lp52.domain.com | FAILED!')
+        self._mock_check_output.side_effect = test_outputs
+        checker = post_install.PostInstallChecker(
+            fcp_prof_entry, permissive=True)
+        checker.verify(areas=['network'])
+        self._mock_logger.warning.assert_called_with(error_msg)
+
+        # failed to read resolv.conf froms systemd
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        test_outputs = list(self._mock_check_output.side_effect)
+        test_outputs[10] = RuntimeError(
+            'Command failed, output: cpc3lp52.domain.com | FAILED!')
+        self._mock_check_output.side_effect = test_outputs
+        error_msg = self._mismatch_msg.format(
+            'iface enccw0.0.f500 nameservers', '192.168.200.241',
+            '<not found>')
+        checker = post_install.PostInstallChecker(fcp_prof_entry)
+        with self.assertRaisesRegex(
+            post_install.Misconfiguration, error_msg):
+            checker.verify(areas=['network'])
+
+        # permissive - only logging occurs
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        test_outputs = list(self._mock_check_output.side_effect)
+        test_outputs[10] = RuntimeError(
+            'Command failed, output: cpc3lp52.domain.com | FAILED!')
+        self._mock_check_output.side_effect = test_outputs
+        checker = post_install.PostInstallChecker(
+            fcp_prof_entry, permissive=True)
+        checker.verify(areas=['network'])
+        self._mock_logger.warning.assert_called_with(error_msg)
 
     # test_misconfiguration_dns()
 

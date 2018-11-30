@@ -147,7 +147,8 @@ class TestPlatKvm(TestCase):
         systems that use virtio-pci-* prefixing.
         """
         special_distros = [
-            {'pname': plat_kvm.UBUNTU_ID, 'major': 0, 'minor': 0},
+            {'pname': plat_kvm.UBUNTU_ID, 'major': 1610, 'minor': 0},
+            {'pname': plat_kvm.UBUNTU_ID, 'major': 1604, 'minor': 0},
             {'pname': plat_kvm.RHEL_ID, 'major': 7, 'minor': 4},
         ]
 
@@ -242,7 +243,11 @@ class TestPlatKvm(TestCase):
         mock_ssh_client = self._mock_ssh_client_cls.return_value
         mock_shell = mock_ssh_client.open_shell.return_value
         mock_shell.run.side_effect = (
-            (0, ''), TimeoutError)
+            (0, ''), TimeoutError,
+            # outputs for domain state verification on host side
+            (1, 'not available'), (0, 'running'), (0, 'shutdown'),
+            (0, 'shut off'),
+        )
 
         plat.reboot(self._profile_entry)
 
@@ -251,13 +256,20 @@ class TestPlatKvm(TestCase):
         password = self._profile_entry.credentials['admin-password']
 
         # Makes sure the reboot procedure was properly executed.
-        mock_ssh_client.login.assert_called_with(hostname, user=user,
-                                                 passwd=password,
-                                                 timeout=10)
+        mock_ssh_client.login.assert_has_calls([
+            mock.call(hostname, user=user, passwd=password, timeout=10),
+            mock.call(
+                self._hyper_profile_entry.system_rel.hostname,
+                user=self._hyper_profile_entry.credentials['admin-user'],
+                passwd=self._hyper_profile_entry.credentials['admin-password'],
+                timeout=10)
+        ])
         run_calls = [
             mock.call('sync'),
-            mock.call('nohup shutdown; nohup killall sshd', timeout=1)
-        ]
+            mock.call('nohup poweroff; nohup killall sshd', timeout=1)
+        ] + (
+            [mock.call('virsh domstate {}'.format(
+                self._profile_entry.system_rel.name))] * 3)
         mock_shell.run.assert_has_calls(run_calls)
         mock_hyp.reboot.assert_called_with(
             self._profile_entry.system_rel.name, None)

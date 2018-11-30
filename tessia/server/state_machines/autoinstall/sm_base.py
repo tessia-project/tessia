@@ -390,7 +390,7 @@ class SmBase(metaclass=abc.ABCMeta):
         ssh_client.logoff()
 
         self._logger.info(
-            "Verifying if installed system match expected parameters")
+            "Verifying if installed system matches expected parameters")
         # with certain distros the connection comes up and down during the
         # boot process so we perform multiple tries until we get a connection
         conn_timeout = time() + CONNECTION_TIMEOUT
@@ -403,6 +403,7 @@ class SmBase(metaclass=abc.ABCMeta):
                 if time() > conn_timeout:
                     raise ConnectionError('Timeout occurred while trying to '
                                           'connect to target system')
+                self._logger.debug('post install failed:', exc_info=True)
                 sleep(5)
                 continue
             break

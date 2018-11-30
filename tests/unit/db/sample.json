@@ -85,7 +85,8 @@
             "modifier": "user_x_0@domain.com",
             "project": "Department x",
             "subnet": "cpc0 shared",
-            "owner": "user_x_0@domain.com"
+            "owner": "user_x_0@domain.com",
+            "system": "cpc0"
         }
     ],
     "SystemIface": [

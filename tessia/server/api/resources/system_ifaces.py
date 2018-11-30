@@ -27,9 +27,8 @@ from tessia.server.api.exceptions import BaseHttpError
 from tessia.server.api.exceptions import ItemNotFoundError
 from tessia.server.api.resources.secure_resource import NAME_PATTERN
 from tessia.server.api.resources.secure_resource import SecureResource
-from tessia.server.db.models import System
-from tessia.server.db.models import SystemIface
-from tessia.server.db.models import SystemProfile
+from tessia.server.db.models import IpAddress, Subnet
+from tessia.server.db.models import System, SystemIface, SystemProfile
 
 import ipaddress
 
@@ -127,27 +126,59 @@ class SystemIfaceResource(SecureResource):
             io='r'
         )
 
-    @staticmethod
-    def _verify_ip(properties):
+    def _verify_ip(self, properties, system_obj):
         """
         Verifies the correctness of the subnet/ip_address combination.
+        This method will also create the association with the target system in
+        the IP address db object if it does not exist yet.
 
         Args:
             properties (dict): field=value combination for the item to be
                                verify
+            system_obj (System): target system db object
 
         Raises:
-            BaseHttpError: if provided address is invalid
+            BaseHttpError: - if provided address is in invalid format
+                           - if address already assigned to another system
+            ItemNotFoundError: if provides address does not exist
         """
-        if properties.get('ip_address'):
-            # verify if ip address has a valid format
-            ip_addr = properties['ip_address'].rsplit('/', 1)[-1]
-            try:
-                ipaddress.ip_address(ip_addr)
-            except ValueError as exc:
-                msg = "The value '{}={}' is invalid: {}".format(
-                    'subnet/ip_address', properties['ip_address'], str(exc))
-                raise BaseHttpError(code=400, msg=msg)
+        # no ip address in request: nothing to do
+        if not properties.get('ip_address'):
+            return
+
+        # verify if ip address has a valid format
+        try:
+            subnet_name, ip_addr = properties['ip_address'].split('/', 1)
+            ipaddress.ip_address(ip_addr)
+        except ValueError as exc:
+            msg = "The value '{}={}' is invalid: {}".format(
+                'subnet/ip_address', properties['ip_address'], str(exc))
+            raise BaseHttpError(code=400, msg=msg)
+        # retrieve object
+        ip_obj = IpAddress.query.join(
+            Subnet, IpAddress.subnet_id == Subnet.id
+        ).filter(
+            Subnet.name == subnet_name
+        ).filter(
+            IpAddress.address == ip_addr
+        ).one_or_none()
+        if ip_obj is None:
+            raise ItemNotFoundError(
+                'ip_address', properties['ip_address'], self)
+
+        # target ip address has no system assigned yet: check if user has
+        # update permission to it
+        if not ip_obj.system_id:
+            self._perman.can('UPDATE', flask_global.auth_user, ip_obj,
+                             'IP address')
+            # create association
+            ip_obj.system_id = system_obj.id
+        # ip address assigned to different system: cannot assign to two systems
+        # at the same time
+        elif ip_obj.system_id != system_obj.id:
+            msg = ('The IP address is already assigned to system <{}>, remove '
+                   'the association first'.format(ip_obj.system_rel.name))
+            raise BaseHttpError(409, msg=msg)
     # _verify_ip()
 
     @staticmethod
@@ -233,10 +264,11 @@ class SystemIfaceResource(SecureResource):
         if target_system is None:
             raise ItemNotFoundError('system', properties['system'], self)
 
-        self._perman.can('CREATE', flask_global.auth_user, target_system)
+        self._perman.can('UPDATE', flask_global.auth_user, target_system,
+                         'system')
 
         self._verify_mac(properties, None)
-        self._verify_ip(properties)
+        self._verify_ip(properties, target_system)
 
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,
@@ -263,7 +295,7 @@ class SystemIfaceResource(SecureResource):
 
         # validate user permission on object
         self._perman.can(
-            'DELETE', flask_global.auth_user, entry.system_rel, 'system')
+            'UPDATE', flask_global.auth_user, entry.system_rel, 'system')
 
         self.manager.delete_by_id(id)
         return True
@@ -290,7 +322,6 @@ class SystemIfaceResource(SecureResource):
         allowed_instances = []
         for instance in self.manager.instances(kwargs.get('where'),
                                                kwargs.get('sort')):
-
             try:
                 self._perman.can(
                     'READ', flask_global.auth_user, instance.system_rel)
@@ -322,7 +353,8 @@ class SystemIfaceResource(SecureResource):
         item = self.manager.read(id)
 
         # validate permission on the object - use the associated system
-        self._perman.can('READ', flask_global.auth_user, item.system_rel)
+        self._perman.can('READ', flask_global.auth_user, item.system_rel,
+                         'system')
 
         return item
     # do_read()
@@ -354,7 +386,7 @@ class SystemIfaceResource(SecureResource):
             'UPDATE', flask_global.auth_user, item.system_rel, 'system')
 
         self._verify_mac(properties, item)
-        self._verify_ip(properties)
+        self._verify_ip(properties, item.system_rel)
 
         # an iface cannot change its system so we only allow to set it on
         # creation

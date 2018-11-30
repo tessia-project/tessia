@@ -4,6 +4,7 @@ tasks_order:
   - base_add
   - lpar_add
   - kvm_add
+  - ip_withdraw
   - kvm_del
   - lpar_del
 tasks:
@@ -130,6 +131,12 @@ tasks:
       - Volume attached successfully.
     - - system vol-attach --system=guest55 --profile='KVM root1' --server=DS8K16 --vol=1022400300000000
       - Volume attached successfully.
+  # withdraw system for ip addresses is done separately because only lab admin has permission to do so
+  ip_withdraw:
+    - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --system=
+      - Item successfully updated.
+    - - net ip-edit --ip=192.168.160.55 --subnet='GEO_1-NE-1822' --system=
+      - Item successfully updated.
   kvm_del:
     # switch to developer user to test whether they have the rights to perform the following actions
     - - - conf key-gen

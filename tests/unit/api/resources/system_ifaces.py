@@ -1,5 +1,4 @@
-
-# Copyright 2018 IBM Corp.
+# Copyright 2018, 2019 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +23,7 @@ from tessia.server.api.resources.system_ifaces import SystemIfaceResource
 from tessia.server.db import models
 from tests.unit.api.resources.secure_resource import TestSecureResource
 
+import ipaddress
 import json
 
 #
@@ -56,7 +56,6 @@ class TestSystemIface(TestSecureResource):
                 'osname': 'eth0',
                 'system': 'lpar0',
                 'type': 'OSA',
-                'ip_address': 'cpc0 shared/10.1.0.4',
                 'mac_address': '00:11:22:33:44:55',
                 'attributes': {'ccwgroup': '0.0.f101,0.0.f102,0.0.f103',
                                'layer2': True},
@@ -65,6 +64,15 @@ class TestSystemIface(TestSecureResource):
             index += 1
             yield data
     # _entry_gen()
+
+    @classmethod
+    def _ip_gen(cls):
+        network_obj = ipaddress.ip_network('10.1.0.0/16')
+        index = 5
+        while True:
+            yield network_obj[index]
+            index += 1
+    # _ip_gen()
 
     @classmethod
     def setUpClass(cls):
@@ -88,6 +96,10 @@ class TestSystemIface(TestSecureResource):
             system_obj.owner = 'user_user@domain.com'
             cls.db.session.add(system_obj)
         cls.db.session.commit()
+
+        # define the generator for new ips
+        cls._get_next_ip = cls._ip_gen()
+        cls._subnet_name = 'cpc0 shared'
     # setUpClass()
 
     def _validate_resp(self, resp, msg, status_code):
@@ -99,13 +111,12 @@ class TestSystemIface(TestSecureResource):
         self.assertEqual(msg, body['message'])
     # _validate_resp()
 
-    def test_add_all_fields(self):
+    def test_add_all_fields_many_roles(self):
         """
         Exercise the scenario where a user with permissions creates an item
         by specifying all possible fields.
         """
         logins = [
-            # TODO: fix user_user having access to system iface of other user
             'user_user@domain.com',
             'user_privileged@domain.com',
             'user_project_admin@domain.com',
@@ -113,8 +124,186 @@ class TestSystemIface(TestSecureResource):
             'user_admin@domain.com'
         ]
 
+        # create iface without ip, user has permission to system
         self._test_add_all_fields_many_roles(logins)
+
+        ip_addr = str(next(self._get_next_ip))
+        ip_obj = models.IpAddress(
+            address=ip_addr,
+            subnet=self._subnet_name,
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(ip_obj)
+        self.db.session.commit()
+        def cleanup_helper():
+            """Helper to remove IP on test end/failure"""
+            self.db.session.delete(ip_obj)
+            self.db.session.commit()
+        self.addCleanup(cleanup_helper)
+
+        for login in logins:
+            # logins with update-ip permission
+            if login in ('user_hw_admin@domain.com', 'user_admin@domain.com'):
+                ip_owner = 'admin'
+            # logins without permission, must be owner of the ip
+            else:
+                ip_owner = login
+            # create iface with ip, user has permission to both
+            ip_obj.owner = ip_owner
+            self.db.session.add(ip_obj)
+            self.db.session.commit()
+            iface_new = next(self._get_next_entry)
+            iface_new['ip_address'] = '{}/{}'.format(
+                self._subnet_name, ip_addr)
+            created_id = self._request_and_assert(
+                'create', '{}:a'.format(login), iface_new)
+
+            # clean up
+            ip_obj.owner = 'admin'
+            self.db.session.add(ip_obj)
+            self.db.session.commit()
+            self.db.session.query(self.RESOURCE_MODEL).filter_by(
+                id=created_id).delete()
     # test_add_all_fields_many_roles()
+
+    def test_add_all_fields_no_role(self):
+        """
+        Exercise the scenario where a normal user without permissions tries to
+        create an item and fails.
+        """
+        # create iface without ip, user has no permission to system
+        self._test_add_all_fields_no_role(['user_restricted@domain.com'])
+
+        ip_addr = str(next(self._get_next_ip))
+        ip_obj = models.IpAddress(
+            address=ip_addr,
+            subnet=self._subnet_name,
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(ip_obj)
+        self.db.session.commit()
+        def cleanup_helper():
+            """Helper to remove IP on test end/failure"""
+            self.db.session.delete(ip_obj)
+            self.db.session.commit()
+        self.addCleanup(cleanup_helper)
+
+        sys_name = next(self._get_next_entry)['system']
+        sys_obj = models.System.query.filter_by(name=sys_name).one()
+        orig_sys_owner = sys_obj.owner
+        def restore_owner():
+            """Helper to restore system owner on test end/failure"""
+            sys_obj = models.System.query.filter_by(name=sys_name).one()
+            sys_obj.owner = orig_sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+        # restore_owner()
+        self.addCleanup(restore_owner)
+
+        def assert_fail(error_msg, login, sys_owner, ip_owner, http_code=403):
+            """Helper to prepare and validate action"""
+            data = next(self._get_next_entry)
+            sys_name = data['system']
+
+            # prepare ip ownership
+            ip_obj = models.IpAddress.query.filter_by(
+                address=ip_addr, subnet=self._subnet_name).one()
+            ip_obj.owner = ip_owner
+            self.db.session.add(ip_obj)
+            # set system owner which gets used by iface for permission
+            # verification
+            sys_obj = models.System.query.filter_by(name=sys_name).one()
+            orig_sys_owner = sys_obj.owner
+            sys_obj.owner = sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+
+            data['ip_address'] = '{}/{}'.format(self._subnet_name, ip_addr)
+            resp = self._do_request('create', '{}:a'.format(login), data)
+            # validate the response received, should be forbidden
+            self._validate_resp(resp, error_msg, http_code)
+
+            # cleanup
+            ip_obj.owner = 'admin'
+            self.db.session.add(ip_obj)
+            # restore system owner
+            sys_obj = models.System.query.filter_by(name=sys_name).one()
+            sys_obj.owner = orig_sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+        # assert_fail()
+
+        def assert_assigned(login, sys_owner, ip_owner):
+            """
+            Helper to validate the case when ip is assigned to another system
+            """
+            another_system = 'cpc0'
+            ip_obj = models.IpAddress.query.filter_by(
+                address=ip_addr, subnet=self._subnet_name).one()
+            ip_obj.system = another_system
+            self.db.session.add(ip_obj)
+            self.db.session.commit()
+            msg = ('The IP address is already assigned to system <{}>, remove '
+                   'the association first'.format(another_system))
+            assert_fail(msg, login, sys_owner, ip_owner, http_code=409)
+
+            # cleanup
+            ip_obj = models.IpAddress.query.filter_by(
+                address=ip_addr, subnet=self._subnet_name).one()
+            ip_obj.system = None
+            self.db.session.add(ip_obj)
+            self.db.session.commit()
+        # assert_assigned()
+
+        # logins without update-system and update-ip permission
+        logins = [
+            'user_restricted@domain.com',
+            'user_user@domain.com',
+        ]
+        for login in logins:
+            # create iface with ip, user has permission to ip but not to system
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_fail(msg, login, 'admin', login)
+
+            # create iface with ip, user has no permission to system nor ip
+            assert_fail(msg, login, 'admin', 'admin')
+
+            # create iface with ip, user has permission to system but not ip
+            msg = 'User has no UPDATE permission for the specified IP address'
+            assert_fail(msg, login, login, 'admin')
+
+            # create iface with ip, user has permission to system but ip is
+            # already assigned to another system
+            assert_assigned(login, login, login)
+
+        # logins without update-ip permission
+        logins = [
+            'user_privileged@domain.com',
+            'user_project_admin@domain.com',
+        ]
+        for login in logins:
+            # create iface with ip, user has permission to system but not ip
+            msg = 'User has no UPDATE permission for the specified IP address'
+            assert_fail(msg, login, 'admin', 'admin')
+
+            # create iface with ip, user has permission to system but ip is
+            # already assigned to another system
+            assert_assigned(login, 'admin', login)
+
+        # logins with all permissions
+        logins = [
+            'user_hw_admin@domain.com',
+            'user_admin@domain.com',
+        ]
+        for login in logins:
+            # create iface with ip, user has permission to system but ip is
+            # already assigned to another system
+            assert_assigned(login, 'admin', 'admin')
+    # test_add_all_fields_no_role()
 
     def test_add_mandatory_fields(self):
         """
@@ -122,8 +311,6 @@ class TestSystemIface(TestSecureResource):
         by specifying only the mandatory fields.
         """
         # the fields to be omitted and their expected values on response
-        pop_fields = [('ip_address', None)]
-        pop_fields = [('osname', None)]
         pop_fields = [('desc', None)]
         self._test_add_mandatory_fields(
             'user_privileged@domain.com', pop_fields)
@@ -146,8 +333,6 @@ class TestSystemIface(TestSecureResource):
         # system is test separately because error message is different
         wrong_fields = [
             ('ip_address', 'wrong-subnet/192.168.5.10'),
-            # try without subnet
-            ('ip_address', '192.168.5.10'),
             ('type', 'wrong-type'),
         ]
         self._test_add_update_assoc_error(
@@ -175,6 +360,8 @@ class TestSystemIface(TestSecureResource):
             ('name', False),
             ('name', None),
             ('ip_address', 'wrong-subnet/wrong-ip'),
+            # try without subnet
+            ('ip_address', '192.168.5.10'),
             ('ip_address', 5),
             ('ip_address', False),
             ('osname', ''),
@@ -220,12 +407,10 @@ class TestSystemIface(TestSecureResource):
         """
         Exercise to remove entries with different roles
         """
-        # keep in mind that ifaces use permissions from systems - which means
-        # the first field (login add) refers to the profile creation but when
-        # deleting it's the system's owner and project that count for
-        # permission validation
+        # keep in mind that ifaces check for UPDATE permission to system
         combos = [
             ('user_user@domain.com', 'user_user@domain.com'),
+            ('user_user@domain.com', 'user_privileged@domain.com'),
             ('user_user@domain.com', 'user_project_admin@domain.com'),
             ('user_user@domain.com', 'user_hw_admin@domain.com'),
             ('user_user@domain.com', 'user_admin@domain.com'),
@@ -235,12 +420,15 @@ class TestSystemIface(TestSecureResource):
             ('user_privileged@domain.com', 'user_project_admin@domain.com'),
             ('user_privileged@domain.com', 'user_admin@domain.com'),
             ('user_privileged@domain.com', 'user_hw_admin@domain.com'),
+            ('user_project_admin@domain.com', 'user_privileged@domain.com'),
             ('user_project_admin@domain.com', 'user_project_admin@domain.com'),
             ('user_project_admin@domain.com', 'user_hw_admin@domain.com'),
             ('user_project_admin@domain.com', 'user_admin@domain.com'),
+            ('user_hw_admin@domain.com', 'user_privileged@domain.com'),
             ('user_hw_admin@domain.com', 'user_project_admin@domain.com'),
             ('user_hw_admin@domain.com', 'user_hw_admin@domain.com'),
             ('user_hw_admin@domain.com', 'user_admin@domain.com'),
+            ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_admin@domain.com'),
             ('user_admin@domain.com', 'user_hw_admin@domain.com'),
         ]
@@ -261,12 +449,8 @@ class TestSystemIface(TestSecureResource):
         """
         combos = [
             # privileged can add and update but not delete
-            ('user_user@domain.com', 'user_privileged@domain.com'),
-            ('user_project_admin@domain.com', 'user_privileged@domain.com'),
             ('user_project_admin@domain.com', 'user_restricted@domain.com'),
-            ('user_hw_admin@domain.com', 'user_privileged@domain.com'),
             ('user_hw_admin@domain.com', 'user_restricted@domain.com'),
-            ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_restricted@domain.com'),
         ]
         self._test_del_no_role(combos)
@@ -294,6 +478,58 @@ class TestSystemIface(TestSecureResource):
         self._test_list_and_read_restricted_no_role(
             'user_user@domain.com', 'user_restricted@domain.com')
     # test_list_and_read_restricted_no_role()
+
+    def test_list_and_read_restricted_with_role(self):
+        """
+        List entries with a restricted user who has a role in a project.
+        """
+        user_rest = 'user_restricted@domain.com'
+        # collect the existing entries and add them to the new ones for
+        # later validation
+        entries = []
+        systems = models.System.query.join(
+            'project_rel'
+        ).filter(
+            models.System.project == self._db_entries['Project'][0]['name']
+        ).all()
+        for sys_name in [system.name for system in systems]:
+            resp = self._do_request(
+                'list', 'admin:a',
+                'where={}'.format(json.dumps({'system': sys_name}))
+            )
+            entries.extend(json.loads(resp.get_data(as_text=True)))
+        # adjust id field to make the http response look like the same as the
+        # dict from the _create_many_entries return
+        for entry in entries:
+            entry['id'] = entry.pop('$uri').split('/')[-1]
+
+        # create new entries to work with and merge all of them
+        entries.extend(self._create_many_entries('admin', 5)[0])
+
+        # add the role for the restricted user
+        role = models.UserRole(
+            project=self._db_entries['Project'][0]['name'],
+            user=user_rest,
+            role="USER_RESTRICTED"
+        )
+        self.db.session.add(role)
+        self.db.session.commit()
+        def cleanup_helper():
+            """Helper to remove role on test end/failure"""
+            self.db.session.delete(role)
+            self.db.session.commit()
+        self.addCleanup(cleanup_helper)
+
+        # retrieve list
+        resp = self._do_request('list', '{}:a'.format(user_rest))
+        self._assert_listed_or_read(resp, entries, 0)
+
+        # perform a read
+        resp = self._do_request(
+            'get', '{}:a'.format(user_rest), entries[0]['id'])
+        self._assert_listed_or_read(
+            resp, [entries[0]], 0, read=True)
+    # test_list_and_read_restricted_with_role()
 
     def test_mac_non_osa(self):
         """
@@ -351,8 +587,6 @@ class TestSystemIface(TestSecureResource):
         """
         Test creation/update of OSA cards on LPARs
         """
-        user_cred = '{}:a'.format('user_user@domain.com')
-
         # layer2 on, mac defined - allowed
         user_cred = '{}:a'.format('user_user@domain.com')
         data = next(self._get_next_entry)
@@ -457,6 +691,425 @@ class TestSystemIface(TestSecureResource):
         self.db.session.commit()
     # test_mac_osa_zvm()
 
+    def test_update_has_role(self):
+        """
+        Exercise update scenarios involving different permission combinations
+        """
+        ip_addr = str(next(self._get_next_ip))
+        ip_obj = models.IpAddress(
+            address=ip_addr,
+            subnet=self._subnet_name,
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(ip_obj)
+        ip_addr_2 = str(next(self._get_next_ip))
+        ip_obj_2 = models.IpAddress(
+            address=ip_addr_2,
+            subnet=self._subnet_name,
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(ip_obj_2)
+        self.db.session.commit()
+
+        # restore original system owner on test end/failure to avoid causing
+        # problems with other tests
+        data = next(self._get_next_entry)
+        sys_obj = models.System.query.filter_by(name=data['system']).one()
+        orig_sys_owner = sys_obj.owner
+        def restore_owner():
+            """Helper cleanup"""
+            sys_obj = models.System.query.filter_by(name=data['system']).one()
+            sys_obj.owner = orig_sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+        self.addCleanup(restore_owner)
+
+        def assert_update(update_user, sys_owner, ip_cur, ip_target):
+            """
+            Helper function to validate update action
+
+            Args:
+                update_user (str): login performing the update action
+                sys_owner (str): set this login as owner of the system
+                ip_cur (str): name and owner of the current ip address
+                ip_target (str): name and owner of target ip address
+            """
+            data = next(self._get_next_entry)
+            # set system owner which gets used by iface for permission
+            # verification
+            sys_obj = models.System.query.filter_by(name=data['system']).one()
+            sys_obj.owner = sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+            if ip_cur:
+                data['ip_address'] = '{}/{}'.format(
+                    self._subnet_name, ip_cur['address'])
+                ip_obj = models.IpAddress.query.filter_by(
+                    address=ip_cur['address'], subnet=self._subnet_name).one()
+                ip_obj.owner = ip_cur['owner']
+                # assign ip to a system
+                if ip_cur['assign']:
+                    ip_obj.system = data['system']
+                else:
+                    ip_obj.system = None
+                self.db.session.add(ip_obj)
+                self.db.session.commit()
+            iface_id = self._request_and_assert('create', 'admin:a', data)
+
+            if ip_target:
+                ip_obj = models.IpAddress.query.filter_by(
+                    address=ip_target['address'], subnet=self._subnet_name
+                ).one()
+                ip_obj.owner = ip_target['owner']
+                # assign ip to a system
+                if ip_target['assign']:
+                    ip_obj.system = data['system']
+                else:
+                    ip_obj.system = None
+                self.db.session.add(ip_obj)
+                self.db.session.commit()
+                ip_tgt_name = '{}/{}'.format(
+                    self._subnet_name, ip_target['address'])
+            else:
+                ip_tgt_name = None
+
+            # perform request and validate
+            data = {'id': iface_id, 'ip_address': ip_tgt_name}
+            self._request_and_assert(
+                'update', '{}:a'.format(update_user), data)
+            self.assertEqual(
+                self.RESOURCE_MODEL.query.filter_by(
+                    id=iface_id).one().ip_address,
+                data['ip_address'], 'IP address field update failed')
+
+            # clean up
+            self.db.session.query(self.RESOURCE_MODEL).filter_by(
+                id=iface_id).delete()
+            if ip_cur:
+                ip_obj = models.IpAddress.query.filter_by(
+                    address=ip_cur['address'], subnet=self._subnet_name).one()
+                ip_obj.system_id = None
+                self.db.session.add(ip_obj)
+            if ip_target:
+                ip_obj = models.IpAddress.query.filter_by(
+                    address=ip_target['address'], subnet=self._subnet_name
+                ).one()
+                ip_obj.system_id = None
+                self.db.session.add(ip_obj)
+            self.db.session.commit()
+        # assert_update()
+
+        logins = [
+            'user_restricted@domain.com',
+            'user_user@domain.com',
+            'user_privileged@domain.com',
+            'user_project_admin@domain.com',
+            'user_hw_admin@domain.com',
+            'user_admin@domain.com',
+        ]
+        for login in logins:
+            # update iface set ip, user has permission to both system and ip
+            # exercise case where user is owner of system
+            if login in ('user_restricted@domain.com', 'user_user@domain.com'):
+                sys_owner = login
+            # exercise case where user has permission via a role
+            else:
+                sys_owner = 'admin'
+            # exercise case where user is owner of ip
+            if login not in ('user_hw_admin@domain.com',
+                             'user_admin@domain.com'):
+                ip_owner = login
+            # exercise case where user has permission via a role
+            else:
+                ip_owner = 'admin'
+            assert_update(
+                login, sys_owner,
+                None,
+                {'address': ip_addr, 'owner': ip_owner, 'assign': False},
+            )
+
+            # update iface set ip assigned to system, user has permission to
+            # system but not to ip
+            assert_update(
+                login, sys_owner,
+                None,
+                {'address': ip_addr, 'owner': 'admin', 'assign': True},
+            )
+
+            # update iface withdraw ip, user has permission to system and ip
+            assert_update(
+                login, sys_owner,
+                {'address': ip_addr, 'owner': ip_owner, 'assign': False},
+                None,
+            )
+
+            # update iface withdraw ip assigned to system, user has
+            # permission to system but not to ip
+            assert_update(
+                login, sys_owner,
+                {'address': ip_addr, 'owner': 'admin', 'assign': True},
+                None,
+            )
+
+            # update iface change ip, user has permission to both
+            # exercise case where user is owner
+            if login not in ('user_hw_admin@domain.com',
+                             'user_admin@domain.com'):
+                ip_owner_2 = login
+            # exercise case where user has permission via a role
+            else:
+                ip_owner_2 = 'admin'
+            assert_update(
+                login, sys_owner,
+                {'address': ip_addr, 'owner': ip_owner, 'assign': False},
+                {'address': ip_addr_2, 'owner': ip_owner_2, 'assign': False},
+            )
+
+            # update iface change ip assigned to system, user has permission
+            # to system but not to ip
+            assert_update(
+                login, sys_owner,
+                {'address': ip_addr, 'owner': ip_owner, 'assign': False},
+                {'address': ip_addr_2, 'owner': ip_owner_2, 'assign': True},
+            )
+
+        # clean up
+        self.db.session.delete(ip_obj)
+        self.db.session.delete(ip_obj_2)
+        self.db.session.commit()
+    # test_update_has_role()
+
+    def test_update_no_role(self):
+        """
+        Try to update an iface without an appropriate role to do so.
+        """
+        hw_admin = 'user_hw_admin@domain.com'
+        # restore original system owner on test end/failure to avoid causing
+        # problems with other tests
+        data = next(self._get_next_entry)
+        sys_name = data['system']
+        sys_obj = models.System.query.filter_by(name=sys_name).one()
+        orig_sys_owner = sys_obj.owner
+        def restore_owner():
+            """Helper cleanup"""
+            sys_obj = models.System.query.filter_by(name=sys_name).one()
+            sys_obj.owner = orig_sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+        self.addCleanup(restore_owner)
+        sys_obj.owner = hw_admin
+        self.db.session.add(sys_obj)
+        self.db.session.commit()
+
+        # update iface without ip, user has no permission to system
+        update_fields = {
+            'name': 'some_name',
+            'osname': 'ethX',
+            'desc': 'some_desc',
+            'mac_address': '99:11:22:33:44:55',
+            'attributes': {'ccwgroup': '0.0.e101,0.0.e102,0.0.e103',
+                           'layer2': True},
+        }
+        logins = [
+            'user_restricted@domain.com',
+            'user_user@domain.com',
+        ]
+        self._test_update_no_role(hw_admin, logins, update_fields)
+
+        ip_addr = str(next(self._get_next_ip))
+        ip_obj = models.IpAddress(
+            address=ip_addr,
+            subnet=self._subnet_name,
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        self.db.session.add(ip_obj)
+        ip_addr_2 = str(next(self._get_next_ip))
+        ip_obj_2 = models.IpAddress(
+            address=ip_addr_2,
+            subnet=self._subnet_name,
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][1]['name'],
+        )
+        self.db.session.add(ip_obj_2)
+        self.db.session.commit()
+        # keep track of ids for cleaning up at the end
+        ip_obj_id = ip_obj.id
+        ip_obj_id_2 = ip_obj_2.id
+
+        def assert_update(error_msg, update_user, sys_owner, ip_cur,
+                          ip_target, http_code=403):
+            """
+            Helper function to validate update action is forbidden
+
+            Args:
+                update_user (str): login performing the update action
+                sys_owner (str): set this login as owner of the system
+                ip_cur (str): name and owner of the current ip address
+                ip_target (str): name and owner of target ip address
+                error_msg (str): expected error message
+                http_code (int): expected http error code, defaults to
+                                 403 forbidden
+            """
+            data = next(self._get_next_entry)
+            sys_name = data['system']
+            # set system owner which gets used by iface for permission
+            # verification
+            sys_obj = models.System.query.filter_by(name=sys_name).one()
+            orig_sys_owner = sys_obj.owner
+            sys_obj.owner = sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+            if ip_cur:
+                data['ip_address'] = '{}/{}'.format(
+                    self._subnet_name, ip_cur['address'])
+                ip_obj = models.IpAddress.query.filter_by(
+                    address=ip_cur['address'], subnet=self._subnet_name).one()
+                ip_obj.owner = ip_cur['owner']
+                if ip_cur.get('assign'):
+                    ip_obj.system = ip_cur['assign']
+                else:
+                    ip_obj.system = None
+                self.db.session.add(ip_obj)
+                self.db.session.commit()
+            iface_id = self._request_and_assert('create', 'admin:a', data)
+
+            if ip_target:
+                ip_obj = models.IpAddress.query.filter_by(
+                    address=ip_target['address'], subnet=self._subnet_name
+                ).one()
+                ip_obj.owner = ip_target['owner']
+                # assign ip to a system
+                if ip_target.get('assign'):
+                    ip_obj.system = ip_target['assign']
+                else:
+                    ip_obj.system = None
+                self.db.session.add(ip_obj)
+                self.db.session.commit()
+                ip_tgt_name = '{}/{}'.format(
+                    self._subnet_name, ip_target['address'])
+            else:
+                ip_tgt_name = None
+
+            data = {'id': iface_id, 'ip_address': ip_tgt_name}
+            resp = self._do_request('update', '{}:a'.format(update_user), data)
+            # validate the response received
+            self._validate_resp(resp, error_msg, http_code)
+            # clean up
+            self.db.session.query(self.RESOURCE_MODEL).filter_by(
+                id=iface_id).delete()
+            if ip_cur:
+                ip_obj = models.IpAddress.query.filter_by(
+                    address=ip_cur['address'], subnet=self._subnet_name).one()
+                ip_obj.system_id = None
+                self.db.session.add(ip_obj)
+            if ip_target:
+                ip_obj = models.IpAddress.query.filter_by(
+                    address=ip_target['address'], subnet=self._subnet_name
+                ).one()
+                ip_obj.system_id = None
+                self.db.session.add(ip_obj)
+            # restore system owner
+            sys_obj = models.System.query.filter_by(name=sys_name).one()
+            sys_obj.owner = orig_sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+        # assert_update()
+
+        # logins with update-system permission but no update-ip
+        logins_system = (
+            'user_privileged@domain.com',
+            'user_project_admin@domain.com',
+        )
+        for login in logins_system:
+            # update iface assign ip, user has permission to system but not
+            # to ip
+            msg = 'User has no UPDATE permission for the specified IP address'
+            assert_update(msg, login, hw_admin,
+                          None, {'address': ip_addr, 'owner': hw_admin})
+
+            # update iface change ip, user has permission to system and
+            # current ip but not to target ip
+            msg = 'User has no UPDATE permission for the specified IP address'
+            assert_update(msg, login, hw_admin,
+                          {'address': ip_addr, 'owner': login},
+                          {'address': ip_addr_2, 'owner': hw_admin})
+
+        # logins without update-system permission
+        logins_no_system = (
+            'user_restricted@domain.com',
+            'user_user@domain.com'
+        )
+        for login in logins_no_system:
+            # update iface assign ip, user has permission to ip but
+            # not to system
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_update(msg, login, hw_admin,
+                          None, {'address': ip_addr, 'owner': login})
+
+            # update iface assign ip, user has permission to system but not
+            # to ip
+            msg = 'User has no UPDATE permission for the specified IP address'
+            assert_update(msg, login, login,
+                          None, {'address': ip_addr, 'owner': hw_admin})
+
+            # update iface assign ip, user has no permission to system nor ip
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_update(msg, login, hw_admin,
+                          None, {'address': ip_addr, 'owner': hw_admin})
+
+            # note: no test for update iface withdraw ip as this is allowed
+
+            # update iface withdraw ip, user has no permission to system nor ip
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_update(msg, login, hw_admin,
+                          {'address': ip_addr, 'owner': hw_admin}, None)
+
+            # update iface withdraw ip, user has permission to ip but
+            # not to system
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_update(msg, login, hw_admin,
+                          {'address': ip_addr, 'owner': login}, None)
+
+            # update iface change ip, user has permission to system and
+            # current ip but not to target ip
+            msg = 'User has no UPDATE permission for the specified IP address'
+            assert_update(msg, login, login,
+                          {'address': ip_addr, 'owner': login},
+                          {'address': ip_addr_2, 'owner': hw_admin})
+
+        another_system = 'cpc0'
+        for login in (('user_hw_admin@domain.com', 'user_admin@domain.com') +
+                      logins_system + logins_no_system):
+            # update iface assign ip, user has permission to system and
+            # ip but ip is already assigned to another system
+            msg = ('The IP address is already assigned to system <{}>, remove '
+                   'the association first'.format(another_system))
+            assert_update(
+                msg, login, login,
+                None,
+                {'address': ip_addr, 'owner': login, 'assign': another_system},
+                http_code=409)
+
+            # update iface change ip, user has permission to system and ip but
+            # ip is already assigned to another system
+            assert_update(msg, login, login,
+                          {'address': ip_addr, 'owner': login},
+                          {'address': ip_addr_2, 'owner': login,
+                           'assign': another_system}, http_code=409)
+
+        # clean up
+        models.IpAddress.query.filter_by(id=ip_obj_id).delete()
+        models.IpAddress.query.filter_by(id=ip_obj_id_2).delete()
+        self.db.session.commit()
+    # test_update_no_role()
+
     def test_update_assoc_system(self):
         """
         Try to change the system associated to an iface.
@@ -476,6 +1129,4 @@ class TestSystemIface(TestSecureResource):
         self.RESOURCE_MODEL.query.filter_by(id=created_id).delete()
         self.db.session.commit()
     # test_update_assoc_system()
-
-    # TODO: test listing as restricted user with role
 # TestSystemIface

@@ -338,20 +338,28 @@ class SmBase(metaclass=abc.ABCMeta):
         result["size"] = storage_vol.size
         result["part_table"] = deepcopy(storage_vol.part_table)
         result["is_root"] = False
-        try:
-            result["part_table"]["table"]
-        except (TypeError, KeyError):
-            pass
-        else:
-            for entry in result["part_table"]["table"]:
-                if entry["mp"] == "/":
-                    result["is_root"] = True
-                    break
 
         # device path not user-defined: determine it based on the platform
         if "device" not in result["system_attributes"]:
             result["system_attributes"]["device"] = \
                 self._platform.get_vol_devpath(storage_vol)
+
+        try:
+            part_table = result["part_table"]["table"]
+        except (TypeError, KeyError):
+            # no partition table, nothing more to do
+            return result
+
+        scheme_size = 0
+        for entry in part_table:
+            scheme_size += entry['size']
+            if entry["mp"] == "/":
+                result["is_root"] = True
+        # partitions use the whole disk: distro installers begin creating
+        # partitions at 1 so we remove 1 from the end to make sure the scheme
+        # fits
+        if scheme_size == result['size']:
+            result['part_table']['table'][-1]['size'] -= 1
 
         return result
     # _parse_svol()

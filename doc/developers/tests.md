@@ -504,7 +504,7 @@ Similar to how the unit tests are executed, there is a helper script to execute 
 The first step is to start the containers in devmode using the orc tool:
 
 ```
-[user@myhost tessia]$ tools/ci/orc devmode --tag=17.713.740
+[user@myhost tessia]$ tools/ci/orc run --devmode --tag=17.713.740
 
 (output suppressed...)
 

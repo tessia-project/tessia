@@ -595,6 +595,9 @@ class Manager(object):
         Tell each image object to clean up (remove associated image and
         containers)
         """
+        # stopping and clean any running services
+        self._compose_stop()
+
         # delete dangling (unreachable) images, that helps keeping the disk
         # usage low as docker does not have a gc available.
         # By doing this before removing the actual images we assure that

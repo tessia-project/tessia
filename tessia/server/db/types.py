@@ -59,6 +59,9 @@ OPERATING_SYSTEMS = [
     'ubuntu16.04.1,debian,1604,1,Ubuntu 16.04.1 LTS,ubuntu16-default',
     'ubuntu16.04.2,debian,1604,2,Ubuntu 16.04.2 LTS,ubuntu16-default',
     'ubuntu16.04.3,debian,1604,3,Ubuntu 16.04.3 LTS,ubuntu16-default',
+    'ubuntu18.04,debian,1804,0,Ubuntu 18.04 LTS,ubuntu18-default',
+    'ubuntu18.04.1,debian,1804,1,Ubuntu 18.04.1 LTS,ubuntu18-default',
+    'ubuntu18.10,debian,1810,0,Ubuntu 18.10,ubuntu18-default',
 ]
 
 USERS = [
@@ -81,6 +84,9 @@ TEMPLATES = [
     "ubuntu16-default,Default template for Ubuntu16 installations"
     ",admin,Admins",
     "ubuntu16-kvmhost,Ubuntu16 KVM hypervisor profile,admin,Admins",
+    "ubuntu18-default,Default template for Ubuntu18 installations"
+    ",admin,Admins",
+    "ubuntu18-kvmhost,Ubuntu18 KVM hypervisor profile,admin,Admins",
 ]
 
 ROLES = [

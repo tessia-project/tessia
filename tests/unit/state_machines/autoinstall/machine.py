@@ -332,6 +332,24 @@ class TestAutoInstallMachine(TestCase):
             machine.AutoInstallMachine.parse(REQUEST_PARAMETERS)
     # test_parse_no_hyp_profile()
 
+    def test_system_no_iface(self):
+        """
+        Confirm that exception is raised when a system without any interface
+        attached is provided for installation.
+        """
+        request = json.dumps({
+            'system': 'CPC3LP55',
+            'profile': 'default_CPC3LP55_no_iface',
+            'os': 'ubuntu16.04.1',
+        })
+
+        error_msg = 'No network interface attached to perform installation'
+        with self.assertRaisesRegex(ValueError, error_msg):
+            machine.AutoInstallMachine.parse(request)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            machine.AutoInstallMachine(request)
+    # test_system_no_iface()
+
     def test_system_no_hypervisor(self):
         """
         Confirm that parse fails when a system without hypervisor defined is
@@ -345,6 +363,44 @@ class TestAutoInstallMachine(TestCase):
             with self.assertRaisesRegex(ValueError, error_msg):
                 machine.AutoInstallMachine.parse(REQUEST_PARAMETERS)
     # test_system_no_hypervisor()
+
+    def test_system_invalid_gw_iface(self):
+        """
+        Confirm that an exception is raised for the cases where a system has
+        an invalid gateway interface defined
+        """
+        system_name = 'CPC3LP55'
+        prof_name = 'default_CPC3LP55_SCSI'
+        prof_obj = utils.get_profile("{}/{}".format(system_name, prof_name))
+        iface_obj = prof_obj.system_ifaces_rel[0]
+        request = json.dumps({
+            'system': system_name,
+            'profile': prof_name,
+            'os': 'ubuntu16.04.1',
+        })
+
+        # subnet has no gateway route
+        error_msg = (
+            "Subnet <{}> of the gateway network interface <{}> has no gateway "
+            "route defined".format(iface_obj.ip_address_rel.subnet_rel.name,
+                                   iface_obj.name))
+        with self._mock_db_obj(
+            iface_obj.ip_address_rel.subnet_rel, 'gateway', None):
+            with self.assertRaisesRegex(ValueError, error_msg):
+                machine.AutoInstallMachine.parse(request)
+            with self.assertRaisesRegex(ValueError, error_msg):
+                machine.AutoInstallMachine(request)
+
+        # gateway iface has no IP address
+        error_msg = (
+            "Gateway network interface <{}> has no IP address assigned"
+            .format(iface_obj.name))
+        with self._mock_db_obj(iface_obj, 'ip_address_id', None):
+            with self.assertRaisesRegex(ValueError, error_msg):
+                machine.AutoInstallMachine.parse(request)
+            with self.assertRaisesRegex(ValueError, error_msg):
+                machine.AutoInstallMachine(request)
+    # test_system_gw_iface_no_gateway()
 
     def test_unsupported_os(self):
         """

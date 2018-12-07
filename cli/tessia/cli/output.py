@@ -19,6 +19,8 @@ Utilities for printing content to console
 #
 # IMPORTS
 #
+from enum import Enum
+
 import click
 import datetime
 import subprocess
@@ -27,11 +29,17 @@ import sys
 #
 # CONSTANTS AND DEFINITIONS
 #
+class PrintMode(Enum):
+    """
+    Class representing an enumeration of display modes for the print functions
+    """
+    LONG = 0
+    TABLE = 1
 
 #
 # CODE
 #
-class _Pager(object):
+class _Pager():
     """
     Class representing a Pager (i.e. less) that can receive input to be
     presented to the user.
@@ -111,7 +119,7 @@ def call_pager():
     return _Pager()
 # call_pager()
 
-def print_items(fields, model, format_map, items):
+def print_items(fields, model, format_map, items, mode=PrintMode.LONG):
     """
     Receive a list of items and format them for printing.
 
@@ -121,14 +129,13 @@ def print_items(fields, model, format_map, items):
         format_map (dict): mapping between model attributes and functions to
                            format their value
         items (list): the resource items to be printed
+        mode (PrintMode): the mode in which print_items should display the
+                          items
 
     Raises:
         None
-
-    Returns:
-        None
     """
-    if len(items) == 0:
+    if not items:
         click.echo('No results were found.')
         return
     if format_map is None:
@@ -140,6 +147,10 @@ def print_items(fields, model, format_map, items):
         field = getattr(model, attr)
         # __doc__ comes from the attribute 'description' in the schema
         headers.append(field.__doc__)
+
+    if mode == PrintMode.TABLE:
+        print_ver_table(headers, items, fields, format_map)
+        return
 
     # prepare each item and print it
     for item in items:
@@ -164,9 +175,6 @@ def print_hor_table(headers, rows):
         rows (list): in format [(entry1_1, entry1_2, entry1_3),
                      (entry2_1, entry2_2, entry2_3)]
 
-    Returns:
-        None
-
     Raises:
         None
     """
@@ -178,12 +186,10 @@ def print_hor_table(headers, rows):
 
     output = ''
     # process each entry and add to output
-    for i in range(0, len(rows)):
-        entry = rows[i]
-        for j in range(0, len(entry)):
-            header = headers[j]
-            field_value = entry[j]
-            # treat field_value, could be of different types
+    for row in rows:
+        for row_idx, field_value in  enumerate(row):
+            header = headers[row_idx]
+            # field_value could be of different types
             if field_value is None:
                 field_value = ''
             elif isinstance(field_value, datetime.datetime):
@@ -199,15 +205,17 @@ def print_hor_table(headers, rows):
             output += lines[0]
 
             # different handling for next lines
-            for i in range(1, len(lines)):
+            for index, line in enumerate(lines):
+                if index == 0:
+                    continue
                 # white spaces to align content
                 spaces = ' ' * (trunc_width+3)
-                output += '\n{}{}'.format(spaces, lines[i].strip())
+                output += '\n{}{}'.format(spaces, line.strip())
 
     click.echo(output)
 # print_hor_table()
 
-def print_ver_table(headers, entries, fields_map):
+def print_ver_table(headers, entries, fields_map, format_map=None):
     """
     Print to the screen one or more items in vertical (traditional)
     orientation.
@@ -217,16 +225,18 @@ def print_ver_table(headers, entries, fields_map):
         entries (list): in format [(entry1_1, entry1_2, entry1_3),
                      (entry2_1, entry2_2, entry2_3)]
         fields_map (list): mapping of header to entries' fields
-
-    Returns:
-        None
+        format_map (dict): mapping between model attributes and functions to
+                           format their value
 
     Raises:
         None
     """
-    if len(entries) == 0:
+    if not entries:
         click.echo('No results were found.')
         return
+
+    if not format_map:
+        format_map = {}
 
     # start a pager in a subprocess to control output
     pager = call_pager()
@@ -269,8 +279,12 @@ def print_ver_table(headers, entries, fields_map):
         # determine biggest width for each column
         cols_width = [(len(header) + 2) for header in headers]
         for row in rows:
-            for i in range(0, len(row)):
-                field_value = row[i]
+            for index, field_value in enumerate(row):
+                format_function = format_map.get(fields_map[index])
+                # a formatting function was defined for this attribute: call it
+                if format_function is not None:
+                    field_value = format_function(field_value)
+
                 # treat field_value, could be of different types
                 if field_value is None:
                     field_value = ''
@@ -279,20 +293,20 @@ def print_ver_table(headers, entries, fields_map):
                     field_value = field_value.strftime("%Y-%m-%d %H:%M:%S")
                 else:
                     field_value = str(field_value)
-                row[i] = field_value
+                row[index] = field_value
 
-                row_width = len(row[i]) + 2
-                if row_width > cols_width[i]:
-                    cols_width[i] = row_width
+                row_width = len(row[index]) + 2
+                if row_width > cols_width[index]:
+                    cols_width[index] = row_width
 
         output = ''
         # first iteration: print header
         if print_header is True:
             output_cols = []
             output_sep = []
-            for i in range(0, len(headers)):
-                output_cols.append(headers[i].center(cols_width[i]))
-                sep = '-' * cols_width[i]
+            for index, header in enumerate(headers):
+                output_cols.append(header.center(cols_width[index]))
+                sep = '-' * cols_width[index]
                 output_sep.append(sep)
             output = '\n' + '|'.join(output_cols)
             output += '\n'
@@ -302,9 +316,9 @@ def print_ver_table(headers, entries, fields_map):
         # print rows
         for row in rows:
             output_row = []
-            for i in range(0, len(row)):
-                output_value = ' {}'.format(row[i])
-                output_row.append(output_value.ljust(cols_width[i]))
+            for index, field_value in enumerate(row):
+                output_value = ' {}'.format(field_value)
+                output_row.append(output_value.ljust(cols_width[index]))
 
             output += '\n{}'.format('|'.join(output_row))
         # send the rows to the pager's stdin

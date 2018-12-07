@@ -674,7 +674,7 @@ def _create_disk(client, ctx, sys_item, prof_item):
         ctx.invoke(vol_cmds.part_init, server=vol_item.server,
                    volume_id=vol_item.volume_id, label=vol_label)
 
-        class MenuItem(object):
+        class MenuItem():
             """Simple menu item entry"""
             def __init__(self, name):
                 self._name = name

@@ -87,7 +87,7 @@ def role_list(**kwargs):
 
     # pre-process the list of actions before printing it
     pretty_entries = []
-    class Entry(object):
+    class Entry():
         """Helper class to allow setting attributes"""
         def __init__(self, name, desc, actions):
             self.name = name

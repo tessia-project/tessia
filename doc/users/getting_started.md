@@ -132,7 +132,7 @@ A server can be created with:
 ```
 $ tess storage server-add --name=ds8k16 --model=DS8000 --type=DASD-FCP --project='devops' --desc='Storage server 1'
 
-$ tess storage server-list --name=ds8k16
+$ tess storage server-list --long --name=ds8k16
 
 Name           : ds8k16
 Hostname       : 
@@ -159,7 +159,7 @@ Item added successfully.
 $ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2f --size=7gb --desc='for use by lpar cpc3lp25'
 Item added successfully.
 
-$ tess storage vol-list --server=ds8k16
+$ tess storage vol-list --long --server=ds8k16
 
 Volume id                  : 7e2f
 Storage server             : ds8k16
@@ -221,7 +221,7 @@ For network related commands we make use of the `net` sub-family of commands. Le
 ```
 $ tess net zone-add --name='lab1-zone-c' --desc='Lab 1 Zone C'
 Item added successfully.
-$ tess net zone-list
+$ tess net zone-list --long
 
 Zone name     : lab1-zone-c
 Owner         : jstone@example.com
@@ -242,7 +242,7 @@ A subnet defines a range of IP addresses with information about routing and name
 $ tess net subnet-add --zone=lab1-zone-c --name='lab1-zone-c-s1' --address=192.168.0.0/24 --gw=192.168.0.1 --dns1=8.8.8.8 --desc='shared subnet on zone-c'
 Item added successfully.
 
-$ tess net subnet-list --zone=lab1-zone-c
+$ tess net subnet-list --long --zone=lab1-zone-c
 
 Subnet name     : lab1-zone-c-s1
 Network zone    : lab1-zone-c
@@ -266,7 +266,7 @@ Create an IP address which will be associated to a system later:
 $ tess net ip-add --subnet='lab1-zone-c-s1' --ip=192.168.0.9 --desc='Gateway IP for lpar cpc3lp25'
 Item added successfully.
 
-$ tess net ip-list --subnet='lab1-zone-c-s1'
+$ tess net ip-list --long --subnet='lab1-zone-c-s1'
 
 IP address        : 192.168.0.9
 Part of subnet    : lab1-zone-c-s1
@@ -287,7 +287,7 @@ As we want to install LPARs the hypervisor is a CPC which we create below:
 $ tess system add --name=cpc3 --type=cpc --hostname=hmc2.domain.com --model=zec12_h43 --desc='2 books'
 Item added successfully.
 
-$ tess system list --name=cpc3
+$ tess system list --long --name=cpc3
 
 Name            : cpc3
 Hostname        : hmc2.domain.com
@@ -310,7 +310,7 @@ We still need to provide the user credentials for logging on the HMC, this is do
 $ tess system prof-add --system=cpc3 --name='default' --cpu=43 --memory=800gib --login='hmc_user:hmc_password'
 Item added successfully.
 
-$ tess system prof-list --system=cpc3
+$ tess system prof-list --long --system=cpc3
 
 Profile name                : default
 System                      : cpc3
@@ -345,7 +345,7 @@ This is done by attaching the disk to the CPC's system profile:
 $ tess system vol-attach --system=cpc3 --profile='default' --server=ds8k16 --vol=7e2d
 Volume attached successfully.
 
-$ tess system prof-list --system=cpc3
+$ tess system prof-list --long --system=cpc3
 
 Profile name                : default
 System                      : cpc3
@@ -369,7 +369,7 @@ It's time to finally add the target LPAR to the tool. During creation we point t
 $ tess system add --name=cpc3lp25 --hyp=cpc3 --type=LPAR --hostname=cpc3lp25.domain.com --desc='System for database performance tests'
 Item added successfully.
 
-$ tess system list --name=cpc3lp25
+$ tess system list --long --name=cpc3lp25
 
 Name            : cpc3lp25
 Hostname        : cpc3lp25.domain.com
@@ -409,7 +409,7 @@ $ tess system vol-attach --system=cpc3lp25 --profile=default --server=ds8k16 --v
 Volume attached successfully.
 
 
-tess system prof-list --system=cpc3lp25
+tess system prof-list --long --system=cpc3lp25
 
 Profile name                : default
 System                      : cpc3lp25
@@ -476,7 +476,7 @@ Item added successfully.
 $ tess system iface-attach --system=cpc3lp25 --profile=default --iface='default osa'
 Network interface attached successfully.
 
-$ tess system iface-list --system=cpc3lp25
+$ tess system iface-list --long --system=cpc3lp25
 
 Interface name             : default osa
 Operating system name      : enccw0.0.f500
@@ -502,7 +502,7 @@ At least one package repository must be available for the installation to happen
 $ tess repo add --name=ubuntu-xenial --url=http://ports.ubuntu.com/ubuntu-ports --kernel='/dists/xenial/main/installer-s390x/current/images/generic/kernel.ubuntu' --initrd='/dists/xenial/main/installer-s390x/current/images/generic/initrd.ubuntu' --os=ubuntu16.04.1
 Item added successfully.
 
-$ tess repo list --name=ubuntu-xenial
+$ tess repo list --long --name=ubuntu-xenial
 
 Repository name : ubuntu-xenial
 Installable OS  : ubuntu16.04.1

@@ -23,6 +23,7 @@ from tessia.cli.config import CONF
 from tessia.cli.client import Client
 from tessia.cli.output import print_items
 from tessia.cli.output import print_hor_table
+from tessia.cli.output import PrintMode
 from tessia.cli.session import SESSION
 from tessia.cli.utils import build_expect_header
 from tessia.cli.utils import fetch_item
@@ -42,7 +43,8 @@ FIELDS = (
 )
 
 NO_USER_MSG = (
-    "current key is not registered, create a new one with 'tessia conf key-gen'"
+    "current key is not registered, create a new one with "
+    "'tessia conf key-gen'"
 )
 
 #
@@ -111,6 +113,8 @@ def key_del(key, login, password):
 # key_del()
 
 @conf.command(name='key-list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 def key_list(**kwargs):
     """
     list the access keys associated with the user
@@ -124,8 +128,10 @@ def key_list(**kwargs):
     entries = client.UserKeys.instances(where={'user': current_key.user})
 
     # present results
-    print_items(
-        FIELDS, client.UserKeys, None, entries)
+    if kwargs.pop('long_info'):
+        print_items(FIELDS, client.UserKeys, None, entries, PrintMode.LONG)
+    else:
+        print_items(FIELDS, client.UserKeys, None, entries, PrintMode.TABLE)
 
 # key_list()
 

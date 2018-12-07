@@ -24,6 +24,7 @@ from tessia.cli.filters import dict_to_filter
 from tessia.cli.types import IPADDRESS
 from tessia.cli.types import SUBNET
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 
@@ -35,6 +36,10 @@ import click
 FIELDS = (
     'address', 'subnet', 'owner', 'project', 'modified', 'modifier', 'desc',
     'system'
+)
+
+FIELDS_TABLE = (
+    'address', 'subnet', 'system', 'owner', 'project', 'desc'
 )
 
 #
@@ -102,11 +107,13 @@ def ip_edit(subnet, cur_address, **kwargs):
 # ip_edit()
 
 @click.command(name='ip-list')
-@click.option('--subnet', type=SUBNET, help='the subnet to list')
 @click.option('address', '--ip', type=IPADDRESS,
               help='filter by ip address')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
+@click.option('--subnet', type=SUBNET, help='the subnet to list')
 def ip_list(**kwargs):
     """
     list the registered ip addresses
@@ -120,13 +127,17 @@ def ip_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.IpAddresses.instances(**parsed_filter)
 
     # present results
-    print_items(
-        FIELDS, client.IpAddresses, None, entries)
+    if long_info:
+        print_items(FIELDS, client.IpAddresses, None, entries, PrintMode.LONG)
+    else:
+        print_items(FIELDS_TABLE, client.IpAddresses, None, entries,
+                    PrintMode.TABLE)
 # ip_list()
 
 CMDS = [ip_add, ip_del, ip_edit, ip_list]

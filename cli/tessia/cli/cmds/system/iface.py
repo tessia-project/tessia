@@ -23,6 +23,7 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.utils import fetch_item
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import CONSTANT
 from tessia.cli.types import IPADDRESS
 from tessia.cli.types import LIBVIRT_XML
@@ -42,9 +43,11 @@ IFACE_FIELDS = (
     'name', 'osname', 'system', 'type', 'ip_address', 'mac_address',
     'attributes', 'profiles', 'desc'
 )
+
 IFACE_TYPE_FIELDS = (
     'name', 'desc'
 )
+
 ATTR_BY_TYPE = {
     'ccwgroup': 'OSA',
     'layer2': 'OSA',
@@ -360,6 +363,8 @@ def iface_edit(system, cur_name, **kwargs):
 # iface_edit()
 
 @click.command(name='iface-list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--system', type=NAME, help='the system to list')
 @click.option('--name', type=NAME, help="filter by interface name")
 @click.option('--type', type=CONSTANT,
@@ -383,24 +388,28 @@ def iface_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
 
     entries = client.SystemIfaces.instances(**parsed_filter)
-
+    parser_map = {'profiles': lambda prof_list: ', '.join(
+        ['[{}]'.format(prof.name) for prof in prof_list])
+                 }
     # present results
-    print_items(
-        IFACE_FIELDS,
-        client.SystemIfaces,
-        {'profiles': lambda prof_list: ', '.join(
-            ['[{}]'.format(prof.name) for prof in prof_list])
-        },
-        entries)
-
+    if long_info:
+        print_items(IFACE_FIELDS, client.SystemIfaces, parser_map, entries,
+                    PrintMode.LONG)
+    else:
+        parser_map['attributes'] = _shorten_ccw
+        print_items(IFACE_FIELDS, client.SystemIfaces, parser_map, entries,
+                    PrintMode.TABLE)
 # iface_list()
 
 @click.command(name='iface-types')
-def iface_types():
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
+def iface_types(**kwargs):
     """
     list the supported network interface types
     """
@@ -411,9 +420,24 @@ def iface_types():
     entries = client.IfaceTypes.instances()
 
     # present results
-    print_items(
-        IFACE_TYPE_FIELDS, client.IfaceTypes, None, entries)
+    if kwargs.pop('long_info'):
+        print_items(IFACE_TYPE_FIELDS, client.IfaceTypes, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(IFACE_TYPE_FIELDS, client.IfaceTypes, None, entries,
+                    PrintMode.TABLE)
 # iface_types()
+
+def _shorten_ccw(attr_dict):
+    """
+    Shorten the ccwgroup attribute notation for table output.
+    "0.0.f500,0.0.f501,0.0.f502" will be shortened to "f500"
+    """
+    if attr_dict.get('ccwgroup'):
+        attr_dict['ccwgroup'] = (
+            attr_dict['ccwgroup'].split(',', 1)[0].lstrip('0.0.'))
+    return attr_dict
+# shorten_ccw()
 
 CMDS = [
     iface_add, iface_attach, iface_del, iface_edit, iface_detach, iface_list,

@@ -75,35 +75,59 @@ tasks:
       - Item added successfully.
     - - repo add --name='SLES12.2' --url='http://example.com/xxx'
       - 'request failed. Server answered: An item with the provided value'
-    - - repo list 
+    - - repo list
+      - - ' *Repository name *| *Installable OS *| *Network URL *| *Kernel path *| *Initrd path *| *Owner *| *Project'
+        - ' *SLES12.2 *|'
+    - - repo list --long
       - 'Repository name : SLES12.2'
     - - repo list --name='SLES12.1'
       - No results were found.
     - - repo list --name='SLES12.1-GA'
+      - - ' *Repository name *| *Installable OS *| *Network URL *| *Kernel path *| *Initrd path *| *Owner *| *Project'
+        - ' *SLES12.1-GA *|'
+    - - repo list --name='SLES12.1-GA' --long
       - 'Repository name : SLES12.1-GA'
     - - repo list --url='http://example.com/redhat/s390x/RHEL7.2/DVD'
+      - - ' *Repository name *| *Installable OS *| *Network URL *| *Kernel path *| *Initrd path *| *Owner *| *Project'
+        - ' *RHEL7.2-GA *|'
+    - - repo list --url='http://example.com/redhat/s390x/RHEL7.2/DVD' --long
       - 'Repository name : RHEL7.2-GA'
     - - repo list --url='http://example.com/xxx'
       - No results were found.
     - - repo list --os=sles12.1
+      - - ' *Repository name *| *Installable OS *| *Network URL *| *Kernel path *| *Initrd path *| *Owner *| *Project'
+        - ' *SLES12.1-GA *|'
+    - - repo list --os=sles12.1 --long
       - 'Repository name : SLES12.1-GA'
     - - repo list --os=''
       - No results were found.
     - - repo list --os=wrong_os
       - No results were found.
     - - repo list --kernel='/images/kernel.img'
+      - - ' *Repository name *| *Installable OS *| *Network URL *| *Kernel path *| *Initrd path *| *Owner *| *Project'
+        - ' *RHEL7.2-GA *|'
+    - - repo list --kernel='/images/kernel.img' --long
       - 'Repository name : RHEL7.2-GA'
     - - repo list --kernel='/xxx/kernel.img'
       - No results were found.
     - - repo list --initrd='/boot/s390x/initrd'
+      - - ' *Repository name *| *Installable OS *| *Network URL *| *Kernel path *| *Initrd path *| *Owner *| *Project'
+        - ' *SLES12.1-GA *|'
+    - - repo list --initrd='/boot/s390x/initrd' --long
       - 'Repository name : SLES12.1-GA'
     - - repo list --initrd='/boot/xxx/initrd'
       - No results were found.
     - - repo list --owner=lab_admin@example.com
+      - - ' *Repository name *| *Installable OS *| *Network URL *| *Kernel path *| *Initrd path *| *Owner *| *Project'
+        - ' *SLES12.2 *|'
+    - - repo list --owner=lab_admin@example.com --long
       - 'Repository name : SLES12.2'
     - - repo list --owner=dev9
       - No results were found.
     - - repo list --project='GEO_1 labadmins'
+      - - ' *Repository name *| *Installable OS *| *Network URL *| *Kernel path *| *Initrd path *| *Owner *| *Project'
+        - ' *SLES12.2 *|'
+    - - repo list --project='GEO_1 labadmins' --long
       - 'Repository name : SLES12.2'
     - - repo list --project='XXX'
       - No results were found.

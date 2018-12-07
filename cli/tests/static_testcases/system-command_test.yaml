@@ -126,13 +126,19 @@ tasks:
       - 'Usage: tess system vol-detach'
   system_command:
     - - system types
+      - - ' *Type name *| *Architecture *| *Description'
+        - ' *KVM *|'
+    - - system types --long
       - 'Type name    : KVM'
     - - system states
+      - - ' *State name *| *Description'
+        - ' *AVAILABLE *|'
+    - - system states --long
       - 'State name  : AVAILABLE'
     - - system list
       - No results were found.
     # 'system add' subcommand
-    - - system add 
+    - - system add
       - Missing option "--name".
     - - system add --name=cpc1
       - Missing option "--hostname".
@@ -192,10 +198,16 @@ tasks:
       - Item added successfully.
     # 'system list' subcommand
     - - system list
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *guest55 *|'
+    - - system list --long
       - 'Name            : guest55'
     - - system list --name=cpc3lp
       - No results were found.
     - - system list --name=cpc3lp54
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *cpc3lp54 *|'
+    - - system list --name=cpc3lp54 --long
       - 'Name            : cpc3lp54'
     - - system list --hyp=
       - 'Invalid value for "--hyp": value may not be empty'
@@ -204,33 +216,57 @@ tasks:
     - - system list --hyp=cpc3lp54
       - No results were found.
     - - system list --hyp=cpc3lp52
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *guest55 *|'
+    - - system list --hyp=cpc3lp52 --long
       - 'Name            : guest55'
     - - system list --model=
       - 'Invalid value for "--model": value may not be empty'
     - - system list --model=zec12
       - No results were found.
     - - system list --model=zec12_h43
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *guest55 *|'
+    - - system list --model=zec12_h43 --long
       - 'Name            : guest55'
     - - system list --type=
       - 'Invalid value for "--type": value may not be empty'
     - - system list --type=vm
       - No results were found.
     - - system list --type=kvm
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *guest55 *|'
+    - - system list --type=kvm --long
       - 'Name            : guest55'
     - - system list --state=locked
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *cpc4 *|'
+    - - system list --state=locked --long
       - 'Name            : cpc4'
     - - system list --state=LOCKED
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *cpc4 *|'
+    - - system list --state=LOCKED --long
       - 'Name            : cpc4'
     - - system list --owner=
       - No results were found.
-      # There is a system with na empty name, created before
+      # There is a system with an empty name, created before
     - - system list --owner=dev1@example.com
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *|'
+    - - system list --owner=dev1@example.com --long
       - 'Name            :'
     - - system list --owner=dev11@example.com
       - No results were found.
     - - system list --project='GEO_1 labadmins'
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *cpc3 *|'
+    - - system list --project='GEO_1 labadmins' --long
       - 'Name            : cpc3'
     - - system list --project='GEO_1 developers'
+      - - ' *Name *| *Hostname *| *Type *| *Model *| *Current state *| *Owner *| *Project'
+        - ' *guest55 *|'
+    - - system list --project='GEO_1 developers' --long
       - 'Name            : guest55'
     - - system list --project='GEO_1'
       - No results were found.
@@ -327,6 +363,9 @@ tasks:
         - myzvmpasswd
       - 'Item added successfully.'
     - - system prof-list --name=login_int --system=vmguest01
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ".*|.*|.*|.*|.*|.*|.*|.*|.*'zvm-password': '\\*\\*\\*\\*'"
+    - - system prof-list --name=login_int --system=vmguest01 --long
       - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
         # no login and no zvm specified
     - - - system prof-add --name=login_int2 --system=vmguest01
@@ -342,30 +381,37 @@ tasks:
         - myzvmpasswd
       - 'Item added successfully.'
     - - system prof-list --name=login_int2 --system=vmguest01
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ".*|.*|.*|.*|.*|.*|.*|.*|.*'zvm-password': '\\*\\*\\*\\*'"
+    - - system prof-list --name=login_int2 --system=vmguest01 --long
       - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
     - - system prof-add --name=default --system=vmguest01 --login=root:passwd --zvm-pass=vmpassword --zvm-by=vmadmin
       - 'Item added successfully.'
     - - system prof-list --name=default --system=vmguest01
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ".*|.*|.*|.*|.*|.*|.*|.*|.*'zvm-password': '\\*\\*\\*\\*'"
+        - ".*|.*|.*|.*|.*|.*|.*|.*|.*'zvm-logonby': 'vmadmin'"
+    - - system prof-list --name=default --system=vmguest01 --long
       - - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
         - "Credentials *: .*'zvm-logonby': 'vmadmin'"
     - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword2 --zvm-by=
       - 'Item successfully updated'
-    - - system prof-list --name=default --system=vmguest01
+    - - system prof-list --name=default --system=vmguest01 --long
       - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
     # set zvm-by again
     - - system prof-edit --name=default --system=vmguest01 --zvm-by=vmadmin2
       - 'Item successfully updated'
-    - - system prof-list --name=default --system=vmguest01
+    - - system prof-list --name=default --system=vmguest01 --long
       - "Credentials *: .*'zvm-logonby': 'vmadmin2'"
     # unset zvm-by without setting password
     - - system prof-edit --name=default --system=vmguest01 --zvm-by=
       - 'Item successfully updated'
-    - - system prof-list --name=default --system=vmguest01
+    - - system prof-list --name=default --system=vmguest01 --long
       - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
     # upate zvm password
     - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword3
       - 'Item successfully updated'
-    - - system prof-list --name=default --system=vmguest01
+    - - system prof-list --name=default --system=vmguest01 --long
       - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
     # ask to update zvm password
     - - - system prof-edit --name=default --system=vmguest01 --ask-zvm-pass
@@ -374,11 +420,14 @@ tasks:
       - 'Item successfully updated'
     - - system prof-edit --name=default --system=vmguest01 --zvm-pass=vmpassword4 --zvm-by=vmadmin3
       - 'Item successfully updated'
-    - - system prof-list --name=default --system=vmguest01
+    - - system prof-list --name=default --system=vmguest01 --long
       - - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
         - "Credentials *: .*'zvm-logonby': 'vmadmin3'"
   system_model:
     - - system model-list
+      - - ' *Model name identifier *| *Architecture *| *Model title *| *Model sub-classification *| *Description'
+        - ' *ZGENERIC *|'
+    - - system model-list --long
       - 'Model name identifier    : ZGENERIC'
     - - system model-add --name=Z196_M50 --title=Z196 --arch=s390x
       - 'permission denied. Server answered: You need administrator privileges to perform this operation'
@@ -400,6 +449,9 @@ tasks:
       - Item successfully deleted.
   system_iface:
     - - system iface-types
+      - - ' *Type name *| *Description'
+        - ' *OSA *|'
+    - - system iface-types --long
       - 'Type name   : OSA'
     # 'system iface-add' subcommand
     - - system iface-add
@@ -507,22 +559,37 @@ tasks:
     - - system iface-list --name=
       - 'Invalid value for "--name": value may not be empty'
     - - system iface-list --system=guest55
+      - - ' *Interface name *| *Operating system name *| *System *| *Interface type *| *IP address *| *MAC address *| *Attributes *| *Associated system profiles *| *Description'
+        - ' *default macvtap *|'
+    - - system iface-list --system=guest55 --long
       - 'Interface name             : default macvtap'
     - - system iface-list --system=cpc3lp52
+      - - ' *Interface name *| *Operating system name *| *System *| *Interface type *| *IP address *| *MAC address *| *Attributes *| *Associated system profiles *| *Description'
+        - ' *default osa *|'
+    - - system iface-list --system=cpc3lp52 --long
       - 'Interface name             : default osa'
     - - system iface-list --system=guest55 --type=macvtap
+      - - ' *Interface name *| *Operating system name *| *System *| *Interface type *| *IP address *| *MAC address *| *Attributes *| *Associated system profiles *| *Description'
+        - ' *default macvtap *|'
+    - - system iface-list --system=guest55 --type=macvtap --long
       - 'Interface name             : default macvtap'
     - - system iface-list --system=cpc3lp52 --type=lpar
       - No results were found.
     - - system iface-list --system=cpc3lp52 --type=
       - 'Invalid value for "--type": value may not be empty'
     - - system iface-list --system=cpc3lp52 --osname=en0
+      - - ' *Interface name *| *Operating system name *| *System *| *Interface type *| *IP address *| *MAC address *| *Attributes *| *Associated system profiles *| *Description'
+        - ' *osa iface2 *|'
+    - - system iface-list --system=cpc3lp52 --osname=en0 --long
       - 'Interface name             : osa iface2'
     - - system iface-list --system=cpc3lp52 --osname=en10
       - No results were found.
     - - system iface-list --system=cpc3lp52 --osname=
       - 'Invalid value for "--osname": value may not be empty'
     - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:00
+      - - ' *Interface name *| *Operating system name *| *System *| *Interface type *| *IP address *| *MAC address *| *Attributes *| *Associated system profiles *| *Description'
+        - ' *osa iface2 *|'
+    - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:00 --long
       - 'Interface name             : osa iface2'
     - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:05
       - No results were found.
@@ -531,6 +598,9 @@ tasks:
     - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:7000
       - 'Invalid value for "--mac": 02:57:52:00:7000 is not a valid mac address'
     - - system iface-list --system=cpc3lp52 --ip=192.168.161.222
+      - - ' *Interface name *| *Operating system name *| *System *| *Interface type *| *IP address *| *MAC address *| *Attributes *| *Associated system profiles *| *Description'
+        - ' *default osa *|'
+    - - system iface-list --system=cpc3lp52 --ip=192.168.161.222 --long
       - 'Interface name             : default osa'
     - - system iface-list --system=cpc3lp52 --ip=192.168.161.300
       - 'Invalid value for "--ip": 192.168.161.300 is not a valid ip address'
@@ -728,6 +798,10 @@ tasks:
         - mypasswd
       - Item added successfully.
     - - system prof-list --system=cpc3lp52 --name='login_int'
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ".*|.*|.*|.*|.*|.*|.*|.*|.*'admin-user': 'root'"
+        - ".*|.*|.*|.*|.*|.*|.*|.*|.*'admin-password': '\\*\\*\\*\\*'"
+    - - system prof-list --system=cpc3lp52 --name='login_int' --long
       - - "Credentials *: .*'admin-user': 'root'"
         - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
     - - system prof-add --system=cpc3lp52 --name='DASD5' --cpu=4 --memory= --login='root:mypasswd'
@@ -755,6 +829,10 @@ tasks:
         - mypasswd
       - Item successfully updated.
     - - system prof-list --system=cpc3lp52 --name='login_int'
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ".*|.*|.*|.*|.*|.*|.*|.*|.*'admin-user': 'root'"
+        - ".*|.*|.*|.*|.*|.*|.*|.*|.*'admin-password': '\\*\\*\\*\\*'"
+    - - system prof-list --system=cpc3lp52 --name='login_int' --long
       - - "Credentials *: .*'admin-user': 'root'"
         - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
       # The next default profile changes the status of the existing default profile to 'not default'
@@ -763,6 +841,9 @@ tasks:
     - - system prof-add --system=cpc3lp52 --name='DASD11' --default --memory=2gib --login='root:mypasswd'
       - Item added successfully.
     - - system prof-list --system=cpc3lp52
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD *|'
+    - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD'
     - - system prof-list --system=cpc3lp52 --memory=12
       - No results were found.
@@ -796,18 +877,30 @@ tasks:
     - - system prof-list --system=
       - 'Invalid value for "--system": value may not be empty'
     - - system prof-list --system=cpc3lp52
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD root1 *|'
+    - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD root1'
     - - system prof-list --name=
       - 'Invalid value for "--name": value may not be empty'
     - - system prof-list --name='DASD root1'
       - 'Missing option "--system"'
     - - system prof-list --system=cpc3lp52 --name='DASD4'
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD4 *|'
+    - - system prof-list --system=cpc3lp52 --name='DASD4' --long
       - 'Profile name                : DASD4'
     - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu
       - ' --cpu option requires an argument'
     - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu=4
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD root1 *|'
+    - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu=4 --long
       - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3lp52 --cpu=4
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD root1 *|'
+    - - system prof-list --system=cpc3lp52 --cpu=4 --long
       - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3lp52 --cpu=3
       - No results were found.
@@ -816,25 +909,46 @@ tasks:
     - - system prof-list --system=cpc3lp52 --memory=2048mb
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=2048mib
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD root1 *|'
+    - - system prof-list --system=cpc3lp52 --memory=2048mib --long
       - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3lp52 --memory=2gb
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD17 *|'
+    - - system prof-list --system=cpc3lp52 --memory=2gb --long
       - 'Profile name                : DASD17'
     - - system prof-list --system=cpc3lp52 --memory=2gib
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD root1 *|'
+    - - system prof-list --system=cpc3lp52 --memory=2gib --long
       - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3lp52 --memory=1024mb
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=1024mib
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD10 *|'
+    - - system prof-list --system=cpc3lp52 --memory=1024mib --long
       - 'Profile name                : DASD10'
     - - system prof-list --system=cpc3lp52 --memory=1gb
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=1gib
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD10 *|'
+    - - system prof-list --system=cpc3lp52 --memory=1gib --long
       - 'Profile name                : DASD10'
       # expecting DASD11 as it was the last to be set as default
     - - system prof-list --system=cpc3lp52 --default
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD11 *|'
+    - - system prof-list --system=cpc3lp52 --default --long
       - 'Profile name                : DASD11'
     - - system prof-list --system=cpc3lp52 --hyp
       - '--hyp option requires an argument'
     - - system prof-list --system=cpc3lp52 --hyp='default cpc3'
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD root1 *|'
+    - - system prof-list --system=cpc3lp52 --hyp='default cpc3' --long
       - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3lp52 --hyp=cpc3
       - No results were found.
@@ -842,12 +956,21 @@ tasks:
     - - system iface-attach --system=cpc3lp52 --profile='DASD root1' --iface='default osa'
       - Network interface attached successfully.
     - - system prof-list --system=cpc3lp52
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD root1 *|'
+    - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD root1'
     - - system iface-edit --system=cpc3lp52 --name='default osa' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
       - Item successfully updated.
     - - system prof-list --system=cpc3lp52
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD root1 *|'
+    - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *default cpc3 *|'
+    - - system prof-list --system=cpc3 --long
       - 'Profile name                : default cpc3'
     # 'system prof-edit' subcommand
     - - system prof-edit
@@ -1152,6 +1275,9 @@ tasks:
       - Volume detached successfully.
       # delete default profile if it is the last one
     - - system prof-list --system=cpc3lp52
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD4 *|'
+    - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD4'
     - - system prof-del --system=cpc3lp52 --name=login_int
       - Item successfully deleted.
@@ -1162,6 +1288,9 @@ tasks:
     - - system prof-del --system=cpc3lp52 --name=DASD
       - Item successfully deleted.
     - - system prof-list --system=cpc3lp52
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD4 *|'
+    - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD4'
     - - system prof-del --system=cpc3lp52 --name=DASD4
       - Item successfully deleted.
@@ -1174,14 +1303,17 @@ tasks:
     - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=rhel7.4
       - "Item added successfully."
     - - system prof-list --system=cpc3lp52 --name='Manual install'
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - '.*|.*|.*|.*| *rhel7.4"'
+    - - system prof-list --system=cpc3lp52 --name='Manual install' --long
       - "Operating system *: rhel7.4"
     - - system prof-edit --system=cpc3lp52 --name='Manual install' --os=wrong-os
       - "Error: request failed. Server answered: No associated item found with value 'wrong-os' for field 'Operating system'"
     - - system prof-edit --system=cpc3lp52 --name='Manual install' --os=
       - "Item successfully updated."
-    - - system prof-list --system=cpc3lp52 --name='Manual install'
+    - - system prof-list --system=cpc3lp52 --name='Manual install' --long
       - "Operating system *: *\n"
     - - system prof-edit --system=cpc3lp52 --name='Manual install' --os=cms
       - "Item successfully updated."
-    - - system prof-list --system=cpc3lp52 --name='Manual install'
+    - - system prof-list --system=cpc3lp52 --name='Manual install' --long
       - "Operating system *: cms"

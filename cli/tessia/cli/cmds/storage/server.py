@@ -22,6 +22,7 @@ Module for the server (storage servers) command
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import CONSTANT
 from tessia.cli.types import HOSTNAME
 from tessia.cli.types import NAME
@@ -36,6 +37,11 @@ FIELDS = (
     'name', 'hostname', 'model', 'type', 'fw_level', 'owner', 'project',
     'modified', 'modifier', 'desc'
 )
+
+FIELDS_TABLE = (
+    'name', 'hostname', 'model', 'type', 'fw_level', 'owner', 'project'
+)
+
 TYPE_FIELDS = ('name', 'desc')
 
 #
@@ -109,8 +115,10 @@ def server_edit(cur_name, **kwargs):
 # server_edit()
 
 @click.command(name='server-list')
-@click.option('--name', type=NAME, help="filter by specified name")
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--model', type=CONSTANT, help="filter by specified model")
+@click.option('--name', type=NAME, help="filter by specified name")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 @click.option('--type', help="filter by specified volume type")
@@ -121,18 +129,24 @@ def server_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.StorageServers.instances(**parsed_filter)
 
     # present results
-    print_items(
-        FIELDS, client.StorageServers, None, entries)
-
+    if long_info:
+        print_items(FIELDS, client.StorageServers, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(FIELDS_TABLE, client.StorageServers, None, entries,
+                    PrintMode.TABLE)
 # server_list()
 
 @click.command(name='server-types')
-def server_types():
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
+def server_types(**kwargs):
     """
     list the supported storage server types
     """
@@ -143,9 +157,12 @@ def server_types():
     entries = client.StorageServerTypes.instances()
 
     # present results
-    print_items(
-        TYPE_FIELDS, client.StorageServerTypes, None, entries)
-
+    if kwargs.pop('long_info'):
+        print_items(TYPE_FIELDS, client.StorageServerTypes, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(TYPE_FIELDS, client.StorageServerTypes, None, entries,
+                    PrintMode.TABLE)
 # server_types()
 
 CMDS = [server_add, server_del, server_edit, server_list, server_types]

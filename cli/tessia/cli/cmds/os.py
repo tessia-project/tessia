@@ -22,6 +22,7 @@ Module for operating system commands
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import CustomIntRange, NAME
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
@@ -35,6 +36,10 @@ OS_TYPES = click.Choice(('cms', 'debian', 'redhat', 'suse'))
 
 MODEL_FIELDS = (
     'name', 'type', 'major', 'minor', 'pretty_name', 'template'
+)
+
+MODEL_FIELDS_TABLE = (
+    'name', 'type', 'pretty_name', 'template', 'major', 'minor'
 )
 
 VERSION_TYPE = CustomIntRange(min=0)
@@ -114,6 +119,8 @@ def os_edit(cur_name, **kwargs):
 # os_edit()
 
 @_os.command('list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--name', type=NAME, help="filter by OS identifier")
 @click.option('--type', type=OS_TYPES, help="filter by OS type")
 @click.option('--template', type=NAME, help="filter by default template")
@@ -124,10 +131,16 @@ def os_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.OperatingSystems.instances(**parsed_filter)
 
     # present results
-    print_items(MODEL_FIELDS, client.OperatingSystems, None, entries)
+    if long_info:
+        print_items(MODEL_FIELDS, client.OperatingSystems, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(MODEL_FIELDS_TABLE, client.OperatingSystems, None, entries,
+                    PrintMode.TABLE)
 # os_list()

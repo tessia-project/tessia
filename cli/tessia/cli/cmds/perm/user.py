@@ -22,6 +22,7 @@ Module for the users command
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.types import LOGIN
 from tessia.cli.types import NAME
 from tessia.cli.utils import fetch_and_delete
@@ -33,7 +34,12 @@ import click
 # CONSTANTS AND DEFINITIONS
 #
 FIELDS = (
-    'login', 'name', 'title', 'restricted', 'admin')
+    'login', 'name', 'title', 'restricted', 'admin'
+)
+
+FIELDS_TABLE = (
+    'login', 'name', 'admin', 'restricted', 'title'
+)
 
 FIELDS_ROLE = (
     'project', 'role')
@@ -98,6 +104,8 @@ def user_edit(login, **kwargs):
 # user_edit()
 
 @click.command(name='user-list')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('--login', type=LOGIN, help="filter by user's login")
 @click.option('--restricted', type=click.BOOL, help="list restricted users")
 @click.option('--admin', type=click.BOOL, help="list admin users")
@@ -108,17 +116,22 @@ def user_list(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.Users.instances(**parsed_filter)
 
     # present results
-    print_items(
-        FIELDS, client.Users, None, entries)
+    if long_info:
+        print_items(FIELDS, client.Users, None, entries, PrintMode.LONG)
+    else:
+        print_items(FIELDS_TABLE, client.Users, None, entries, PrintMode.TABLE)
 
 # user_list()
 
 @click.command(name='user-roles')
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
 @click.option('user', '--login', required=True, type=LOGIN,
               help="user's login to list")
 def user_roles(**kwargs):
@@ -128,13 +141,18 @@ def user_roles(**kwargs):
     # fetch data from server
     client = Client()
 
+    long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.UserRoles.instances(**parsed_filter)
 
     # present results
-    print_items(
-        FIELDS_ROLE, client.UserRoles, None, entries)
+    if long_info:
+        print_items(FIELDS_ROLE, client.UserRoles, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(FIELDS_ROLE, client.UserRoles, None, entries,
+                    PrintMode.TABLE)
 
 # user_roles()
 

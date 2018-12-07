@@ -53,14 +53,23 @@ tasks:
       - 'Usage: tess autotemplate print'
     # autotemplate list, autotemplate print
     - - autotemplate list
+      - - ' *Template name *| *Owner *| *Project *| *Description'
+        - ' *sles12-default *|'
+    - - autotemplate list --long
       - 'Template name : sles12-default'
     - - autotemplate list --name=rhel7-default
+      - - ' *Template name *| *Owner *| *Project *| *Description'
+        - ' *rhel7-default *|'
+    - - autotemplate list --name=rhel7-default --long
       - 'Template name : rhel7-default'
     - - autotemplate list --owner=admin
+      - - ' *Template name *| *Owner *| *Project *| *Description'
+        - ' *sles12-default *| *admin *|'
+    - - autotemplate list --owner=admin --long
       - 'Template name : sles12-default'
     - - autotemplate print
       - 'Missing option "--name".'
-    - - autotemplate print --name= 
+    - - autotemplate print --name=
       - 'Invalid value for "--name": value may not be empty'
     - - autotemplate print --name=rhel7-default
       - '# System authorization information'
@@ -73,7 +82,7 @@ tasks:
       - '--content option requires an argument'
     - - autotemplate add --name=RHEL7.3
       - Missing option "--content".
-      # cover stmts 139-143 in main.py, check output manually: 
+      # cover stmts 139-143 in main.py, check output manually:
       # The client encountered an unexpected problem, the error is: [Errno 2] No such file or directory: 'rhel7.3_template'
     - - autotemplate add --name=RHEL7.3 --content='rhel7.3_template'
       - 'The client encountered an unexpected problem, the error is:'
@@ -85,7 +94,7 @@ tasks:
       - Missing option "--name".
     - - autotemplate edit --name=rhel7-default
       - no update criteria provided.
-    - - autotemplate edit --name=rhel7-default --newname=RHEL7.2_GEO_1 
+    - - autotemplate edit --name=rhel7-default --newname=RHEL7.2_GEO_1
       - Item successfully updated.
     - - autotemplate edit --name=RHEL7.2_GEO_1 --newname=
       - 'Invalid value for "--newname": value may not be empty'
@@ -102,8 +111,17 @@ tasks:
     - - autotemplate del --name
       - '--name option requires an argument'
     - - autotemplate list
+      - - ' *Template name *| *Owner *| *Project *| *Description'
+        - ' *sles12-default *|'
+    - - autotemplate list --long
       - 'Template name : sles12-default'
     - - autotemplate list --name=rhel7-default
+      - - ' *Template name *| *Owner *| *Project *| *Description'
+        - ' *rhel7-default *|'
+    - - autotemplate list --name=rhel7-default --long
       - 'Template name : rhel7-default'
     - - autotemplate list --owner=admin
-      - 'Template name : rhel7-default'
+      - - ' *Template name *| *Owner *| *Project *| *Description'
+        - ' *sles12-default *| *admin *|'
+    - - autotemplate list --owner=admin --long
+      - 'Template name : sles12-default'

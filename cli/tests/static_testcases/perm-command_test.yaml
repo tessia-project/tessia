@@ -7,6 +7,9 @@ tasks:
   base_add:
     # lab admin to create the lab resources
     - - perm project-list
+      - - ' *Name *| *Description'
+        - ' *Admins *|'
+    - - perm project-list --long
       - 'Name        : Admins'
     - - perm project-add --name='GEO_1 labadmins' --desc='GEO_1 lab admins'
       - Item added successfully.
@@ -15,10 +18,15 @@ tasks:
     - - perm role-list
       - 'Role            : USER'
     - - perm user-list
+      - - ' *Login *| *Fullname *| *Administrator *| *Restricted *| *Job title'
+        - ' *admin *|'
+    - - perm user-list --long
       - 'Login         : admin'
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 labadmins'
       - User role added successfully.
     - - perm user-roles --login=lab_admin@example.com
+      - ' *Project name *| *Role *\n.*GEO_1 labadmins'
+    - - perm user-roles --login=lab_admin@example.com --long
       - 'Project name : GEO_1 labadmins'
     # create the target project
     - - perm project-add --name='GEO_1 developers' --desc='Developer team'
@@ -107,12 +115,18 @@ tasks:
     - - perm project-edit --name='GEO_3 testers' --newname='GEO_2 testers' --desc='3rd tester team'
       - 'request failed. Server answered: An item with the provided value'
     - - perm project-list
+      - - ' *Name *| *Description'
+        - ' *Admins *|'
+    - - perm project-list --long
       - 'Name        : Admins'
     - - perm project-list --name=
       - 'Invalid value for "--name": value may not be empty'
     - - perm project-list --name='GEO_1 testers'
       - No results were found.
     - - perm project-list --name='GEO_2 testers'
+      - - ' *Name *| *Description'
+        - ' *GEO_2 testers *|'
+    - - perm project-list --name='GEO_2 testers' --long
       - 'Name        : GEO_2 testers'
     - - perm project-del
       - Missing option "--name".
@@ -208,8 +222,13 @@ tasks:
     - - perm user-edit --login=lab_admin5@example.com --admin=false
       - User successfully updated.
     - - perm user-list
+      - - ' *Login *| *Fullname *| *Administrator *| *Restricted *| *Job title'
+        - ' *admin *|'
+    - - perm user-list --long
       - 'Login         : admin'
     - - perm user-list --login=dev4@example.com
+      - ' *Login *| *Fullname *| *Administrator *| *Restricted *| *Job title *\n.*dev4@example.com'
+    - - perm user-list --login=dev4@example.com --long
       - 'Login         : dev4@example.com'
     - - perm user-list --login=dev5@example.com
       - No results were found.
@@ -217,9 +236,9 @@ tasks:
       - '--restricted option requires an argument'
     - - perm user-list --restricted=TRUE
       - 'No results were found.'
-    - - perm user-list --restricted=FALSE
+    - - perm user-list --restricted=FALSE --long
       - 'Login         : admin'
-    - - perm user-list --restricted=0
+    - - perm user-list --restricted=0 --long
       - 'Login         : admin'
     - - perm user-list --restricted=yes
       - 'No results were found.'
@@ -229,9 +248,9 @@ tasks:
       - '--admin option requires an argument'
     - - perm user-list --admin=xxx
       - 'Invalid value for "--admin": xxx is not a valid boolean'
-    - - perm user-list --admin=FALSE
+    - - perm user-list --admin=FALSE --long
       - 'Login         : lab_admin@example.com'
-    - - perm user-list --login=dev4@example.com --admin=FALSE
+    - - perm user-list --login=dev4@example.com --admin=FALSE --long
       - 'Login         : dev4@example.com'
     - - perm user-list --restrict=TRUE
       - 'no such option: --restrict  Did you mean --restricted?'
@@ -246,6 +265,8 @@ tasks:
     - - perm user-roles --login=XXX
       - No results were found.
     - - perm user-roles --login=lab_admin@example.com
+      - ' *Project name *| *Role *\n.*GEO_1 labadmins'
+    - - perm user-roles --login=lab_admin@example.com --long
       - 'Project name : GEO_1 labadmins'
     - - perm user-del
       - Missing option "--login".

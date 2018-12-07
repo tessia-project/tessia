@@ -21,6 +21,7 @@ Module for the model (system models) commands
 #
 from tessia.cli.client import Client
 from tessia.cli.output import print_items
+from tessia.cli.output import PrintMode
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 
@@ -95,7 +96,9 @@ def model_edit(cur_name, **kwargs):
 # model_edit()
 
 @click.command(name='model-list')
-def model_list():
+@click.option('--long', 'long_info', help="show extended information",
+              is_flag=True, default=False)
+def model_list(**kwargs):
     """
     list the supported system models
     """
@@ -106,8 +109,12 @@ def model_list():
     entries = client.SystemModels.instances()
 
     # present results
-    print_items(
-        MODEL_FIELDS, client.SystemModels, None, entries)
+    if kwargs.pop('long_info'):
+        print_items(MODEL_FIELDS, client.SystemModels, None, entries,
+                    PrintMode.LONG)
+    else:
+        print_items(MODEL_FIELDS, client.SystemModels, None, entries,
+                    PrintMode.TABLE)
 # model_list()
 
 CMDS = [model_add, model_del, model_edit, model_list]

@@ -38,7 +38,7 @@ import ipaddress
 #
 DESC = {
     'name': 'Interface name',
-    'osname': 'Operating system name',
+    'osname': 'Network device name',
     'ip_address': 'IP address',
     'mac_address': 'MAC address',
     'system': 'System',

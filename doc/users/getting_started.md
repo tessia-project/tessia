@@ -469,7 +469,7 @@ Configuration of disks is done and they are now ready for use.
 Create a system network interface and associate the IP address previously created:
 
 ```
-$ tess system iface-add --system=cpc3lp25 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=02:20:10:10:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='lab1-zone-c-s1' --ip=192.168.0.9
+$ tess system iface-add --system=cpc3lp25 --name='default osa' --type=OSA --devname=enccw0.0.f500 --mac=02:20:10:10:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='lab1-zone-c-s1' --ip=192.168.0.9
 Item added successfully.
 
 # assign the network interface to the system profile

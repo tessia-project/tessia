@@ -372,7 +372,7 @@ Options:
   --system NAME               target system  [required]
   --name NAME                 interface name  [required]
   --type STRING               interface type (see iface-types)  [required]
-  --osname NAME               interface name in operating system (i.e. en0)
+  --devname NAME              network device name in operating system (i.e. net0)
                               [required]
   --mac TEXT                  mac address
   --subnet TEXT               subnet of ip address to be assigned
@@ -391,7 +391,7 @@ To choose a correct id for the interface type you may use the `system iface-type
 The provided IP address may be assigned to the interface at once. Don't forget to specify a subnet also, otherwise you will get an error. Let's create the interface:
 
 ```
-$ tess system iface-add --system=kvm25 --name='KVM macvtap' --type=MACVTAP --desc='KVM macvtap interface' --osname=eth0 --hostiface='enccw0.0.f500' --mac=aa:bb:cc:dd:ee:11 --subnet='CPC50 shared' --ip=192.168.0.25 --system=kvm25
+$ tess system iface-add --system=kvm25 --name='KVM macvtap' --type=MACVTAP --desc='KVM macvtap interface' --devname=eth0 --hostiface='enccw0.0.f500' --mac=aa:bb:cc:dd:ee:11 --subnet='CPC50 shared' --ip=192.168.0.25 --system=kvm25
 Item added successfully.
 $ tess system iface-list --long --system=kvm25
 

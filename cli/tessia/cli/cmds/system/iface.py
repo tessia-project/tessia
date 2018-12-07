@@ -66,8 +66,8 @@ ATTR_BY_TYPE = {
 @click.option('--name', required=True, type=NAME, help="interface name")
 @click.option('--type', required=True, type=CONSTANT,
               help="interface type (see iface-types)")
-@click.option('--osname', required=True, type=NAME,
-              help="interface name in operating system (i.e. en0)")
+@click.option('osname', '--devname', required=True, type=NAME,
+              help="network device name in operating system (i.e. net0)")
 @click.option('mac_address', '--mac', type=MACADDRESS, help="mac address")
 @click.option('--subnet', type=SUBNET,
               help="subnet of ip address to be assigned")
@@ -240,8 +240,8 @@ def iface_detach(system, profile, iface):
 @click.option('name', '--newname', type=NAME, help="new interface name")
 @click.option('--type', type=CONSTANT,
               help="interface type (see iface-types)")
-@click.option('--osname', type=NAME,
-              help="interface name in operating system (i.e. en0)")
+@click.option('osname', '--devname', type=NAME,
+              help="network device name in operating system (i.e. net0)")
 @click.option('mac_address', '--mac', help="mac address")
 @click.option('--subnet', type=SUBNET,
               help="subnet of ip address to be assigned")
@@ -369,8 +369,8 @@ def iface_edit(system, cur_name, **kwargs):
 @click.option('--name', type=NAME, help="filter by interface name")
 @click.option('--type', type=CONSTANT,
               help="filter by specified interface type")
-@click.option('--osname', type=NAME,
-              help="filter by specified operating system name")
+@click.option('osname', '--devname', type=NAME,
+              help="filter by specified network device name")
 @click.option('mac_address', '--mac', type=MACADDRESS,
               help="filter by specified mac address")
 @click.option('ip_address', '--ip', type=IPADDRESS,

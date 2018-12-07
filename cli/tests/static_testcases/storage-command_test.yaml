@@ -247,7 +247,7 @@ tasks:
     - - storage vol-add --server=DS8K16 --id= --size=7gb --type=DASD
       - 'Error: Invalid value for "--id": value may not be empty'
     - - storage vol-add --server=DS8K16 --id=3951 --size= --type=DASD
-      - invalid size specified.
+      - 'Error: Invalid value for "--size": value may not be empty'
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=
       - "The server did not accept our request. The response is: The value 'type=' is invalid: it does not match storage server type 'DASD-FCP'"
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=DASD
@@ -258,7 +258,7 @@ tasks:
       - Item added successfully.
         # vol-add: wrong size
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7g --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
-      - invalid size specified.
+      - 'Error: Invalid value for "--size": 7g is not a valid size'
     - - storage vol-add --server=DS8K16 --type=DASD --id=#3952 --size=7gb --owner= --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - 'Invalid value for "--id":'
     - - storage vol-add --server=DS8K16 --type=DASD --id=3952 --size=7gb --owner= --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
@@ -394,7 +394,7 @@ tasks:
     - - storage vol-edit --server=DS8K16 --id=3955 --size=7gb
       - Item successfully updated.
     - - storage vol-edit --server=DS8K16 --id=3955 --size=7g
-      - invalid size specified.
+      - 'Error: Invalid value for "--size": 7g is not a valid size'
     - - storage vol-edit --server=DS8K16 --id=3955 --type=DASD
       - 'no such option: --type'
     - - storage vol-edit --server=DS8K16 --id=3950 --size=7gb

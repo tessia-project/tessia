@@ -297,10 +297,16 @@ class AutoInstallMachine(BaseMachine):
             except IndexError:
                 msg = 'No network interface attached to perform installation'
                 raise ValueError(msg)
-            if gw_iface.ip_address_rel is None:
+            if not gw_iface.ip_address_rel:
                 raise ValueError(
-                    "Gateway interface '{}' has no IP address assigned".format(
-                        gw_iface.name)
+                    "Gateway network interface <{}> has no IP address assigned"
+                    .format(gw_iface.name)
+                )
+            elif not gw_iface.ip_address_rel.subnet_rel.gateway:
+                raise ValueError(
+                    "Subnet <{}> of the gateway network interface <{}> has no "
+                    "gateway route defined".format(
+                        gw_iface.ip_address_rel.subnet_rel.name, gw_iface.name)
                 )
 
         # sanity check, without hypervisor it's not possible to manage

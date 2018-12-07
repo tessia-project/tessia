@@ -130,7 +130,7 @@ def output(job_id):
         # output available: print and increment the line counter and offset
         else:
             click.echo(output_buf, nl=False)
-            buf_lines = len(output_buf.strip().split('\n'))
+            buf_lines = len(output_buf.splitlines())
             # move the offset forward
             offset += buf_lines
         # got less lines than expected: possibly means the output ended, in

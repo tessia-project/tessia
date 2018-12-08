@@ -1138,8 +1138,26 @@ tasks:
       - no storage volume found.
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3956
       - Volume attached successfully.
+      # add partitions so that we can test (root)(swap) in prof-list
+    - - storage part-init --server=DS8K16 --id=3956 --label=dasd
+      - Partition table successfully initialized
+    - - storage part-add --server=DS8K16 --id=3956 --fs=ext4 --mp=/ --size=5gb
+      - Partition successfully added
+    - - storage part-add --server=DS8K16 --id=3956 --fs=swap
+      - Partition successfully added
+    - - system prof-list --name=DASD4 --system=cpc3lp52
+      - ".*|.*|.*|.*|.*| *[DS8K16/3956](root)(swap) *|"
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
       - Volume attached successfully.
+    - - storage part-init --server=DS8K16 --id=3952 --label=dasd
+      - Partition table successfully initialized
+    - - storage part-add --server=DS8K16 --id=3952 --fs=swap
+      - Partition successfully added
+    - - storage part-del --server=DS8K16 --id=3956 --num=2
+      - Partition successfully deleted
+    - - system prof-list --name=DASD4 --system=cpc3lp52
+      - ".*|.*|.*|.*|.*| *[DS8K16/3956](root), [DS8K16/3952](swap) *|"
+      # end testing (root)(swap) in in prof-list
     - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3950
       - Volume attached successfully.
     - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3951

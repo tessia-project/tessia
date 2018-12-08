@@ -44,7 +44,7 @@ PROFILE_FIELDS = (
 
 PROFILE_FIELDS_TABLE = (
     'name', 'system', 'operating_system', 'cpu', 'memory', 'storage_volumes',
-    'system_ifaces', 'hypervisor_profile'
+    'system_ifaces'
 )
 
 USERNAME_PROMPT = "OS admin's username"
@@ -275,10 +275,25 @@ def prof_list(**kwargs):
         return ', '.join(parsed_ifaces)
     # parse_ifaces()
 
+    def parse_vols(vols):
+        """Helper function to format output from volumes list"""
+        ret_vols = []
+        for vol in vols:
+            vol_entry = '[{}/{}]'.format(vol.server, vol.volume_id)
+            if vol.part_table:
+                for part in vol.part_table.get('table', []):
+                    if part.get('mp', '') == '/':
+                        vol_entry += '(root)'
+                    elif part.get('fs', '') == 'swap':
+                        vol_entry += '(swap)'
+            ret_vols.append(vol_entry)
+
+        return ', '.join(ret_vols)
+    # parse_vols()
+
     parser_map = {
         'memory': size_to_str,
-        'storage_volumes': lambda vols: ', '.join(
-            ['[{}/{}]'.format(vol.server, vol.volume_id) for vol in vols]),
+        'storage_volumes': parse_vols,
         'system_ifaces': parse_ifaces,
     }
 

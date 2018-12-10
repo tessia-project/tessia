@@ -290,8 +290,6 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
       <initialize config:type="boolean">true</initialize>
       <partitions config:type="list">
     {% for entry in volume["part_table"]["table"] %}
-        {% set primary_nr = [1] %}
-        {% set logical_nr = [5] %}
         <partition>
           <create config:type="boolean">true</create>
           <crypt_fs config:type="boolean">false</crypt_fs>
@@ -310,6 +308,11 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
       </partitions>
       <type config:type="symbol">CT_DISK</type>
       <use>all</use>
+    {% if volume["type"] == "DASD" -%}
+      <disklabel>dasd</disklabel>
+    {% else -%}
+      <disklabel>{{volume["part_table"]["type"]}}</disklabel>
+    {% endif -%}
     </drive>
   {% endfor %}
   </partitioning>

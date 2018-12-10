@@ -391,6 +391,7 @@ def iface_list(**kwargs):
     long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'name': False}
 
     entries = client.SystemIfaces.instances(**parsed_filter)
     parser_map = {'profiles': lambda prof_list: ', '.join(

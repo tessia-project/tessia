@@ -130,6 +130,7 @@ def template_list(**kwargs):
 
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'name': False}
     entries = client.AutoTemplates.instances(**parsed_filter)
 
     # present results

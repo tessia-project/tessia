@@ -132,6 +132,8 @@ class SystemProfileResource(SecureResource):
                     'id': fields.Integer(),
                     'volume_id': fields.String(),
                     'server': fields.String(),
+                    'part_table': fields.Custom(
+                        schema=StorageVolume.get_schema('part_table')),
                 },
                 model=StorageVolume,
                 io='r'

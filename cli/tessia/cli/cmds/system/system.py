@@ -25,11 +25,10 @@ from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
 from tessia.cli.types import CONSTANT, CustomIntRange, HOSTNAME, \
-    VERBOSITY_LEVEL, NAME, NAME_URL
+    MIB_SIZE, NAME, NAME_URL, VERBOSITY_LEVEL
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 from tessia.cli.utils import fetch_item
-from tessia.cli.utils import str_to_size
 from tessia.cli.utils import wait_scheduler, wait_job_exec
 
 import click
@@ -246,8 +245,10 @@ def poweroff(ctx, name, verbosity):
               help="activation profile to use, if not specified uses default")
 @click.option('--cpu', type=CustomIntRange(min=1),
               help="override profile with custom cpu quantity")
-@click.option('--memory',
-              help="override profile with custom memory size (i.e. 1gib)")
+@click.option(
+    '--memory', type=MIB_SIZE,
+    help=("override profile with custom memory size (an integer followed by "
+          "one of the units KB, MB, GB, TB, KiB, MiB, GiB, TiB"))
 @click.option('--force', is_flag=True,
               help="force a poweron even if system is already up")
 @click.option('--noverify', is_flag=True,
@@ -261,12 +262,6 @@ def poweron(ctx, name, **kwargs):
     """
     poweron (activate) a system
     """
-    # convert a human size to integer
-    try:
-        kwargs['memory'] = str_to_size(kwargs['memory'])
-    except ValueError:
-        raise click.ClickException('invalid memory size specified.')
-
     client = Client()
     # make sure that system exists, it's faster than submitting a job request
     # and waiting for it to fail

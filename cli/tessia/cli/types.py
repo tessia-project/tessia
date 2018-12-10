@@ -383,6 +383,8 @@ class MibSize(click.ParamType):
         Receives a human size (i.e. 10GB) and converts to an integer size in
         mebibytes.
         """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
         try:
             int_value = str_to_size(value)
         except ValueError:

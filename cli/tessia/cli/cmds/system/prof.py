@@ -24,11 +24,10 @@ from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
 from tessia.cli.types import CustomIntRange
-from tessia.cli.types import LOGIN, NAME, TEXT, USER_PASSWD
+from tessia.cli.types import LOGIN, MIB_SIZE, NAME, TEXT, USER_PASSWD
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 from tessia.cli.utils import fetch_item
-from tessia.cli.utils import str_to_size
 from tessia.cli.utils import size_to_str
 
 import click
@@ -36,6 +35,9 @@ import click
 #
 # CONSTANTS AND DEFINITIONS
 #
+MEM_HELP = ("memory size as an integer followed by one of the units KB, MB, "
+            "GB, TB, KiB, MiB, GiB, TiB")
+
 PROFILE_FIELDS = (
     'name', 'system', 'hypervisor_profile', 'operating_system', 'default',
     'cpu', 'memory', 'parameters', 'credentials', 'storage_volumes',
@@ -60,7 +62,7 @@ ZVM_PROMPT = 'z/VM password'
 @click.option('--name', required=True, type=NAME, help="profile name")
 @click.option('--cpu', default=1, type=CustomIntRange(min=1),
               help="number of cpus")
-@click.option('--memory', default='1gib', help="memory size (i.e. 1gib)")
+@click.option('--memory', default='1gib', type=MIB_SIZE, help=MEM_HELP)
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('hypervisor_profile', '--hyp', type=NAME,
               help="hypervisor profile required for activation")
@@ -78,11 +80,6 @@ def prof_add(**kwargs):
     """
     client = Client()
 
-    # convert a human size to integer
-    try:
-        kwargs['memory'] = str_to_size(kwargs['memory'])
-    except ValueError:
-        raise click.ClickException('invalid memory size specified.')
     # avoid user confusion
     if (kwargs['hypervisor_profile'] is not None and
             kwargs['hypervisor_profile'].find('/') > -1):
@@ -150,7 +147,7 @@ def prof_del(**kwargs):
 @click.option('name', '--newname', type=NAME,
               help="new name (i.e. new-profile-name)")
 @click.option('--cpu', type=CustomIntRange(min=1), help="number of cpus")
-@click.option('--memory', help="memory size (i.e. 1gib)")
+@click.option('--memory', type=MIB_SIZE, help=MEM_HELP)
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('--gateway', help='name of interface to use as gateway')
 @click.option('hypervisor_profile', '--hyp', type=NAME,
@@ -171,11 +168,6 @@ def prof_edit(system, cur_name, **kwargs):
     """
     change properties of an existing system activation profile
     """
-    # convert a human size to integer
-    try:
-        kwargs['memory'] = str_to_size(kwargs['memory'])
-    except ValueError:
-        raise click.ClickException('invalid memory size specified.')
     # avoid user confusion
     if (kwargs['hypervisor_profile'] is not None and
             kwargs['hypervisor_profile'].find('/') > -1):
@@ -235,7 +227,7 @@ def prof_edit(system, cur_name, **kwargs):
 @click.option('--name', type=NAME, help="filter by profile-name")
 @click.option('--cpu', type=CustomIntRange(min=1),
               help="filter by specified number of cpus")
-@click.option('--memory', help="filter by specified memory size (i.e. 1gib)")
+@click.option('--memory', type=MIB_SIZE, help=MEM_HELP)
 @click.option('--default', is_flag=True, help="list only default profiles")
 @click.option('hypervisor_profile', '--hyp', type=NAME,
               help="filter by required hypervisor profile")
@@ -243,12 +235,6 @@ def prof_list(**kwargs):
     """
     list the activation profiles of a system
     """
-    # convert a human size to integer
-    try:
-        kwargs['memory'] = str_to_size(kwargs['memory'])
-    except ValueError:
-        raise click.ClickException('invalid memory size specified.')
-
     # default not provided: remove from dict otherwise it will force listing
     # only non defaults
     if kwargs['default'] is False:
@@ -287,8 +273,8 @@ def prof_list(**kwargs):
         print_items(PROFILE_FIELDS, client.SystemProfiles, parser_map, entries,
                     PrintMode.LONG)
     else:
-        print_items(PROFILE_FIELDS_TABLE, client.SystemProfiles, parser_map, entries,
-                    PrintMode.TABLE)
+        print_items(PROFILE_FIELDS_TABLE, client.SystemProfiles, parser_map,
+                    entries, PrintMode.TABLE)
 # prof_list()
 
 CMDS = [prof_add, prof_del, prof_edit, prof_list]

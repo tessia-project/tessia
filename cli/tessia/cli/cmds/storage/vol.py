@@ -30,7 +30,6 @@ from tessia.cli.types import CustomIntRange, FCP_PATH, MIB_SIZE, NAME, \
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_item
 from tessia.cli.utils import size_to_str
-from tessia.cli.utils import str_to_size
 
 import click
 
@@ -55,6 +54,9 @@ FIELDS_TABLE = (
 PART_FIELDS = (
     'number', 'size', 'type', 'filesystem', 'mount point', 'mount options'
 )
+
+SIZE_HELP = ("an integer followed by one of the units KB, MB, GB, "
+             "TB, KiB, MiB, GiB, TiB")
 
 TYPE_FIELDS = (
     'name', 'desc'
@@ -110,7 +112,7 @@ def _process_fcp_path(prop_dict, value):
 @click.option('--server', required=True, help='target storage server')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
-@click.option('--size', type=MIB_SIZE, help="size (i.e. 500mib)")
+@click.option('--size', type=MIB_SIZE, help=SIZE_HELP)
 @click.option('--fs', required=True, help="filesystem type")
 @click.option('--mo', default=None, help="mount options")
 @click.option('--mp', default=None, help="mount point")
@@ -210,7 +212,7 @@ def part_del(server, volume_id, num):
               help="volume id")
 @click.option('--num', type=CustomIntRange(min=1), required=True,
               help="partition's number to edit")
-@click.option('--size', type=MIB_SIZE, help="size (i.e. 500mib)")
+@click.option('--size', type=MIB_SIZE, help=SIZE_HELP)
 @click.option('--fs', help="filesystem")
 @click.option('--mo', help="mount options")
 @click.option('--mp', help="mount point")
@@ -319,7 +321,7 @@ def part_list(server, volume_id):
 @click.option('--server', required=True, help='target storage server')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help='volume id')
-@click.option('--size', required=True, help="volume size (i.e. 10gb)")
+@click.option('--size', required=True, type=MIB_SIZE, help=SIZE_HELP)
 @click.option('--type', required=True, help="volume type (see vol-types)")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning volume")
@@ -335,12 +337,6 @@ def vol_add(**kwargs):
     """
     create a new storage volume
     """
-    # convert a human size to integer
-    try:
-        kwargs['size'] = str_to_size(kwargs['size'])
-    except ValueError:
-        raise click.ClickException('invalid size specified.')
-
     client = Client()
     item = client.StorageVolumes()
 
@@ -421,8 +417,7 @@ def vol_del(**kwargs):
 # set the parameter name after the model's attribute name to save on typing
 @click.option('volume_id', '--newid', type=VOLUME_ID,
               help="new volume's id in form volume-id")
-@click.option('--size',
-              help="volume size (i.e. 10gb)")
+@click.option('--size', type=MIB_SIZE, help=SIZE_HELP)
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
@@ -442,11 +437,6 @@ def vol_edit(server, cur_id, **kwargs):
     """
     change properties of an existing storage volume
     """
-    try:
-        kwargs['size'] = str_to_size(kwargs['size'])
-    except ValueError:
-        raise click.ClickException('invalid size specified.')
-
     client = Client()
     item = fetch_item(
         client.StorageVolumes,

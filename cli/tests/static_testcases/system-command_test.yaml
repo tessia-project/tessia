@@ -805,7 +805,7 @@ tasks:
       - - "Credentials *: .*'admin-user': 'root'"
         - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
     - - system prof-add --system=cpc3lp52 --name='DASD5' --cpu=4 --memory= --login='root:mypasswd'
-      - invalid memory size specified.
+      - 'Error: Invalid value for "--memory": value may not be empty'
     - - system prof-add --system=cpc3lp52 --name='DASD7' --default --login='root:mypasswd'
       - Item added successfully.
       # edit default profile
@@ -848,17 +848,13 @@ tasks:
     - - system prof-list --system=cpc3lp52 --memory=12
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=AAAmb
-      - invalid memory size specified.
-    - - system prof-list --system=cpc3lp52 --memory=AAAmib
-      - invalid memory size specified.
-    - - system prof-list --system=cpc3lp52 --memory=12mm
-      - invalid memory size specified.
+      - 'Error: Invalid value for "--memory": AAAmb is not a valid size'
     - - system prof-add --system=cpc3lp52 --name='DASD8' --hyp= --login='root:mypasswd'
       - 'Invalid value for "--hyp": value may not be empty'
     - - system prof-add --system=cpc3lp52 --name='DASD9' --hyp='default cpc3' --login='root:mypasswd'
       - "request failed. Server answered: No associated item found with value 'default cpc3' for field 'Required hypervisor profile'"
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136g --login='DEVEL1:somepwd'
-      - invalid memory size specified.
+      - 'Error: Invalid value for "--memory": 1136g is not a valid size'
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136gib --login='DEVEL1:somepwd'
       - Item added successfully.
     - - system prof-add --system=cpc3 --name='alternate' --cpu=43 --memory=1136gib --login='DEVEL1:somepwd'
@@ -1044,7 +1040,7 @@ tasks:
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp='default cpc3'
       - Item successfully updated.
     - - system prof-edit --system=cpc3 --name='default cpc3' --memory=1136g
-      - invalid memory size specified.
+      - 'Error: Invalid value for "--memory": 1136g is not a valid size'
     - - system prof-edit --system=cpc3 --name='default cpc3' --hyp='cpc3/default cpc3'
       - 'Invalid value for "--hyp"'
     - - system prof-edit --system=cpc3 --name='default cpc3' --login='root-mypasswd'
@@ -1176,9 +1172,9 @@ tasks:
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory
       - '--memory option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=
-      - 'invalid memory size specified.'
+      - 'Error: Invalid value for "--memory": value may not be empty'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2g
-      - 'invalid memory size specified.'
+      - 'Error: Invalid value for "--memory": 2g is not a valid size'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2gb
       - 'Failed to establish a new connection'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity

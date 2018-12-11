@@ -104,11 +104,11 @@ class PermManager(object):
             if user.admin:
                 msg = ('Could not detect which project to use, specify one')
             else:
-                msg = ('No create permission found for the user in any '
+                msg = ('No CREATE permission found for the user in any '
                        'project')
         # project was specified: report that user has no permission on it
         else:
-            msg = ('User has no create permission for the specified '
+            msg = ('User has no CREATE permission for the specified '
                    'project')
         raise PermissionError(msg)
     # _assert_create()
@@ -272,12 +272,14 @@ class PermManager(object):
         action = action.upper()
         if action in ('UPDATE', 'DELETE'):
             self._assert_permission(user, action, item, item_desc)
+            return None
         elif action == 'CREATE':
             return self._assert_create(user, item)
         elif action == 'READ':
             self._assert_read(user, item)
+            return None
 
-        return None
+        raise ValueError('Cannot validate unknown action <{}>'.format(action))
     # can()
 
     @staticmethod

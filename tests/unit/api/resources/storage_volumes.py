@@ -759,6 +759,14 @@ class TestStorageVolume(TestSecureResource):
         self.db.session.commit()
     # test_list_filtered()
 
+    def test_update_project(self):
+        """
+        Exercise the update of the item's project. For that operation a user
+        requires permission on both projects.
+        """
+        self._test_update_project()
+    # test_update_project()
+
     def test_update_valid_fields(self):
         """
         Exercise the update of existing objects when correct format and
@@ -798,7 +806,6 @@ class TestStorageVolume(TestSecureResource):
 
         update_fields = {
             'owner': 'user_user@domain.com',
-            'project': self._db_entries['Project'][1]['name'],
             'desc': 'some_desc',
             'volume_id': '1500',
             'type': 'DASD',

@@ -366,6 +366,14 @@ class TestSubnet(TestSecureResource):
         self.db.session.commit()
     # test_list_filtered()
 
+    def test_update_project(self):
+        """
+        Exercise the update of the item's project. For that operation a user
+        requires permission on both projects.
+        """
+        self._test_update_project()
+    # test_update_project()
+
     def test_update_valid_fields(self):
         """
         Exercise the update of existing objects when correct format and
@@ -385,7 +393,6 @@ class TestSubnet(TestSecureResource):
         update_fields = {
             'name': 'some_name',
             'owner': 'user_user@domain.com',
-            'project': self._db_entries['Project'][1]['name'],
             'desc': 'some_desc',
             'address': '10.0.0.0/22',
             'gateway': '10.0.0.1',

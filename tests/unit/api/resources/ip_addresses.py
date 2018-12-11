@@ -325,6 +325,14 @@ class TestIpAddress(TestSecureResource):
         self.db.session.commit()
     # test_list_filtered()
 
+    def test_update_project(self):
+        """
+        Exercise the update of the item's project. For that operation a user
+        requires permission on both projects.
+        """
+        self._test_update_project()
+    # test_update_project()
+
     def test_update_valid_fields(self):
         """
         Exercise the update of existing objects when correct format and
@@ -340,8 +348,8 @@ class TestIpAddress(TestSecureResource):
             zone='cpc0',
             name='some_subnet_for_filter',
             owner='user_hw_admin@domain.com',
-            modifier='user_hw_admin@domain.com',
             project=self._db_entries['Project'][0]['name'],
+            modifier='user_hw_admin@domain.com',
             desc='some description'
         )
         self.db.session.add(subnet)
@@ -350,7 +358,6 @@ class TestIpAddress(TestSecureResource):
         update_fields = {
             'address': '172.10.0.1',
             'owner': 'user_user@domain.com',
-            'project': self._db_entries['Project'][1]['name'],
             'desc': 'some_desc',
             'subnet': subnet.name
         }

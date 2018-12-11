@@ -727,10 +727,11 @@ class TestSecureResource(TestCase):
                 len(listed_entries), 0, 'Restricted user was able to list')
 
             # perform a read
-            resp = self._do_request(
-                'get', '{}:a'.format(login_rest), entries[0]['id'])
-            # expect a 403 forbidden
-            self.assertEqual(resp.status_code, 403)
+            for entry in entries:
+                resp = self._do_request(
+                    'get', '{}:a'.format(login_rest), entry['id'])
+                # expect a 403 forbidden
+                self.assertEqual(resp.status_code, 403)
 
         # types resource: listing and read are allowed
         else:
@@ -738,10 +739,11 @@ class TestSecureResource(TestCase):
             self._assert_listed_or_read(resp, entries, time_range)
 
             # perform a read
-            resp = self._do_request(
-                'get', '{}:a'.format(login_rest), entries[-1]['id'])
-            self._assert_listed_or_read(
-                resp, [entries[-1]], time_range, read=True)
+            for entry in entries:
+                resp = self._do_request(
+                    'get', '{}:a'.format(login_rest), entry['id'])
+                self._assert_listed_or_read(
+                    resp, [entry], time_range, read=True)
 
     # _test_list_and_read_restricted_no_role()
 
@@ -839,6 +841,123 @@ class TestSecureResource(TestCase):
             self.db.session.commit()
             entries[0][field] = orig_value
     # _test_list_filtered()
+
+    def _test_update_project(self, logins=None):
+        """
+        Exercise the update of the item's project. For that operation a user
+        requires permission on both projects.
+
+        Args:
+            logins (list): list of users to test
+
+        Raises:
+            ValueError: if test is attempted on an invalid resource type
+        """
+        is_resource = hasattr(self.RESOURCE_MODEL, 'project_id')
+        if not is_resource:
+            raise ValueError(
+                'This test cannot be executed on a resource without project')
+
+        if not logins:
+            logins = [
+                'user_restricted@domain.com',
+                'user_user@domain.com',
+                'user_privileged@domain.com',
+                'user_hw_admin@domain.com',
+            ]
+
+        # prepare the necessary projects and the role
+        clean_objs = []
+        proj_name = 'Project _test_update_project'
+        proj_obj = models.Project(name=proj_name, desc=proj_name)
+        self.db.session.add(proj_obj)
+        clean_objs.append(proj_obj)
+        proj_2_name = 'Project _test_update_project 2'
+        proj_obj_2 = models.Project(name=proj_2_name, desc=proj_2_name)
+        self.db.session.add(proj_obj_2)
+        clean_objs.append(proj_obj_2)
+        role_name = '_test_update_project'
+        role_obj = models.Role(name=role_name, desc=role_name)
+        self.db.session.add(role_obj)
+        clean_objs.append(role_obj)
+        action_obj = models.RoleAction(
+            role=role_name,
+            resource=self.RESOURCE_MODEL.__tablename__.upper(),
+            action='UPDATE'
+        )
+        self.db.session.add(action_obj)
+        clean_objs.append(action_obj)
+        self.db.session.commit()
+
+        for login in logins:
+            # create the entry to work with
+            data = next(self._get_next_entry)
+            data['project'] = proj_name
+            data['owner'] = login
+            created_id = self._request_and_assert('create', 'admin:a', data)
+
+            # user is owner but has no role in target project
+            data = {'id': created_id, 'project': proj_2_name}
+            resp = self._do_request('update', '{}:a'.format(login), data)
+            self.assertEqual(resp.status_code, 403)
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(
+                body['message'],
+                "User has no UPDATE permission for the specified project"
+            )
+
+            # user has role in current project but not in target project
+            # prepare the environment first
+            user_role_obj = models.UserRole(
+                user=login,
+                role=role_name,
+                project=proj_name,
+            )
+            self.db.session.add(user_role_obj)
+            self.db.session.commit()
+            data = {'id': created_id, 'owner': 'admin'}
+            resp = self._request_and_assert('update', 'admin:a', data)
+            # now perform action and verify result
+            data = {'id': created_id, 'project': proj_2_name}
+            resp = self._do_request('update', '{}:a'.format(login), data)
+            self.assertEqual(resp.status_code, 403)
+            body = json.loads(resp.get_data(as_text=True))
+            self.assertEqual(
+                body['message'],
+                "User has no UPDATE permission for the specified project"
+            )
+
+            # user has role in both projects
+            user_role_2_obj = models.UserRole(
+                user=login,
+                role=role_name,
+                project=proj_2_name
+            )
+            self.db.session.add(user_role_2_obj)
+            self.db.session.commit()
+            data = {'id': created_id, 'project': proj_2_name}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+
+            # user is owner and has role only in target project
+            # prepare the environment first
+            self.db.session.delete(user_role_2_obj)
+            self.db.session.commit()
+            data = {'id': created_id, 'owner': login}
+            resp = self._request_and_assert('update', 'admin:a', data)
+            # now perform action and verify result
+            data = {'id': created_id, 'project': proj_name}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+
+            # clean up
+            self.RESOURCE_MODEL.query.filter_by(id=created_id).delete()
+            self.db.session.delete(user_role_obj)
+            self.db.session.commit()
+
+        # clean up
+        for obj in clean_objs:
+            self.db.session.delete(obj)
+        self.db.session.commit()
+    # _test_update_project()
 
     def _test_update_valid_fields(
             self, login_add, logins_update, update_fields):

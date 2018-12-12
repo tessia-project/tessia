@@ -300,6 +300,6 @@ d-i preseed/late_command string \
    {% endif -%}
 {% endfor -%}
     echo 'sclp_line0' >> /target/etc/securetty ; \
-    sed -i 's/PermitRootLogin.*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config ; \
+    sed -i 's/^[# ]*PermitRootLogin .*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config ; \
     {{configure_repos()}}
     rm -f /bin/nohup ; ln -s /target/usr/bin/nohup /bin/nohup; sync

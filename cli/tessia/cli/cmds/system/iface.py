@@ -44,6 +44,11 @@ IFACE_FIELDS = (
     'attributes', 'profiles', 'desc'
 )
 
+IFACE_FIELDS_TABLE = (
+    'name', 'osname', 'system', 'type', 'ip_address', 'mac_address',
+    'attributes', 'profiles'
+)
+
 IFACE_TYPE_FIELDS = (
     'name', 'desc'
 )
@@ -402,8 +407,8 @@ def iface_list(**kwargs):
                     PrintMode.LONG)
     else:
         parser_map['attributes'] = _shorten_ccw
-        print_items(IFACE_FIELDS, client.SystemIfaces, parser_map, entries,
-                    PrintMode.TABLE)
+        print_items(IFACE_FIELDS_TABLE, client.SystemIfaces, parser_map,
+                    entries, PrintMode.TABLE)
 # iface_list()
 
 @click.command(name='iface-types')

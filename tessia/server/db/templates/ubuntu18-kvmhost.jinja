@@ -73,7 +73,7 @@
    chzdev --base /etc=/target/etc -p qeth {{iface['attributes']['ccwgroup']}} portno=1 ; \
    {% endif -%}
    chzdev --base /etc=/target/etc qeth {{iface['attributes']['ccwgroup']}} online=1 ; \
-   echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", KERNEL=="eth*", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
+   echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
 {%- endmacro -%}
 
 {% macro iface_add_ip(iface) -%}
@@ -106,7 +106,7 @@
 
 {% macro configure_gw_iface(iface) -%}
 {% if iface['type'] == "OSA" -%}
-    echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", KERNEL=="eth*", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
+    echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
     sed -i 's/enc{{iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}}:/{{iface['osname']}}:/g' /target/etc/netplan/01-netcfg.yaml; \
     {{iface_append_hwaddress(iface)}}
 {%- elif iface['type'] == 'MACVTAP' -%}

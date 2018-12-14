@@ -275,7 +275,7 @@ WIZ_NET_IFACE_TYPE_TITLE = (
 WIZ_NET_IFACE_TYPE_ASK = (
     "Enter the number matching your interface type"
 )
-WIZ_NET_IFACE_OSNAME = (
+WIZ_NET_IFACE_DEVNAME = (
     "How should the interface be named in the operating system? Hint: for "
     "channel based cards you can use the convention encXXXX.\nEnter the "
     "OS name"
@@ -782,7 +782,7 @@ def _create_iface(client, ctx, sys_item, prof_item):
     params = {
         'system': sys_item.name,
         'name': None,
-        'osname': None,
+        'devname': None,
         'type': None,
         'mac': None,
         'desc': None,
@@ -820,8 +820,8 @@ def _create_iface(client, ctx, sys_item, prof_item):
                 WIZ_NET_IFACE_TYPE_ASK, WIZ_NET_IFACE_TYPE_TITLE)
         params['type'] = iface_type_item.name
 
-        params['osname'] = _prompt(
-            WIZ_NET_IFACE_OSNAME, default=params['osname'], type=types.NAME)
+        params['devname'] = _prompt(
+            WIZ_NET_IFACE_DEVNAME, default=params['devname'], type=types.NAME)
 
         # osa card: gather specific info
         if params['type'].lower() == 'osa':

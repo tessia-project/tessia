@@ -76,7 +76,7 @@ tasks:
       - Item added successfully.
     - - system add --name=cpc3lp52 --hyp=cpc3 --type=LPAR --hostname=cpc3lp52.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
-    - - system iface-add --system=cpc3lp52 --name='default osa' --type=OSA --osname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
+    - - system iface-add --system=cpc3lp52 --name='default osa' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
       - Item added successfully.
     # create activation profiles
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136gb --login='DEVEL1:somepwd'
@@ -119,7 +119,7 @@ tasks:
     # system
     - - system add --name=guest55 --hyp=cpc3lp52 --type=KVM --hostname=guest55.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
-    - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --osname=en0 --mac=00:11:22:33:44:55 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
+    - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=00:11:22:33:44:55 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
       - Item added successfully.
     # create activation profiles
     - - system prof-add --system=guest55 --name='KVM root1' --cpu=2 --memory=1024mb --login='root:mypasswd' --hyp='FCP root1'

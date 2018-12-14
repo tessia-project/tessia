@@ -46,14 +46,14 @@ tasks:
       - Item added successfully.
     - - net ip-add --subnet='zone-a-s1920' --ip=192.168.0.11 --desc='For use by system zvm01'
       - Item added successfully.
-    - - system iface-add --name=zvm-gw-iface --system=zvm01 --type=osa --ccwgroup=f400,f401,f402 --osname=encf400 --desc='gateway interface' --ip=192.168.0.11 --subnet='zone-a-s1920'
+    - - system iface-add --name=zvm-gw-iface --system=zvm01 --type=osa --ccwgroup=f400,f401,f402 --devname=encf400 --desc='gateway interface' --ip=192.168.0.11 --subnet='zone-a-s1920'
       - Item added successfully.
     # kvm guest related entries
     - - system add --name=cp1lp02 --type=LPAR --hyp=cpc1 --hostname=cpc1lp02.example._com --project=lab-admins --desc='kvm hypervisor'
       - Item added successfully.
-    - - system iface-add --name=kvmhost-gw-iface --system=cp1lp02 --type=osa --ccwgroup=f500,f501,f502 --osname=encf500 --desc='gateway interface'
+    - - system iface-add --name=kvmhost-gw-iface --system=cp1lp02 --type=osa --ccwgroup=f500,f501,f502 --devname=encf500 --desc='gateway interface'
       - Item added successfully.
-    - - system iface-add --name=internal-iface --system=cp1lp02 --type=osa --ccwgroup=f300,f301,f302 --osname=encf300 --desc='internal interface'
+    - - system iface-add --name=internal-iface --system=cp1lp02 --type=osa --ccwgroup=f300,f301,f302 --devname=encf300 --desc='internal interface'
       - Item added successfully.
     - - storage vol-add --type=DASD --server=ds8k15 --id=abcd --size=7gib --desc='To exercise reusing already existing volume'
       - Item added successfully.
@@ -271,7 +271,7 @@ tasks:
     - - storage part-list --server=ds8k10 --id=123456789abcdef
       - '\n *1 *\| *15\.0 GiB *\| *primary *\| *btrfs *\| */var/log *\| *\n'
     - - system iface-list --system=cp1lp10 --name=gw-iface --long
-      - - 'Operating system name *: encf500'
+      - - 'Network device name *: encf500'
         - 'Interface type *: OSA'
         - "Attributes *: .*'layer2': True"
         - "Attributes *: .*'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'"
@@ -351,7 +351,7 @@ tasks:
         - 'Storage volumes *: .*\[ds8k15/0abc\]'
         - 'Network interfaces *: .*\[vlan100-iface\]'
     - - system iface-list --system=cp1lp10 --name=vlan100-iface --long
-      - - 'Operating system name *: encf600'
+      - - 'Network device name *: encf600'
         - 'Interface type *: OSA'
         - "Attributes *: .*'layer2': True"
         - "Attributes *: .*'ccwgroup': '0.0.f600,0.0.f601,0.0.f602'"
@@ -465,7 +465,7 @@ tasks:
     - - storage part-list --server=ds8k10 --id=0123
       - '\n *1 *\| *7\.0 GiB *\| *primary *\| *ext4 *\| */ *\| *\n'
     - - system iface-list --system=zvm01 --name=internal-iface --long
-      - - 'Operating system name *: osa01'
+      - - 'Network device name *: osa01'
         - 'Interface type *: OSA'
         - "Attributes *: .*'layer2': True"
         - "Attributes *: .*'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'"
@@ -575,7 +575,7 @@ tasks:
       - - '\n *1 *\| *5\.0 GiB *\| *primary *\| *ext3 *\| */ *\| *\n'
         - '\n *2 *\| *2\.0 GiB *\| *primary *\| *xfs *\| *\| *\n'
     - - system iface-list --system=kvm01 --name=macvtap-iface --long
-      - - 'Operating system name *: en0 *\n'
+      - - 'Network device name *: en0 *\n'
         - 'Interface type *: MACVTAP'
         - "Attributes *: .*'hostiface': 'encf300'"
         - 'MAC address *: *aa:bb:cc:ee:dd:ff *\n'

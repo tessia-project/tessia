@@ -222,7 +222,7 @@ Options:
   --system NAME               target system  [required]
   --name NAME                 interface name  [required]
   --type STRING               interface type (see iface-types)  [required]
-  --osname NAME               interface name in operating system (i.e. en0)
+  --devname NAME              network device name in operating system (i.e. net0)
                               [required]
   --mac TEXT                  mac address
   --subnet TEXT               subnet of ip address to be assigned
@@ -242,7 +242,7 @@ We will use OSA card interface type (the name `OSA`) with layer2 mode enabled an
 The provided IP address may be assigned to the interface at once. Don't forget to specify a subnet also, otherwise you will get an error. Let's create the interface:
 
 ```
-$ tess system iface-add --system=vm70002 --name='default osa' --type=OSA --osname=enccw0.0.f500 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --subnet='CPC50 shared' --ip=192.168.0.30 --desc='default gateway interface'
+$ tess system iface-add --system=vm70002 --name='default osa' --type=OSA --devname=enccw0.0.f500 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --subnet='CPC50 shared' --ip=192.168.0.30 --desc='default gateway interface'
 Item added successfully.
 $ tess system iface-list --long --system=vm70002
 

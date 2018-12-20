@@ -23,52 +23,63 @@ This page contains a detailed view of the current supported combinations and usa
 - [Partitioning on LPAR](#partitioning-on-lpar)
 - [Partitioning on z/VM](#partitioning-on-zvm)
 - [Partitioning on KVM](#partitioning-on-kvm)
+- [Distro as KVM hypervisor](#distro-as-kvm-hypervisor)
 
 # Network and volumes on LPAR
 
-| Distro                   | RHEL | SLES | Ubuntu |
-| ------                   | ---- | ---- | -----  |
-| volume type DASD         | Y    | Y    | Y      |
-| volume type FCP          | Y    | Y    | Y      |
-| multipath on (FCP only)  | Y    | Y    | Y      |
-| multipath off (FCP only) | Y    | Y    | Y      |
-| network interface OSA    | Y    | Y    | Y      |
-| layer2 on (OSA only)     | Y    | Y    | Y      |
-| layer2 off (OSA only)    | Y    | Y    | Y      |
+| Distro                   | RHEL | SLES | Ubuntu | Fedora |
+| ------                   | ---  | ---  | -----  | -----  |
+| volume type DASD         | Y    | Y    | Y*     | Y      |
+| volume type FCP          | Y    | Y    | Y      | Y      |
+| multipath on (FCP only)  | Y    | Y    | Y      | Y      |
+| multipath off (FCP only) | Y    | Y    | Y      | Y      |
+| network interface OSA    | Y    | Y    | Y      | Y      |
+| layer2 on (OSA only)     | Y    | Y    | Y      | Y      |
+| layer2 off (OSA only)    | Y    | Y    | Y      | Y      |
+
+[*] Except Ubuntu 16.04 (GA) due to distro installer issues, for details see [ReleaseNotes](https://wiki.ubuntu.com/XenialXerus/ReleaseNotes#IBM_LinuxONE_and_z_Systems_specific_known_issues)
 
 # Network and volumes on z/VM
 
-The supported network and volumes combinations for z/VM are the same as for LPAR.
+Except Ubuntu16.04.1 which won't boot its installer's initrd on z/VM, the supported network and volumes combinations for z/VM are the same as for LPAR.
 
 # Network and volumes on KVM
 
-| Distro                            | RHEL | SLES | Ubuntu |
-| ------                            | ---- | ---- | ------ |
-| volume type DASD (through virtio) | N    | N    | Y      |
-| volume type FCP (through virtio)  | Y    | Y    | Y      |
-| multipath on (FCP only)           | Y    | Y    | Y      |
-| multipath off (FCP only)          | N    | N    | N      |
-| network interface MACVTAP         | Y    | Y    | Y      |
+| Distro                            | RHEL | SLES | Ubuntu | Fedora |
+| ------                            | ---  | ---  | -----  | -----  |
+| volume type DASD (through virtio) | N    | Y*   | Y      | N      |
+| volume type FCP (through virtio)  | Y    | Y    | Y      | Y      |
+| multipath on (FCP only)           | Y    | Y    | Y      | Y      |
+| multipath off (FCP only)          | Y    | Y    | Y      | Y      |
+| network interface MACVTAP         | Y    | Y    | Y      | Y      |
+
+[*] - Except SLES15 due to an AutoYaST bug
 
 # Partitioning on LPAR
 
 Remarks:
 
 - due to a DASD architecture constraint, DASD volumes can only use the partition table type `dasd`.
-- `gpt` partition tables are not supported, which means currently only the `msdos` type can be used for FCP volumes.
+- FCP volumes can be used with `gpt` and `msdos` partition tables.
 
-| Distro               | RHEL | SLES | Ubuntu |
-| -----                | ---  | ---  | ---    |
-| Ext2                 | Y    | Y    | Y      |
-| Ext3                 | Y    | Y    | Y      |
-| Ext4                 | Y    | Y    | Y      |
-| XFS                  | Y    | N    | Y      |
-| BtrFS (not '/' only) | N    | N    | Y      |
-| ReiserFS             | N    | N    | N      |
-| JFS                  | N    | N    | N      |
-| FAT16                | N    | N    | N      |
-| FAT32                | N    | N    | N      |
-| set mount options    | Y    | Y    | Y      |
+| Distro               | RHEL | SLES | Ubuntu | Fedora |
+| -----                | ---  | ---  | -----  | -----  |
+| dasd                 | Y    | Y    | Y      | Y      |
+| gpt                  | N    | Y    | Y      | N      |
+| msdos                | Y    | Y    | Y      | Y      |
+
+| Distro               | RHEL | SLES | Ubuntu | Fedora |
+| -----                | ---  | ---  | -----  | -----  |
+| Ext2                 | Y    | Y    | Y      | Y      |
+| Ext3                 | Y    | Y    | Y      | Y      |
+| Ext4                 | Y    | Y    | Y      | Y      |
+| XFS                  | Y    | Y    | Y      | Y      |
+| BtrFS (except '/')   | N    | Y    | Y      | N      |
+| ReiserFS             | N    | N    | N      | Y      |
+| JFS                  | N    | N    | N      | N      |
+| FAT16                | N    | N    | N      | N      |
+| FAT32                | N    | N    | N      | N      |
+| set mount options    | Y    | Y    | Y      | Y      |
 
 # Partitioning on z/VM
 
@@ -76,15 +87,29 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 
 # Partitioning on KVM
 
-| Distro               | RHEL | SLES | Ubuntu |
-| -----                | ---  | ---  | ---    |
-| Ext2                 | Y    | Y    | Y      |
-| Ext3                 | Y    | Y    | Y      |
-| Ext4                 | Y    | Y    | Y      |
-| XFS                  | Y    | N    | Y      |
-| BtrFS (not '/' only) | N    | N    | Y      |
-| ReiserFS             | N    | N    | N      |
-| JFS                  | N    | N    | N      |
-| FAT16                | N    | N    | N      |
-| FAT32                | N    | N    | N      |
-| set mount options    | Y    | Y    | Y      |
+| Distro               | RHEL | SLES | Ubuntu | Fedora |
+| -----                | ---  | ---  | -----  | -----  |
+| dasd                 | Y    | Y    | Y      | Y      |
+| gpt                  | N    | Y    | N      | N      |
+| msdos                | Y    | Y    | Y      | Y      |
+
+| Distro               | RHEL | SLES | Ubuntu | Fedora |
+| -----                | ---  | ---  | -----  | -----  |
+| Ext2                 | Y    | Y    | Y      | Y      |
+| Ext3                 | Y    | Y    | Y      | Y      |
+| Ext4                 | Y    | Y    | Y      | Y      |
+| XFS                  | Y    | Y    | Y      | Y      |
+| BtrFS (except '/')   | N    | Y    | Y      | N      |
+| ReiserFS             | N    | N    | N      | Y      |
+| JFS                  | N    | N    | N      | N      |
+| FAT16                | N    | N    | N      | N      |
+| FAT32                | N    | N    | N      | N      |
+| set mount options    | Y    | Y    | Y      | N      |
+
+# Distro as KVM hypervisor
+
+| Distro                         | RHEL | SLES | Ubuntu | Fedora |
+| ------                         | ---  | ---  | -----  | -----  |
+| using distro as KVM hypervisor | Y*   | Y    | Y      | Y      |
+
+[*] - Except RHEL7.4 and lower.

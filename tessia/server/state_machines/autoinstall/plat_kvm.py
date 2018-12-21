@@ -164,10 +164,11 @@ class PlatKvm(PlatBase):
         #    src_type = 'file'
         #    driver = 'qcow2'
         boot_tag = ''
-        for part in vol_obj.part_table['table']:
-            if part['mp'] == '/':
-                boot_tag = '<boot order="1"/>'
-                break
+        if vol_obj.part_table:
+            for part in vol_obj.part_table.get('table', []):
+                if part['mp'] == '/':
+                    boot_tag = '<boot order="1"/>'
+                    break
 
         hex_devno = '{:04x}'.format(devno)
         vol_libvirt = DISK_TEMPLATE.format(

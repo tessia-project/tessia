@@ -19,6 +19,7 @@ Machine to perform power management of systems
 #
 # IMPORTS
 #
+from copy import deepcopy
 from datetime import datetime
 from itertools import chain
 from jsonschema import validate
@@ -447,9 +448,7 @@ class PowerManagerMachine(BaseMachine):
             if result['type'] != 'fcp':
                 result['devno'] = vol_obj.volume_id.split('.')[-1]
             else:
-                result['devno'] = (
-                    vol_obj.specs['adapters'][0]['devno'].split('.')[-1])
-                result['wwpn'] = vol_obj.specs['adapters'][0]['wwpns'][0]
+                result['adapters'] = deepcopy(vol_obj.specs['adapters'])
                 result['lun'] = vol_obj.volume_id
             if guest_prof.root_vol is vol_obj:
                 result['boot_device'] = True

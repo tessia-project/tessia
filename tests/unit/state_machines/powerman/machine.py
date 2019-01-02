@@ -233,9 +233,7 @@ class TestPowerManagerMachine(TestCase):
                 if result['type'] != 'fcp':
                     result['devno'] = vol_obj.volume_id.split('.')[-1]
                 else:
-                    result['devno'] = (
-                        vol_obj.specs['adapters'][0]['devno'].split('.')[-1])
-                    result['wwpn'] = vol_obj.specs['adapters'][0]['wwpns'][0]
+                    result['adapters'] = vol_obj.specs['adapters']
                     result['lun'] = vol_obj.volume_id
                 if guest_prof_obj.root_vol is vol_obj:
                     result['boot_device'] = True

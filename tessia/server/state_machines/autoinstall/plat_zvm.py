@@ -19,6 +19,7 @@ Module to deal with operations on zVM guests
 #
 # IMPORTS
 #
+from copy import deepcopy
 from tessia.baselib.hypervisors import Hypervisor
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
@@ -108,11 +109,10 @@ class PlatZvm(PlatBase):
         result = {'type': vol_entry.type_rel.name.lower()}
         if result['type'] != 'fcp':
             result['devno'] = vol_entry.volume_id.split('.')[-1]
-        else:
-            result['devno'] = (
-                vol_entry.specs['adapters'][0]['devno'].split('.')[-1])
-            result['wwpn'] = vol_entry.specs['adapters'][0]['wwpns'][0]
-            result['lun'] = vol_entry.volume_id
+            return result
+
+        result['adapters'] = deepcopy(vol_entry.specs['adapters'])
+        result['lun'] = vol_entry.volume_id
         return result
     # _zvm_jsonify_vol()
 

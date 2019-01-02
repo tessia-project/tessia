@@ -328,6 +328,14 @@ class TestSystems(TestSecureResource):
         self._test_list_filtered('user_user@domain.com', filter_values)
     # test_list_filtered()
 
+    def test_update_project(self):
+        """
+        Exercise the update of the item's project. For that operation a user
+        requires permission on both projects.
+        """
+        self._test_update_project()
+    # test_update_project()
+
     def test_update_valid_fields(self):
         """
         Exercise the update of existing objects when correct format and
@@ -338,7 +346,6 @@ class TestSystems(TestSecureResource):
 
         update_fields = {
             'owner': 'user_project_admin@domain.com',
-            'project': self._db_entries['Project'][1]['name'],
             'name': 'some_name',
             'hostname': 'some_hostname',
             'hypervisor': entry['name'],

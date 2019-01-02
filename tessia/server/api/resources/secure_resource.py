@@ -340,7 +340,7 @@ class SecureResource(ModelResource):
                       id field in the table's database
 
         Raises:
-            Forbidden: in case user has no permission to perform action
+            PermissionError: in case user has no permission to perform action
 
         Returns:
             int: id of updated item
@@ -350,6 +350,13 @@ class SecureResource(ModelResource):
 
         # validate permission on the object
         self._perman.can('UPDATE', flask_global.auth_user, item)
+
+        # project changed: make sure user has permission to new project
+        if 'project' in properties:
+            dummy_item = self.meta.model()
+            dummy_item.project = properties['project']
+            self._perman.can(
+                'UPDATE', flask_global.auth_user, dummy_item, 'project')
 
         updated_item = self.manager.update(item, properties)
 

@@ -28,7 +28,6 @@ from flask_potion.instances import Pagination
 from sqlalchemy.exc import IntegrityError
 from tessia.server.api.db import API_DB
 from tessia.server.api.exceptions import BaseHttpError
-from tessia.server.api.exceptions import ConflictError
 from tessia.server.api.exceptions import ItemNotFoundError
 from tessia.server.api.resources.secure_resource import NAME_PATTERN
 from tessia.server.api.resources.secure_resource import SecureResource
@@ -59,7 +58,6 @@ DESC = {
 }
 
 MARKER_STRIPPED_SECRET = '****'
-MARKER_HIDDEN_CRED = '[NOT DISPLAYED]'
 
 #
 # CODE
@@ -185,37 +183,47 @@ class SystemProfileResource(SecureResource):
         Retrieve the item and system rows and validate user permissions on
         them.
         """
-        # retrieve the item for permission verification
-        item = model.query.filter_by(id=item_id).one_or_none()
-        # row does not exist: report error
-        if item is None:
-            raise ItemNotFoundError(item_id_key, item_id, None)
-        # make sure user has update permission on the item
-        if hasattr(item, 'project'):
-            try:
-                self._perman.can('UPDATE', flask_global.auth_user, item,
-                                 item_desc)
-            except PermissionError as exc:
-                raise Forbidden(description=str(exc))
-
         # retrieve the system row for permission verification
-        # first we need the profile object
-        system = System.query.join(
+        system_obj = System.query.join(
             SystemProfile, System.id == SystemProfile.system_id
         ).filter(
             SystemProfile.id == prof_id
         ).one_or_none()
         # row does not exist: report error
-        if system is None:
+        if system_obj is None:
             raise ItemNotFoundError('profile_id', prof_id, None)
         # make sure user has update permission on the system
         try:
-            self._perman.can('UPDATE', flask_global.auth_user, system,
+            self._perman.can('UPDATE', flask_global.auth_user, system_obj,
                              'system')
         except PermissionError as exc:
             raise Forbidden(description=str(exc))
 
-        return item, system
+        # retrieve the target item for permission verification
+        item = model.query.filter_by(id=item_id).one_or_none()
+        # row does not exist: report error
+        if item is None:
+            raise ItemNotFoundError(item_id_key, item_id, None)
+        # item has no ownership info: nothing more to check
+        if not hasattr(item, 'project'):
+            return item, system_obj
+
+        # volume assigned to the system: already confirmed user has update
+        # permission to the system therefore they are allowed to
+        # attach to/detach from profiles
+        if (isinstance(item, StorageVolume) and
+                item.system_id == system_obj.id):
+            return item, system_obj
+
+        # for non volume items or a volume not assigned to the system we need
+        # to verify if the user has update permission to the item
+        try:
+            self._perman.can('UPDATE', flask_global.auth_user, item,
+                             item_desc)
+        except PermissionError as exc:
+            raise Forbidden(description=str(exc))
+
+        return item, system_obj
     # _fetch_and_assert_item()
 
     @staticmethod
@@ -226,7 +234,7 @@ class SystemProfileResource(SecureResource):
         Args:
             credentials (dict): key from credentials dict
         """
-        if not isinstance(credentials, dict):
+        if not credentials:
             return
 
         for key in credentials:
@@ -391,23 +399,12 @@ class SystemProfileResource(SecureResource):
                                                kwargs.get('sort')):
             self._strip_secrets(instance.credentials)
 
-            if self._perman.is_owner_or_admin(flask_global.auth_user,
-                                              instance.system_rel):
-                ret_instances.append(instance)
-                continue
-
-            # user is not the resource's owner or an administrator: verify
-            # if they have a role in resource's project
+            # restricted user can list if they have a role in the project
             try:
-                self._perman.can('UPDATE', flask_global.auth_user,
+                self._perman.can('READ', flask_global.auth_user,
                                  instance.system_rel, 'system')
             except PermissionError:
-                if flask_global.auth_user.restricted:
-                    continue
-                # non-restricted users can list but credentials must be
-                # hidden
-                instance.credentials = MARKER_HIDDEN_CRED
-
+                continue
             ret_instances.append(instance)
 
         return Pagination.from_list(
@@ -432,27 +429,11 @@ class SystemProfileResource(SecureResource):
         # pylint: disable=redefined-builtin
 
         item = self.manager.read(id)
-
-        # validate permission on the object - use the associated system
-        # user is not the system's owner or an administrator: verify if
-        # they have a role in system's project
-        if not self._perman.is_owner_or_admin(flask_global.auth_user,
-                                              item.system_rel):
-            # no role in system's project: access forbidden
-            try:
-                self._perman.can('UPDATE', flask_global.auth_user,
-                                 item.system_rel, 'system')
-            except PermissionError:
-                # restricted users: cannot read
-                if flask_global.auth_user.restricted:
-                    msg = ('Restricted user has no permission to access the '
-                           'specified resource')
-                    raise Forbidden(description=msg)
-                # non-restricted users can list but credentials must be
-                # hidden
-                item.credentials = MARKER_HIDDEN_CRED
-
         self._strip_secrets(item.credentials)
+
+        # restricted user can list if they have a role in the project
+        self._perman.can('READ', flask_global.auth_user,
+                         item.system_rel, 'system')
         return item
     # do_read()
 
@@ -548,8 +529,7 @@ class SystemProfileResource(SecureResource):
         """
         # validate existence and permissions
         svol, system = self._fetch_and_assert_item(
-            StorageVolume, properties['unique_id'], 'volume_id',
-            'storage volume', id)
+            StorageVolume, properties['unique_id'], 'volume_id', 'volume', id)
 
         # for a cpc system only one disk can be associated *per profile*
         # which is regarded as the disk containing the live image used
@@ -567,7 +547,7 @@ class SystemProfileResource(SecureResource):
         # volume attached to different system: cannot attach to two systems at
         # the same time
         elif svol.system_id != system.id:
-            msg = 'The volume is already attached to system {}'.format(
+            msg = 'The volume is already assigned to system {}'.format(
                 svol.system)
             raise BaseHttpError(409, msg=msg)
 
@@ -578,8 +558,9 @@ class SystemProfileResource(SecureResource):
         try:
             API_DB.db.session.commit()
         # duplicate entry
-        except IntegrityError as exc:
-            raise ConflictError(exc, None)
+        except IntegrityError:
+            msg = 'The volume specified is already attached to the profile'
+            raise BaseHttpError(409, msg=msg)
 
         return new_attach
     # attach_storage_volume()
@@ -599,28 +580,18 @@ class SystemProfileResource(SecureResource):
         """
         # validate existence and permissions
         self._fetch_and_assert_item(
-            StorageVolume, vol_unique_id, 'volume_id', 'storage volume', id)
+            StorageVolume, vol_unique_id, 'volume_id', 'volume', id)
 
         # remove association
         match = StorageVolumeProfileAssociation.query.filter_by(
             profile_id=id, volume_id=vol_unique_id,
         ).one_or_none()
         if match is None:
-            value = '{},{}'.format(id, vol_unique_id)
-            # TODO: create a schema to have human-readable content in the error
-            # message
-            raise ItemNotFoundError('profile_id,volume_id', value, None)
+            msg = 'The volume specified is not attached to the profile'
+            raise BaseHttpError(404, msg=msg)
         API_DB.db.session.delete(match)
-
-        last = StorageVolumeProfileAssociation.query.filter_by(
-            volume_id=vol_unique_id,
-        ).first()
-        # no more associations for this volume: remove system attribute
-        if last is None:
-            StorageVolume.query.filter_by(id=vol_unique_id).update(
-                {'system_id': None})
-
         API_DB.db.session.commit()
+
         return True
     # detach_storage_volume
     detach_storage_volume.request_schema = None
@@ -650,8 +621,10 @@ class SystemProfileResource(SecureResource):
         try:
             API_DB.db.session.commit()
         # duplicate entry
-        except IntegrityError as exc:
-            raise ConflictError(exc, None)
+        except IntegrityError:
+            msg = ('The network interface specified is already attached to '
+                   'the profile')
+            raise BaseHttpError(409, msg=msg)
 
         return new_attach
     # attach_iface()
@@ -678,10 +651,9 @@ class SystemProfileResource(SecureResource):
             profile_id=id, iface_id=iface_id,
         ).one_or_none()
         if match is None:
-            value = '{},{}'.format(id, iface_id)
-            # TODO: create a schema to have human-readable content in the error
-            # message
-            raise ItemNotFoundError('profile_id,iface_id', value, None)
+            msg = ('The network interface specified is not attached to '
+                   'the profile')
+            raise BaseHttpError(404, msg=msg)
         API_DB.db.session.delete(match)
 
         API_DB.db.session.commit()

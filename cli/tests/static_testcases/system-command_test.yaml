@@ -154,6 +154,8 @@ tasks:
       - 'Invalid value for "--type": value may not be empty'
     - - system add --name=cpc1 --type=cpc --hostname=
       - 'Invalid value for "--hostname": value may not be empty'
+    - - system add --name=cpc2 --type=cpc --hostname=hosthmc#1.example.com
+      - 'Invalid value for "--hostname":'
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zzzz
       - "request failed. Server answered: No associated item found with value 'ZZZZ' for field 'Model'"
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=
@@ -162,22 +164,12 @@ tasks:
       - 'Invalid value for "--state": value may not be empty'
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=available
       - Item added successfully.
-    - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
-      - 'request failed. Server answered: An item with the provided value'
-    - - system add --name=cpc2 --type=cpc --hostname=hosthmc#1.example.com --model=zec12_h43 --state=AVAILABLE
-      - 'Invalid value for "--hostname":'
     - - system add --name=cpc+2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
       - 'Invalid value for "--name":'
-    - - system add --name=cpc2 --type=cpc --hostname=hosthmc4.example.com
-      - 'request failed. Server answered: An item with the provided value'
     - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=locked
       - Item added successfully.
-    - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=LOCKED
-      - 'request failed. Server answered: An item with the provided value'
     - - system add --name=cpc5 --type=cpc --hostname=hosthmc5.example.com --state=Debug
       - Item added successfully.
-    - - system add --name=cpc5 --type=cpc --hostname=hosthmc5.example.com --state=DEBUG
-      - 'request failed. Server answered: An item with the provided value'
     - - system add --name=cpc3 --type=cpc --hostname=hmcserver.example.com --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
       - Item added successfully.
     - - system add --name=cpc3lp52 --hyp=cpc3 --type=LPAR --hostname=cpc3lp52.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
@@ -629,8 +621,6 @@ tasks:
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa23' --newname='default osa2'
       - network interface not found.
-    - - system iface-edit --system=cpc3lp52 --name='default osa22' --newname='default osa2'
-      - 'request failed. Server answered: An item with the provided value'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=dummy
       - "request failed. Server answered: No associated item found with value 'DUMMY' for field 'Interface type'"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=OS
@@ -1069,7 +1059,7 @@ tasks:
     - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
       - Network interface attached successfully.
     - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
-      - 'request failed. Server answered: An item with the provided value'
+      - 'request failed. Server answered: The network interface specified is already attached to the profile'
     - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface='default osa1'
       - Network interface attached successfully.
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa3'
@@ -1096,11 +1086,9 @@ tasks:
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
       - Network interface detached successfully.
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
-      - "request failed. Server answered: No associated item found with value '[0-9]+,[0-9]+' for field 'profile_id,iface_id'"
+      - 'request failed. Server answered: The network interface specified is not attached to the profile'
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa1'
       - Network interface detached successfully.
-    - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default osa3'
-      - "request failed. Server answered: No associated item found with value '[0-9]+,[0-9]+' for field 'profile_id,iface_id'"
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface='default macvtap4'
       - no network interface found.
     # 'system vol-attach' subcommand
@@ -1284,7 +1272,7 @@ tasks:
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3956
       - Volume detached successfully.
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3957
-      - "request failed. Server answered: No associated item found with value .* for field 'profile_id,volume_id'"
+      - 'Error: request failed. Server answered: The volume specified is not attached to the profile'
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
       - Volume detached successfully.
       # delete default profile if it is the last one

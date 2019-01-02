@@ -19,12 +19,16 @@ Resource definition
 #
 # IMPORTS
 #
+from flask import g as flask_global
 from flask_potion import fields
 from flask_potion.contrib.alchemy.fields import InlineModel
+from flask_potion.instances import Pagination
 from tessia.server.api.exceptions import BaseHttpError, ItemNotFoundError
 from tessia.server.api.resources.secure_resource import SecureResource
 from tessia.server.db.models import StorageVolume
+from tessia.server.db.models import StorageVolumeProfileAssociation
 from tessia.server.db.models import StorageServer
+from tessia.server.db.models import System
 from tessia.server.db.models import SystemProfile
 
 #
@@ -37,7 +41,7 @@ DESC = {
     'part_table': 'Partition table',
     'specs': 'Volume specifications',
     'type': 'Volume type',
-    'system': 'Attached to system',
+    'system': 'Assigned to system',
     'system_attributes': 'System related attributes',
     'system_profiles': 'Associated system profiles',
     'pool': 'Attached to storage pool',
@@ -73,6 +77,12 @@ MSG_INVALID_TYPE = (
     "The value 'type={}' is invalid: it does not match storage server "
     "type '{}'"
 )
+
+# when the volume is assigned to a system and the user has permission to update
+# that system they are entitled to update these attributes on the volume
+# (note that modifier is actually set by secure_resource and not by user)
+SYS_DERIVED_PERMS = set(
+    ('size', 'part_table', 'specs', 'system_attributes', 'modifier'))
 
 # support map between storage servers and volumes types
 VOL_SERVER_MAP = {
@@ -145,9 +155,8 @@ class StorageVolumeResource(SecureResource):
             title=DESC['type'], description=DESC['type'])
         server = fields.String(
             title=DESC['server'], description=DESC['server'])
-        # association with a system is done via system profiles
         system = fields.String(
-            title=DESC['system'], description=DESC['system'], io='r')
+            title=DESC['system'], description=DESC['system'], nullable=True)
         system_attributes = fields.Custom(
             schema=StorageVolume.get_schema('system_attributes'),
             title=DESC['system_attributes'],
@@ -281,6 +290,51 @@ class StorageVolumeResource(SecureResource):
             raise BaseHttpError(code=400, msg=msg)
     # _assert_type()
 
+    def _assert_system(self, item, system_name):
+        """
+        Retrieve the system and validate user permissions to it.
+
+        Args:
+            item (StorageVolume): provided in case of an update, None for
+                                  create
+            system_name (str): target system to assign volume
+
+        Raises:
+            ItemNotFoundError: if system does not exist
+            PermissionError: if user has no permission to current system
+        """
+        # volume is created with no system or updated without changing system:
+        # nothing to check
+        if (not item and not system_name) or (
+                item and item.system_rel and
+                item.system_rel.name == system_name):
+            return
+
+        # volume already assigned to a system: make sure user has permission
+        # to unassign a volume from it
+        if item and item.system_id:
+            try:
+                self._perman.can('UPDATE', flask_global.auth_user,
+                                 item.system_rel)
+            except PermissionError:
+                msg = ('User has no UPDATE permission for the system '
+                       'currently holding the volume')
+                raise PermissionError(msg)
+
+        # user only wants to withdraw system: nothind more to check
+        if not system_name:
+            return
+
+        # verify permission to the target system
+        system_obj = System.query.filter_by(name=system_name).one_or_none()
+        # system does not exist: report error
+        if system_obj is None:
+            raise ItemNotFoundError('system', system_name, self)
+        # make sure user has update permission on the system
+        self._perman.can('UPDATE', flask_global.auth_user, system_obj,
+                         'system')
+    # _assert_system()
+
     def do_create(self, properties):
         """
         Overriden method to perform sanity checks. See parent class for
@@ -292,8 +346,82 @@ class StorageVolumeResource(SecureResource):
         self._assert_ptable(
             properties.get('part_table'), properties['size'])
 
+        self._assert_system(None, properties.get('system'))
+
         return super().do_create(properties)
     # do_create()
+
+    def do_list(self, **kwargs):
+        """
+        Verify if the user attempting to list has permissions to do so.
+
+        Args:
+            kwargs (dict): contains keys like 'where' (filtering) and
+                           'per_page' (pagination), see potion doc for details
+
+        Returns:
+            list: list of items retrieved, can be an empty in case no items are
+                  found or a restricted user has no permission to see them
+        """
+        if not flask_global.auth_user.restricted:
+            return self.manager.paginated_instances(**kwargs)
+
+        ret_instances = []
+        for instance in self.manager.instances(kwargs.get('where'),
+                                               kwargs.get('sort')):
+            # restricted user may list if they have a role in the project
+            try:
+                self._perman.can(
+                    'READ', flask_global.auth_user, instance)
+            except PermissionError:
+                if not instance.system_id:
+                    continue
+                # they can list if the disk is assigned to a system they have
+                # access
+                try:
+                    self._perman.can('READ', flask_global.auth_user,
+                                     instance.system_rel, 'system')
+                except PermissionError:
+                    continue
+            ret_instances.append(instance)
+
+        return Pagination.from_list(
+            ret_instances, kwargs['page'], kwargs['per_page'])
+    # do_list()
+
+    def do_read(self, id):
+        """
+        Custom implementation of item reading. Use permissions from the
+        associated system to validate access if necessary.
+
+        Args:
+            id (any): id of the item, usually an integer corresponding to the
+                      id field in the table's database
+
+        Raises:
+            PermissionError: if user has no permission to the item
+
+        Returns:
+            json: json representation of item
+        """
+        # pylint: disable=redefined-builtin
+        item = self.manager.read(id)
+        if not flask_global.auth_user.restricted:
+            return item
+
+        # restricted user may read if they have a role in the project
+        try:
+            self._perman.can('READ', flask_global.auth_user, item)
+        except PermissionError:
+            if not item.system_id:
+                raise
+            # they can read if the disk is assigned to a system they have
+            # access
+            self._perman.can('READ', flask_global.auth_user,
+                             item.system_rel, 'system')
+
+        return item
+    # do_read()
 
     def do_update(self, properties, id):
         # pylint: disable=invalid-name,redefined-builtin
@@ -301,8 +429,33 @@ class StorageVolumeResource(SecureResource):
         Overriden method to perform sanity checks. See parent class for
         complete docstring.
         """
-        # cache the item's instance to avoid unnecessary queries on the db
-        cached_item = None
+        vol_obj = self.manager.read(id)
+        # determine which kind of permission the user has
+        try:
+            self._perman.can(
+                'UPDATE', flask_global.auth_user, vol_obj, 'volume')
+        except PermissionError:
+            # volume is not assigned to a system: no more permissions to
+            # check
+            if not vol_obj.system_rel:
+                raise
+            # when a volume is assigned to a system and the user has update
+            # permission to that system then it's allowed to update certain
+            # attributes
+            self._perman.can('UPDATE', flask_global.auth_user,
+                             vol_obj.system_rel, 'system')
+            # abort if attempting to update a protected attribute
+            for prop in properties:
+                if prop not in SYS_DERIVED_PERMS:
+                    raise
+
+            # partition table changed: validate partitions' sizes
+            if 'part_table' in properties:
+                self._assert_ptable(properties.get('part_table'),
+                                    properties.get('size', vol_obj.size))
+
+            updated_item = self.manager.update(vol_obj, properties)
+            return updated_item.id
 
         # server changed: verify if vol type matches it
         if 'server' in properties:
@@ -311,27 +464,42 @@ class StorageVolumeResource(SecureResource):
                 type_value = properties['type']
             # vol type not changed: use existing value from db
             else:
-                cached_item = self.manager.read(id)
-                type_value = cached_item.type
+                type_value = vol_obj.type
             self._assert_type(properties['server'], type_value)
 
         # volume type changed: verify if new type matches storage server
         elif 'type' in properties:
-            self._assert_type(
-                self.manager.read(id).server_rel, properties['type'])
+            self._assert_type(vol_obj.server_rel, properties['type'])
 
         # partition table changed: validate partitions' sizes
         if 'part_table' in properties:
             if 'size' in properties:
                 size = properties['size']
-            elif cached_item is not None:
-                size = cached_item.size
             else:
-                cached_item = self.manager.read(id)
-                size = cached_item.size
+                size = vol_obj.size
             self._assert_ptable(properties.get('part_table'), size)
 
-        return super().do_update(properties, id)
-    # do_update()
+        # system assignment changed: validate permissions and remove any
+        # profiles attached
+        if 'system' in properties:
+            self._assert_system(vol_obj, properties['system'])
 
+            # remove any existing profile associations
+            StorageVolumeProfileAssociation.query.filter_by(
+                volume_id=id).delete()
+
+        # project changed: make sure user has permission to new project
+        if 'project' in properties:
+            dummy_item = self.meta.model()
+            dummy_item.project = properties['project']
+            self._perman.can('UPDATE', flask_global.auth_user, dummy_item,
+                             'project')
+
+        updated_item = self.manager.update(vol_obj, properties)
+
+        # don't waste resources building the object in the answer,
+        # just give the id and let the client decide if it needs more info (in
+        # which case it can use the provided id to request the item)
+        return updated_item.id
+    # do_update()
 # StorageVolumeResource

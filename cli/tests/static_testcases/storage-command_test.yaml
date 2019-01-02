@@ -31,6 +31,8 @@ tasks:
         - lab_admin@example.com
         - password
       - Key successfully created and added to client configuration.
+    - - system add --name=lpar69 --type=LPAR --hostname=lpar69.example._com
+      - Item added successfully.
   storage_help:
     - - storage -h
       - 'Usage: tess storage'
@@ -229,10 +231,6 @@ tasks:
         - ' *DASD *|'
     - - storage vol-types --long
       - 'Type name   : DASD'
-    - - storage vol-list
-      - at least one of --server or --id must be specified
-    - - storage vol-list --server=DS8K16
-      - No results were found.
     # 'storage vol-add' subcommand
     - - storage vol-add
       - Missing option "--server".
@@ -279,7 +277,7 @@ tasks:
       - "Error: FCP parameters can't be applied to a non FCP disk."
     - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc=
       - Item added successfully.
-    - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR' --system=lpar69
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT'
       - 'both --path and --wwid must be specified'
@@ -308,6 +306,8 @@ tasks:
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400300000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c000' --path='1800,100207630508c000' --path='1800,100207630510c000' --path='1800,100207630513c000' --path='1880,100207630503c000' --path='1880,100207630508c000' --path='1880,100207630510c000' --path='1880,100207630513c000' --wwid=11002076305aac1a0000000000002207
       - Item added successfully.
     # 'storage vol-list' subcommand
+    - - storage vol-list
+      - ' *3955 *|'
     - - storage vol-list --server=DS8KKK
       - No results were found.
     - - storage vol-list --server=
@@ -317,10 +317,10 @@ tasks:
         - ' *3955 *|'
     - - storage vol-list --server=DS8K16 --long
       - 'Volume id                  : 3955'
+    - - storage vol-list --system=
+      - 'Invalid value for "--system": value may not be empty'
     - - storage vol-list --system=lpar69
-      - at least one of --server or --id must be specified
-    - - storage vol-list --owner=lab_admin@example.com
-      - at least one of --server or --id must be specified
+      - ' *3955 *|'
     - - storage vol-list --id=3955
       - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
         - ' *3955 *|'
@@ -361,10 +361,6 @@ tasks:
       - 'Volume id                  : 3955'
     - - storage vol-list --server=DS8K16 --project='GEO_1'
       - No results were found.
-    - - storage vol-list --server=DS8K16 --system=
-      - 'Invalid value for "--system": value may not be empty'
-    - - storage vol-list --server=DS8K16 --system=lpar69
-      - No results were found.
     - - storage vol-list --server=DS8K16 --type=
       - No results were found.
     - - storage vol-list --server=DS8K16 --type=DASD
@@ -387,6 +383,16 @@ tasks:
       - volume not found.
     - - storage vol-edit --server=DS8K16 --id=3955
       - no update criteria provided.
+    - - storage vol-edit --server=DS8K16 --id=3955 --system=
+      - Item successfully updated.
+    # make sure update worked
+    - - storage vol-list --system=lpar69
+      - No results were found.
+    - - storage vol-edit --server=DS8K16 --id=3955 --system=lpar69
+      - Item successfully updated.
+    # make sure update worked
+    - - storage vol-list --system=lpar69
+      - ' *3955 *|'
     - - storage vol-edit --server=DS8K16 --id=3955 --newid=
       - 'Error: Invalid value for "--newid": value may not be empty'
     - - storage vol-edit --server=DS8K16 --id=3955 --newid=3955

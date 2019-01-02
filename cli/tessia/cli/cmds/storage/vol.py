@@ -323,6 +323,7 @@ def part_list(server, volume_id):
               help='volume id')
 @click.option('--size', required=True, type=MIB_SIZE, help=SIZE_HELP)
 @click.option('--type', required=True, help="volume type (see vol-types)")
+@click.option('--system', type=NAME, help="assign volume to this system")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
@@ -418,6 +419,7 @@ def vol_del(**kwargs):
 @click.option('volume_id', '--newid', type=VOLUME_ID,
               help="new volume's id in form volume-id")
 @click.option('--size', type=MIB_SIZE, help=SIZE_HELP)
+@click.option('--system', help="assign volume to this system")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning volume")
 @click.option('--desc', help="free form field describing volume")
@@ -520,6 +522,13 @@ def vol_edit(server, cur_id, **kwargs):
             update_dict.setdefault('specs', item.specs)
             update_dict['specs']['wwid'] = value
 
+        # system must be validated
+        elif key == 'system':
+            if value:
+                update_dict[key] = NAME.convert(value, None, None)
+            else:
+                update_dict[key] = None
+
         # normal arg: just add to the dict
         else:
             update_dict[key] = value
@@ -547,12 +556,6 @@ def vol_list(**kwargs):
     """
     list registered storage volumes
     """
-    # at least one qualifier must be specified so that we don't have to
-    # retrieve the full list
-    if kwargs['server'] is None and kwargs['volume_id'] is None:
-        raise click.ClickException(
-            'at least one of --server or --id must be specified')
-
     # fetch data from server
     client = Client()
 

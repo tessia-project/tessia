@@ -140,8 +140,11 @@ tasks:
       - Network interface detached successfully.
     - - system vol-detach --system=guest55 --profile='KVM root1' --server=DS8K16 --vol=1022400200000000
       - Volume detached successfully.
-    - - system vol-detach --system=guest55 --profile='KVM root1' --server=DS8K16 --vol=1022400300000000
-      - Volume detached successfully.
+    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --system=
+      - Item successfully updated.
+    # exercise indirect detaching by removing disk assignment to system
+    - - storage vol-edit --server=DS8K16 --id=1022400300000000 --system=
+      - Item successfully updated.
     - - system prof-del --system=guest55 --name='KVM root1'
       - Item successfully deleted.
     - - system del --name=guest55
@@ -157,10 +160,15 @@ tasks:
       - Network interface detached successfully.
     - - system vol-detach --system=cpc3lp52 --profile='DASD root1' --server=DS8K16 --vol=3956
       - Volume detached successfully.
+    - - storage vol-edit --server=DS8K16 --id=3956 --system=
+      - Item successfully updated.
     - - system vol-detach --system=cpc3lp52 --profile='DASD root1' --server=DS8K16 --vol=3957
       - Volume detached successfully.
-    - - system vol-detach --system=cpc3lp52 --profile='FCP root1' --server=DS8K16 --vol=1022400100000000
-      - Volume detached successfully.
+    - - storage vol-edit --server=DS8K16 --id=3957 --system=
+      - Item successfully updated.
+    # exercise indirect detaching by removing disk assignment to system
+    - - storage vol-edit --server=DS8K16 --id=1022400100000000 --system=
+      - Item successfully updated.
         # first remove the non default profile to avoid error
     - - system prof-del --system=cpc3lp52 --name='FCP root1'
       - Item successfully deleted.
@@ -175,6 +183,8 @@ tasks:
       - Key successfully created and added to client configuration.
     - - system vol-detach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3951
       - Volume detached successfully.
+    - - storage vol-edit --server=DS8K16 --id=3951 --system=
+      - Item successfully updated.
     - - system prof-del --system=cpc3 --name='default cpc3'
       - Item successfully deleted.
     - - system del --name=cpc3

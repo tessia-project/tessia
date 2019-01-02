@@ -20,7 +20,6 @@ Unit test for system_profiles resource module
 # IMPORTS
 #
 from base64 import b64encode
-from tessia.server.api.resources.system_profiles import MARKER_HIDDEN_CRED
 from tessia.server.api.resources.system_profiles import MARKER_STRIPPED_SECRET
 from tessia.server.api.resources.system_profiles import SystemProfileResource
 from tessia.server.db import models
@@ -71,53 +70,88 @@ class TestSystemProfile(TestSecureResource):
             yield data
     # _entry_gen()
 
-    def _request_attach(self, disk_id, prof_id, user_cred, validate=True):
-        """
-        Perform an attach volume request
-        """
-        # attach a disk
+    def _req_att(self, user_cred, url, data, exp_body=None):
         auth = 'basic {}'.format(
             b64encode(bytes(user_cred, 'ascii')).decode('ascii'))
-        url = '{}/{}/storage_volumes'.format(self.RESOURCE_URL, prof_id)
-        disk_data = {'unique_id': disk_id}
         resp = self.app.post(
             url,
             headers={
                 'Authorization': auth, 'Content-type': 'application/json'},
-            data=json.dumps(disk_data)
+            data=json.dumps(data)
         )
-
-        if validate:
-            exp_body = {'profile_id': prof_id, 'volume_id': disk_id}
+        if exp_body:
             self.assertEqual(resp.status_code, 200)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(exp_body, body)
 
         return resp
-    # _req_attach()
+    # _req_att()
 
-    def _request_detach(self, disk_id, prof_id, user_cred, validate=True):
+    def _req_att_disk(self, disk_id, prof_id, user_cred, validate=True):
         """
-        Perform a detach volume request
+        Perform an attach volume request
+        """
+        # attach a disk
+        url = '{}/{}/storage_volumes'.format(self.RESOURCE_URL, prof_id)
+        disk_data = {'unique_id': disk_id}
+        if validate:
+            exp_body = {'profile_id': prof_id, 'volume_id': disk_id}
+        else:
+            exp_body = None
+        return self._req_att(user_cred, url, disk_data, exp_body)
+    # _req_att_disk()
+
+    def _req_att_iface(self, iface_id, prof_id, user_cred, validate=True):
+        """
+        Perform an attach network interface request
+        """
+        url = '{}/{}/system_ifaces'.format(self.RESOURCE_URL, prof_id)
+        iface_data = {'id': iface_id}
+        if validate:
+            exp_body = {'profile_id': prof_id, 'iface_id': iface_id}
+        else:
+            exp_body = None
+        return self._req_att(user_cred, url, iface_data, exp_body)
+    # _req_att_iface()
+
+    def _req_det(self, user_cred, url, validate=True):
+        """
+        Perform a detach request
         """
         # detach a disk
         auth = 'basic {}'.format(
             b64encode(bytes(user_cred, 'ascii')).decode('ascii'))
-        url = '{}/{}/storage_volumes/{}'.format(
-            self.RESOURCE_URL, prof_id, disk_id)
         resp = self.app.delete(
             url,
             headers={
                 'Authorization': auth, 'Content-type': 'application/json'},
         )
-
         if validate:
             self.assertEqual(resp.status_code, 200)
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(True, body)
 
         return resp
-    # _req_detach()
+    # _req_det()
+
+    def _req_det_disk(self, disk_id, prof_id, user_cred, validate=True):
+        """
+        Perform a detach volume request
+        """
+        url = '{}/{}/storage_volumes/{}'.format(
+            self.RESOURCE_URL, prof_id, disk_id)
+        return self._req_det(user_cred, url, validate)
+    # _req_det_disk()
+
+    def _req_det_iface(self, iface_id, prof_id, user_cred, validate=True):
+        """
+        Perform a detach network interface request
+        """
+        # detach a disk
+        url = '{}/{}/system_ifaces/{}'.format(
+            self.RESOURCE_URL, prof_id, iface_id)
+        return self._req_det(user_cred, url, validate)
+    # _req_det_iface()
 
     def _update_cred(self, target_id, req_cred, user_login):
         """
@@ -261,10 +295,10 @@ class TestSystemProfile(TestSecureResource):
         prof_id = self._request_and_assert('create', user_cred, data)
 
         # attach a disk
-        self._request_attach(disk_ids[0], prof_id, user_cred)
+        self._req_att_disk(disk_ids[0], prof_id, user_cred)
 
         # try to attach a second disk - should fail
-        resp = self._request_attach(
+        resp = self._req_att_disk(
             disk_ids[1], prof_id, user_cred, validate=False)
         one_disk_msg = 'A CPC profile can have only one volume associated'
         self._validate_resp(resp, one_disk_msg, 422)
@@ -275,16 +309,16 @@ class TestSystemProfile(TestSecureResource):
         prof_another_id = self._request_and_assert('create', user_cred, data)
 
         # attach a disk
-        self._request_attach(disk_ids[1], prof_another_id, user_cred)
+        self._req_att_disk(disk_ids[1], prof_another_id, user_cred)
 
         # try to attach a second disk - should fail
-        resp = self._request_attach(
+        resp = self._req_att_disk(
             disk_ids[2], prof_another_id, user_cred, validate=False)
         self._validate_resp(resp, one_disk_msg, 422)
 
         # clean up (and also test detach)
-        self._request_detach(disk_ids[0], prof_id, user_cred)
-        self._request_detach(disk_ids[1], prof_another_id, user_cred)
+        self._req_det_disk(disk_ids[0], prof_id, user_cred)
+        self._req_det_disk(disk_ids[1], prof_another_id, user_cred)
         models.SystemProfile.query.filter_by(id=prof_id).delete()
         models.SystemProfile.query.filter_by(id=prof_another_id).delete()
         for disk_id in disk_ids:
@@ -761,6 +795,367 @@ class TestSystemProfile(TestSecureResource):
         self.db.session.commit()
     # test_add_update_zvm()
 
+    def test_attach_detach_disk(self):
+        """
+        Exercise different scenarios of attaching/detaching disks
+        """
+        # prepare the target profile
+        data = next(self._get_next_entry)
+        prof_id = self._request_and_assert('create', 'admin:a', data)
+
+        # restore original system owner on test end/failure to avoid causing
+        # problems with other tests
+        sys_obj = models.System.query.filter_by(
+            name=self._target_lpar).one()
+        orig_sys_owner = sys_obj.owner
+        def restore_owner():
+            """Helper cleanup"""
+            sys_obj = models.System.query.filter_by(
+                name=self._target_lpar).one()
+            sys_obj.owner = orig_sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+        self.addCleanup(restore_owner)
+
+        # create target disk
+        disk_name = '1111_test_attach_detach_disk'
+        disk_obj = models.StorageVolume(
+            server='DSK8_x_0',
+            system=self._target_lpar,
+            volume_id=disk_name,
+            type='DASD',
+            size=10000,
+            part_table=None,
+            system_attributes={},
+            owner='admin',
+            modifier='admin',
+            project=self._db_entries['Project'][0]['name'],
+            desc='some description'
+        )
+        self.db.session.add(disk_obj)
+        self.db.session.commit()
+        disk_id = disk_obj.id
+
+        def assert_actions(login, disk_owner, sys_owner, assign,
+                           error_msg=None):
+            """
+            Helper to prepare environment and validate attach/detach actions
+            """
+            # set system ownership
+            sys_obj = models.System.query.filter_by(
+                name=self._target_lpar).one()
+            sys_obj.owner = sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+
+            # disk assignment to system
+            disk_obj = models.StorageVolume.query.filter_by(
+                volume_id=disk_name).one()
+            if assign:
+                disk_obj.system = sys_obj.name
+            else:
+                disk_obj.system = None
+            # disk ownership
+            disk_obj.owner = disk_owner
+            self.db.session.add(disk_obj)
+            self.db.session.commit()
+
+            # removing existing disk associations first
+            models.StorageVolumeProfileAssociation.query.filter_by(
+                volume_id=disk_id, profile_id=prof_id).delete()
+            self.db.session.commit()
+
+            args = [disk_id, prof_id, '{}:a'.format(login)]
+            # no error msg expected: expect a 200 response
+            if not error_msg:
+                self._req_att_disk(*args)
+                self._req_det_disk(*args)
+
+                # disk was not assigned to system: validate that it is now
+                if not assign:
+                    disk_obj = models.StorageVolume.query.filter_by(
+                        volume_id=disk_name).one()
+                    self.assertEqual(
+                        disk_obj.system, self._target_lpar,
+                        'Disk was not assigned to system after attach')
+                return
+
+            resp = self._req_att_disk(*args, validate=False)
+            self._validate_resp(resp, error_msg, 403)
+
+            # prepare association for detach
+            assoc_obj = models.StorageVolumeProfileAssociation(
+                volume_id=disk_id, profile_id=prof_id)
+            self.db.session.add(assoc_obj)
+            self.db.session.commit()
+            # try detach
+            resp = self._req_det_disk(*args, validate=False)
+            self._validate_resp(resp, error_msg, 403)
+        # assert_actions()
+
+        # logins with no update role
+        logins_no_role = ('user_user@domain.com', 'user_restricted@domain.com')
+        for login in logins_no_role:
+            # attach disk assigned to system, user has no permission to system
+            # nor disk (fails)
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_actions(login, 'admin', 'admin', assign=True, error_msg=msg)
+
+            # attach disk assigned to system, user is owner of system but
+            # no permission to disk (works)
+            assert_actions(login, 'admin', login, assign=True)
+
+            # attach disk assigned to system, user is owner of system and
+            # disk (works)
+            assert_actions(login, login, login, assign=True)
+
+            # attach disk unassigned to system, user is owner of system but
+            # no permission to disk (fails)
+            msg = 'User has no UPDATE permission for the specified volume'
+            assert_actions(login, 'admin', login, assign=False, error_msg=msg)
+
+        # logins with an update-system role but no update-disk
+        logins_sys_no_disk = (
+            'user_privileged@domain.com', 'user_project_admin@domain.com')
+        for login in logins_sys_no_disk:
+            # attach disk assigned to system, user has permission to system but
+            # not to disk (works)
+            assert_actions(login, 'admin', 'admin', assign=True)
+
+            # attach disk assigned to system, user has permission to system and
+            # is owner of disk (works)
+            assert_actions(login, login, 'admin', assign=True)
+
+            # attach disk unassigned to system, user has permission to system
+            # but not to disk (fails)
+            msg = 'User has no UPDATE permission for the specified volume'
+            assert_actions(login, 'admin', 'admin', assign=False,
+                           error_msg=msg)
+
+            # attach disk unassigned to system, user has permission to system
+            # and is owner of disk (works)
+            assert_actions(login, login, 'admin', assign=False)
+
+        logins_with_both_roles = (
+            'user_hw_admin@domain.com', 'user_admin@domain.com')
+        for login in logins_with_both_roles:
+            # attach disk assigned to system, user has permission to system and
+            # disk (works)
+            assert_actions(login, 'admin', 'admin', assign=True)
+
+            # attach disk unassigned system, user has permission to system and
+            # disk (works)
+            assert_actions(login, 'admin', 'admin', assign=False)
+
+        # test the case where the disk is already assigned to another system
+        sys_2_obj = models.System(
+            name="lpar test_attach_detach_disk",
+            state="AVAILABLE",
+            modifier='admin',
+            type="LPAR",
+            hostname="lpar.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner='admin',
+        )
+        self.db.session.add(sys_2_obj)
+        self.db.session.commit()
+        for login in (logins_no_role + logins_sys_no_disk +
+                      logins_with_both_roles):
+            # set ownerships
+            sys_obj = models.System.query.filter_by(
+                name=self._target_lpar).one()
+            sys_obj.owner = login
+            self.db.session.add(sys_obj)
+            sys_2_obj.owner = login
+            self.db.session.add(sys_2_obj)
+            disk_obj = models.StorageVolume.query.filter_by(
+                volume_id=disk_name).one()
+            disk_obj.owner = login
+            disk_obj.system = sys_2_obj.name
+            self.db.session.add(disk_obj)
+            self.db.session.commit()
+
+            resp = self._req_att_disk(
+                disk_id, prof_id, '{}:a'.format(login), validate=False)
+            msg = 'The volume is already assigned to system {}'.format(
+                sys_2_obj.name)
+            self._validate_resp(resp, msg, 409)
+
+        # test the case where the disk is already attached to the profile
+        disk_obj = models.StorageVolume.query.filter_by(
+            volume_id=disk_name).one()
+        disk_obj.system = sys_obj.name
+        self.db.session.add(disk_obj)
+        self.db.session.commit()
+        self._req_att_disk(disk_id, prof_id, 'admin:a')
+        resp = self._req_att_disk(
+            disk_id, prof_id, 'admin:a', validate=False)
+        self._validate_resp(
+            resp, 'The volume specified is already attached to the profile',
+            409)
+        # test trying to detach when it is not attached
+        self._req_det_disk(disk_id, prof_id, 'admin:a')
+        resp = self._req_det_disk(
+            disk_id, prof_id, 'admin:a', validate=False)
+        self._validate_resp(
+            resp, 'The volume specified is not attached to the profile', 404)
+
+        # clean up
+        self.db.session.delete(sys_2_obj)
+        self.db.session.delete(disk_obj)
+        self.db.session.commit()
+    # test_attach_detach_disk()
+
+    def test_attach_detach_iface(self):
+        """
+        Exercise different scenarios of attaching/detaching interfaces
+        """
+        # prepare the target profile
+        data = next(self._get_next_entry)
+        prof_id = self._request_and_assert('create', 'admin:a', data)
+
+        # restore original system owner on test end/failure to avoid causing
+        # problems with other tests
+        sys_obj = models.System.query.filter_by(
+            name=self._target_lpar).one()
+        orig_sys_owner = sys_obj.owner
+        def restore_owner():
+            """Helper cleanup"""
+            sys_obj = models.System.query.filter_by(
+                name=self._target_lpar).one()
+            sys_obj.owner = orig_sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+        self.addCleanup(restore_owner)
+
+        # create target interface
+        iface_obj = models.SystemIface(
+            name='iface_test_attach_detach_iface',
+            osname='eth0',
+            system=self._target_lpar,
+            type='OSA',
+            ip_address=None,
+            mac_address='00:11:22:33:44:55',
+            attributes={'ccwgroup': '0.0.f101,0.0.f102,0.0.f103',
+                        'layer2': True},
+            desc='Description iface'
+        )
+        self.db.session.add(iface_obj)
+        self.db.session.commit()
+        iface_id = iface_obj.id
+
+        def assert_actions(login, sys_owner, error_msg=None):
+            """
+            Helper to prepare environment and validate attach/detach actions
+            """
+            # set system ownership
+            sys_obj = models.System.query.filter_by(
+                name=self._target_lpar).one()
+            sys_obj.owner = sys_owner
+            self.db.session.add(sys_obj)
+            self.db.session.commit()
+
+            # removing existing iface associations first
+            models.SystemIfaceProfileAssociation.query.filter_by(
+                iface_id=iface_id, profile_id=prof_id).delete()
+
+            args = [iface_id, prof_id, '{}:a'.format(login)]
+            if not error_msg:
+                self._req_att_iface(*args)
+                self._req_det_iface(*args)
+                return
+
+            resp = self._req_att_iface(*args, validate=False)
+            self._validate_resp(resp, error_msg, 403)
+
+            # prepare association for detach
+            assoc_obj = models.SystemIfaceProfileAssociation(
+                iface_id=iface_id, profile_id=prof_id)
+            self.db.session.add(assoc_obj)
+            self.db.session.commit()
+            # try detach
+            resp = self._req_det_iface(*args, validate=False)
+            self._validate_resp(resp, error_msg, 403)
+        # assert_actions()
+
+        # logins with no update role
+        logins_no_role = ('user_user@domain.com', 'user_restricted@domain.com')
+        for login in logins_no_role:
+            # attach iface, user has no permission to system (fails)
+            msg = 'User has no UPDATE permission for the specified system'
+            assert_actions(login, 'admin', error_msg=msg)
+
+            # attach iface assigned to system, user is owner of system (works)
+            assert_actions(login, login)
+
+        # logins with an update-system role
+        logins_sys_role = (
+            'user_privileged@domain.com', 'user_project_admin@domain.com',
+            'user_hw_admin@domain.com', 'user_admin@domain.com')
+        for login in logins_sys_role:
+            # attach iface, user has permission to system (works)
+            assert_actions(login, 'admin')
+
+            # attach disk assigned to system, user is owner of system (works)
+            assert_actions(login, login)
+
+        # test the case where the iface does not belong to same system as
+        # profile
+        sys_2_obj = models.System(
+            name="lpar test_attach_detach_iface",
+            state="AVAILABLE",
+            modifier='admin',
+            type="LPAR",
+            hostname="lpar.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner='admin',
+        )
+        self.db.session.add(sys_2_obj)
+        self.db.session.commit()
+        iface_2_obj = models.SystemIface(
+            name='iface_2_test_attach_detach_iface',
+            osname='eth0',
+            system=sys_2_obj.name,
+            type='OSA',
+            ip_address=None,
+            mac_address='00:11:22:33:44:55',
+            attributes={'ccwgroup': '0.0.f101,0.0.f102,0.0.f103',
+                        'layer2': True},
+            desc='Description iface'
+        )
+        self.db.session.add(iface_2_obj)
+        self.db.session.commit()
+        resp = self._req_att_iface(
+            iface_2_obj.id, prof_id, 'admin:a', validate=False)
+        msg = 'Profile and network interface belong to different systems'
+        self._validate_resp(resp, msg, 409)
+
+        # test the case where the iface is already attached to the profile
+        self._req_att_iface(iface_id, prof_id, 'admin:a')
+        resp = self._req_att_iface(
+            iface_id, prof_id, 'admin:a', validate=False)
+        self._validate_resp(
+            resp,
+            'The network interface specified is already attached to the '
+            'profile', 409)
+        # test trying to detach when it is not attached
+        self._req_det_iface(iface_id, prof_id, 'admin:a')
+        resp = self._req_det_iface(
+            iface_id, prof_id, 'admin:a', validate=False)
+        self._validate_resp(
+            resp,
+            'The network interface specified is not attached to the profile',
+            404)
+
+        # clean up
+        self.db.session.delete(iface_2_obj)
+        self.db.session.delete(sys_2_obj)
+        self.db.session.delete(iface_obj)
+        self.db.session.commit()
+    # test_attach_detach_iface()
+
     def test_del_default_profile_multi_profiles(self):
         """
         Try to delete a default profile while others exist
@@ -978,9 +1373,12 @@ class TestSystemProfile(TestSecureResource):
         new_entries, time_range = self._create_many_entries(login_add, 5)
         entries += new_entries
 
-        # set the expected value of hidden
+        # add the expected marker for secrets
         for entry in entries:
-            entry['credentials'] = MARKER_HIDDEN_CRED
+            if not entry.get('credentials'):
+                continue
+            if entry['credentials'].get('admin-password'):
+                entry['credentials']['admin-password'] = MARKER_STRIPPED_SECRET
 
         # retrieve list
         resp = self._do_request('list', '{}:a'.format(login_list), None)
@@ -1025,7 +1423,5 @@ class TestSystemProfile(TestSecureResource):
     # a netiface must be attached first)
     # TODO: add tests with hypervisor_profile (need to improve handling of
     # indirect value hyp_name/hyp_profile_name first)
-    # TODO: add tests for attach/detach of volumes/network interfaces
-    # (including negative test of multiple disks to a cpc)
     # TODO: add tests with same hyp_profile name
 # TestSystemProfile

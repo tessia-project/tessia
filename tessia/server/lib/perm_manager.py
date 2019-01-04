@@ -172,7 +172,7 @@ class PermManager(object):
         # if they have a role in resource's project
         if not self.is_owner_or_admin(user, item):
             # no role in system's project
-            if self._get_role_for_project(user, item.project_id) is None:
+            if self.get_role_for_project(user, item.project_id) is None:
                 raise PermissionError(
                     "User has no role assigned in resource's project")
     # _assert_read()
@@ -222,7 +222,7 @@ class PermManager(object):
     # _get_project_for_action()
 
     @staticmethod
-    def _get_role_for_project(user, project_id):
+    def get_role_for_project(user, project_id):
         """
         Query the db for any role associated with the given user on the
         provided project.
@@ -248,7 +248,7 @@ class PermManager(object):
             UserRole.project_id == project_id
         )
         return query.first()
-    # _get_role_for_project()
+    # get_role_for_project()
 
     def can(self, action, user, item, item_desc='resource'):
         """

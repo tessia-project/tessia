@@ -23,6 +23,7 @@ from base64 import b64encode
 from tessia.server import config
 from tessia.server.api.app import API
 from tessia.server.db import models
+from tessia.server.db.models import ResourceMixin
 from tests.unit.config import EnvConfig
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
@@ -126,7 +127,7 @@ class TestSecureResource(TestCase):
             read (bool): if True, means the action to validate is a read
                          instead of list
         """
-        is_resource = hasattr(self.RESOURCE_MODEL, 'project_id')
+        is_resource = issubclass(self.RESOURCE_MODEL, ResourceMixin)
 
         listed_entries = json.loads(resp.get_data(as_text=True))
         # read action: enclose response in a list
@@ -196,7 +197,7 @@ class TestSecureResource(TestCase):
         Returns:
             tuple: (list_of_entries, [start_time, end_time])
         """
-        is_resource = hasattr(self.RESOURCE_MODEL, 'project_id')
+        is_resource = issubclass(self.RESOURCE_MODEL, ResourceMixin)
 
         # store the start time for later comparison with datetime fields
         time_range = [int(time.time() - 5)]
@@ -696,13 +697,17 @@ class TestSecureResource(TestCase):
                 resp, [entries[0]], time_range, read=True)
     # _test_list_and_read()
 
-    def _test_list_and_read_restricted_no_role(self, login_add, login_rest):
+    def _test_list_and_read_restricted_no_role(self, login_add, login_rest,
+                                               allowed=True, http_code=403):
         """
         List entries with a restricted user without role in any project
 
         Args:
             login_add (str): user login used to create items
             login_rest (str): restricted user login used to list items
+            allowed (str): whether the resource being tested allow
+                           listing/reading
+            http_code (int): http status code expected when trying to read
         """
         # store the existing entries and add them to the new ones for
         # later validation
@@ -718,19 +723,14 @@ class TestSecureResource(TestCase):
         new_entries, time_range = self._create_many_entries(login_add, 5)
         entries += new_entries
 
-        # system profile and iface are special cases as they do not have a
-        # project associated but still use from the system for permission
-        # validation
-        is_resource = (
-            hasattr(self.RESOURCE_MODEL, 'project_id') or
-            self.RESOURCE_MODEL is models.SystemProfile or
-            self.RESOURCE_MODEL is models.SystemIface)
+        block_read = (issubclass(self.RESOURCE_MODEL, ResourceMixin) or
+                      not allowed)
 
         # retrieve the existing entries
         resp = self._do_request('list', '{}:a'.format(login_rest))
         listed_entries = json.loads(resp.get_data(as_text=True))
-        # regular resource: listing and read should not work
-        if is_resource:
+        # regular resource or allowed False: listing and read should not work
+        if block_read:
             self.assertEqual(
                 len(listed_entries), 0, 'Restricted user was able to list')
 
@@ -738,10 +738,9 @@ class TestSecureResource(TestCase):
             for entry in entries:
                 resp = self._do_request(
                     'get', '{}:a'.format(login_rest), entry['id'])
-                # expect a 403 forbidden
-                self.assertEqual(resp.status_code, 403)
+                self.assertEqual(resp.status_code, http_code)
 
-        # types resource: listing and read are allowed
+        # types resource or allowed True: listing and read are allowed
         else:
             resp = self._do_request('list', '{}:a'.format(login_rest), None)
             self._assert_listed_or_read(resp, entries, time_range)
@@ -758,9 +757,6 @@ class TestSecureResource(TestCase):
     def _test_list_and_read_restricted_with_role(self, login_add, login_rest):
         """
         List entries with a restricted user who has a role in a project.
-        NOTE: this testcase only applies to regular resources (ResourceMixin)
-        because for non regular resource a restricted user does not need a role
-        in order to list (since there is no project associated with the items).
 
         Args:
             login_add (str): user login used to create items
@@ -861,7 +857,7 @@ class TestSecureResource(TestCase):
         Raises:
             ValueError: if test is attempted on an invalid resource type
         """
-        is_resource = hasattr(self.RESOURCE_MODEL, 'project_id')
+        is_resource = issubclass(self.RESOURCE_MODEL, ResourceMixin)
         if not is_resource:
             raise ValueError(
                 'This test cannot be executed on a resource without project')
@@ -982,7 +978,7 @@ class TestSecureResource(TestCase):
                                   (owner, updater) if it's a resourcemixin
             update_fields (dict): mapping of fields with values to update
         """
-        is_resource = hasattr(self.RESOURCE_MODEL, 'project_id')
+        is_resource = issubclass(self.RESOURCE_MODEL, ResourceMixin)
 
         for login_update in logins_update:
             # create the entry to work with

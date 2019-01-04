@@ -492,7 +492,8 @@ class TestSystemIface(TestSecureResource):
         List entries with a restricted user without role in any project
         """
         self._test_list_and_read_restricted_no_role(
-            'user_user@domain.com', 'user_restricted@domain.com')
+            'user_user@domain.com', 'user_restricted@domain.com',
+            allowed=False)
     # test_list_and_read_restricted_no_role()
 
     def test_list_and_read_restricted_with_role(self):

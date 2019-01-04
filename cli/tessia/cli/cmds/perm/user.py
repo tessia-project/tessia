@@ -42,7 +42,7 @@ FIELDS_TABLE = (
 )
 
 FIELDS_ROLE = (
-    'project', 'role')
+    'user', 'project', 'role')
 
 #
 # CODE
@@ -133,11 +133,12 @@ def user_list(**kwargs):
 @click.command(name='user-roles')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
-@click.option('user', '--login', required=True, type=LOGIN,
-              help="user's login to list")
+@click.option('user', '--login', type=LOGIN, help="filter by user login")
+@click.option('project', '--project', type=NAME, help="filter by project")
+@click.option('role', '--role', type=NAME, help="filter by role name")
 def user_roles(**kwargs):
     """
-    list the roles associated to a user
+    list the roles associated to users
     """
     # fetch data from server
     client = Client()
@@ -145,6 +146,7 @@ def user_roles(**kwargs):
     long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'user': False}
     entries = client.UserRoles.instances(**parsed_filter)
 
     # present results
@@ -154,7 +156,6 @@ def user_roles(**kwargs):
     else:
         print_items(FIELDS_ROLE, client.UserRoles, None, entries,
                     PrintMode.TABLE)
-
 # user_roles()
 
 CMDS = [user_add, user_del, user_edit, user_list, user_roles]

@@ -1284,7 +1284,7 @@ class TestStorageVolume(TestSecureResource):
 
             # update disk withdraw system, user has no permission to disk nor
             # system
-            msg = 'User has no UPDATE permission for the specified system'
+            msg = 'User has no UPDATE permission for the specified volume'
             assert_update(msg, login, hw_admin,
                           {'name': sys_name, 'owner': hw_admin}, None)
 

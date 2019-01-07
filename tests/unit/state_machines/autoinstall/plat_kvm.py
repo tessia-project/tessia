@@ -194,6 +194,41 @@ class TestPlatKvm(TestCase):
                                self._create_plat_kvm)
     # test_invalid_libvirt_xml()
 
+    def test_null_ptable(self):
+        """
+        Test the case when a disk's partition table is not set (set to None).
+        """
+        # save the original content for restoring after the test
+        orig_ptable = self._profile_entry.storage_volumes_rel[0].part_table
+        self._profile_entry.storage_volumes_rel[0].part_table = None
+        orig_attr = (
+            self._profile_entry.storage_volumes_rel[0].system_attributes)
+        self._profile_entry.storage_volumes_rel[0].system_attributes = {}
+        def ptable_restore():
+            """
+            Helper to restore original partition table value upon test cleanup
+            """
+            self._profile_entry.storage_volumes_rel[0].part_table = orig_ptable
+            self._profile_entry.storage_volumes_rel[0].system_attributes = (
+                orig_attr)
+            MANAGER.session.add(self._profile_entry.storage_volumes_rel[0])
+            MANAGER.session.commit()
+        # ptable_restore()
+        self.addCleanup(ptable_restore)
+        MANAGER.session.add(self._profile_entry.storage_volumes_rel[0])
+        MANAGER.session.commit()
+
+        # perform test and validation
+        plat = self._create_plat_kvm()
+        plat.boot("SOME PARAM")
+        mock_hyp = self._mock_hypervisor_cls.return_value
+        mock_hyp.start.assert_called_with(
+            self._profile_entry.system_rel.name,
+            self._profile_entry.cpu,
+            self._profile_entry.memory,
+            mock.ANY)
+    # test_null_ptable()
+
     def test_missing_address_tag(self):
         """
         Test the case the livbirt xml of a storage volume does not have

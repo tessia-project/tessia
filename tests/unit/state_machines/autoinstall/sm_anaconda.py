@@ -20,6 +20,8 @@ Unit test for the Anaconda-based state machine module.
 # IMPORTS
 #
 from contextlib import contextmanager
+from tessia.server.db.connection import MANAGER
+from tessia.server.db.models import OperatingSystem, Repository
 from tessia.server.state_machines.autoinstall import sm_anaconda, sm_base
 from tests.unit.state_machines.autoinstall import utils
 from unittest.mock import MagicMock, Mock, patch
@@ -156,27 +158,78 @@ class TestSmAnaconda(TestCase):
         """
         Test the correct execution of the install machine.
         """
-        os_entry = utils.get_os("rhel7.2")
+        os_name = 'rhel7.2'
+        os_entry = utils.get_os(os_name)
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        # make sure profile has no OS assigned before tests are executed
+        profile_entry.operating_system_id = None
+        MANAGER.session.commit()
         template_entry = utils.get_template("rhel7-default")
         mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
         mock_shell.run.return_value = 0, "Thread Done: AnaConfigurationThread"
 
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
         mach.start()
+        self.assertEqual(profile_entry.operating_system, os_name)
+
+        # test a fedora installation
+        fedora_name = 'fedora28'
+        fedora_os = OperatingSystem(
+            name=fedora_name, type="redhat", major=28, minor=0, template=None,
+            pretty_name="Fedora Twenty Eight")
+        MANAGER.session.add(fedora_os)
+        repo_entry = Repository(
+            initrd="/images/initrd.img",
+            kernel="/images/kernel.img",
+            modifier="admin",
+            name=fedora_name,
+            operating_system=fedora_name,
+            owner="admin",
+            project="Admins",
+            url="http://installserver.domain._com/fedora/28"
+        )
+        MANAGER.session.add(repo_entry)
+        MANAGER.session.commit()
+        def fedora_cleanup():
+            """Cleanup helper"""
+            profile_entry.operating_system_id = None
+            Repository.query.filter_by(id=repo_entry.id).delete()
+            OperatingSystem.query.filter_by(id=fedora_os.id).delete()
+            MANAGER.session.commit()
+        self.addCleanup(fedora_cleanup)
+
+        mach = sm_anaconda.SmAnaconda(fedora_os, profile_entry, template_entry)
+        mach.start()
+        self.assertEqual(profile_entry.operating_system, fedora_name)
     # test_init()
 
     def test_init_no_memory(self):
         """
-        Test the correct execution of the install machine.
+        Test scenarios where the minimum required memory is not available
         """
+        mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
+        mock_shell.run.return_value = 0, "Thread Done: AnaConfigurationThread"
         os_entry = utils.get_os("rhel7.2")
         profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
         template_entry = utils.get_template("rhel7-default")
 
-        wrong_mem = sm_anaconda.MIN_MIB_MEM - 1
-        with self._mock_db_obj(profile_entry, 'memory', wrong_mem):
+        small_mem = sm_anaconda.MIN_MIB_MEM - 1
+        with self._mock_db_obj(profile_entry, 'memory', small_mem):
+            # first try with older versions, no verification takes place
+            sm_obj = sm_anaconda.SmAnaconda(
+                os_entry, profile_entry, template_entry)
+            sm_obj.start()
+
+            # rhel 7.5+ (newer versions), should fail
             with self._mock_db_obj(os_entry, 'minor', 5):
+                msg = ("Installations of '{}' require at least {}MiB of memory"
+                       .format(os_entry.pretty_name,
+                               sm_anaconda.MIN_MIB_MEM))
+                with self.assertRaises(ValueError, msg=msg):
+                    sm_anaconda.SmAnaconda(
+                        os_entry, profile_entry, template_entry)
+            # fedora, should fail
+            with self._mock_db_obj(os_entry, 'pretty_name', 'Fedora Twenty'):
                 msg = ("Installations of '{}' require at least {}MiB of memory"
                        .format(os_entry.pretty_name,
                                sm_anaconda.MIN_MIB_MEM))

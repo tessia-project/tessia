@@ -51,10 +51,15 @@ class SmAnaconda(SmBase):
         Constructor
         """
         # make sure minimum ram is available
-        if ((os_entry.pretty_name.startswith(RHEL_ID) and os_entry.major <= 7
-             and os_entry.minor >= 5) or
-                os_entry.pretty_name.startswith(FEDORA_ID)
-           ) and profile_entry.memory < MIN_MIB_MEM:
+        no_ram = bool(
+            profile_entry.memory < MIN_MIB_MEM and (
+                os_entry.pretty_name.startswith(FEDORA_ID) or
+                (os_entry.pretty_name.startswith(RHEL_ID) and
+                 (os_entry.major == 7 and os_entry.minor >= 5) or
+                 (os_entry.major > 7))
+            )
+        )
+        if no_ram:
             raise ValueError(
                 "Installations of '{}' require at least {}MiB of memory"
                 .format(os_entry.pretty_name, MIN_MIB_MEM))

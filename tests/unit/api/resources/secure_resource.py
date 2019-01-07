@@ -1126,7 +1126,8 @@ class TestSecureResource(TestCase):
                 'update', '{}:a'.format(login_update), update_fields)
 
             # validate the response received, should be forbidden
-            self.assertEqual(resp.status_code, 403)
+            self.assertEqual(resp.status_code, 403,
+                             resp.get_data(as_text=True))
 
     # _test_update_no_role()
 

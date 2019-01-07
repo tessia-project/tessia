@@ -130,6 +130,7 @@ def ip_list(**kwargs):
     long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'address': False}
     entries = client.IpAddresses.instances(**parsed_filter)
 
     # present results

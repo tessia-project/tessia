@@ -107,6 +107,7 @@ def project_list(**kwargs):
     long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'name': False}
     entries = client.Projects.instances(**parsed_filter)
 
     # present results

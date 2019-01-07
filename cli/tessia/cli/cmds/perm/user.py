@@ -119,6 +119,7 @@ def user_list(**kwargs):
     long_info = kwargs.pop('long_info')
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'login': False}
     entries = client.Users.instances(**parsed_filter)
 
     # present results

@@ -253,7 +253,7 @@ def poweroff(ctx, name, verbosity):
 @click.option('--force', is_flag=True,
               help="force a poweron even if system is already up")
 @click.option('--noverify', is_flag=True,
-              help="do not any perform system state verification")
+              help="do not perform any system state verification")
 @click.option(
     '--exclusive', is_flag=True,
     help="stop ALL other systems under same hypervisor, USE WITH CARE!")

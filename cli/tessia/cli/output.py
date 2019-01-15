@@ -241,6 +241,9 @@ def print_ver_table(headers, entries, fields_map, format_map=None):
     # start a pager in a subprocess to control output
     pager = call_pager()
 
+
+    # calculate the initial column width using the header values
+    cols_width = [(len(header) + 2) for header in headers]
     # flag to make the header be printed only once in the loop
     print_header = True
     # which entry we are currently working on
@@ -277,7 +280,6 @@ def print_ver_table(headers, entries, fields_map, format_map=None):
         rows_qty = 0
 
         # determine biggest width for each column
-        cols_width = [(len(header) + 2) for header in headers]
         for row in rows:
             for index, field_value in enumerate(row):
                 format_function = format_map.get(fields_map[index])

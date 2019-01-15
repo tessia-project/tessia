@@ -122,8 +122,9 @@ class TestStorageVolume(TestSecureResource):
         # create disk without system, user has permission to disk
         self._test_add_all_fields_many_roles(logins)
 
+        sys_name = 'New system'
         system = models.System(
-            name='New system',
+            name=sys_name,
             hostname='new_system.domain.com',
             type='LPAR',
             model='ZGENERIC',
@@ -134,17 +135,21 @@ class TestStorageVolume(TestSecureResource):
         )
         self.db.session.add(system)
         self.db.session.commit()
-        # create disk with system, user has permission to both
-        vol_new = next(self._get_next_entry)
-        vol_new['system'] = 'New system'
-        created_id = self._request_and_assert(
-            'create', '{}:a'.format('user_hw_admin@domain.com'), vol_new)
+        def cleanup_helper():
+            """Helper to remove system on test end/failure"""
+            self.db.session.delete(system)
+            self.db.session.commit()
+        self.addCleanup(cleanup_helper)
+        for login in logins:
+            # create disk with system, user has permission to both
+            vol_new = next(self._get_next_entry)
+            vol_new['system'] = sys_name
+            created_id = self._request_and_assert(
+                'create', '{}:a'.format(login), vol_new)
 
-        # clean up
-        self.db.session.query(self.RESOURCE_MODEL).filter_by(
-            id=created_id).delete()
-        self.db.session.delete(system)
-        self.db.session.commit()
+            # clean up
+            self.db.session.query(self.RESOURCE_MODEL).filter_by(
+                id=created_id).delete()
     # test_add_all_fields_many_roles()
 
     def test_add_all_fields_no_role(self):
@@ -1284,7 +1289,7 @@ class TestStorageVolume(TestSecureResource):
 
             # update disk withdraw system, user has no permission to disk nor
             # system
-            msg = 'User has no UPDATE permission for the specified system'
+            msg = 'User has no UPDATE permission for the specified volume'
             assert_update(msg, login, hw_admin,
                           {'name': sys_name, 'owner': hw_admin}, None)
 

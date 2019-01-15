@@ -577,6 +577,7 @@ class IpAddress(CommonMixin, ResourceMixin, BASE):
     subnet_id = Column(
         Integer, ForeignKey('subnets.id'), index=True, nullable=False)
     address = Column(postgresql.INET, nullable=False)
+    system_id = Column(Integer, ForeignKey('systems.id'), index=True)
 
     __table_args__ = (UniqueConstraint(subnet_id, address),)
 
@@ -604,24 +605,33 @@ class IpAddress(CommonMixin, ResourceMixin, BASE):
         """Expression used for performing queries"""
         return Subnet.name
 
+    # system relationship section
+    system_rel = relationship('System', uselist=False)
+
     @hybrid_property
     def system(self):
-        """Defines the attribute as a system_name"""
-        item = SystemIface.query.filter_by(
-            ip_address_id=self.id).first()
-        if item is None:
+        """Defines the system attribute pointing to system's name"""
+        if self.system_rel is None:
             return None
-        return item.system
+        return self.system_rel.name
 
     @system.setter
     def system(self, value): # pylint: disable=unused-argument
         """Defines what to do when assigment occurs for the attribute"""
-        raise RuntimeError('Not allowed')
+        if not value:
+            self.system_id = None
+            return
+        match = System.query.filter_by(name=value).one_or_none()
+        # related entry does not exist: report error
+        if match is None:
+            raise AssociationError(
+                self.__class__, 'system', System, 'name', value)
+        self.system_id = match.id
 
     @system.expression
     def system(cls):
         """Expression used for performing queries"""
-        return None
+        return System.name
 
     def __repr__(self):
         """Object representation"""

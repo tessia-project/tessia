@@ -434,16 +434,19 @@ class StorageVolumeResource(SecureResource):
         try:
             self._perman.can(
                 'UPDATE', flask_global.auth_user, vol_obj, 'volume')
-        except PermissionError:
+        except PermissionError as no_disk_perm:
             # volume is not assigned to a system: no more permissions to
             # check
             if not vol_obj.system_rel:
-                raise
+                raise no_disk_perm
             # when a volume is assigned to a system and the user has update
             # permission to that system then it's allowed to update certain
             # attributes
-            self._perman.can('UPDATE', flask_global.auth_user,
-                             vol_obj.system_rel, 'system')
+            try:
+                self._perman.can('UPDATE', flask_global.auth_user,
+                                 vol_obj.system_rel, 'system')
+            except PermissionError:
+                raise no_disk_perm
             # abort if attempting to update a protected attribute
             for prop in properties:
                 if prop not in SYS_DERIVED_PERMS:

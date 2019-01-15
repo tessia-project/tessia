@@ -21,8 +21,7 @@ Module for the ip (ip addresses) command
 #
 from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
-from tessia.cli.types import IPADDRESS
-from tessia.cli.types import SUBNET
+from tessia.cli.types import IPADDRESS, NAME, SUBNET
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
 from tessia.cli.utils import fetch_and_delete
@@ -34,8 +33,8 @@ import click
 # CONSTANTS AND DEFINITIONS
 #
 FIELDS = (
-    'address', 'subnet', 'owner', 'project', 'modified', 'modifier', 'desc',
-    'system'
+    'address', 'subnet', 'system', 'owner', 'project', 'modified',
+    'modifier', 'desc',
 )
 
 FIELDS_TABLE = (
@@ -49,6 +48,7 @@ FIELDS_TABLE = (
 @click.option('--subnet', required=True, type=SUBNET, help='target subnet')
 @click.option('address', '--ip', required=True, type=IPADDRESS,
               help="ip address to create (i.e. 192.168.0.50)")
+@click.option('--system', type=NAME, help="assign ip to this system")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning ip address")
 @click.option('--desc', help="free form field describing address")
@@ -90,6 +90,7 @@ def ip_del(**kwargs):
 @click.option('cur_address', '--ip', required=True, type=IPADDRESS,
               help="ip address to edit")
 @click.option('address', '--newip', type=IPADDRESS, help="new ip-addr")
+@click.option('--system', help="assign ip to this system")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning ip address")
 @click.option('--desc', help="free form field describing address")
@@ -97,6 +98,10 @@ def ip_edit(subnet, cur_address, **kwargs):
     """
     change properties of an existing ip address
     """
+    # system must be validated
+    if kwargs['system']:
+        kwargs['system'] = NAME.convert(kwargs['system'], None, None)
+
     client = Client()
     fetch_and_update(
         client.IpAddresses,
@@ -111,6 +116,7 @@ def ip_edit(subnet, cur_address, **kwargs):
               help='filter by ip address')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
+@click.option('--system', type=NAME, help="list ips assigned to this system")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 @click.option('--subnet', type=SUBNET, help='the subnet to list')
@@ -118,12 +124,6 @@ def ip_list(**kwargs):
     """
     list the registered ip addresses
     """
-    # at least one qualifier must be specified so that we don't have to
-    # retrieve the full list
-    if kwargs['subnet'] is None and kwargs['address'] is None:
-        raise click.ClickException(
-            'at least one of --subnet or --ip must be specified')
-
     # fetch data from server
     client = Client()
 

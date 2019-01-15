@@ -28,6 +28,9 @@ tasks:
         - lab_admin@example.com
         - password
       - Key successfully created and added to client configuration.
+    # create system for use in test
+    - - system add --name=lpar69 --type=LPAR --hostname=lpar69.example._com --project='GEO_1 developers'
+      - Item added successfully.
   net_command:
     # net help
     - - net -h
@@ -121,8 +124,6 @@ tasks:
       - Item added successfully.
     - - net subnet-add --zone=GEO_1-NE --name='GEO/1-NE-1822' --address=192.168.160.0/22
       - Invalid value for "--name"
-    - - net subnet-add --zone=GEO_1-NE --name='Geo_NE-1822' --address=192.168.160.0/22
-      - Item added successfully.
     - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1822' --address=192.168.160.0/22  --gw=192.168.160.1 --dns1=192.168.200.241 --vlan=1822 --project='GEO_1 labadmins' --desc='Shared zone vlan 1822'
       - Item added successfully.
     - - net subnet-list --zone=GEO_1-NE
@@ -204,8 +205,6 @@ tasks:
     - - net subnet-del --zone=GEO_1-NE --name='GEO_1-NE-1823'
       - Item successfully deleted.
     # 'net ip' subcommands
-    - - net ip-list
-      - at least one of --subnet or --ip must be specified
     - - net ip-list --subnet='GEO_1-NE-1822'
       - No results were found.
     - - net ip-add --ip=192.168.161.222
@@ -216,20 +215,22 @@ tasks:
       - Item added successfully.
     - - net ip-add --subnet='GEO/1-NE-1822' --ip=192.168.161.222
       - Invalid value for "--subnet"
-    - - net ip-add --subnet='Geo_NE-1822' --ip=192.168.161.222
-      - Item added successfully.
     - - net ip-add --subnet='GEO_1-NE' --ip=192.168.161.222
       - "request failed. Server answered: No associated item found with value 'GEO_1-NE' for field 'Part of subnet'"
     - - net ip-add --subnet= --ip=192.168.161.222
       - 'Invalid value for "--subnet": value may not be empty'
-    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.222
-      - Item added successfully.
     - - net ip-add --subnet='GEO_1-NE-1822' --ip=
       - 'Invalid value for "--ip": value may not be empty'
+    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.222
+      - Item added successfully.
     - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.222  --project='GEO_1 developers' --desc='For use by lpar 52'
       - 'request failed. Server answered: An item with the provided value'
-    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.223  --project='GEO_1 developers' --desc='For use by lpar 53' --owner=dev1@example.com
+    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.223  --system=lpar69 --project='GEO_1 developers' --desc='For use by lpar 69' --owner=dev1@example.com
       - Item added successfully.
+    - - net ip-list --system=
+      - 'Invalid value for "--system": value may not be empty'
+    - - net ip-list --system=lpar69
+      - ' *192.168.161.223 *|'
     - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.223  --newip=192.168.161.221
       - Item successfully updated.
     - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.223  --desc='For use by lpar 51'
@@ -244,6 +245,19 @@ tasks:
       - Item successfully updated.
     - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.221  --newip=9152.161.221
       - 'Invalid value for "--newip": 9152.161.221 is not a valid ip address'
+    - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.221 --system=
+      - Item successfully updated.
+    # make sure update worked
+    - - net ip-list --system=lpar69
+      - No results were found.
+    - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.221 --system=lpar69
+      - Item successfully updated.
+    # make sure update worked
+    - - net ip-list --system=lpar69
+      - ' *192.168.161.221 *|'
+    - - net ip-list
+      - - ' *192.168.161.221 *|'
+        - ' *192.168.161.222 *|'
     - - net ip-list --subnet='GEO_1-NE-1822'
       - - ' *IP address *| *Part of subnet *| *Associated system *| *Owner *| *Project *| *Description'
         - ' *192.168.161.221 *|'
@@ -258,6 +272,8 @@ tasks:
       - 'IP address *: 192.168.161.222'
     - - net ip-list --ip=192.168.161.223
       - No results were found.
+    - - net ip-list --system=
+      - 'Invalid value for "--system": value may not be empty'
     - - net ip-list --subnet='GEO_1-NE-1822' --project='GEO_1 developers'
       - - ' *IP address *| *Part of subnet *| *Associated system *| *Owner *| *Project *| *Description'
         - ' *192.168.161.221 *|'

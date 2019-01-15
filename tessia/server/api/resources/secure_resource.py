@@ -49,6 +49,13 @@ class SecureResource(ModelResource):
     capabilities. The method are not in alphabetical order because the
     decorators have dependencies between them.
     """
+    class Meta:
+        """
+        Potion's meta section, must be defined here so that metaclass machinery
+        from potion works
+        """
+        sort_attribute = None
+
     def __init__(self, *args, **kwargs):
         """
         Constructor, creates permission manager instance.

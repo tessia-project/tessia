@@ -94,6 +94,8 @@ tasks:
       - 'Usage: tess system iface-list'
     - - system iface-types -h
       - 'Usage: tess system iface-types'
+    - - system info -h
+      - 'Usage: tess system info'
     - - system list -h
       - 'Usage: tess system list'
     - - system model-add -h
@@ -188,6 +190,14 @@ tasks:
       - Item added successfully.
     - - system add --name=guest55 --hyp=cpc3lp52 --type=KVM --hostname=guest55.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
+    # 'system info' subcommand
+    - - system info --system=cpc3lp5
+      - - 'System'
+        - '------No results were found'
+    - - system info --system=cpc3lp54
+      - - 'System'
+        - '------'
+        - 'Name            : cpc3lp54'
     # 'system list' subcommand
     - - system list
       - - ' *Name *\| *Hostname *\| *Type *\| *Model *\| *Current state *\| *Owner *\| *Project'

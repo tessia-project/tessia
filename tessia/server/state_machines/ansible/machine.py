@@ -217,10 +217,11 @@ class AnsibleMachine(BaseMachine):
 
         # git source: use git command to verify it
         if repo['type'] == 'git':
+            git_url = repo['url']
             # parse git revision info (branch, commit/tag)
             try:
                 _, git_rev = parsed_url.path.rsplit('@', 1)
-                repo['url'] = parsed_url.geturl().replace('@' + git_rev, '')
+                git_url = parsed_url.geturl().replace('@' + git_rev, '')
                 repo['git_branch'] = git_rev
                 repo['git_branch'], repo['git_commit'] = git_rev.rsplit(':', 1)
             except ValueError:
@@ -236,7 +237,7 @@ class AnsibleMachine(BaseMachine):
             process_env['GIT_SSL_NO_VERIFY'] = 'true'
             try:
                 subprocess.run(
-                    ['git', 'ls-remote', repo['url']],
+                    ['git', 'ls-remote', git_url],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.PIPE,
                     env=process_env,

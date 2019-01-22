@@ -16,6 +16,7 @@
 Unit test for the ansible machine.
 """
 
+from tessia.server.state_machines import base
 from tessia.server.state_machines.ansible import machine
 from tessia.server.db.models import System, SystemProfile
 from tests.unit.db.models import DbUnit
@@ -58,8 +59,15 @@ class TestAnsibleMachine(TestCase):
 
     def setUp(self):
         # mock config object
-        patcher = mock.patch.object(machine, 'CONF', autospec=True)
+        patcher = mock.patch.object(base, 'CONF', autospec=True)
         self._mock_conf = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        # mock sys object
+        patcher = mock.patch.object(base, 'sys', autospec=True)
+        self._mock_sys = patcher.start()
+        self._mock_sys_tblimit = 10
+        self._mock_sys.tracebacklimit = self._mock_sys_tblimit
         self.addCleanup(patcher.stop)
 
         # patch the open function
@@ -329,6 +337,8 @@ class TestAnsibleMachine(TestCase):
 
         # no verbosity check - check that config was not called
         self._mock_conf.assert_not_called()
+        self.assertEqual(self._mock_sys.tracebacklimit, 0,
+                         'sys.tracebacklimit not set to 0')
 
         # validate stage build environment
         # Validate that the method was called once
@@ -445,6 +455,8 @@ class TestAnsibleMachine(TestCase):
         self._mock_conf.log_config.assert_called_with(
             conf=machine.AutoInstallMachine._LOG_CONFIG,
             log_level=request['verbosity'])
+        self.assertEqual(self._mock_sys.tracebacklimit, self._mock_sys_tblimit,
+                         'sys.tracebacklimit was altered')
 
         # validate exec playbook
         self.assertTrue(

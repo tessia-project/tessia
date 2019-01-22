@@ -19,7 +19,6 @@ Simple state machine which echoes the messages specified.
 #
 # IMPORTS
 #
-from tessia.server.config import CONF
 from tessia.server.state_machines.base import BaseMachine
 from time import sleep
 
@@ -42,6 +41,9 @@ class EchoMachine(BaseMachine):
         super(EchoMachine, self).__init__(params)
 
         self._params = self.parse(params)
+
+        # apply custom log level if specified
+        self._log_config(self._params.get('verbosity'))
     # __init__()
 
     @staticmethod
@@ -101,7 +103,8 @@ class EchoMachine(BaseMachine):
             'resources': {'shared': [], 'exclusive': []},
             'description': MACHINE_DESCRIPTION,
             'commands': [],
-            'cleanup_commands': []
+            'cleanup_commands': [],
+            'verbosity': None
         }
 
         cleanup = False
@@ -190,7 +193,7 @@ class EchoMachine(BaseMachine):
                         "Verbosity '{}' is invalid, choose from {}".format(
                             fields[1], ', '.join(cls._LOG_LEVELS)))
 
-                CONF.log_config(conf=cls._LOG_CONFIG, log_level=fields[1])
+                ret['verbosity'] = fields[1]
 
             else:
                 raise SyntaxError('Invalid command {} at line {}'.format(

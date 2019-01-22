@@ -21,7 +21,6 @@ Machine to enable the usage of ansible playbooks
 #
 from copy import deepcopy
 from jsonschema import validate
-from tessia.server.config import CONF
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import System
 from tessia.server.db.models import SystemProfile
@@ -164,10 +163,8 @@ class AnsibleMachine(BaseMachine):
         self._params = parsed_params['params']
         self._params['repo_info'] = parsed_params['repo_info']
 
-        # user specified custom log level: apply it to log config
-        if 'verbosity' in self._params:
-            CONF.log_config(conf=self._LOG_CONFIG,
-                            log_level=self._params['verbosity'])
+        # apply custom log level if specified
+        self._log_config(self._params.get('verbosity'))
         self._logger = logging.getLogger(__name__)
 
         self._env = EnvDocker()

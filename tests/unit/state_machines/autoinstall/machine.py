@@ -23,6 +23,7 @@ from contextlib import contextmanager
 from copy import deepcopy
 from tessia.server.db import models
 from tessia.server.db.connection import MANAGER
+from tessia.server.state_machines import base
 from tessia.server.state_machines.autoinstall import machine
 from tests.unit.config import EnvConfig
 from tests.unit.state_machines.autoinstall import utils
@@ -74,6 +75,16 @@ class TestAutoInstallMachine(TestCase):
         """
         Setup all the mocks used for the execution of the tests.
         """
+        patcher = patch.object(base, 'CONF', autospec=True)
+        self._mock_conf = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        patcher = patch.object(base, 'sys', autospec=True)
+        self._mock_sys = patcher.start()
+        self._mock_sys_tblimit = 10
+        self._mock_sys.tracebacklimit = self._mock_sys_tblimit
+        self.addCleanup(patcher.stop)
+
         self._mock_sm_anaconda = Mock(spec_set=machine.SmAnaconda)
         self._mock_sm_autoyast = Mock(spec_set=machine.SmAutoyast)
 
@@ -169,10 +180,6 @@ class TestAutoInstallMachine(TestCase):
         Test the correct initialization of the AutoInstallMachine when output
         verbosity is specified.
         """
-        patcher = patch.object(machine, 'CONF', autospec=True)
-        mock_conf = patcher.start()
-        self.addCleanup(patcher.stop)
-
         request = {
             "system": "kvm054",
             "os": "rhel7.2",
@@ -181,9 +188,11 @@ class TestAutoInstallMachine(TestCase):
 
         self._perform_test_init(json.dumps(request))
 
-        mock_conf.log_config.assert_called_with(
+        self._mock_conf.log_config.assert_called_with(
             conf=machine.AutoInstallMachine._LOG_CONFIG,
             log_level=request['verbosity'])
+        self.assertEqual(self._mock_sys.tracebacklimit, self._mock_sys_tblimit,
+                         'sys.tracebacklimit was altered')
     # test_init_default_profile()
 
     def test_invalid_fcp_parameters(self):

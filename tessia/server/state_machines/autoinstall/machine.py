@@ -21,7 +21,6 @@ State machine that performs the installation of Linux Distros.
 #
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
-from tessia.server.config import CONF
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import OperatingSystem
 from tessia.server.db.models import Template
@@ -97,11 +96,8 @@ class AutoInstallMachine(BaseMachine):
 
         self._params = self.parse(params)['params']
 
-        # user specified custom log level: apply it to log config
-        if 'verbosity' in self._params:
-            CONF.log_config(conf=self._LOG_CONFIG,
-                            log_level=self._params['verbosity'])
-
+        # apply custom log level if specified
+        self._log_config(self._params.get('verbosity'))
         self._logger = logging.getLogger(__name__)
 
         self._machine = self._create_machine()

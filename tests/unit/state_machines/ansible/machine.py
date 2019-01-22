@@ -139,7 +139,9 @@ class TestAnsibleMachine(TestCase):
                 'source': (
                     'http://user:pwd@example._com/dir/ansible-example.git@'
                     'mybranch'),
-                'url': 'http://user:pwd@example._com/dir/ansible-example.git',
+                'url': (
+                    'http://user:pwd@example._com/dir/ansible-example.git@'
+                    'mybranch'),
                 'url_obs': ('http://****@example._com/dir/ansible-example.git@'
                             'mybranch'),
                 'type': 'git',
@@ -149,7 +151,8 @@ class TestAnsibleMachine(TestCase):
             {
                 'source': (
                     'https://example._com/dir/ansible-example.git@:mycommit'),
-                'url': 'https://example._com/dir/ansible-example.git',
+                'url': (
+                    'https://example._com/dir/ansible-example.git@:mycommit'),
                 'url_obs': ('https://example._com/dir/ansible-example.git@'
                             ':mycommit'),
                 'type': 'git',
@@ -160,7 +163,8 @@ class TestAnsibleMachine(TestCase):
                 'source': (
                     'git://example._com/dir/ansible-example.git@'
                     'mybranch:mycommit'),
-                'url': 'git://example._com/dir/ansible-example.git',
+                'url': ('git://example._com/dir/ansible-example.git@'
+                        'mybranch:mycommit'),
                 'url_obs': ('git://example._com/dir/ansible-example.git@'
                             'mybranch:mycommit'),
                 'type': 'git',

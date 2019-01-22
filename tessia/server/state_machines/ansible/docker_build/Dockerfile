@@ -33,6 +33,7 @@ RUN apt-get -q update > /dev/null && \
     requests && \
     chmod a+x /assets/downloader.py && \
     # add the ansible user for less privileged playbook execution
+    # /home/ansible folder is created to have a working directory
     useradd --create-home --shell /bin/bash ansible && \
     # add empty folder to clone ansible playbook to
     mkdir /home/ansible/playbook && \

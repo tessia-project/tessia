@@ -32,6 +32,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 import logging
 import os
+import re
 import requests
 import shutil
 import tempfile
@@ -50,6 +51,8 @@ MACHINE_DESCRIPTION = 'Execute playbook {} from {}'
 MAX_REPO_MB_SIZE = 100
 # max number of commits for cloning
 MAX_GIT_CLONE_DEPTH = '10'
+# regex pattern to be used for name fields
+NAME_PATTERN = r'^\w+[\w\s\.\-]+$'
 # Schema to validate the job request
 REQUEST_SCHEMA = {
     'type': 'object',
@@ -62,13 +65,21 @@ REQUEST_SCHEMA = {
             # prevent injection of parameters in ansible call
             'pattern': '[a-zA-Z0-9_]'
         },
+        'vars': {
+            # dictionary with key:value pairs
+            'type': 'object'
+        },
+        'groups': {
+            'type': 'object'
+        },
         'systems': {
             'type': 'array',
             'items': {
                 'type': 'object',
                 'properties': {
                     'name': {
-                        'type': 'string'
+                        'type': 'string',
+                        'pattern': NAME_PATTERN
                     },
                     'groups': {
                         'type': 'array',
@@ -96,6 +107,9 @@ REQUEST_SCHEMA = {
                         ],
                         'additionalProperties': False
                     },
+                    'vars': {
+                        'type': 'object'
+                    }
                 },
                 'required': [
                     'groups',
@@ -350,7 +364,7 @@ class AnsibleMachine(BaseMachine):
 
                 # the hypervisor hierarchy is a shared resource
                 system_obj = system_obj.hypervisor_rel
-                while system_obj != None:
+                while system_obj is not None:
                     shared_res.add(system_obj.name)
                     system_obj = system_obj.hypervisor_rel
 
@@ -391,12 +405,33 @@ class AnsibleMachine(BaseMachine):
 
         Creates an ansible.cfg file which is used during ansible-playbook
         execution. Creates an inventory file (tessia-hosts) which is referenced
-        in the ansible.cfg file.
+        in the ansible.cfg file. Creates the folder structure and files to
+        overwrite default variables.
         """
         self._logger.info('creating inventory file')
 
+        # There's a slight chance that an empty temp dir is not cleaned up if
+        # a signal interrupts the execution between dir creation and storing
+        # its name in the file, but it is still better to use the standard lib
+        # to securely create the dir than generating a random name, avoiding
+        # race conditions, permissions, etc. if creating it manually.
+        with open(TEMP_DIR_FILE, 'w') as temp_dir_file:
+            self._temp_dir = tempfile.mkdtemp()
+            temp_dir_file.write(self._temp_dir)
+
+        # create folders for the playbook and inventory specific variables
+        playbook_dir = os.path.join(self._temp_dir, "playbook")
+        os.makedirs(playbook_dir)
+
+        group_vars_folder = os.path.join(self._temp_dir, "group_vars")
+        group_vars_all_folder = os.path.join(group_vars_folder, "all")
+        os.makedirs(group_vars_all_folder)
+
+        host_vars_folder = os.path.join(self._temp_dir, "host_vars")
+        os.makedirs(host_vars_folder)
+
         # create a mapping of all the groups specified by user and their
-        # corresponding systems
+        # corresponding systems and create system specific variable files
         groups = {}
         for system in self._params['systems']:
             system_obj = System.query.filter_by(
@@ -440,22 +475,44 @@ class AnsibleMachine(BaseMachine):
                 }
                 groups.setdefault(group, []).append(entry)
 
-        # There's a slight chance that an empty temp dir is not cleaned up if
-        # a signal interrupts the execution between dir creation and storing
-        # its name in the file, but it is still better to use the standard lib
-        # to securely create the dir than generating a random name, avoiding
-        # race conditions, permissions, etc. if creating it manually.
-        with open(TEMP_DIR_FILE, 'w') as temp_dir_file:
-            self._temp_dir = tempfile.mkdtemp()
-            temp_dir_file.write(self._temp_dir)
+            # create system specific variable file
+            if 'vars' in system:
+                host_vars_file = os.path.join(host_vars_folder,
+                                              system['name'] + ".yml")
+                with open(host_vars_file, 'w') as file_fd:
+                    yaml.dump(system['vars'], file_fd,
+                              default_flow_style=False)
+
+        if 'groups' in self._params:
+            for group_name, group_dict in self._params['groups'].items():
+                # print a warning when no system is in the specified group
+                # note: every system is in the group 'all' and every system
+                #       with just the group 'all' is in the group 'ungrouped'
+                if (group_name not in groups
+                        and group_name not in ['all', 'ungrouped']):
+                    raise ValueError('no system has group {} assigned'
+                                     .format(group_name))
+
+                # write to file
+                if 'vars' in group_dict:
+                    if group_name == 'all':
+                        # all variables defined here overwrites all_1.yml
+                        group_vars_file = os.path.join(group_vars_all_folder,
+                                                       "all_2.yml")
+                    else:
+                        group_vars_file = os.path.join(group_vars_folder,
+                                                       group_name + ".yml")
+                    with open(group_vars_file, 'w') as file_fd:
+                        yaml.dump(group_dict['vars'], file_fd,
+                                  default_flow_style=False)
 
         # write the inventory file
-        inventory_file = '{}/{}'.format(self._temp_dir, INVENTORY_FILE_NAME)
+        inventory_file = os.path.join(self._temp_dir, INVENTORY_FILE_NAME)
         with open(inventory_file, 'w') as file_fd:
             # create each group section
             for group in groups:
                 file_fd.write('[{}]\n'.format(group))
-                # write the hosts beloging to this group
+                # write the hosts belonging to this group
                 for entry in groups[group]:
                     file_fd.write(
                         '{name} ansible_host={hostname} ansible_user={user} '
@@ -464,7 +521,9 @@ class AnsibleMachine(BaseMachine):
                 file_fd.write('\n')
 
         self._logger.info('creating config file')
+
         # write the config file
+        inventory_file = os.path.join("..", INVENTORY_FILE_NAME)
         config_content = ("[defaults]\n"
                           "inventory = {inv_file}\n"
                           "\n"
@@ -472,10 +531,18 @@ class AnsibleMachine(BaseMachine):
                           "\n"
                           "[ssh_connection]\n"
                           "pipelining = True")\
-            .format(inv_file=INVENTORY_FILE_NAME)
-        config_file = '{}/ansible.cfg'.format(self._temp_dir)
+            .format(inv_file=inventory_file)
+        config_file = os.path.join(playbook_dir, "ansible.cfg")
         with open(config_file, 'w') as file_fd:
             file_fd.write(config_content)
+
+        # write the group vars all file
+        if 'vars' in self._params:
+            group_vars_all_file = os.path.join(group_vars_all_folder,
+                                               "all_1.yml")
+            with open(group_vars_all_file, 'w') as file_fd:
+                yaml.dump(self._params['vars'], file_fd,
+                          default_flow_style=False)
     # _stage_create_config()
 
     def _stage_exec_playbook(self):
@@ -513,6 +580,15 @@ class AnsibleMachine(BaseMachine):
         try:
             obj_params = yaml.safe_load(params)
             validate(obj_params, REQUEST_SCHEMA)
+            # validate that each group object is a dict and sanitize group_name
+            # characters which might e.g. exploit the path ('..', '/', '.')
+            for group_name, group_dict in obj_params.get('groups', {}).items():
+                if not isinstance(group_dict, dict):
+                    raise SyntaxError('group {} has invalid definition'
+                                      .format(group_name))
+                if not re.match(NAME_PATTERN, group_name):
+                    raise SyntaxError('group_name {} is invalid'
+                                      .format(group_name))
         except Exception as exc:
             raise SyntaxError(
                 "Invalid request parameters: {}".format(str(exc)))

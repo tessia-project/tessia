@@ -1039,6 +1039,9 @@ class TestStorageVolume(TestSecureResource):
             data['owner'] = login
             vol_id = self._request_and_assert(
                 'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+
+            # update disk assign system, user has permission to both disk and
+            # system
             # exercise case where user is system owner
             if login in ('user_restricted@domain.com', 'user_user@domain.com'):
                 sys_obj.owner = login
@@ -1048,22 +1051,35 @@ class TestStorageVolume(TestSecureResource):
             sys_obj.project = self._db_entries['Project'][0]['name']
             self.db.session.add(sys_obj)
             self.db.session.commit()
-
-            # update disk assign system, user has permission to both disk and
-            # system
+            # perform request
             data = {'id': vol_id, 'system': sys_name}
             self._request_and_assert('update', '{}:a'.format(login), data)
             self.assertEqual(
                 self.RESOURCE_MODEL.query.filter_by(id=vol_id).one().system,
                 sys_name, 'System was not assigned to disk')
 
-            # update disk withdraw system, user has permission to disk and
-            # system
+            # update disk re-assign to same system, profile associations are
+            # preserved
             # associate to a profile
             assoc_obj = models.StorageVolumeProfileAssociation(
                 profile_id=prof_id, volume_id=vol_id)
             self.db.session.add(assoc_obj)
             self.db.session.commit()
+            # perform request
+            data = {'id': vol_id, 'system': sys_name}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+            self.assertEqual(
+                self.RESOURCE_MODEL.query.filter_by(id=vol_id).one().system,
+                sys_name, 'System was withdrawn from disk')
+            # validate that profile association was preserved
+            self.assertEqual(
+                len(models.StorageVolumeProfileAssociation.query.filter_by(
+                    profile_id=prof_id, volume_id=vol_id).all()),
+                1, 'Association was not preserved'
+            )
+
+            # update disk withdraw system, user has permission to disk and
+            # system
             data = {'id': vol_id, 'system': None}
             self._request_and_assert('update', '{}:a'.format(login), data)
             self.assertEqual(

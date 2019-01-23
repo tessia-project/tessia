@@ -147,7 +147,9 @@ class TestSecureResource(TestCase):
                 mod_datetime = modified_field['$date'] / 1000.0
                 self.assertTrue(
                     (mod_datetime > time_range[0] and
-                     mod_datetime < time_range[1]))
+                     mod_datetime < time_range[1]),
+                    'start_range: {} mod_datetime: {} end_range: {}'.format(
+                        time_range[0], mod_datetime, time_range[1]))
 
             for key, value in entries[index].items():
                 # id field

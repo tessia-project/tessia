@@ -484,7 +484,7 @@ class StorageVolumeResource(SecureResource):
 
         # system assignment changed: validate permissions and remove any
         # profiles attached
-        if 'system' in properties:
+        if 'system' in properties and properties['system'] != vol_obj.system:
             self._assert_system(vol_obj, properties['system'])
 
             # remove any existing profile associations

@@ -21,6 +21,7 @@ Base state machine for auto installation of operating systems
 #
 from copy import deepcopy
 from datetime import datetime
+from functools import cmp_to_key
 from tessia.baselib.common.ssh.client import SshClient
 from socket import inet_ntoa, gethostbyname
 from tessia.server.config import Config
@@ -479,6 +480,18 @@ class SmBase(metaclass=abc.ABCMeta):
             info['svols'].append(svol_dict)
         if not has_root:
             raise ValueError('Partitioning scheme has no root disk defined')
+        # make sure hpav aliases come after dasds so that the templates always
+        # activate the base devices first
+        def compare(item_1, item_2):
+            """Helper to sort hpav as last"""
+            if item_1['type'] == 'HPAV' or item_1['type'] > item_2['type']:
+                return 1
+            if item_1['type'] == item_2['type']:
+                return 0
+            return -1
+        # compare()
+        info['svols'].sort(key=cmp_to_key(compare))
+
         for iface in self._profile.system_ifaces_rel:
             info['ifaces'].append(self._parse_iface(
                 iface, iface.osname == self._gw_iface['osname']))

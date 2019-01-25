@@ -31,6 +31,8 @@ from tessia.server.db.models import StorageServer
 from tessia.server.db.models import System
 from tessia.server.db.models import SystemProfile
 
+import re
+
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -52,6 +54,8 @@ DESC = {
     'project': 'Project',
     'owner': 'Owner',
 }
+
+HPAV_PATTERN = re.compile(r"^[a-f0-9]{4}$")
 
 MSG_PTABLE_DASD_PARTS = (
     "The value 'part_table' is invalid: a dasd partition table cannot have "
@@ -86,7 +90,7 @@ SYS_DERIVED_PERMS = set(
 
 # support map between storage servers and volumes types
 VOL_SERVER_MAP = {
-    'DASD-FCP': ['DASD', 'FCP'],
+    'DASD-FCP': ['DASD', 'FCP', 'HPAV'],
     'ISCSI': ['ISCSI'],
 }
 
@@ -134,8 +138,8 @@ class StorageVolumeResource(SecureResource):
         volume_id = fields.String(
             pattern=r'^[a-z0-9_\.\-]+$',
             title=DESC['volume_id'], description=DESC['volume_id'])
-        size = fields.PositiveInteger(
-            title=DESC['size'], description=DESC['size'])
+        size = fields.Integer(
+            minimum=0, title=DESC['size'], description=DESC['size'])
         part_table = fields.Custom(
             schema=StorageVolume.get_schema('part_table'),
             title=DESC['part_table'], description=DESC['part_table'],
@@ -193,6 +197,36 @@ class StorageVolumeResource(SecureResource):
             # read-only field
             io='r'
         )
+
+    @staticmethod
+    def _assert_hpav(vol_obj, properties):
+        """
+        Validate correctness of hpav entry
+        """
+        # not a hpav type: nothing to check
+        if (vol_obj and vol_obj.type != 'HPAV') or (
+                not vol_obj and properties['type'].upper() != 'HPAV'):
+            return
+
+        if 'volume_id' in properties and (
+                not HPAV_PATTERN.search(properties['volume_id'])):
+            msg = 'HPAV alias {} is not in valid format'.format(
+                properties['volume_id'])
+            raise BaseHttpError(code=400, msg=msg)
+
+        if 'size' in properties and properties['size'] != 0:
+            msg = 'HPAV type must have size 0'
+            raise BaseHttpError(code=400, msg=msg)
+        if properties.get('part_table'):
+            msg = 'HPAV type cannot have partition table'
+            raise BaseHttpError(code=400, msg=msg)
+        if properties.get('specs'):
+            msg = 'HPAV type cannot have specs'
+            raise BaseHttpError(code=400, msg=msg)
+        if properties.get('system_attributes'):
+            msg = 'HPAV type cannot have system_attributes'
+            raise BaseHttpError(code=400, msg=msg)
+    # _assert_hpav()
 
     @staticmethod
     def _assert_ptable(part_table, vol_size):
@@ -342,6 +376,8 @@ class StorageVolumeResource(SecureResource):
         """
         # make sure type matches selected storage server
         self._assert_type(properties['server'], properties['type'])
+
+        self._assert_hpav(None, properties)
 
         self._assert_ptable(
             properties.get('part_table'), properties['size'])
@@ -497,6 +533,8 @@ class StorageVolumeResource(SecureResource):
             dummy_item.project = properties['project']
             self._perman.can('UPDATE', flask_global.auth_user, dummy_item,
                              'project')
+
+        self._assert_hpav(vol_obj, properties)
 
         updated_item = self.manager.update(vol_obj, properties)
 

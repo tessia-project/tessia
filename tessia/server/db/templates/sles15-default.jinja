@@ -28,6 +28,12 @@
             <channel>0.0.{{ volume["volume_id"] }}</channel>
             <diag config:type="boolean">false</diag>
           </listentry>
+        {% elif volume["type"] == "HPAV" -%}
+          <listentry>
+            <channel>0.0.{{ volume["volume_id"] }}</channel>
+            <diag config:type="boolean">false</diag>
+            <format config:type="boolean">false</format>
+          </listentry>
         {% endif %}
       {% endfor %}
     </devices>

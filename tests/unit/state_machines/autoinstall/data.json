@@ -300,6 +300,31 @@
             "volume_id": "3963"
         },
         {
+            "desc": "- DASD disk with HPAV alias for vmguest01",
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+                "table": [
+                    {
+                        "fs": "ext4",
+                        "mo": null,
+                        "mp": "/home",
+                        "size": 6000,
+                        "type": "primary"
+                    }
+                ],
+                "type": "dasd"
+            },
+            "project": "Admins",
+            "server": "DSK7K16",
+            "size": 7000,
+            "specs": {"hpav": {"0.0.aaaa": true}},
+            "system": "vmguest01",
+            "system_attributes": {},
+            "type": "DASD",
+            "volume_id": "3964"
+        },
+        {
             "desc": "FCP-SCSI DISK for vmguest01",
             "modifier": "admin",
             "owner": "admin",
@@ -897,6 +922,10 @@
         {
             "profile": "vmguest01/default",
             "volume": "DSK7K16/3963"
+        },
+        {
+            "profile": "vmguest01/default",
+            "volume": "DSK7K16/3964"
         },
         {
             "profile": "vmguest01/default",

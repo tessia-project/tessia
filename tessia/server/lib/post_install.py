@@ -194,6 +194,26 @@ class PostInstallChecker(object):
         return cmd_output
     # _exec_ansible()
 
+    def _fetch_alias(self):
+        """
+        Get DASD alias information from a target instance.
+
+        Returns:
+            list: a list with all aliases
+        """
+        try:
+            alias_entries = self._exec_ansible(
+                'command', 'lsdasd').splitlines()
+        except RuntimeError:
+            return {}
+
+        dasd_aliases = dict.fromkeys(
+            [entry.split()[0] for entry in alias_entries
+             if ' alias' in entry])
+
+        return dasd_aliases
+    # _fetch_alias()
+
     def _fetch_facts(self):
         """
         Get and store 'ansible facts' from a target instance.
@@ -219,6 +239,10 @@ class PostInstallChecker(object):
         # additional entries with the necessary information.
         for svol in self._expected_params['storage']:
             devpath = svol['devpath']
+
+            # dasd alias: collected later with lsdasd
+            if svol['type'] == 'HPAV':
+                continue
 
             # no partition table defined: just verify disk presence
             if not svol['part_table']:
@@ -296,6 +320,9 @@ class PostInstallChecker(object):
         for dns_server in self._fetch_systemd_dns():
             if not dns_server in params['ansible_dns']['nameservers']:
                 params['ansible_dns']['nameservers'].append(dns_server)
+
+        # DASD aliases - not provided by ansible
+        params['dasd_aliases'] = self._fetch_alias()
 
         self._facts = params
     # _fetch_facts()
@@ -966,6 +993,17 @@ class PostInstallChecker(object):
             return
 
         for svol in self._expected_params['storage']:
+            # hpav alias: check only device presence
+            if svol['type'] == "HPAV":
+                vol_id = svol['id']
+                if not '.' in vol_id:
+                    vol_id = '0.0.{}'.format(vol_id)
+                try:
+                    self._facts['dasd_aliases'][vol_id]
+                except KeyError:
+                    self._report('dasd alias', vol_id, None)
+                continue
+
             # verify FCP paths
             if svol['type'] == "FCP":
                 # no fcp configuration available on the host: report mismatch

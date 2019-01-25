@@ -42,6 +42,12 @@
             <channel>0.0.{{ volume["volume_id"] }}</channel>
             <diag config:type="boolean">false</diag>
           </listentry>
+        {% elif volume["type"] == "HPAV" -%}
+          <listentry>
+            <channel>0.0.{{ volume["volume_id"] }}</channel>
+            <diag config:type="boolean">false</diag>
+            <format config:type="boolean">false</format>
+          </listentry>
         {% endif %}
       {% endfor %}
     </devices>
@@ -72,10 +78,12 @@ parted -s {{volume['system_attributes']['device']}} mklabel {{volume['part_table
         <interpreter>shell</interpreter>
         <source><![CDATA[
 #!/bin/bash
-echo "Activating DASDs without partition table defined..."
+echo "Activating DASDs without partition table defined and HPAV aliases..."
 {% for volume in config["svols"] -%}
   {% if volume["type"] == "DASD" and not volume['part_table'] -%}
 /sbin/dasd_configure '0.0.{{ volume["volume_id"] }}' 1 0
+  {% elif volume["type"] == "HPAV" -%}
+/sbin/cio_ignore -r '0.0.{{ volume["volume_id"] }}'
   {% endif -%}
 {% endfor -%}
 ]]>

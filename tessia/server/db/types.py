@@ -201,6 +201,7 @@ SYSTEM_STATES = [
 
 VOLUME_TYPES = [
     'DASD,DASD disk type',
+    'HPAV,HPAV alias for DASD disks',
     'FCP,FCP-SCSI disk type',
     'ISCSI,ISCSI disk type',
     'RAW,RAW (loopback file)',

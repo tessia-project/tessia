@@ -292,9 +292,16 @@ Total offline memory:            0
 nameserver 192.168.200.241
 search domain.com
 """)
+
+        lsdasd = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
+==============================================================================
+""")
+
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
-            lscpu_output, lsmem_output, realp_output, resolv_output]
+            lscpu_output, lsmem_output, realp_output, resolv_output, lsdasd]
     # _set_mocks_lpar_fcp()
 
     def _set_mocks_lpar_dasd(self, prof_obj):
@@ -432,9 +439,19 @@ Total offline memory: 0 MB
 /etc/resolv.conf
 """)
 
+        lsdasd = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
+==============================================================================
+0.0.3999   alias                         ECKD
+0.0.399a   alias                         ECKD
+0.0.3956   active      dasda     94:0    ECKD  4096   7000MB    1792000
+0.0.3957   active      dasdb     94:4    ECKD  4096   7000MB    1792000
+""")
+
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
-            lscpu_output, RuntimeError(), lsmem_output, realp_output]
+            lscpu_output, RuntimeError(), lsmem_output, realp_output, lsdasd]
     # _set_mocks_lpar_dasd()
 
     def test_facts_fail(self):
@@ -955,6 +972,33 @@ ID=xxxxx
                 dasd_prof_entry, permissive=True)
             checker.verify(areas=['storage'])
             self._mock_logger.warning.assert_called_with(error_msg)
+
+        # simulate hpav alias not found
+        self._set_mocks_lpar_dasd(dasd_prof_entry)
+        test_outputs = list(self._mock_check_output.side_effect)
+        test_outputs[11] = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
+==============================================================================
+""")
+        self._mock_check_output.side_effect = test_outputs
+        error_msg = self._mismatch_msg.format(
+            'dasd alias', '0.0.3999', '<not found>')
+        error_msg_2 = self._mismatch_msg.format(
+            'dasd alias', '0.0.399a', '<not found>')
+        checker = post_install.PostInstallChecker(dasd_prof_entry)
+        with self.assertRaisesRegex(post_install.Misconfiguration, error_msg):
+            checker.verify(areas=['storage'])
+
+        # permissive - only logging occurs
+        self._set_mocks_lpar_dasd(dasd_prof_entry)
+        self._mock_check_output.side_effect = test_outputs
+        self._mock_logger.reset_mock()
+        checker = post_install.PostInstallChecker(
+            dasd_prof_entry, permissive=True)
+        checker.verify(areas=['storage'])
+        self._mock_logger.warning.assert_any_call(error_msg)
+        self._mock_logger.warning.assert_any_call(error_msg_2)
     # test_misconfiguration_storage()
 
     def test_misconfiguration_kernel(self):

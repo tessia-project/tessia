@@ -135,6 +135,32 @@ class DateTime(click.ParamType):
 
 DATE_TIME = DateTime()
 
+class Devno(click.ParamType):
+    """
+    Represents a channel id for use with DASDs
+    """
+    name = 'devno'
+
+    def convert(self, value, param, ctx):
+        """
+        Validate and convert a string representing a channel id
+        """
+        devno = value.lower()
+
+        # format and validate for devno format
+        if devno.startswith('0x'):
+            devno = devno[2:]
+        ret = re.match(r"^[a-f0-9]{4}$", devno)
+        if ret is None:
+            self.fail(
+                '{} is not a valid devno'.format(value), param, ctx)
+
+        return devno
+    # convert()
+# Devno
+
+DEVNO = Devno()
+
 class FcpPath(click.ParamType):
     """
     Represents a FCP path type

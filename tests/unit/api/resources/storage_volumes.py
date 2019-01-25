@@ -19,6 +19,7 @@ Unit test for storage_volumes resource module
 #
 # IMPORTS
 #
+from copy import deepcopy
 from tessia.server.api.resources.storage_volumes import \
     MSG_PTABLE_SIZE_MISMATCH
 from tessia.server.api.resources.storage_volumes import MSG_INVALID_TYPE
@@ -261,6 +262,57 @@ class TestStorageVolume(TestSecureResource):
         self._test_add_update_assoc_error(
             'user_hw_admin@domain.com', wrong_fields)
     # test_add_update_assoc_error()
+
+    def test_add_update_hpav(self):
+        """
+        Test creation and update of HPAV aliases
+        """
+        user = 'user_hw_admin@domain.com'
+        vol_new = next(self._get_next_entry)
+        vol_new['volume_id'] = '1234'
+        vol_new['type'] = 'HPAV'
+        vol_new['size'] = 0
+        fcp_spec = vol_new['specs']
+        vol_new['specs'] = {}
+
+        invalid_combos = [
+            {'field': 'specs', 'value': fcp_spec,
+             'msg': 'HPAV type cannot have specs'},
+            {'field': 'size', 'value': 1,
+             'msg': 'HPAV type must have size 0'},
+            {'field': 'part_table', 'value': {'type': 'dasd', 'table': []},
+             'msg': 'HPAV type cannot have partition table'},
+            {'field': 'system_attributes', 'value': {'libvirt': 'xxxx'},
+             'msg': 'HPAV type cannot have system_attributes'},
+            {'field': 'volume_id', 'value': 'zzzzz',
+             'msg': 'HPAV alias zzzzz is not in valid format'}
+        ]
+        # test create actions
+        for combo in invalid_combos:
+            orig_value = deepcopy(vol_new[combo['field']])
+            vol_new[combo['field']] = combo['value']
+            resp = self._do_request('create', '{}:a'.format(user), vol_new)
+            self._assert_failed_req(resp, 400, combo['msg'])
+            vol_new[combo['field']] = orig_value
+
+        vol_new['part_table'] = None
+        vol_new['size'] = 0
+        vol_new['specs'] = {}
+        vol_id = self._request_and_assert(
+            'create', '{}:a'.format(user), vol_new)
+
+        # test update actions
+        for combo in invalid_combos:
+            update_fields = {
+                'id': vol_id, combo['field']: combo['value']}
+            resp = self._do_request(
+                'update', '{}:a'.format(user), update_fields)
+            self._assert_failed_req(resp, 400, combo['msg'])
+
+        # update with valid content
+        update_fields = {'id': vol_id, 'volume_id': '9999'}
+        self._request_and_assert('update', '{}:a'.format(user), update_fields)
+    # test_add_update_hpav()
 
     def test_add_mandatory_fields(self):
         """

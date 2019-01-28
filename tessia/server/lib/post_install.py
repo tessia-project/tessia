@@ -142,6 +142,7 @@ class PostInstallChecker(object):
             ConnectionError: if ansible can't connect to target system
         """
         process_env = os.environ.copy()
+        process_env['ANSIBLE_TRANSPORT'] = 'ssh'
         process_env['ANSIBLE_SSH_PIPELINING'] = 'true'
         process_env['ANSIBLE_HOST_KEY_CHECKING'] = 'false'
 
@@ -154,7 +155,8 @@ class PostInstallChecker(object):
 
             # we use the default 'minimal' stdout callback for stable output
             # parsing
-            cmd = ['ansible', '-i', file_fd.name, self._hostname, '-m', module]
+            cmd = ['ansible', '-i', file_fd.name, self._hostname, '-m', module,
+                   '--ssh-extra-args', '-oUserKnownHostsFile=/dev/null']
             if args:
                 cmd.extend(['-a', args])
             try:

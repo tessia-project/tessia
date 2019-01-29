@@ -333,7 +333,6 @@ class TestSystemIface(TestSecureResource):
         # system is test separately because error message is different
         wrong_fields = [
             ('ip_address', 'wrong-subnet/192.168.5.10'),
-            ('type', 'wrong-type'),
         ]
         self._test_add_update_assoc_error(
             'user_privileged@domain.com', wrong_fields)
@@ -377,12 +376,16 @@ class TestSystemIface(TestSecureResource):
             ('mac_address', 5),
             ('type', False),
             ('type', 5),
+            # type as string is tested separately
             ('system', 5),
             ('system', None),
             ('system', True),
             ('attributes', 5),
             ('attributes', 'something'),
             ('attributes', True),
+            # set macvtap attributes which don't match the interface type osa
+            ('attributes', {'libvirt': 'xxxx'},
+             'Field "attributes" is not valid under any JSON schema'),
             # read-only fields
             ('profiles', 'something'),
         ]
@@ -402,6 +405,19 @@ class TestSystemIface(TestSecureResource):
                "'System'".format(data['system']))
         self._validate_resp(resp, msg, 422)
     # test_add_wrong_system()
+
+    def test_add_wrong_type(self):
+        """
+        Try to add an iface to a system that does not exist.
+        """
+        user_login = '{}:a'.format('user_privileged@domain.com')
+        # create iface
+        data = next(self._get_next_entry)
+        data['type'] = 'wrong-type'
+        resp = self._do_request('create', user_login, data)
+        msg = "Invalid interface type {}".format(data['type'])
+        self._validate_resp(resp, msg, 400)
+    # test_add_wrong_type()
 
     def test_del_many_roles(self):
         """
@@ -1110,9 +1126,9 @@ class TestSystemIface(TestSecureResource):
         self.db.session.commit()
     # test_update_no_role()
 
-    def test_update_assoc_system(self):
+    def test_update_prohibited(self):
         """
-        Try to change the system associated to an iface.
+        Try to update prohibited fields
         """
         user_login = '{}:a'.format('user_privileged@domain.com')
         # create iface
@@ -1123,6 +1139,12 @@ class TestSystemIface(TestSecureResource):
         update_data = {'id': created_id, 'system': 'cpc0'}
         resp = self._do_request('update', user_login, update_data)
         msg = 'Interfaces cannot change their associated system'
+        self._validate_resp(resp, msg, 422)
+
+        # try to change type
+        update_data = {'id': created_id, 'type': 'macvtap'}
+        resp = self._do_request('update', user_login, update_data)
+        msg = 'Interfaces cannot change their type'
         self._validate_resp(resp, msg, 422)
 
         # clean up

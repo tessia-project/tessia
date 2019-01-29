@@ -67,6 +67,9 @@ class PlatLpar(PlatBase):
 
         Args:
             kargs (str): kernel command line args for os' installer
+
+        Raises:
+            ValueError: in case an unsupported network type is found
         """
         # basic information
         cpu = self._guest_prof.cpu
@@ -98,18 +101,30 @@ class PlatLpar(PlatBase):
             "cmdline": kargs
         }
         # network configuration
-        options = deepcopy(self._gw_iface['attributes'])
-        options.pop('ccwgroup')
         params['boot_params']['netsetup'] = {
             "mac": self._gw_iface['mac_addr'],
             "ip": self._gw_iface['ip'],
             "mask": self._gw_iface["mask"],
             "gateway": self._gw_iface['gateway'],
-            "device": self._gw_iface['attributes']
-                      ['ccwgroup'].split(",")[0].split('.')[-1],
-            "options": options,
             "password": self._live_passwd,
         }
+        # osa cards
+        if self._gw_iface['type'].lower() == 'osa':
+            params['boot_params']['netsetup']['type'] = 'osa'
+            params['boot_params']['netsetup']['device'] = (
+                self._gw_iface['attributes']['ccwgroup']
+                .split(",")[0].split('.')[-1])
+            options = deepcopy(self._gw_iface['attributes'])
+            options.pop('ccwgroup')
+            params['boot_params']['netsetup']['options'] = options
+        # roce cards
+        elif self._gw_iface['type'].lower() == 'roce':
+            params['boot_params']['netsetup']['type'] = 'pci'
+            params['boot_params']['netsetup']['device'] = (
+                self._gw_iface['attributes']['fid'])
+        else:
+            raise ValueError('Unsupported network card type {}'
+                             .format(self._gw_iface['type']))
         dns_servers = []
         if self._gw_iface.get('dns_1'):
             dns_servers.append(self._gw_iface['dns_1'])

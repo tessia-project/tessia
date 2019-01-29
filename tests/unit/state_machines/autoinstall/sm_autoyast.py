@@ -264,5 +264,19 @@ class TestSmAutoyast(TestCase):
         with self.assertRaisesRegex(
             TimeoutError, "Timed out while waiting for installation logfile"):
             machine.start()
-    # test_wait_install_timeout_log_file()
+    # test_installation_timeout_log_file()
+
+    def test_gw_unsupported_roce(self):
+        """
+        Make sure machine reports unsupported message when trying to install
+        with a roce card as the gateway iface
+        """
+        os_entry = utils.get_os("sles12.1")
+        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55_SCSI")
+        template_entry = utils.get_template("sles12-default")
+
+        msg = 'Installations using a ROCE card .* are not supported'
+        with self.assertRaisesRegex(ValueError, msg):
+            sm_autoyast.SmAutoyast(os_entry, profile_entry, template_entry)
+    # test_gw_unsupported_roce()
 # TestSmAutoyast

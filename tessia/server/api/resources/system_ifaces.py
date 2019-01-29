@@ -23,6 +23,8 @@ from flask import g as flask_global
 from flask_potion import fields
 from flask_potion.contrib.alchemy.fields import InlineModel
 from flask_potion.instances import Pagination
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 from tessia.server.api.exceptions import BaseHttpError
 from tessia.server.api.exceptions import ItemNotFoundError
 from tessia.server.api.resources.secure_resource import NAME_PATTERN
@@ -125,6 +127,58 @@ class SystemIfaceResource(SecureResource):
             # read-only field
             io='r'
         )
+
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor, loads the necessary json schemas for validations
+        """
+        super().__init__(*args, **kwargs)
+        self._schemas_by_type = {
+            'macvtap': [],
+            'osa': [],
+            'roce': [],
+        }
+        for schema in SystemIface.get_schema('attributes')['oneOf']:
+            if schema['title'].lower().startswith('macvtap'):
+                self._schemas_by_type['macvtap'].append(schema)
+            elif schema['title'].lower().startswith('osa '):
+                self._schemas_by_type['osa'].append(schema)
+            elif schema['title'].lower().startswith('roce '):
+                self._schemas_by_type['roce'].append(schema)
+    # __init__()
+
+    def _assert_attributes(self, properties, iface_obj):
+        """
+        Make sure the properties specified are match the iface type
+        """
+        # for an update action there are existing values
+        if iface_obj:
+            iface_type = iface_obj.type
+            iface_attr = iface_obj.attributes
+        # values from request
+        if 'type' in properties:
+            iface_type = properties['type']
+        if 'attributes' in properties:
+            iface_attr = properties['attributes']
+
+        try:
+            schemas = self._schemas_by_type[iface_type.lower()]
+        except KeyError:
+            msg = 'Invalid interface type {}'.format(iface_type)
+            raise BaseHttpError(400, msg=msg)
+
+        validated = False
+        for schema in schemas:
+            try:
+                validate(iface_attr, schema)
+            except ValidationError:
+                continue
+            validated = True
+            break
+        if not validated:
+            msg = 'Field "attributes" is not valid under any JSON schema'
+            raise BaseHttpError(400, msg=msg)
+    # _assert_attributes()
 
     def _verify_ip(self, properties, system_obj):
         """
@@ -267,6 +321,7 @@ class SystemIfaceResource(SecureResource):
         self._perman.can('UPDATE', flask_global.auth_user, target_system,
                          'system')
 
+        self._assert_attributes(properties, None)
         self._verify_mac(properties, None)
         self._verify_ip(properties, target_system)
 
@@ -385,14 +440,17 @@ class SystemIfaceResource(SecureResource):
         self._perman.can(
             'UPDATE', flask_global.auth_user, item.system_rel, 'system')
 
-        self._verify_mac(properties, item)
-        self._verify_ip(properties, item.system_rel)
-
-        # an iface cannot change its system so we only allow to set it on
-        # creation
+        # an iface cannot change its system or type as we only allow to set
+        # these on creation
         if 'system' in properties and properties['system'] != item.system:
             raise BaseHttpError(
                 422, msg='Interfaces cannot change their associated system')
+        elif 'type' in properties and properties['type'] != item.type:
+            raise BaseHttpError(422, msg='Interfaces cannot change their type')
+
+        self._assert_attributes(properties, item)
+        self._verify_mac(properties, item)
+        self._verify_ip(properties, item.system_rel)
 
         updated_item = self.manager.update(item, properties)
 

@@ -29,6 +29,7 @@ from tessia.cli.types import IPADDRESS
 from tessia.cli.types import LIBVIRT_XML
 from tessia.cli.types import MACADDRESS
 from tessia.cli.types import NAME
+from tessia.cli.types import ROCE_FID
 from tessia.cli.types import SUBNET
 from tessia.cli.types import QETH_GROUP, QETH_PORTNO
 from tessia.cli.utils import fetch_and_delete
@@ -60,6 +61,7 @@ ATTR_BY_TYPE = {
     'portno': 'OSA',
     'hostiface': 'MACVTAP',
     'libvirt': 'MACVTAP',
+    'fid': 'ROCE',
 }
 
 #
@@ -78,6 +80,7 @@ ATTR_BY_TYPE = {
               help="subnet of ip address to be assigned")
 @click.option('--ip', type=IPADDRESS,
               help="ip address to be assigned to interface")
+@click.option('--fid', type=ROCE_FID, help="function ID (ROCE only)")
 @click.option('--layer2', type=click.BOOL,
               help="enable layer2 mode (OSA only)")
 @click.option('--ccwgroup', type=QETH_GROUP, help="device channels (OSA only)")
@@ -149,6 +152,16 @@ def iface_add(**kwargs):
             raise click.ClickException(
                 'one of --hostiface or --libvirt must be specified, '
                 'but not both')
+    # ROCE (pci cards)
+    elif kwargs['type'] == 'ROCE':
+        try:
+            item.attributes['fid']
+        except KeyError:
+            raise click.ClickException(
+                'for ROCE cards --fid must be specified')
+        if not kwargs['mac_address']:
+            raise click.ClickException(
+                'for ROCE cards --mac must be specified')
     else:
         raise click.ClickException('invalid interface type (see iface-types)')
 
@@ -243,8 +256,6 @@ def iface_detach(system, profile, iface):
 @click.option('cur_name', '--name', required=True, type=NAME,
               help="interface name")
 @click.option('name', '--newname', type=NAME, help="new interface name")
-@click.option('--type', type=CONSTANT,
-              help="interface type (see iface-types)")
 @click.option('osname', '--devname', type=NAME,
               help="network device name in operating system (i.e. net0)")
 @click.option('mac_address', '--mac', help="mac address")
@@ -252,6 +263,7 @@ def iface_detach(system, profile, iface):
               help="subnet of ip address to be assigned")
 @click.option('--ip', help="ip address to be assigned to interface, "
                            "to unassign existing one use --ip= ")
+@click.option('--fid', type=ROCE_FID, help="function ID (ROCE only)")
 @click.option('--layer2', type=click.BOOL,
               help="enable layer2 mode (OSA only)")
 @click.option('--ccwgroup', type=QETH_GROUP,
@@ -273,10 +285,7 @@ def iface_edit(system, cur_name, **kwargs):
         'network interface not found.',
     )
     update_dict = {}
-    if kwargs['type'] is None:
-        iface_type = item.type
-    else:
-        iface_type = kwargs['type']
+    iface_type = item.type
 
     ip_addr = kwargs.pop('ip')
     subnet = kwargs.pop('subnet')
@@ -359,6 +368,12 @@ def iface_edit(system, cur_name, **kwargs):
                     raise click.ClickException(
                         'one of --hostiface or --libvirt must be present, '
                         'but not both')
+        elif iface_type == 'ROCE':
+            try:
+                update_dict['attributes']['fid']
+            except KeyError:
+                raise click.ClickException(
+                    'for ROCE cards --fid must be specified')
         else:
             raise click.ClickException(
                 'invalid interface type (see iface-types)')

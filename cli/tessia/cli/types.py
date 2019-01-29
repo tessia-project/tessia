@@ -600,6 +600,26 @@ class RequestState(click.ParamType):
 
 REQUEST_STATE = RequestState()
 
+class RoceFunctionId(click.ParamType):
+    """
+    Represents a function ID of a ROCE (pci) card.
+    """
+    name = 'FID'
+
+    def convert(self, value, param, ctx):
+        """
+        Validate that a string represents a hex number.
+        """
+        ret = re.match(r"^[a-f0-9]+$", value)
+        if ret is None:
+            self.fail(
+                '{} is not a valid function ID'.format(value), param, ctx)
+        return value.lstrip('0')
+    # convert()
+# RoceFunctionId
+
+ROCE_FID = RoceFunctionId()
+
 class ScsiWwid(click.ParamType):
     """
     Represents a SCSI's World Wide Identifier

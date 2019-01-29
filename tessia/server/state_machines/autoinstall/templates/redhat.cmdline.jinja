@@ -1,1 +1,17 @@
-ro ramdisk_size=50000 {% if config["system_type"] != "KVM" %}cio_ignore=all,!condev zfcp.allow_lun_scan=0 {%for iface in config['ifaces']%}rd.znet=qeth,{{iface['attributes']['ccwgroup']}},layer2={{1 if iface['attributes']['layer2'] else 0}},portno={{iface['attributes']['portno']}},portname={{iface['attributes']['portname']}} {% endfor %}{% endif %}inst.repo={{config['repos'][0]['url']}} ip={{config["gw_iface"]['ip']}}::{{config["gw_iface"]['gateway']}}:{{config["gw_iface"]['mask_bits']}}:{{config['hostname']}}:{{config["gw_iface"]['osname'] if config["system_type"] == "KVM" else config["gw_iface"]['systemd_osname']}}:none nameserver={{config["gw_iface"]['dns_1']}} inst.sshd {%if config["system_type"] == "KVM" %}{% for iface in config['ifaces']%}ifname={{iface['osname']}}:{{iface['mac_addr']}} {% endfor %}{% endif %}inst.ks={{config['autofile']}}
+{% macro ifaces_list(ifaces) -%}
+{% set iface_line = [] -%}
+{% for iface in ifaces -%}
+  {% if iface['type'] == 'OSA' -%}
+    {% if iface['attributes']['layer2'] -%}
+      {% set layer2 = "1" -%}
+    {% else -%}
+      {% set layer2 = "0" -%}
+    {% endif -%}
+    {% set _ = iface_line.append("rd.znet=qeth," + iface['attributes']['ccwgroup'] + ",layer2=" + layer2 + ",portno=" + iface['attributes']['portno'] + ",portname=" + iface['attributes']['portname']) -%}
+  {% else -%}
+    {% set _ = iface_line.append("ifname=" + iface['osname'] + ":" + iface['mac_addr']) -%}
+  {% endif -%}
+{%- endfor -%}
+{{ ' '.join(iface_line) }}
+{%- endmacro %}
+ro ramdisk_size=50000 {{ifaces_list(config['ifaces'])}} inst.repo={{config['repos'][0]['url']}} ip={{config["gw_iface"]['ip']}}::{{config["gw_iface"]['gateway']}}:{{config["gw_iface"]['mask_bits']}}:{{config['hostname']}}:{{config["gw_iface"]['osname'] if config["gw_iface"]["type"] != "OSA" else config["gw_iface"]['systemd_osname']}}:none nameserver={{config["gw_iface"]['dns_1']}} inst.sshd inst.ks={{config['autofile']}}

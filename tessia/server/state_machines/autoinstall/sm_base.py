@@ -551,7 +551,7 @@ class SmBase(metaclass=abc.ABCMeta):
                 template_content = template_file.read()
 
         template_obj = jinja2.Template(template_content)
-        kargs = template_obj.render(config=self._info)
+        kargs = template_obj.render(config=self._info).strip()
         self._logger.info('kernel cmdline for installer is: %s', kargs)
 
         self._platform.boot(kargs)

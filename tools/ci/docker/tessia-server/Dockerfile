@@ -36,6 +36,8 @@ RUN apt-get -q update > /dev/null && \
     libpq5 \
     # useful for administration tasks
     vim \
+    # required by ansible when using ssh connection plugin
+    sshpass openssh-client \
     # init-like daemon to manage our services' processes
     supervisor > /dev/null && \
     # clean the cache to free up space

@@ -161,7 +161,9 @@ $ apt-get install --no-install-recommends \
     libffi-dev python3-dev \
     libpq-dev \
     libpq5 \
-    s3270
+    s3270 \
+    sshpass \
+    openssh-client
 $ pip3 install -U pip setuptools
 ```
 

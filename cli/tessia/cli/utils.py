@@ -189,6 +189,11 @@ def size_to_str(size):
     Returns:
         str: formatted size with its unit
     """
+    # user set a flag to keep memory configuration unchanged: no need to
+    # compute size, just return
+    if size == 0:
+        return '0'
+
     units = ['MiB', 'GiB', 'TiB']
     max_units = len(units) - 1
 
@@ -231,6 +236,11 @@ def str_to_size(size_str):
         return int(size_str)
 
     size_str = size_str.upper()
+
+    # check if size is non-negative number
+    if size_str.startswith('-'):
+        raise ValueError(
+            'Invalid size format: {}'.format(size_str)) from None
 
     # decimal units are converted to bytes and then to mebibytes
     dec_units = ('KB', 'MB', 'GB', 'TB')

@@ -98,9 +98,9 @@ class SystemProfileResource(SecureResource):
         default = fields.Boolean(
             title=DESC['default'], description=DESC['default'])
         cpu = fields.Integer(
-            title=DESC['cpu'], description=DESC['cpu'])
-        memory = fields.PositiveInteger(
-            title=DESC['memory'], description=DESC['memory'])
+            title=DESC['cpu'], description=DESC['cpu'], minimum=0)
+        memory = fields.Integer(
+            title=DESC['memory'], description=DESC['memory'], minimum=0)
         parameters = fields.Object(
             title=DESC['parameters'], description=DESC['parameters'],
             nullable=True)
@@ -336,6 +336,12 @@ class SystemProfileResource(SecureResource):
             properties['hypervisor_profile'] = '{}/{}'.format(
                 target_system.hypervisor_rel.name, hyp_prof_name)
 
+        # there are no pre-defined configurations for KVM guests.
+        if target_system.type == 'KVM' and \
+                (properties['cpu'] == 0 or properties['memory'] == 0):
+            raise BaseHttpError(422, msg='For zVM guests number cpu and '
+                                         'memory must be greater than 0')
+
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,
         # just give the id and let the client decide if it needs more info (in
@@ -511,6 +517,12 @@ class SystemProfileResource(SecureResource):
             properties['hypervisor_profile'] = '{}/{}'.format(
                 item.system_rel.hypervisor_rel.name, hyp_prof_name)
 
+        # there are no pre-defined configurations for KVM guests.
+        if item.system_rel.type == 'KVM' and \
+                (properties.get('cpu') == 0 or properties.get('memory') == 0):
+            raise BaseHttpError(422, msg='For zVM guests number cpu '
+                                         'and memory must be greater than 0')
+
         updated_item = self.manager.update(item, properties)
 
         # don't waste resources building the object in the answer,
@@ -530,7 +542,6 @@ class SystemProfileResource(SecureResource):
         # validate existence and permissions
         svol, system = self._fetch_and_assert_item(
             StorageVolume, properties['unique_id'], 'volume_id', 'volume', id)
-
         # for a cpc system only one disk can be associated *per profile*
         # which is regarded as the disk containing the live image used
         # to netboot lpars.

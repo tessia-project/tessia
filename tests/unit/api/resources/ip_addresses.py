@@ -602,13 +602,28 @@ class TestIpAddress(TestSecureResource):
                 self.RESOURCE_MODEL.query.filter_by(id=ip_id).one().system,
                 sys_name, 'System was not assigned to ip')
 
-            # update ip withdraw system, user has permission to ip and
-            # system
+            # update ip re-assign to same system, iface associations are
+            # preserved
             # first associate to an interface
             iface_obj = models.SystemIface.query.filter_by(id=iface_id).one()
             iface_obj.ip_address = '{subnet}/{address}'.format(**orig_data)
             self.db.session.add(iface_obj)
             self.db.session.commit()
+            # perform request
+            data = {'id': ip_id, 'system': sys_name}
+            self._request_and_assert('update', '{}:a'.format(login), data)
+            self.assertEqual(
+                self.RESOURCE_MODEL.query.filter_by(id=ip_id).one().system,
+                sys_name, 'System was withdrawn from ip')
+            # validate that interface association was preserved
+            self.assertEqual(
+                len(models.SystemIface.query.filter_by(
+                    id=iface_id, ip_address_id=ip_id).all()),
+                1, 'Association was not preserved'
+            )
+
+            # update ip withdraw system, user has permission to ip and
+            # system
             data = {'id': ip_id, 'system': None}
             self._request_and_assert('update', '{}:a'.format(login), data)
             self.assertEqual(

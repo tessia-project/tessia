@@ -273,25 +273,21 @@ class IpAddressResource(SecureResource):
         Overriden method to perform sanity check on the address provided.
         See parent class for complete docstring.
         """
-        # cache the item's instance to avoid unnecessary queries on the db
-        cached_item = None
-
         if 'subnet' in properties:
             raise BaseHttpError(
                 422, msg='IP addresses cannot change their subnet')
 
+        ip_obj = self.manager.read(id)
+
         # address changed: verify if it's valid and fits subnet's range
         if 'address' in properties:
-            cached_item = self.manager.read(id)
             self._assert_address(properties['address'],
-                                 cached_item.subnet_rel.address)
+                                 ip_obj.subnet_rel.address)
 
         # system assignment changed: validate permissions and remove any
         # interfaces assigned
-        if 'system' in properties:
-            if not cached_item:
-                cached_item = self.manager.read(id)
-            self._assert_system(cached_item, properties['system'])
+        if 'system' in properties and properties['system'] != ip_obj.system:
+            self._assert_system(ip_obj, properties['system'])
 
             # remove existing system iface association
             ifaces = SystemIface.query.filter_by(ip_address_id=id).all()

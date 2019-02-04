@@ -20,11 +20,8 @@ Unit test for the sqlalchemy models module
 # IMPORTS
 #
 from datetime import datetime
-from sqlalchemy import event
-from sqlalchemy.dialects import postgresql
-from sqlalchemy.dialects.sqlite.base import SQLiteDialect
-from sqlalchemy.engine import Engine
-from sqlalchemy.ext.compiler import compiles
+from sqlalchemy import create_engine
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.orm import aliased
 from tessia.server.db.exceptions import AssociationError
 from tessia.server.db import connection
@@ -41,6 +38,7 @@ import json
 #
 # CONSTANTS AND DEFINITIONS
 #
+DEFAULT_TEST_DB = 'tessia_test'
 
 #
 # CODE
@@ -53,68 +51,55 @@ class DbUnit(object):
     SAMPLE_DATA = '{}/sample.json'.format(
         os.path.dirname(os.path.abspath(__file__)))
 
-    _prepared = False
-
-    @classmethod
-    def _adapt_sqlite(cls):
-        """
-        Do some monkey patching to allow the sa's models to work in a sqlite
-        database.
-        """
-        # the postgres dialect class defines this variable but it's always None
-        # and falls back to json lib, so we can do the same in sqlite
-        SQLiteDialect._json_serializer = None
-        SQLiteDialect._json_deserializer = None
-
-        # pylint: disable=unused-variable
-        # alternate sql statements for postgres specific types
-        @compiles(postgresql.JSONB, 'sqlite')
-        def compile_jsonb_sqlite(*args, **kwargs):
-            """Type for json objects"""
-            return "VARCHAR"
-        @compiles(postgresql.CIDR, 'sqlite')
-        def compile_cidr_sqlite(*args, **kwargs):
-            """Type for cidr addresses"""
-            return "VARCHAR"
-        @compiles(postgresql.INET, 'sqlite')
-        def compile_inet_sqlite(*args, **kwargs):
-            """Type for inet addresses"""
-            return "VARCHAR"
-        @compiles(postgresql.MACADDR, 'sqlite')
-        def compile_macaddr_sqlite(*args, **kwargs):
-            """Type for mac addresses"""
-            return "VARCHAR"
-
-        # sqlite does not like constraint naming with placeholders
-        models.NAME_CONVENTION.pop('ck', None)
-
-        @event.listens_for(Engine, "connect")
-        def set_sqlite_pragma(dbapi_connection, *args, **kwargs):
-            """Enable fk support"""
-            cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.close()
-    # _adapt_sqlite()
-
     @classmethod
     def _prepare(cls):
         """
-        Prepare the environment to work with the test database
+        Create the database in postgres
         """
-        db_url = os.environ.get('TESSIA_TEST_DB', 'sqlite://')
-        if db_url.startswith('sqlite:'):
-            cls._adapt_sqlite()
-        cls._prepared = True
+        db_url = os.environ.get('TESSIA_DB_TEST_URI')
+        if not db_url:
+            raise RuntimeError('env variable TESSIA_DB_TEST_URI not available')
+        db_url_obj = make_url(db_url)
+        if not db_url_obj.drivername.startswith('postgresql'):
+            raise RuntimeError('Only postgresql is supported as test database '
+                               '({} was set)'.format(db_url_obj.drivername))
+        if db_url_obj.database:
+            test_db = db_url_obj.database
+        else:
+            test_db = DEFAULT_TEST_DB
+
+        db_url_obj.database = 'postgres'
+        engine = create_engine(db_url_obj, isolation_level='AUTOCOMMIT')
+
+        # check whether db already exists
+        result = engine.execute("SELECT 1 FROM pg_database WHERE datname='{}'"
+                                .format(test_db))
+        db_exist = result.scalar()
+        result.close()
+        # db does not exist: try to create it
+        if not db_exist:
+            result = engine.execute(
+                "CREATE DATABASE {} ENCODING 'UTF8' LC_COLLATE 'en_US.utf8' "
+                "LC_CTYPE 'en_US.utf8' TEMPLATE template0".format(test_db))
+            result.close()
+
+        engine.dispose()
+        db_url_obj.database = test_db
+
+        # prepare the url for use by sqlalchemy
+        return str(db_url_obj)
     # _prepare()
 
     @classmethod
-    def _connect(cls):
+    def create_db(cls, empty=False):
         """
-        Establishes a new connection to the database. If in-memory database is
-        in use this means any existing database will be erased a new one will
-        be created.
+        Initialize the test database.
         """
-        db_url = os.environ.get('TESSIA_TEST_DB', 'sqlite://')
+        # connection already opened: close it
+        if connection.MANAGER._conn:
+            connection.MANAGER.session.remove()
+            connection.MANAGER.engine.dispose()
+        db_url = cls._prepare()
 
         # create a mock config to point to our test db url
         patcher = patch.object(connection, 'CONF', autospec=True)
@@ -138,18 +123,9 @@ class DbUnit(object):
 
         # store the references to be used later
         cls._db_insert = db_insert
-    # _connect()
 
-    @classmethod
-    def create_db(cls, empty=False):
-        """
-        Initialize the test database.
-        """
-        if not cls._prepared:
-            cls._prepare()
-        cls._connect()
-
-        # create and pre-populate the database
+        # reset, create and pre-populate the database
+        models.BASE.metadata.drop_all(connection.MANAGER.engine)
         models.BASE.metadata.create_all(connection.MANAGER.engine)
         types.create_all()
 
@@ -177,8 +153,7 @@ class DbUnit(object):
         """
         Drop the test database.
         """
-        if cls._prepared:
-            models.BASE.metadata.drop_all(connection.MANAGER.engine)
+        models.BASE.metadata.drop_all(connection.MANAGER.engine)
     # drop_db()
 # DbUnit
 

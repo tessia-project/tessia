@@ -815,8 +815,15 @@ class TestSmBase(TestCase):
             ],
             "type": "msdos"
         }
-        first_disk = profile_obj.storage_volumes_rel[0]
-        with self._mock_db_obj(first_disk, 'part_table', mock_table):
+        root_disk = None
+        for disk in profile_obj.storage_volumes_rel:
+            for part in disk.part_table['table']:
+                if part['mp'] == '/':
+                    root_disk = disk
+                    break
+        if not root_disk:
+            raise ValueError('Could not find root disk for test')
+        with self._mock_db_obj(root_disk, 'part_table', mock_table):
             mach = self._create_sm(
                 self._child_cls, "rhel7.2", "CPC3LP55/default_CPC3LP55",
                 "rhel7-default")

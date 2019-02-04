@@ -107,12 +107,14 @@ def build(images, tag, quiet):
 # build()
 
 @click.command('cleanup')
-@click.option('tag', '--tag', help='docker tag to locate images')
-def cleanup(tag):
+@click.option('tag', '--tag', help='docker tag to locate images/containers')
+@click.option('--keepimg', is_flag=True, default=False,
+              help='do not delete images')
+def cleanup(tag, keepimg):
     """
     execute the cleanup stage
     """
-    manager = Manager('cleanup', tag)
+    manager = Manager('cleanup', tag, keepimg=keepimg)
     manager.run()
 # cleanup()
 
@@ -130,14 +132,24 @@ def cleanup(tag):
     'install_server_hostname', '--install-server-hostname',
     help='custom hostname/ip to use as install server (when detected fqdn is '
          'not reachable by installed systems)')
-def clitest(tag, field_tests, img_passwd_file, install_server_hostname):
+@click.option(
+    'custom_cli_subnet', '--custom-cli-subnet',
+    help='custom subnet for network between cli and server docker container'
+         ' e.g. 172.28.0.0/16')
+@click.option(
+    'custom_db_subnet', '--custom-db-subnet',
+    help='custom subnet for network between server and db docker container'
+         ' e.g. 172.29.0.0/16')
+def clitest(tag, field_tests, img_passwd_file, install_server_hostname,
+            custom_cli_subnet, custom_db_subnet):
     """
     execute the client integration tests
     """
     manager = Manager(
         'clitest', tag, field_tests=field_tests,
         img_passwd_file=img_passwd_file,
-        install_server_hostname=install_server_hostname)
+        install_server_hostname=install_server_hostname,
+        custom_cli_subnet=custom_cli_subnet, custom_db_subnet=custom_db_subnet)
     manager.run()
 # clitest()
 
@@ -213,14 +225,24 @@ def push(images, tag, registry):
 # push()
 
 @click.command('unittest')
-@click.option('images', '--image', multiple=True,
-              help='name of image to test (if not specified tests all)')
 @click.option('tag', '--tag', help='docker tag to locate images')
-def unittest(images, tag):
+@click.option('--path', default=None, help='optional path to unit test')
+@click.option(
+    'custom_cli_subnet', '--custom-cli-subnet',
+    help='custom subnet for network between cli and server docker container'
+         ' e.g. 172.28.0.0/16')
+@click.option(
+    'custom_db_subnet', '--custom-db-subnet',
+    help='custom subnet for network between server and db docker container'
+         ' e.g. 172.29.0.0/16')
+def unittest(tag, path, custom_cli_subnet, custom_db_subnet):
     """
     execute unit test on docker images
     """
-    manager = Manager('unittest', tag, images=images)
+    manager = Manager(
+        'unittest', tag, images=['server'],
+        custom_cli_subnet=custom_cli_subnet, custom_db_subnet=custom_db_subnet,
+        unittest_path=path)
     manager.run()
 # unittest()
 

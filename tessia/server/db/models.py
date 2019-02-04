@@ -1062,11 +1062,13 @@ class SystemProfile(CommonMixin, SchemaMixin, BASE):
 
     # storage volume relationship section
     storage_volumes_rel = relationship(
-        'StorageVolume', uselist=True, secondary='profiles_storage_volumes')
+        'StorageVolume', uselist=True, secondary='profiles_storage_volumes',
+        order_by="StorageVolumeProfileAssociation.volume_id")
 
     # system iface relationship section
     system_ifaces_rel = relationship(
-        'SystemIface', uselist=True, secondary='profiles_system_ifaces')
+        'SystemIface', uselist=True, secondary='profiles_system_ifaces',
+        order_by="SystemIfaceProfileAssociation.iface_id")
 
     # system relationship section
     system_rel = relationship(
@@ -1318,6 +1320,8 @@ class SystemIface(CommonMixin, SchemaMixin, BASE):
             return
         try:
             subnet_name, ip_address = value.split('/', 1)
+            # make sure ip address is in valid format
+            ipaddress.ip_address(ip_address)
         except ValueError:
             raise AssociationError(
                 self.__class__, 'ip_address', IpAddress, 'address', value)

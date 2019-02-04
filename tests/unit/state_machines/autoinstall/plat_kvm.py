@@ -131,6 +131,7 @@ class TestPlatKvm(TestCase):
         # Here we used specifc test cases, since we know the content
         # ot the database.
         devpaths = [
+            # 0001 comes later because it already has a libvirt definition
             "/dev/disk/by-path/ccw-0.0.0002",
             "/dev/disk/by-path/ccw-0.0.0001",
             "/dev/disk/by-path/ccw-0.0.0003",

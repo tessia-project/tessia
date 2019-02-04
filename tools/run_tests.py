@@ -21,6 +21,8 @@ Wrapper script to execute coverage on unit tests
 # IMPORTS
 #
 from tempfile import NamedTemporaryFile
+from tessia.server.config import CONF
+
 import os
 import subprocess
 import sys
@@ -95,6 +97,13 @@ def main():
 
     # display report
     cmds.append(CMD_COVERAGE_REPORT)
+
+    if not os.environ.get('TESSIA_DB_TEST_URI'):
+        try:
+            test_db_url = CONF.get_config()['db']['test_url']
+            os.environ['TESSIA_DB_TEST_URI'] = test_db_url
+        except KeyError:
+            pass
 
     # given that many modules can use the config module it's possible that some
     # tests fail to appropriately mock all the necessary modules which will

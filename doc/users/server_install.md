@@ -97,7 +97,7 @@ The first step is to have a postgres database available, see the next section ho
 
 # create a user, a database and appropriate permissions
 [root@host ~]# runuser -u postgres -- createuser tessia
-[root@host ~]# runuser -u postgres -- createdb -E UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8 tessia
+[root@host ~]# runuser -u postgres -- createdb -E UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8 --template=template0 tessia
 [root@host ~]# runuser -u postgres -- psql tessia -c 'ALTER DATABASE tessia OWNER TO tessia'
 [root@host ~]# runuser -u postgres -- psql tessia -c "ALTER ROLE tessia WITH PASSWORD 'pass4tessia';"
 

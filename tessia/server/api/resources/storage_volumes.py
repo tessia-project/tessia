@@ -22,7 +22,8 @@ Resource definition
 from flask import g as flask_global
 from flask_potion import fields
 from flask_potion.contrib.alchemy.fields import InlineModel
-from flask_potion.instances import Pagination
+from flask_potion.instances import Instances, Pagination
+from flask_potion.routes import Route
 from tessia.server.api.exceptions import BaseHttpError, ItemNotFoundError
 from tessia.server.api.resources.secure_resource import SecureResource
 from tessia.server.db.models import StorageVolume
@@ -31,6 +32,8 @@ from tessia.server.db.models import StorageServer
 from tessia.server.db.models import System
 from tessia.server.db.models import SystemProfile
 
+import csv
+import io
 import re
 
 #
@@ -54,6 +57,11 @@ DESC = {
     'project': 'Project',
     'owner': 'Owner',
 }
+
+FIELDS_CSV = (
+    'SERVER', 'VOLUME_ID', 'TYPE', 'SIZE', 'SYSTEM', 'FCP_PATHS', 'WWID',
+    'OWNER', 'PROJECT', 'DESC'
+)
 
 HPAV_PATTERN = re.compile(r"^[a-f0-9]{4}$")
 
@@ -368,6 +376,65 @@ class StorageVolumeResource(SecureResource):
         self._perman.can('UPDATE', flask_global.auth_user, system_obj,
                          'system')
     # _assert_system()
+
+    @Route.GET('/bulk', rel='bulk')
+    def bulk(self, **kwargs):
+        """
+        Bulk export operation
+        """
+        result = io.StringIO()
+        csv_writer = csv.writer(result, quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(FIELDS_CSV)
+
+        for entry in self.manager.instances(kwargs.get('where'),
+                                            kwargs.get('sort')):
+            try:
+                self._perman.can(
+                    'READ', flask_global.auth_user, entry)
+            except PermissionError:
+                continue
+
+            if entry.type != 'FCP':
+                entry.fcp_paths = None
+                entry.wwid = None
+            else:
+                fcp_paths = []
+                for adapter in entry.specs.get('adapters', []):
+                    fcp_path = '{}('.format(
+                        adapter['devno'].replace('0.0.', ''))
+                    fcp_path += ','.join(adapter['wwpns'])
+                    fcp_path += ')'
+                    fcp_paths.append(fcp_path)
+                entry.fcp_paths = ' '.join(fcp_paths)
+                entry.wwid = entry.specs.get('wwid')
+
+            csv_writer.writerow(
+                [getattr(entry, attr.lower()) for attr in FIELDS_CSV])
+
+        result.seek(0)
+        return result.read()
+    # bulk()
+    bulk.request_schema = Instances()
+    bulk.response_schema = fields.String(
+        title="result output", description="content in csv format")
+
+    @Route.GET('/schema', rel="describedBy", attribute="schema")
+    def described_by(self, *args, **kwargs):
+        schema, http_code, content_type = super().described_by(*args, **kwargs)
+        # we don't want to advertise pagination for the bulk endpoint
+        link_found = False
+        for link in schema['links']:
+            if link['rel'] == 'bulk':
+                link_found = True
+                link['schema']['properties'].pop('page')
+                link['schema']['properties'].pop('per_page')
+                break
+        if not link_found:
+            raise SystemError(
+                'JSON schema for endpoint /{}/bulk not found'
+                .format(self.Meta.name))
+        return schema, http_code, content_type
+    # described_by()
 
     def do_create(self, properties):
         """

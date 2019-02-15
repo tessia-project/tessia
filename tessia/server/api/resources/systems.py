@@ -19,12 +19,19 @@ Resource definition
 #
 # IMPORTS
 #
+from flask import g as flask_global
 from flask_potion import fields
+from flask_potion.instances import Instances
+from flask_potion.routes import Route
+from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
 from tessia.server.api.exceptions import BaseHttpError
 from tessia.server.api.exceptions import ItemNotFoundError
 from tessia.server.api.resources.secure_resource import NAME_PATTERN
 from tessia.server.api.resources.secure_resource import SecureResource
-from tessia.server.db.models import System
+from tessia.server.db.models import System, SystemProfile, SystemIface
+
+import csv
+import io
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -51,6 +58,11 @@ GUEST_HYP_MATCHES = {
 }
 
 MSG_BAD_COMBO = 'Invalid guest/hypervisor combination'
+
+FIELDS_CSV = (
+    'HYPERVISOR', 'NAME', 'TYPE', 'HOSTNAME', 'IP', 'IFACE', 'LAYER2',
+    'PORTNO', 'OWNER', 'PROJECT', 'STATE', 'DESC'
+)
 
 #
 # CODE
@@ -158,6 +170,98 @@ class SystemResource(SecureResource):
 
         return super().do_create(properties)
     # do_create()
+
+    @Route.GET('/schema', rel="describedBy", attribute="schema")
+    def described_by(self, *args, **kwargs):
+        schema, http_code, content_type = super().described_by(*args, **kwargs)
+        # we don't want to advertise pagination for the bulk endpoint
+        link_found = False
+        for link in schema['links']:
+            if link['rel'] == 'bulk':
+                link_found = True
+                link['schema']['properties'].pop('page')
+                link['schema']['properties'].pop('per_page')
+                break
+        if not link_found:
+            raise SystemError(
+                'JSON schema for endpoint /{}/bulk not found'
+                .format(self.Meta.name))
+        return schema, http_code, content_type
+    # described_by()
+
+    @Route.GET('/bulk', rel='bulk')
+    def bulk(self, **kwargs):
+        """
+        Bulk export operation
+        """
+        result = io.StringIO()
+        csv_writer = csv.writer(result, quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(FIELDS_CSV)
+
+        # we need to include information about network interfaces
+        for entry in self.manager.instances(kwargs.get('where'),
+                                            kwargs.get('sort')):
+            try:
+                self._perman.can(
+                    'READ', flask_global.auth_user, entry)
+            except PermissionError:
+                continue
+
+            entry.ip = None
+            entry.iface = None
+            entry.layer2 = None
+            entry.portno = None
+
+            # retrieve main network interface and ip
+            try:
+                # use the default profile as hint for the gateway iface
+                gw_iface_hint = SystemProfile.query.filter_by(
+                    system_id=entry.id, default=True
+                ).one().gateway
+                if gw_iface_hint:
+                    gw_iface = SystemIface.query.filter_by(
+                        system_id=entry.id, name=gw_iface_hint
+                    ).one()
+                else:
+                    gw_iface = None
+            except (MultipleResultsFound, NoResultFound):
+                gw_iface = None
+
+            # no gateway interface defined: use first one with ip assigned
+            if not gw_iface:
+                ifaces = SystemIface.query.filter_by(system_id=entry.id).all()
+                # no interfaces available: nothing else to do
+                if not ifaces:
+                    continue
+                for iface in ifaces:
+                    if iface.ip_address:
+                        gw_iface = iface
+                        break
+                # no iface with ip found: use first available
+                if not gw_iface:
+                    gw_iface = ifaces[0]
+
+            if gw_iface.type.lower() == 'osa':
+                entry.iface = gw_iface.attributes.get(
+                    'ccwgroup', '').replace('0.0.', '')
+                entry.layer2 = {False: '0', True: '1'}[
+                    gw_iface.attributes.get('layer2', False)]
+                entry.portno = gw_iface.attributes.get('portno', 0)
+            else:
+                entry.iface = gw_iface.mac_address
+
+            if gw_iface.ip_address:
+                entry.ip = gw_iface.ip_address.split('/', 1)[-1]
+
+            csv_writer.writerow(
+                [getattr(entry, attr.lower()) for attr in FIELDS_CSV])
+
+        result.seek(0)
+        return result.read()
+    # bulk()
+    bulk.request_schema = Instances()
+    bulk.response_schema = fields.String(
+        title="result output", description="content in CSV format")
 
     def do_update(self, properties, id):
         """

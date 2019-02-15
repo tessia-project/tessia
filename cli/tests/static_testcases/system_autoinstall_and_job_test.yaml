@@ -128,6 +128,8 @@ tasks:
       - 'Failed to establish a new connection'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity
       - '--verbosity option requires an argument'
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity=
+      - 'Invalid value for "--verbosity": value may not be empty'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity Critical
       - 'Failed to establish a new connection'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity ERROR
@@ -237,6 +239,8 @@ tasks:
       - 'No results were found.'
     - - job list --state
       - '--state option requires an argument'
+    - - job list --state=''
+      - 'Invalid value for "--state": value may not be empty'
     - - job list --state=xxxx
       - 'Invalid value for "--state": job state must be one of: canceled, cleaningup, completed, failed, running, waiting'
     - - job list --state=FAILED
@@ -301,6 +305,8 @@ tasks:
       - 'No results were found.'
     - - job req-list --state
       - '--state option requires an argument'
+    - - job req-list --state=''
+      - 'Invalid value for "--state": value may not be empty'
     - - job req-list --state=xxxx
       - 'Invalid value for "--state": request state must be one of: completed, failed, pending'
     - - job req-list --state=COMPLETED

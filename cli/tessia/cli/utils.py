@@ -307,6 +307,36 @@ def version_verify(logger, response):
 
 # version_verify()
 
+def submit_csv_job(client, ctx, commit, file_content, verbosity, force,
+                   resource_type):
+    """
+    submit a job for importing data in CSV format
+    """
+    params = {'resource_type': resource_type, 'content': file_content.read()}
+    if commit:
+        if not force:
+            msg = ('warning: this operation affects multiple entries, are you '
+                   'sure you want to proceed?')
+            click.confirm(msg, abort=True, err=True)
+        params['commit'] = commit
+    if verbosity:
+        params['verbosity'] = verbosity
+    request = {'action_type': 'SUBMIT', 'job_type': 'bulkop',
+               'parameters': json.dumps(params)}
+
+    job_id = wait_scheduler(client, request)
+    try:
+        wait_job_exec(client, job_id)
+        ctx.invoke(ctx.obj['OUTPUT'], job_id=job_id)
+    except KeyboardInterrupt:
+        cancel_job = click.confirm('\nDo you want to cancel the job?')
+        if not cancel_job:
+            click.echo('warning: job is still running, remember to cancel it '
+                       'if you want to submit a new action for this system')
+            raise
+        ctx.invoke(ctx.obj['CANCEL'], job_id=job_id)
+# submit_csv_job()
+
 def wait_job_exec(client, job_id):
     """
     Wait until job starts to execute.

@@ -34,17 +34,38 @@ Here's a step by step description of how the machine works:
 - User submits a job providing the necessary parameters, as the following example:
 
 ```yaml
+# !!! optional parameters are marked with ("optional") !!!
+
 # the source could also be http:// or tarball files (i.e. url ending with .tgz)
 source: git://myhost.example.com/atc_do_something.git
 
 # this is the ansible playbook to execute, it has to be present in the repository
 playbook: memory_stress.yaml
 
+# global variables which overwrite the role defaults ("optional")
+vars:
+  run_cleanup: true
+
+# define variables for groups, overwritten by playbook group_vars ("optional")
+groups:
+  # at least one group, rest is ("optional")
+  postgres-servers:
+    vars:
+      postgres_version: 10.6
+  # same as the global variables, overwrites global variables
+  all:
+    vars:
+      run_cleanup: false
+  # affects all systems which are only in group 'all' (zvm10 in this case)
+  ungrouped:
+    vars:
+      run_check: true
+
 # a mapping between tessia systems and the ansible groups they belong to
 systems:
-  # system name in tessia
+  # system name in tessia, at least one, rest is ("optional")
   - name: lpar15
-    # optional activation profile, if not specified default is used
+    # activation profile, if not specified default is used ("optional")
     profile: smt_active
     # ansible groups, the names must match those on the playbook
     groups:
@@ -54,6 +75,12 @@ systems:
   - name: kvm50
     groups:
       - superbench-workers
+    # system specific variables, overwritten by playbook host_vars ("optional")
+    vars:
+      threads: 42
+  - name: zvm10
+    groups:
+      - all
 ```
 - Job is started by the scheduler: a new process is spawned and the machine execution starts
 - Machine downloads the ansible repository from the specified source url

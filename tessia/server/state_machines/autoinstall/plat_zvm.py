@@ -109,6 +109,8 @@ class PlatZvm(PlatBase):
         result = {'type': vol_entry.type_rel.name.lower()}
         if result['type'] != 'fcp':
             result['devno'] = vol_entry.volume_id.split('.')[-1]
+            if result['type'] == 'hpav':
+                result['type'] = 'dasd'
             return result
 
         result['adapters'] = deepcopy(vol_entry.specs['adapters'])
@@ -171,7 +173,7 @@ class PlatZvm(PlatBase):
         Raises:
             RuntimeError: in case the volume type is unknown
         """
-        if vol_obj.type == 'DASD':
+        if vol_obj.type in ('DASD', 'HPAV'):
             vol_id = vol_obj.volume_id
             if vol_id.find('.') < 0:
                 vol_id = '0.0.' + vol_id
@@ -185,6 +187,6 @@ class PlatZvm(PlatBase):
             return prefix.format(vol_obj.specs['wwid'])
 
         raise RuntimeError(
-            "Unknown volume type'{}'".format(vol_obj.type))
+            "Unknown volume type '{}'".format(vol_obj.type))
     # get_vol_devpath()
 # PlatZvm

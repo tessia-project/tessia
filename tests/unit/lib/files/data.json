@@ -105,6 +105,36 @@
             "desc": null,
             "modifier": "admin",
             "owner": "admin",
+            "part_table": null,
+            "pool": null,
+            "project": "Admins",
+            "server": "ds8k16",
+            "size": 0,
+            "specs": {},
+            "system": "cpc3lp52",
+            "system_attributes": {},
+            "type": "HPAV",
+            "volume_id": "3999"
+        },
+        {
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": null,
+            "pool": null,
+            "project": "Admins",
+            "server": "ds8k16",
+            "size": 0,
+            "specs": {},
+            "system": "cpc3lp52",
+            "system_attributes": {},
+            "type": "HPAV",
+            "volume_id": "399a"
+        },
+        {
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
             "part_table": {
               "table": [
                 {
@@ -223,6 +253,14 @@
         {
             "profile": "cpc3lp52/dasd1",
             "volume": "ds8k16/3957"
+        },
+        {
+            "profile": "cpc3lp52/dasd1",
+            "volume": "ds8k16/3999"
+        },
+        {
+            "profile": "cpc3lp52/dasd1",
+            "volume": "ds8k16/399a"
         }
     ],
     "System": [

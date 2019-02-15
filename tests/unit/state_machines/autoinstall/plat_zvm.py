@@ -97,7 +97,20 @@ class TestPlatZvm(TestCase):
         self.assertEqual(args[1], cpu)
         self.assertEqual(args[2], memory)
         self.assertIn('ifaces', args[3])
-        self.assertIn('storage_volumes', args[3])
+
+        # verify if volumes were correctly provided
+        for svol in self._prof_entry.storage_volumes_rel:
+            if svol.type in ('DASD', 'HPAV'):
+                check = {'devno': svol.volume_id.lstrip('0.0.'),
+                         'type': 'dasd'}
+                self.assertIn(check, args[3]['storage_volumes'])
+            elif svol.type == 'FCP':
+                check = {'adapters': svol.specs.get('adapters', []),
+                         'type': 'fcp', 'lun': svol.volume_id}
+                self.assertIn(check, args[3]['storage_volumes'])
+            else:
+                raise ValueError('Unexpected volume type {}'.format(svol.type))
+
         self.assertIn('netboot', args[3])
         self.assertIn('kernel_uri', args[3]['netboot'])
         self.assertIn('initrd_uri', args[3]['netboot'])
@@ -113,6 +126,7 @@ class TestPlatZvm(TestCase):
         # validate according to the database content
         devpaths = [
             "/dev/disk/by-path/ccw-0.0.3963",
+            "/dev/disk/by-path/ccw-0.0.3964",
             "/dev/disk/by-id/dm-uuid-mpath-11002076305aac1a0000000000002002",
             "/dev/disk/by-id/scsi-11002076305aac1a0000000000002003",
         ]

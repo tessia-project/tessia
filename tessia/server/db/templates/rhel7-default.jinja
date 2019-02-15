@@ -8,6 +8,16 @@
 {{ dev_list | join(',') }}
 {% endmacro -%}
 
+{%- macro list_real_devs(vols) -%}
+{% set dev_list = [] -%}
+{% for vol in vols -%}
+  {%- if vol["type"] != "HPAV" -%}
+    {% set _ = dev_list.append(vol["system_attributes"]["device"].replace('/dev/', '')) -%}
+  {% endif -%}
+{% endfor -%}
+{{ dev_list | join(',') }}
+{% endmacro -%}
+
 # System authorization information
 auth --enableshadow --passalgo=sha512
 sshpw --username=root {{config["sha512rootpwd"]}} --iscrypted
@@ -49,7 +59,7 @@ zfcp --devnum={{adapter['devno'].replace('0.0.', '')}} --wwpn={{wwpn}} --fcplun=
 {% endif -%}
 
 # Partition clearing information
-ignoredisk --only-use={{(config["svols"]|map(attribute="system_attributes")|map(attribute="device")|join(",")).replace('/dev/', '')}}
+ignoredisk --only-use={{list_real_devs(config["svols"])}}
 clearpart --initlabel --all --drives={{list_devs_with_ptable(config["svols"])}}
 {% for volume in config["svols"] %}
 {% if volume["is_root"] %}
@@ -102,6 +112,8 @@ done
 grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{ volume['volume_id'] }}/status && \
 /sbin/dasdfmt -y -d cdl -b 4096 {{ volume["system_attributes"]["device"] }}
       {% endif -%}
+    {% elif volume['type'] == 'HPAV' -%}
+cio_ignore -r {{ volume['volume_id'] }}; chccwdev -e {{ volume['volume_id'] }}
     {% endif -%}
   {% endfor -%}
 %end

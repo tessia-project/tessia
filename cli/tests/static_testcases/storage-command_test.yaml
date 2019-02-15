@@ -237,9 +237,9 @@ tasks:
     - - storage vol-add --server=DS8K16
       - Missing option "--id".
     - - storage vol-add --server=DS8K16 --id=3951
-      - Missing option "--size".
-    - - storage vol-add --server=DS8K16 --id=3951 --size=7gb
       - Missing option "--type".
+    - - storage vol-add --server=DS8K16 --id=3951 --type=DASD
+      - Missing option "--size".
     - - storage vol-add --server= --id=3951 --size=7gb --type=DASD
       - "request failed. Server answered: No associated item found with value '' for field 'Storage server'"
     - - storage vol-add --server=DS8K16 --id= --size=7gb --type=DASD
@@ -254,7 +254,7 @@ tasks:
       - 'Error: request failed. Server answered: An item with the provided value'
     - - storage vol-add --server=DS8K16 --id=ED51 --size=7gb --type=DASD
       - Item added successfully.
-        # vol-add: wrong size
+    # vol-add: wrong size
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7g --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - 'Error: Invalid value for "--size": 7g is not a valid size'
     - - storage vol-add --server=DS8K16 --type=DASD --id=#3952 --size=7gb --owner= --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
@@ -278,6 +278,13 @@ tasks:
     - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc=
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR' --system=lpar69
+      - Item added successfully.
+    # vol-add subcommand for HPAV
+    - - storage vol-add --server=DS8K16 --id=ED52 --size=7gb --type=HPAV
+      - 'Error: HPAV type does not support --size'
+    - - storage vol-add --server=DS8K16 --id=XXXX --type=HPAV
+      - 'Error: Invalid value: xxxx is not a valid devno'
+    - - storage vol-add --server=DS8K16 --id=ED52 --type=HPAV
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT'
       - 'both --path and --wwid must be specified'
@@ -438,6 +445,11 @@ tasks:
       - 'Volume id                  : 3952'
     - - storage vol-edit --server=DS8K16 --id=3955 --login=lab_admin@example.com
       - 'no such option: --login'
+    # 'storage vol-edit' subcommand for HPAV
+    - - storage vol-edit --server=DS8K16 --id=ED52 --size=7gb
+      - 'Error: HPAV type does not support --size'
+    - - storage vol-edit --server=DS8K16 --id=ED52 --newid=XXXX
+      - 'Error: Invalid value: xxxx is not a valid devno'
     # 'storage vol-edit' subcommand for FCP
     - - storage vol-edit --server=DS8K16 --id=1022400200000000 --type=DASD
       - 'no such option: --type'

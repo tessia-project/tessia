@@ -129,8 +129,8 @@ tasks:
         - 123456789abcdef
         # not found, want to create? this time yes
         - y
-        # volume type, 2- FCP-SCSI
-        - "2"
+        # volume type, 3- FCP-SCSI
+        - "3"
         # which storage server to use?
         - "1"
         # volume size? test default in mib

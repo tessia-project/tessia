@@ -25,7 +25,7 @@ from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
 from tessia.cli.output import PrintMode
-from tessia.cli.types import CustomIntRange, FCP_PATH, MIB_SIZE, NAME, \
+from tessia.cli.types import CustomIntRange, DEVNO, FCP_PATH, MIB_SIZE, NAME, \
     SCSI_WWID, VOLUME_ID
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_item
@@ -321,7 +321,7 @@ def part_list(server, volume_id):
 @click.option('--server', required=True, help='target storage server')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help='volume id')
-@click.option('--size', required=True, type=MIB_SIZE, help=SIZE_HELP)
+@click.option('--size', type=MIB_SIZE, help=SIZE_HELP)
 @click.option('--type', required=True, help="volume type (see vol-types)")
 @click.option('--system', type=NAME, help="assign volume to this system")
 @click.option('--owner', help="owner login")
@@ -376,6 +376,14 @@ def vol_add(**kwargs):
 
         else:
             setattr(item, key, value)
+
+    if item['type'] == 'HPAV':
+        item['volume_id'] = DEVNO.convert(kwargs['volume_id'], None, None)
+        if 'size' in item:
+            raise click.ClickException('HPAV type does not support --size')
+        item['size'] = 0
+    elif not 'size' in item:
+        raise click.UsageError('Missing option "--size".')
 
     # check the availability of required FCP parameters
     if item['type'] == 'FCP':
@@ -532,6 +540,13 @@ def vol_edit(server, cur_id, **kwargs):
         # normal arg: just add to the dict
         else:
             update_dict[key] = value
+
+    if item['type'] == 'HPAV':
+        if 'size' in update_dict:
+            raise click.ClickException('HPAV type does not support --size')
+        if 'volume_id' in update_dict:
+            update_dict['volume_id'] = DEVNO.convert(
+                update_dict['volume_id'], None, None)
 
     if not update_dict:
         raise click.ClickException('no update criteria provided.')

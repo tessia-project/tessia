@@ -39,7 +39,7 @@
 {%- endmacro -%}
 
 {%- macro enable_storage_device(svol) -%}
-{%- if svol['type'] == 'DASD' -%}
+{%- if svol['type'] in ('DASD', 'HPAV') -%}
     chzdev -e --base /etc=/target/etc dasd {{svol['volume_id']}} ; \
 {% elif svol['type'] == 'FCP' -%}
     {% for adapter in svol['specs']['adapters'] -%}

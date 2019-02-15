@@ -35,6 +35,7 @@ import multiprocessing
 import os
 import signal
 import time
+import yaml
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -288,6 +289,34 @@ class Looper(object):
             self._session.commit()
             return
 
+        # very special case: this machine type needs to know the job requester
+        # so we inject it here. It's not nice to have an exception like this
+        # but the alternative is to provide the job id which is not better
+        # because we have to pass it all along the chain (spawner, wrapper,
+        # then machine class) and we create a dependency between the machines
+        # and the scheduler table.
+        if self._machines[request.job_type].__name__ == 'BulkOperatorMachine':
+            try:
+                obj_params = yaml.safe_load(request.parameters)
+            except Exception as exc:
+                msg = "Invalid request parameters: {}".format(str(exc))
+                request.state = SchedulerRequest.STATE_FAILED
+                request.result = msg
+                self._session.commit()
+            try:
+                obj_params['requester'] = request.requester
+                request.parameters = yaml.dump(
+                    obj_params, default_flow_style=False)
+                self._session.commit()
+            except Exception as exc:
+                self._session.rollback()
+                msg = 'Failed to include request in job parameters'
+                self._logger.warning(msg, exc_info=True)
+                request.state = SchedulerRequest.STATE_FAILED
+                request.result = msg
+                self._session.commit()
+                return
+
         # call the parser to define:
         # 1- resources to be used by this state machine
         # 2- job description
@@ -305,6 +334,8 @@ class Looper(object):
                 'Parsing of parameters failed with: {}'.format(str(exc)))
             self._session.commit()
             return
+        if not description:
+            description = 'No description'
 
         if not self._resources_man.validate_resources(resources):
             request.state = SchedulerRequest.STATE_FAILED

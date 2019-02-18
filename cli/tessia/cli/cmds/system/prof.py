@@ -60,9 +60,9 @@ ZVM_PROMPT = 'z/VM password'
 @click.command(name='prof-add')
 @click.option('--system', required=True, type=NAME, help='target system')
 @click.option('--name', required=True, type=NAME, help="profile name")
-@click.option('--cpu', default=1, type=CustomIntRange(min=1),
+@click.option('--cpu', default=0, type=CustomIntRange(min=0),
               help="number of cpus")
-@click.option('--memory', default='1gib', type=MIB_SIZE, help=MEM_HELP)
+@click.option('--memory', default='0', type=MIB_SIZE, help=MEM_HELP)
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('hypervisor_profile', '--hyp', type=NAME,
               help="hypervisor profile required for activation")
@@ -146,7 +146,7 @@ def prof_del(**kwargs):
               help="profile name")
 @click.option('name', '--newname', type=NAME,
               help="new name (i.e. new-profile-name)")
-@click.option('--cpu', type=CustomIntRange(min=1), help="number of cpus")
+@click.option('--cpu', type=CustomIntRange(min=0), help="number of cpus")
 @click.option('--memory', type=MIB_SIZE, help=MEM_HELP)
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('--gateway', help='name of interface to use as gateway')
@@ -225,7 +225,7 @@ def prof_edit(system, cur_name, **kwargs):
               is_flag=True, default=False)
 @click.option('--system', required=True, type=NAME, help="the system to list")
 @click.option('--name', type=NAME, help="filter by profile-name")
-@click.option('--cpu', type=CustomIntRange(min=1),
+@click.option('--cpu', type=CustomIntRange(min=0),
               help="filter by specified number of cpus")
 @click.option('--memory', type=MIB_SIZE, help=MEM_HELP)
 @click.option('--default', is_flag=True, help="list only default profiles")

@@ -1419,6 +1419,78 @@ class TestSystemProfile(TestSecureResource):
         self.db.session.commit()
     # test_update_assoc_system()
 
+    def test_kvm_create_update_cpu_memory(self):
+        """
+        Test if api correctly reports error when invalid cpu and memory are
+        used for KVM guest.
+        """
+        user_login = 'user_user@domain.com'
+
+        # create a new KVM system
+        system_obj = models.System(
+            name="kvm_guest",
+            state="AVAILABLE",
+            modifier=user_login,
+            type="KVM",
+            hostname="hmc_y.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner=user_login,
+        )
+        self.db.session.add(system_obj)
+        self.db.session.commit()
+        # attributes must be stored before the object expires
+        system_id = system_obj.id
+        system_name = system_obj.name
+
+        # generate a new profile entry
+        data = next(self._get_next_entry)
+        data['system'] = system_name
+        # first profile being created is set to default, set here so that
+        # validation later works
+        data['default'] = True
+        user_login = '{}:a'.format('user_user@domain.com')
+
+        # try create with wrong for KVM guest cpu number
+        data['cpu'] = 0
+        data['memory'] = 1024
+        resp = self._do_request('create', user_login, data)
+        bad_number_msg = 'For zVM guests number cpu and memory must be ' \
+                         'greater than 0'
+        self._validate_resp(resp, bad_number_msg, 422)
+
+        # try create with wrong for KVM guest memory number
+        data['cpu'] = 7
+        data['memory'] = 0
+        bad_number_msg = 'For zVM guests number cpu and memory must be ' \
+                         'greater than 0'
+        self._validate_resp(resp, bad_number_msg, 422)
+
+        # try create with correct cpu and memory numbers
+        data['cpu'] = 7
+        data['memory'] = 1024
+        prof_id = self._request_and_assert('create', user_login, data)
+
+        # try update wrong for KVM guest cpu number
+        update_data = {'id': prof_id, 'cpu': 0}
+        resp = self._do_request('update', user_login, update_data)
+        self._validate_resp(resp, bad_number_msg, 422)
+
+        # try update with wrong for KVM guest memory number
+        update_data = {'id': prof_id, 'memory': 0}
+        resp = self._do_request('update', user_login, update_data)
+        self._validate_resp(resp, bad_number_msg, 422)
+
+        # try update with correct for KVM guest and memory number
+        update_data = {'id': prof_id, 'cpu': 5, 'memory': 2048}
+        self._request_and_assert('update', user_login, update_data)
+
+        # clean up
+        self.RESOURCE_MODEL.query.filter_by(id=prof_id).delete()
+        models.System.query.filter_by(id=system_id).delete()
+        self.db.session.commit()
+    # test_kvm_create_update_cpu_memory()
+
     # TODO: add tests with gateway parameter (cannot be tested for creation as
     # a netiface must be attached first)
     # TODO: add tests with hypervisor_profile (need to improve handling of

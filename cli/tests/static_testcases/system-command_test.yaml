@@ -771,6 +771,14 @@ tasks:
       - "Error: system specified not found"
     - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu= --login='root:mypasswd'
       - 'Invalid value for "--cpu":  is not a valid integer'
+    - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu=-1 --login='root:mypasswd'
+      - 'Invalid value for "--cpu": -1 is smaller than the minimum valid value 0.'
+    - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu=0 --memory=-1gib --login='root:mypasswd'
+      - 'Invalid value for "--memory": -1gib is not a valid size'
+    - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu=0 --memory=0gib --login='root:mypasswd'
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp52 --name='DASD18' --memory=0 --login='root:mypasswd'
+      - Item added successfully.
         # exercise login with invalid username
     - - system prof-add --system=cpc3lp52 --name='DASD4' --cpu=4 --login='root#:mypasswd'
       - "Invalid value for \"--login\": 'root#' is not a valid username, it may only contain letters, numbers, and the characters"
@@ -826,7 +834,7 @@ tasks:
       - - "Credentials *: .*'admin-user': 'root'"
         - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
       # The next default profile changes the status of the existing default profile to 'not default'
-    - - system prof-add --system=cpc3lp52 --name='DASD10' --default --cpu=4 --login='root:mypasswd'
+    - - system prof-add --system=cpc3lp52 --name='DASD10' --default --cpu=4 --memory=1024mib --login='root:mypasswd'
       - Item added successfully.
     - - system prof-add --system=cpc3lp52 --name='DASD11' --default --memory=2gib --login='root:mypasswd'
       - Item added successfully.
@@ -911,6 +919,9 @@ tasks:
       - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3lp52 --memory=1024mb
       - No results were found.
+    - - system prof-list --system=cpc3lp52 --memory=0
+      - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
+        - ' *DASD *|'
     - - system prof-list --system=cpc3lp52 --memory=1024mib
       - - ' *Profile name *| *System *| *Operating system *| *CPU(s) *| *Memory *| *Storage volumes *| *Network interfaces *| *Required hypervisor profile'
         - ' *DASD10 *|'
@@ -975,6 +986,12 @@ tasks:
       - '--memory option requires an argument'
     - - system prof-edit --system= --name=DASD --memory=2gib
       - 'Invalid value for "--system": value may not be empty'
+    - - system prof-edit --system=cpc3lp52 --name=DASD --memory=-1gib
+      - 'Invalid value for "--memory": -1gib is not a valid size'
+    - - system prof-edit --system=cpc3lp52 --name=DASD --memory=0gib
+      - Item successfully updated.
+    - - system prof-edit --system=cpc3lp52 --name=DASD --memory=0
+      - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory=2gib
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD10 --memory=2gib
@@ -995,8 +1012,10 @@ tasks:
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu
       - '--cpu option requires an argument'
+    - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=-1
+      - 'Invalid value for "--cpu": -1 is smaller than the minimum valid value 0.'
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=0
-      - 'Invalid value for "--cpu": 0 is smaller than the minimum valid value 1.'
+      - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=A
       - 'Invalid value for "--cpu": A is not a valid integer'
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=4
@@ -1012,6 +1031,10 @@ tasks:
       - A default profile cannot be removed while other profiles for the same system exist
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --default
       - Item successfully updated.
+    - - system prof-del --system=cpc3lp52 --name=DASD3
+      - Item successfully deleted.
+    - - system prof-del --system=cpc3lp52 --name=DASD18
+      - Item successfully deleted
         # now it can be deleted
     - - system prof-del --system=cpc3lp52 --name=DASD11
       - Item successfully deleted.

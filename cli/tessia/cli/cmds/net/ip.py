@@ -20,12 +20,15 @@ Module for the ip (ip addresses) command
 # IMPORTS
 #
 from tessia.cli.client import Client
+from tessia.cli.cmds.job.job import cancel as job_cancel
+from tessia.cli.cmds.job.job import output as job_output
 from tessia.cli.filters import dict_to_filter
-from tessia.cli.types import IPADDRESS, NAME, SUBNET
+from tessia.cli.types import IPADDRESS, NAME, SUBNET, VERBOSITY_LEVEL
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
+from tessia.cli.utils import submit_csv_job
 
 import click
 
@@ -111,6 +114,51 @@ def ip_edit(subnet, cur_address, **kwargs):
     click.echo('Item successfully updated.')
 # ip_edit()
 
+@click.command(name='ip-export')
+@click.option('address', '--ip', type=IPADDRESS,
+              help='filter by ip address')
+@click.option('--system', type=NAME,
+              help="filter by ips assigned to this system")
+@click.option('--owner', help="filter by specified owner login")
+@click.option('--project', help="filter by specified project")
+@click.option('--subnet', type=SUBNET, help='filter by subnet')
+def ip_export(**kwargs):
+    """
+    export data in CSV format
+    """
+    # fetch data from server
+    client = Client()
+
+    # parse parameters to filters
+    parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'address': False}
+
+    click.echo('preparing data, this might take some time ... (specially if '
+               'no filters were specified)', err=True)
+    result = client.IpAddresses.bulk(**parsed_filter)
+    click.echo(result, nl=False)
+# ip_export()
+
+@click.command(name='ip-import')
+@click.pass_context
+@click.option('--commit', is_flag=True, default=False,
+              help='commit changes to database (USE WITH CARE)')
+@click.option('file_content', '--file', type=click.File('r'), required=True,
+              help="csv file")
+@click.option('--verbosity', type=VERBOSITY_LEVEL,
+              help='output verbosity level')
+@click.option('force', '--yes', is_flag=True, default=False,
+              help='answer yes to confirmation question')
+def ip_import(ctx, **kwargs):
+    """
+    submit a job for importing data in CSV format
+    """
+    # pass down the job commands used
+    ctx.obj = {'CANCEL': job_cancel, 'OUTPUT': job_output}
+    kwargs['resource_type'] = 'ip'
+    submit_csv_job(Client(), ctx, **kwargs)
+# ip_import()
+
 @click.command(name='ip-list')
 @click.option('address', '--ip', type=IPADDRESS,
               help='filter by ip address')
@@ -141,4 +189,4 @@ def ip_list(**kwargs):
                     PrintMode.TABLE)
 # ip_list()
 
-CMDS = [ip_add, ip_del, ip_edit, ip_list]
+CMDS = [ip_add, ip_del, ip_edit, ip_export, ip_import, ip_list]

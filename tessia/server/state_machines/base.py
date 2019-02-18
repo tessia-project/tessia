@@ -21,6 +21,7 @@ Abstract state machine class
 #
 from tessia.server.config import CONF
 import abc
+import sys
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -78,6 +79,20 @@ class BaseMachine(metaclass=abc.ABCMeta):
 
         CONF.log_config(conf=self._LOG_CONFIG)
     # __init__()
+
+    def _log_config(self, log_level):
+        """
+        Apply log configuration using the specified log level. To be used by
+        concrete classes during initialization.
+        """
+        if not log_level:
+            sys.tracebacklimit = 0
+            return
+
+        CONF.log_config(conf=self._LOG_CONFIG, log_level=log_level)
+        if log_level != 'DEBUG':
+            sys.tracebacklimit = 0
+    # _log_config()
 
     @staticmethod
     @abc.abstractmethod

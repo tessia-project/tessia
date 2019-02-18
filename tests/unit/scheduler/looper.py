@@ -798,6 +798,8 @@ class TestLooper(TestCase):
         # use a mock for the echo machine
         old_echo = self._looper._machines['echo']
         self._looper._machines['echo'] = MagicMock()
+        self._looper._machines['echo'].__name__ = MagicMock(
+            return_value=old_echo.__name__)
 
         self._looper._machines['echo'].parse = MagicMock(
             side_effect=RuntimeError)

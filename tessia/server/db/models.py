@@ -616,7 +616,7 @@ class IpAddress(CommonMixin, ResourceMixin, BASE):
         return self.system_rel.name
 
     @system.setter
-    def system(self, value): # pylint: disable=unused-argument
+    def system(self, value):
         """Defines what to do when assigment occurs for the attribute"""
         if not value:
             self.system_id = None

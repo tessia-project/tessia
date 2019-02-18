@@ -20,7 +20,8 @@ Module for the system commands
 # IMPORTS
 #
 from tessia.cli.client import Client
-from tessia.cli.cmds.job.job import cancel, output
+from tessia.cli.cmds.job.job import cancel as job_cancel
+from tessia.cli.cmds.job.job import output as job_output
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
@@ -29,6 +30,7 @@ from tessia.cli.types import CONSTANT, CustomIntRange, HOSTNAME, \
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 from tessia.cli.utils import fetch_item
+from tessia.cli.utils import submit_csv_job
 from tessia.cli.utils import wait_scheduler, wait_job_exec
 
 import click
@@ -131,14 +133,14 @@ def autoinstall(ctx, **kwargs):
         return
     try:
         wait_job_exec(client, job_id)
-        ctx.invoke(output, job_id=job_id)
+        ctx.invoke(job_output, job_id=job_id)
     except KeyboardInterrupt:
         cancel_job = click.confirm('\nDo you want to cancel the job?')
         if not cancel_job:
             click.echo('warning: job is still running, remember to cancel it '
                        'if you want to submit a new action for this system')
             raise
-        ctx.invoke(cancel, job_id=job_id)
+        ctx.invoke(job_cancel, job_id=job_id)
 # autoinstall()
 
 @click.command(name='edit')
@@ -167,6 +169,52 @@ def edit(cur_name, **kwargs):
         kwargs)
     click.echo('Item successfully updated.')
 # edit()
+
+@click.command(name='export')
+@click.option('--name', type=NAME, help="filter by system name")
+@click.option('hypervisor', '--hyp', type=NAME,
+              help="filter by specified hypervisor")
+@click.option('--model', type=CONSTANT, help="filter by specified model")
+@click.option('--type', type=CONSTANT, help="filter by specified type")
+@click.option('--state', type=CONSTANT, help="filter by specified state")
+@click.option('--owner', help="filter by specified owner login")
+@click.option('--project', help="filter by specified project")
+def export(**kwargs):
+    """
+    export data in CSV format
+    """
+    # fetch data from server
+    client = Client()
+
+    # parse parameters to filters
+    parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'name': False}
+
+    click.echo('preparing data, this might take some time ... (specially if '
+               'no filters were specified)', err=True)
+    result = client.Systems.bulk(**parsed_filter)
+    click.echo(result, nl=False)
+# export()
+
+@click.command(name='import')
+@click.pass_context
+@click.option('--commit', is_flag=True, default=False,
+              help='commit changes to database (USE WITH CARE)')
+@click.option('file_content', '--file', type=click.File('r'), required=True,
+              help="csv file")
+@click.option('--verbosity', type=VERBOSITY_LEVEL,
+              help='output verbosity level')
+@click.option('force', '--yes', is_flag=True, default=False,
+              help='answer yes to confirmation question')
+def import_(ctx, **kwargs):
+    """
+    submit a job for importing data in CSV format
+    """
+    # pass down the job commands used
+    ctx.obj = {'CANCEL': job_cancel, 'OUTPUT': job_output}
+    kwargs['resource_type'] = 'system'
+    submit_csv_job(Client(), ctx, **kwargs)
+# _import_()
 
 @click.command(name='list')
 @click.option('--name', type=NAME, help="filter by system name")
@@ -229,14 +277,14 @@ def poweroff(ctx, name, verbosity):
     job_id = wait_scheduler(client, request)
     try:
         wait_job_exec(client, job_id)
-        ctx.invoke(output, job_id=job_id)
+        ctx.invoke(job_output, job_id=job_id)
     except KeyboardInterrupt:
         cancel_job = click.confirm('\nDo you want to cancel the job?')
         if not cancel_job:
             click.echo('warning: job is still running, remember to cancel it '
                        'if you want to submit a new action for this system')
             raise
-        ctx.invoke(cancel, job_id=job_id)
+        ctx.invoke(job_cancel, job_id=job_id)
 # poweroff()
 
 @click.command(name='poweron')
@@ -303,14 +351,14 @@ def poweron(ctx, name, **kwargs):
     job_id = wait_scheduler(client, request)
     try:
         wait_job_exec(client, job_id)
-        ctx.invoke(output, job_id=job_id)
+        ctx.invoke(job_output, job_id=job_id)
     except KeyboardInterrupt:
         cancel_job = click.confirm('\nDo you want to cancel the job?')
         if not cancel_job:
             click.echo('warning: job is still running, remember to cancel it '
                        'if you want to submit a new action for this system')
             raise
-        ctx.invoke(cancel, job_id=job_id)
+        ctx.invoke(job_cancel, job_id=job_id)
 # poweron()
 
 @click.command(name='types')
@@ -355,4 +403,5 @@ def states(**kwargs):
                     PrintMode.TABLE)
 # states()
 
-CMDS = [add, del_, edit, autoinstall, list_, poweroff, poweron, types, states]
+CMDS = [add, del_, edit, export, import_, autoinstall, list_, poweroff,
+        poweron, types, states]

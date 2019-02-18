@@ -21,11 +21,14 @@ Resource definition
 #
 from flask import g as flask_global
 from flask_potion import fields
-from flask_potion.instances import Pagination
+from flask_potion.instances import Instances, Pagination
+from flask_potion.routes import Route
 from tessia.server.api.exceptions import BaseHttpError, ItemNotFoundError
 from tessia.server.api.resources.secure_resource import SecureResource
 from tessia.server.db.models import IpAddress, Subnet, System, SystemIface
 
+import csv
+import io
 import ipaddress
 
 #
@@ -41,6 +44,10 @@ DESC = {
     'owner': 'Owner',
     'system': 'Assigned to system',
 }
+
+FIELDS_CSV = (
+    'SUBNET', 'ADDRESS', 'SYSTEM', 'OWNER', 'PROJECT', 'DESC'
+)
 
 #
 # CODE
@@ -179,6 +186,51 @@ class IpAddressResource(SecureResource):
 
         return subnet
     # _fetch_subnet()
+
+    @Route.GET('/bulk', rel='bulk')
+    def bulk(self, **kwargs):
+        """
+        Bulk export operation
+        """
+        result = io.StringIO()
+        csv_writer = csv.writer(result, quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(FIELDS_CSV)
+
+        for entry in self.manager.instances(kwargs.get('where'),
+                                            kwargs.get('sort')):
+            try:
+                self._perman.can(
+                    'READ', flask_global.auth_user, entry)
+            except PermissionError:
+                continue
+
+            csv_writer.writerow(
+                [getattr(entry, attr.lower()) for attr in FIELDS_CSV])
+
+        result.seek(0)
+        return result.read()
+    # bulk()
+    bulk.request_schema = Instances()
+    bulk.response_schema = fields.String(
+        title="result output", description="content in csv format")
+
+    @Route.GET('/schema', rel="describedBy", attribute="schema")
+    def described_by(self, *args, **kwargs):
+        schema, http_code, content_type = super().described_by(*args, **kwargs)
+        # we don't want to advertise pagination for the bulk endpoint
+        link_found = False
+        for link in schema['links']:
+            if link['rel'] == 'bulk':
+                link_found = True
+                link['schema']['properties'].pop('page')
+                link['schema']['properties'].pop('per_page')
+                break
+        if not link_found:
+            raise SystemError(
+                'JSON schema for endpoint /{}/bulk not found'
+                .format(self.Meta.name))
+        return schema, http_code, content_type
+    # described_by()
 
     def do_create(self, properties):
         """

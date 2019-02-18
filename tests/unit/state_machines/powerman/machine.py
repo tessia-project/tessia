@@ -17,6 +17,7 @@ Unit test for the powerman machine.
 """
 
 from contextlib import contextmanager
+from tessia.server.state_machines import base
 from tessia.server.state_machines.powerman import machine
 from tessia.server.db.models import System, SystemProfile
 from tests.unit.db.models import DbUnit
@@ -62,9 +63,16 @@ class TestPowerManagerMachine(TestCase):
             spec=['warning', 'error', 'debug', 'info'])
 
         # mock config object
-        patcher = patch.object(machine, 'CONF', autospec=True)
+        patcher = patch.object(base, 'CONF', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)
+
+        # mock sys module
+        patcher = patch.object(base, 'sys', autospec=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+        # mock sleep
         patcher = patch.object(machine.time, 'sleep', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)

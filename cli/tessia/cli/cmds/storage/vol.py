@@ -21,15 +21,18 @@ Module for the vol (storage volumes) commands
 #
 from collections import namedtuple
 from tessia.cli.client import Client
+from tessia.cli.cmds.job.job import cancel as job_cancel
+from tessia.cli.cmds.job.job import output as job_output
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
 from tessia.cli.output import PrintMode
 from tessia.cli.types import CustomIntRange, DEVNO, FCP_PATH, MIB_SIZE, NAME, \
-    SCSI_WWID, VOLUME_ID
+    SCSI_WWID, VERBOSITY_LEVEL, VOLUME_ID
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_item
 from tessia.cli.utils import size_to_str
+from tessia.cli.utils import submit_csv_job
 
 import click
 
@@ -555,11 +558,57 @@ def vol_edit(server, cur_id, **kwargs):
     click.echo('Item successfully updated.')
 # vol_edit()
 
+@click.command(name='vol-export')
+@click.option('--server', help='filter by storage server')
+@click.option('volume_id', '--id', type=VOLUME_ID, help='filter by volume id')
+@click.option('--owner', help="filter by specified owner login")
+@click.option('--pool', help="list volumes assigned to this pool")
+@click.option('--project', help="filter by specified project")
+@click.option('--system', type=NAME,
+              help="list volumes assigned to this system")
+@click.option('--type', help="filter by specified volume type")
+def vol_export(**kwargs):
+    """
+    export data in CSV format
+    """
+    # fetch data from server
+    client = Client()
+
+    # parse parameters to filters
+    parsed_filter = dict_to_filter(kwargs)
+    parsed_filter['sort'] = {'volume_id': False}
+
+    click.echo('preparing data, this might take some time ... (specially if '
+               'no filters were specified)', err=True)
+    result = client.StorageVolumes.bulk(**parsed_filter)
+    click.echo(result, nl=False)
+# vol_export()
+
+@click.command(name='vol-import')
+@click.pass_context
+@click.option('--commit', is_flag=True, default=False,
+              help='commit changes to database (USE WITH CARE)')
+@click.option('file_content', '--file', type=click.File('r'), required=True,
+              help="csv file")
+@click.option('--verbosity', type=VERBOSITY_LEVEL,
+              help='output verbosity level')
+@click.option('force', '--yes', is_flag=True, default=False,
+              help='answer yes to confirmation question')
+def vol_import(ctx, **kwargs):
+    """
+    submit a job for importing data in CSV format
+    """
+    # pass down the job commands used
+    ctx.obj = {'CANCEL': job_cancel, 'OUTPUT': job_output}
+    kwargs['resource_type'] = 'svol'
+    submit_csv_job(Client(), ctx, **kwargs)
+# vol_import()
+
 @click.command(name='vol-list')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
 # set the parameter name after the model's attribute name to save on typing
-@click.option('--server', help='the storage server to list')
+@click.option('--server', help='filter by storage server')
 @click.option('volume_id', '--id', type=VOLUME_ID, help='filter by volume id')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--pool', help="list volumes assigned to this pool")
@@ -616,6 +665,6 @@ def vol_types(**kwargs):
 # vol_types()
 
 CMDS = [
-    vol_add, vol_del, vol_edit, vol_list, vol_types, part_add, part_clear,
-    part_del, part_edit, part_init, part_list
+    vol_add, vol_del, vol_edit, vol_export, vol_import, vol_list, vol_types,
+    part_add, part_clear, part_del, part_edit, part_init, part_list
 ]

@@ -19,6 +19,7 @@ Unit test for echo machine module
 #
 # IMPORTS
 #
+from tessia.server.state_machines import base
 from tessia.server.state_machines.echo import machine
 from unittest import TestCase
 from unittest.mock import call
@@ -50,9 +51,16 @@ class TestEcho(TestCase):
         self._mock_sleep = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(machine, 'CONF', autospec=True)
+        patcher = patch.object(base, 'CONF', autospec=True)
         self._mock_conf = patcher.start()
         self.addCleanup(patcher.stop)
+
+        patcher = patch.object(base, 'sys', autospec=True)
+        self._mock_sys = patcher.start()
+        self._mock_sys_tblimit = 10
+        self._mock_sys.tracebacklimit = self._mock_sys_tblimit
+        self.addCleanup(patcher.stop)
+    # setUp()
 
     def test_good_content(self):
         """
@@ -101,6 +109,8 @@ class TestEcho(TestCase):
         self._mock_conf.log_config.assert_called_with(
             conf=machine.EchoMachine._LOG_CONFIG,
             log_level='DEBUG')
+        self.assertEqual(self._mock_sys.tracebacklimit, self._mock_sys_tblimit,
+                         'sys.tracebacklimit was altered')
 
     # test_good_content()
 

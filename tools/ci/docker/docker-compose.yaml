@@ -8,6 +8,7 @@ services:
       # and set these variables
       TESSIA_DB_AUTOMANAGE: "true"
       TESSIA_DB_URI: "postgresql://tessia:pass4tessia@db/tessia"
+      TESSIA_DB_TEST_URI: "postgresql://tessia:pass4tessia@db/tessia_test"
       TESSIA_LIVE_IMG_PASSWD: ${TESSIA_LIVE_IMG_PASSWD:-livepasswd}
       TESSIA_SERVER_FQDN: ${TESSIA_SERVER_FQDN:-server}
     hostname: ${TESSIA_SERVER_FQDN:-server}

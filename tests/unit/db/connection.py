@@ -73,7 +73,11 @@ class TestConnection(TestCase):
 
         # force a reconnection because other modules might have connected
         # before
-        connection.MANAGER._conn = None
+        orig_conn = connection.MANAGER._conn
+        def helper():
+            """set back the original value on test end"""
+            connection.MANAGER._conn = orig_conn
+        self.addCleanup(helper)
 
         # verify the result
         self.assertIs(connection.MANAGER.engine, sentinel.sa_engine)
@@ -106,6 +110,12 @@ class TestConnection(TestCase):
         # force a reconnection because other modules might have connected
         # before
         connection.MANAGER._conn = None
+        orig_conn = connection.MANAGER._conn
+        def helper():
+            """set back the original value on test end"""
+            connection.MANAGER._conn = orig_conn
+        self.addCleanup(helper)
+
         self.assertRaises(RuntimeError, lambda: connection.MANAGER.session)
     # test_conn_missing_url()
 

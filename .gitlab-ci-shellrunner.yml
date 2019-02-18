@@ -27,14 +27,14 @@ unittests_server:
   coverage: '/^TOTAL.*\s+(\d+\%)$/'
   stage: tests
   script:
-    - tools/ci/orc unittest --tag=$CI_COMMIT_REF_SLUG --image=tessia-server
+    - tools/ci/orc unittest --tag=$CI_COMMIT_REF_SLUG
   except:
     - schedules
 
 clitests:
   stage: tests
   script:
-    - COMPOSE_PROJECT_NAME=clitests-${CI_COMMIT_REF_SLUG} tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG
+    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG
   except:
     - schedules
 
@@ -45,8 +45,7 @@ fieldtests_lite:
     - "[ -z $TESSIA_FTESTS_LITE_DIR ] && { echo error: variable not defined; exit 1; }"
     - "[ -z $TESSIA_IMG_PASSWD_FILE ] && { echo error: variable not defined; exit 1; }"
   script:
-    # use a different project name to avoid conflict with clitests job
-    - COMPOSE_PROJECT_NAME=fieldtests-${CI_COMMIT_REF_SLUG} tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_LITE_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
+    - tools/ci/orc clitest --tag=$CI_COMMIT_REF_SLUG --fieldtests=${TESSIA_FTESTS_LITE_DIR} --img-passwd-file=${TESSIA_IMG_PASSWD_FILE}
   except:
     - schedules
   tags:

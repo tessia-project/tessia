@@ -1,4 +1,4 @@
-# Copyright 2017 IBM Corp.
+# Copyright 2017, 2018, 2019 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,18 +19,15 @@ Auxiliary class used for managing the CI process
 #
 # IMPORTS
 #
+from lib.compose import ComposeInstance, OpMode
 from lib.image import DockerImage
 from lib.image_server import DockerImageServer
 from lib.util import Shell, build_image_map
-from lib.selinux import is_selinux_enforced
 
-import ipaddress
 import logging
 import os
 import signal
 import tempfile
-import time
-import yaml
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -41,7 +38,7 @@ REPO_DIR = os.path.abspath('{}/../../..'.format(MY_DIR))
 #
 # CODE
 #
-class Manager(object):
+class Manager():
     """
     Coordinates the actions for each docker image
     """
@@ -51,8 +48,9 @@ class Manager(object):
 
     def __init__(self, stage, docker_tag, images=None, registry_url=None,
                  field_tests=None, img_passwd_file=None,
-                 install_server_hostname=None, custom_cli_subnet=None, custom_db_subnet=None,
-                 verbose=True, **stage_args):
+                 install_server_hostname=None, custom_cli_subnet=None,
+                 custom_db_subnet=None, verbose=True, **stage_args):
+        # pylint: disable=too-many-arguments
         """
         Create the image objects and set necessary configuration parameters
 
@@ -72,6 +70,10 @@ class Manager(object):
             install_server_hostname (str): used by clitest stage, custom
                 hostname to use as install server for cases where the detected
                 fqdn is not reachable by systems being installed during tests
+            custom_cli_subnet (str): subnet in cidr notation to be used in
+                                     docker compose definition of cli container
+            custom_db_subnet (str): subnet in cidr notation to be used in
+                                    docker compose definition of db container
             verbose (bool): whether to print output from commands
             stage_args (any): additional specific arguments to the stage
 
@@ -85,8 +87,8 @@ class Manager(object):
         self._registry_url = registry_url
         self._field_tests = field_tests
         self._install_server_hostname = install_server_hostname
-        self._custom_cli_subnet = custom_cli_subnet
-        self._custom_db_subnet = custom_db_subnet
+        self._custom_cli_net = custom_cli_subnet
+        self._custom_db_net = custom_db_subnet
         if img_passwd_file:
             with open(img_passwd_file, 'r') as file_fd:
                 self._img_passwd = file_fd.read().strip()
@@ -119,10 +121,9 @@ class Manager(object):
         # field tests demand the live-image's password otherwise tests with
         # LPAR installations will fail as it won't be possible to use the
         # auxiliar disk to boot them
-        if self._field_tests:
-            if not self._img_passwd:
-                raise ValueError('Field tests specified but no password '
-                                 'provided for auxiliar live-image')
+        if self._field_tests and not self._img_passwd:
+            raise ValueError('Field tests specified but no password '
+                             'provided for auxiliar live-image')
 
         # determine builder's fqdn
         ret_code, output = self._session.run('hostname -f')
@@ -267,239 +268,6 @@ class Manager(object):
                     'failed to clean db after test: {}'.format(output))
     # _clitest_loop()
 
-    @staticmethod
-    def parse_ip_range(ip_range):
-        """
-        Check that the ip range provided is valid by creating an IPvXNetwork
-        python object out of it.
-
-        Args:
-            ip_range (str): ip address range, valid notations:
-                            CIDR: e.g. 192.168.178.0/24
-                            dotted decimal notation: e.g.
-                                192.168.178.0/255.255.255.0
-
-        Returns:
-            parsed ip_address range (str)
-
-        Raises:
-            ValueError: When ip address range is invalid.
-        """
-        range_obj = ipaddress.ip_network(ip_range)
-        return str(range_obj)
-    # parse_ip_range()
-
-    def _compose_start(self, dev_mode=False, cli_test=False):
-        """
-        Bring up and configure the services by using docker-compose.
-
-        Args:
-            dev_mode (bool): if True, local git repository will be bind mounted
-                             inside the container.
-            cli_test (bool): if True, local cli folder will be bind mounted
-                              inside the container.
-
-        Raises:
-            RuntimeError: if python package path determination fails
-        """
-        with open('tools/ci/docker/docker-compose.yaml', 'r') as file_fd:
-            compose_cfg = yaml.safe_load(file_fd.read())
-
-        # dev/test mode: mount bind git repo files from host in the container
-        if dev_mode or cli_test:
-            # determine the path of the python packages
-            pkg_paths = {}
-            docker_cmd = (
-                'docker run --rm -t --entrypoint python3 tessia-{}:{} '
-                '-c "import tessia; print(tessia.__path__[0])"')
-            for image in ['server', 'cli']:
-                ret_code, output = self._session.run(
-                    docker_cmd.format(image, self._tag))
-                if ret_code != 0:
-                    raise RuntimeError(
-                        "failed to determine tessia's python package path in "
-                        "image {}: {}".format(image, output))
-                pkg_paths[image] = output.strip()
-
-            # devmode: bind mount all folders
-            if dev_mode:
-                if is_selinux_enforced:
-                    compose_cfg['services']['server']['security_opt'] = [
-                        'label:disable']
-                    compose_cfg['services']['cli']['security_opt'] = [
-                        'label:disable']
-                compose_cfg['services']['server']['volumes'] += [
-                    '{}/tessia/server:{}/server:ro'.format(
-                        REPO_DIR, pkg_paths['server']),
-                    '{}:/root/tessia:ro'.format(REPO_DIR)
-                ]
-                compose_cfg['services']['cli']['volumes'] = [
-                    '{}/cli/tessia/cli:{}/cli:ro'.format(
-                        REPO_DIR, pkg_paths['cli']),
-                    '{}/cli:/home/admin/cli:ro'.format(REPO_DIR)
-                ]
-            # clitests requested: bind mount the cli folder
-            else:
-                if is_selinux_enforced:
-                    compose_cfg['services']['cli']['security_opt'] = [
-                        'label:disable']
-                compose_cfg['services']['cli']['volumes'] = [
-                    '{}/cli:/home/admin/cli:ro'.format(REPO_DIR)]
-
-        # static tests: do not expose ports unnecessarily
-        if cli_test and not self._field_tests:
-            compose_cfg['services']['server'].pop('ports')
-
-        # set custom subnet for tessia_cli_net
-        if self._custom_cli_subnet:
-            parsed_ip_range = self.parse_ip_range(self._custom_cli_subnet)
-            compose_cfg['networks']['cli_net'] = {}
-            compose_cfg['networks']['cli_net']['ipam'] = {
-                'driver': 'default', 'config': [{'subnet': parsed_ip_range}]
-            }
-
-        # set custom subnet for tessia_db_net
-        if self._custom_db_subnet:
-            parsed_ip_range = self.parse_ip_range(self._custom_db_subnet)
-            compose_cfg['networks']['db_net'] = {}
-            compose_cfg['networks']['db_net']['ipam'] = {
-                'driver': 'default', 'config': [{'subnet': parsed_ip_range}]
-            }
-
-        if self._img_passwd:
-            (compose_cfg['services']['server']['environment']
-             ['TESSIA_LIVE_IMG_PASSWD']) = self._img_passwd
-
-        # create compose file
-        with open('.docker-compose.yaml', 'w') as file_fd:
-            file_fd.write(yaml.dump(compose_cfg, default_flow_style=False))
-        # create compose's .env file
-        with open('.env', 'w') as file_fd:
-            file_fd.write(
-                "COMPOSE_FILE=.docker-compose.yaml\n"
-                "COMPOSE_PROJECT_NAME=tessia\n"
-                "TESSIA_DOCKER_TAG={}\n"
-                "TESSIA_SERVER_FQDN={}\n"
-                .format(self._tag, self._fqdn)
-            )
-        ret_code, output = self._session.run(
-            'docker-compose down -v && docker-compose up -d')
-        if ret_code != 0:
-            raise RuntimeError(
-                'failed to start services: {}'.format(output))
-
-        # store the id of each started container
-        for service in ['server', 'cli']:
-            image_obj = self._images['tessia-{}'.format(service)]
-            ret_code, output = self._session.run(
-                'docker-compose ps -q {}'.format(service))
-            if ret_code != 0:
-                raise RuntimeError(
-                    'failed to get container name for service {}: {}'.format(
-                        service, output))
-            if len(output.strip().splitlines()) > 1:
-                raise RuntimeError(
-                    'Multiple containers found for service {}. Use '
-                    'COMPOSE_PROJECT_NAME if you want to run parallel '
-                    'instances.'.format(service))
-            image_obj.container_name = output.strip()
-        server_id = self._images['tessia-server'].container_name
-        client_id = self._images['tessia-cli'].container_name
-
-        # user-provided hostname for http install server: use it in place of
-        # fqdn (for cases where fqdn is not reachable)
-        if self._install_server_hostname:
-            ret_code, output = self._session.run(
-                'docker exec {} yamlman update '
-                '/etc/tessia/server.yaml auto_install.url http://{}/static'
-                .format(server_id, self._install_server_hostname)
-            )
-            if ret_code != 0:
-                raise RuntimeError(
-                    'failed to set custom install server hostname: {}'.format(
-                        output))
-
-        # current we have to use 'docker exec' directly due to the way
-        # 'docker-compose exec' works, where it always tries to hijack the
-        # shell's tty even when there isn't one allocated (which is the case
-        # with gitlab-runner's ssh executor).
-        # A possible alternative solution is to use gitlab's shell executor
-        # instead and use orc itself to connect to the builder via ssh.
-
-        # wait for api service to come up
-        ret_code = 1
-        timeout = time.time() + 60
-        self._logger.info('waiting for api to come up (60 secs)')
-        while ret_code != 0 and time.time() < timeout:
-            ret_code, _ = self._session.run(
-                "docker exec {} bash -c '"
-                "openssl s_client -connect {}:5000 "
-                "< /dev/null &>/dev/null'".format(client_id, self._fqdn)
-            )
-            time.sleep(5)
-        if ret_code != 0:
-            raise RuntimeError('timed out while waiting for api')
-
-        # download ssl certificate to client
-        cmd = (
-            'docker exec {} bash -c \''
-            'openssl s_client -showcerts -connect {}:5000 '
-            '< /dev/null 2>/dev/null | '
-            'sed -ne "/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p" '
-            '> /etc/tessia-cli/ca.crt\''.format(client_id, self._fqdn)
-        )
-        ret_code, output = self._session.run(cmd)
-        if ret_code != 0:
-            raise RuntimeError(
-                'failed to retrieve ssl cert: {}'.format(output))
-
-        # dev/test mode: set the free authenticator in api
-        if dev_mode or cli_test:
-            ret_code, output = self._session.run(
-                'docker exec {0} yamlman update '
-                '/etc/tessia/server.yaml auth.login_method free && '
-                'docker exec {0} supervisorctl restart tessia-api'
-                .format(server_id))
-            if ret_code != 0:
-                raise RuntimeError(
-                    'failed to set authenticator config: {}'.format(output))
-
-        # add auth token to admin user in client to make it ready for use
-        # better hide token from logs
-        ret_code, output = self._session.run(
-            'docker exec {} tess-dbmanage get-token 2>/dev/null'
-            .format(server_id), stdout=False)
-        if ret_code != 0:
-            raise RuntimeError(
-                "failed to fetch admin's authorization token: {}'"
-                .format(output))
-        cmd_env = os.environ.copy()
-        cmd_env['db_token'] = output.strip()
-        ret_code, output = self._session.run(
-            'docker exec {0} bash -c "umask 077; mkdir {1} &>/dev/null; '
-            'echo $db_token > {1}/auth.key && chown -R admin. {1}"'
-            .format(client_id, '/home/admin/.tessia-cli'), env=cmd_env
-        )
-        if ret_code != 0:
-            raise RuntimeError(
-                "failed to create admin user's auth.key file: {}"
-                .format(output))
-    # _compose_start()
-
-    def _compose_stop(self):
-        """
-        Stop services and remove docker associated entities (volumes, networks,
-        etc.)
-        """
-        ret_code, output = self._session.run(
-            'test -e .env && docker-compose down -v && '
-            'rm -f .env .docker-compose.yaml'
-        )
-        if ret_code != 0:
-            self._logger.warning(
-                'failed to clean compose services: %s', output)
-    # _compose_stop()
-
     def _create_tag(self):
         """
         Create a tag by using the project's versioning scheme
@@ -536,34 +304,35 @@ class Manager(object):
                 .format(image_obj.get_fullname()))
 
         self._logger.info('[run] starting services')
+        if self._stage_args.get('devmode'):
+            mode = OpMode.DEV
+        elif self._stage_args.get('clitests'):
+            mode = OpMode.CLITEST
+        else:
+            mode = OpMode.NORMAL
+        compose_obj = ComposeInstance(
+            self._session, mode, self._images, self._tag, self._fqdn,
+            self._img_passwd, self._custom_cli_net, self._custom_db_net,
+            self._install_server_hostname)
         try:
-            self._compose_start(dev_mode=self._stage_args['devmode'],
-                                cli_test=self._stage_args['clitests'])
+            compose_obj.prepare(persistent=True)
+            compose_obj.start()
         except Exception as exc:
             # clean up before dying
             self._logger.info('[run] cleaning compose services')
             try:
-                self._compose_stop()
+                compose_obj.stop()
             except Exception as clean_exc:
                 self._logger.warning('[run] failed to clean compose '
                                      'services: %s', str(clean_exc))
             raise exc
 
         # show the started containers to the user
-        self._session.run('docker-compose ps', stdout=True)
+        compose_obj.do_ps()
 
         if self._stage_args['clitests']:
             self._logger.info('[run] clitests requested')
-            try:
-                self._clitest_exec()
-            finally:
-                self._logger.info('[clitest] cleaning compose services')
-                # clean up before dying/finishing
-                try:
-                    self._compose_stop()
-                except Exception as clean_exc:
-                    self._logger.warning('[run] failed to clean compose '
-                                         'services: %s', str(clean_exc))
+            self._clitest_exec()
     # _run()
 
     @staticmethod
@@ -596,7 +365,14 @@ class Manager(object):
         containers)
         """
         # stopping and clean any running services
-        self._compose_stop()
+        compose_obj = ComposeInstance(
+            self._session, OpMode.NORMAL, self._images, self._tag, self._fqdn,
+            self._img_passwd, self._custom_cli_net, self._custom_db_net,
+            self._install_server_hostname)
+        compose_obj.stop()
+
+        if self._stage_args.get('keepimg'):
+            return
 
         # delete dangling (unreachable) images, that helps keeping the disk
         # usage low as docker does not have a gc available.
@@ -631,14 +407,23 @@ class Manager(object):
         Start the client based tests stage
         """
         self._logger.info('new stage: clitest')
+        if self._field_tests:
+            mode = OpMode.FIELDTEST
+        else:
+            mode = OpMode.CLITEST
+        compose_obj = ComposeInstance(
+            self._session, mode, self._images, self._tag, self._fqdn,
+            self._img_passwd, self._custom_cli_net, self._custom_db_net,
+            self._install_server_hostname)
         try:
-            self._compose_start(cli_test=True)
+            compose_obj.prepare()
+            compose_obj.start()
             self._clitest_exec()
         finally:
             self._logger.info('[clitest] cleaning compose services')
             # clean up before dying/finishing
             try:
-                self._compose_stop()
+                compose_obj.stop()
             except Exception as clean_exc:
                 self._logger.warning(
                     '[clitest] failed to clean compose services: %s',
@@ -664,8 +449,32 @@ class Manager(object):
         Tell each image object to execute unit tests.
         """
         self._logger.info('new stage: unittest')
-        for image in self._images.values():
-            image.unit_test()
+        compose_obj = ComposeInstance(
+            self._session, OpMode.UNITTEST, self._images, self._tag,
+            self._fqdn, self._img_passwd, self._custom_cli_net,
+            self._custom_db_net, self._install_server_hostname)
+
+        if self._stage_args.get('unittest_path'):
+            cmd = '-c "cd /root/tessia && tools/run_tests.py {}"'.format(
+                self._stage_args['unittest_path'])
+        else:
+            cmd = ('-c "cd /root/tessia && tools/run_pylint.py && '
+                   'tools/run_tests.py"')
+        try:
+            compose_obj.prepare()
+            ret_code, _ = compose_obj.run(
+                service='server', entrypoint='bash', cmd=cmd)
+            if ret_code != 0:
+                raise RuntimeError('unit tests failed')
+        finally:
+            self._logger.info('[clitest] cleaning compose services')
+            # clean up before dying/finishing
+            try:
+                compose_obj.stop()
+            except Exception as clean_exc:
+                self._logger.warning(
+                    '[clitest] failed to clean compose services: %s',
+                    str(clean_exc))
     # _stage_unittest()
 
     def _stop_handler(self, signum, *args, **kwargs):

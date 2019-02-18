@@ -137,8 +137,14 @@ class TestSecureResource(TestCase):
             len(entries), len(listed_entries),
             'number of entries is different')
 
-        # compare each entry, the order by default is by id number which
-        # matches our list
+        # sort lists to make sure the order of entries are the same
+        listed_entries.sort(key=lambda entry: entry['$uri'].split('/')[-1])
+        entries.sort(
+            key=lambda entry: str(
+                entry.get('id', entry.get('$uri', '').split('/')[-1]))
+        )
+
+        # compare each entry
         for index, entry in enumerate(listed_entries):
 
             # model is a resourcemixin: check modified time

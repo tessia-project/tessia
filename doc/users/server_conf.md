@@ -174,6 +174,23 @@ The path set here should be reflected in the `uwsgi.yaml` configuration so that 
 - Description: the URL configured in `uwsgi.yaml` to serve static content. This URL is passed by the machine to the distro installers so that they know from where to fetch
 the autofile for the installation.
 
+## Section `db`
+
+Database related configuration
+
+`url`
+
+- Type: string
+- Default: (must be specified)
+- Description: location of the postgres database in sqlalchemy format.
+
+`test_url`
+
+- Type: string
+- Default: (optional)
+- Description: location of the postgres test database used for unit tests, used for development purposes (do not use in production). If the URL does not contain a database
+name the unit test code will try to create a database with the default name `tessia_test`.
+
 ## Section `log`
 
 Defines how logging should behave (whether to log to console or file, which log files to use, log rotation, etc.). This section follows the format defined by the python

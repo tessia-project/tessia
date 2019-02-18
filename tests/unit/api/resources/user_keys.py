@@ -78,7 +78,7 @@ class TestUserKey(TestSecureResource):
         self.assertEqual(bool(resp_value), True)
 
         deleted_entry = self.RESOURCE_MODEL.query.filter_by(
-            key_id=orig_id).one_or_none()
+            id=orig_id).one_or_none()
         self.assertIs(deleted_entry, None)
     # _assert_deleted()
 

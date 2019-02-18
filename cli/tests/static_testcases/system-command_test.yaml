@@ -125,6 +125,8 @@ tasks:
     - - system vol-detach -h
       - 'Usage: tess system vol-detach'
   system_command:
+    - - system
+      - manage systems and related resources
     - - system types
       - - ' *Type name *| *Architecture *| *Description'
         - ' *KVM *|'
@@ -510,6 +512,8 @@ tasks:
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --devname=enccw0.0.f500 --layer2=false --ccwgroup=f500 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=1
       - 'Invalid value for "--ccwgroup": f500 is not a valid qeth ccwgroup'
+    - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --devname=enccw0.0.f500 --layer2=false --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=
+      - 'Invalid value for "--portno": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --devname=enccw0.0.f500 --layer2=false --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=1
       - Item added successfully.
       # iface-add with ip and without subnet
@@ -861,6 +865,10 @@ tasks:
       - 'Invalid value for "--hyp"'
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root-mypasswd' --hyp='default cpc3'
       - 'Error: Invalid value for "--login": input should be in the format username:password'
+    - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=0.5mib --login='root:mypasswd' --hyp='default cpc3'
+      - 'Invalid value for "--memory": 0.5mib is not a valid size'
+    - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='default cpc3' --zvm-pass=vmpassword
+      - zVM credentials should be provided for zVM guests only
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='default cpc3'
       - Item added successfully.
     # 'system prof-list' subcommand

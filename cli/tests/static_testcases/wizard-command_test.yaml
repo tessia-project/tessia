@@ -95,6 +95,18 @@ tasks:
         - 0abc
         # not found, want to create?
         - y
+        # incorrect volume type, 5- QCOW2 instead of DASD
+        - "5"
+        # which storage server to use?
+        - "2"
+        # volume size?
+        - 10gib
+        # volume description
+        - root disk for system cp1lp10
+        # storage section, second attempt
+        - 0abc
+        # not found, want to create?
+        - y
         # volume type, 1- DASD
         - "1"
         # which storage server to use?

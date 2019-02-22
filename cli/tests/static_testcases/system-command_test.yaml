@@ -170,8 +170,6 @@ tasks:
       - 'Invalid value for "--name":'
     - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=locked
       - Item added successfully.
-    - - system add --name=cpc5 --type=cpc --hostname=hosthmc5.example.com --state=Debug
-      - Item added successfully.
     - - system add --name=cpc3 --type=cpc --hostname=hmcserver.example.com --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
       - Item added successfully.
     - - system add --name=cpc3lp52 --hyp=cpc3 --type=LPAR --hostname=cpc3lp52.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'

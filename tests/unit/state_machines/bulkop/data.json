@@ -104,7 +104,7 @@
             "system": "cpc3lp52",
             "system_attributes": {},
             "type": "DASD",
-            "volume_id": "3956"
+            "volume_id": "39ff"
         },
         {
             "desc": null,
@@ -281,7 +281,7 @@
         },
         {
             "profile": "cpc3lp52/dasd1",
-            "volume": "ds8k16/3956"
+            "volume": "ds8k16/39ff"
         },
         {
             "profile": "kvm054/default",

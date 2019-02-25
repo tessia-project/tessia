@@ -79,8 +79,13 @@ class TestResourceStorageVolume(TestCase):
 
         # check volume values
         for field in SVOL_HEADERS:
+            # validate volume id conversion to lowercase
+            if field == 'volume_id':
+                entry_value = entry[field].lower()
+            else:
+                entry_value = entry[field]
             self.assertEqual(
-                entry[field], getattr(svol_obj, field),
+                entry_value, getattr(svol_obj, field),
                 'Comparison of field "{}" failed for login "{}"'
                 .format(field, login))
         # check fcp path and wwid
@@ -132,6 +137,9 @@ class TestResourceStorageVolume(TestCase):
             # normalize empty to None
             if field == 'desc' and not entry[field]:
                 entry_value = None
+            # validate volume id conversion to lowercase
+            elif field == 'volume_id':
+                entry_value = entry[field].lower()
             else:
                 entry_value = entry[field]
             self.assertEqual(
@@ -203,7 +211,7 @@ class TestResourceStorageVolume(TestCase):
             'server_rel'
         ).filter(
             models.StorageServer.name == server,
-            models.StorageVolume.volume_id == volume_id
+            models.StorageVolume.volume_id == volume_id.lower()
         ).one()
     # _get_svol()
 
@@ -245,7 +253,8 @@ class TestResourceStorageVolume(TestCase):
         """
         ref_entry_dasd = {
             'server': 'ds8k16',
-            'volume_id': '9999',
+            # use uppercase letters to test conversion to lowercase
+            'volume_id': '99FF',
             'type': 'DASD',
             'size': 21100,
             'system': '',
@@ -402,7 +411,8 @@ class TestResourceStorageVolume(TestCase):
         # use dasd to test update of dasd type
         ref_entry = {
             'server': 'ds8k16',
-            'volume_id': '3956',
+            # use uppercase letters to test conversion to lowercase
+            'volume_id': '39FF',
             'type': 'DASD',
             'size': 21100,
             'system': '',
@@ -710,7 +720,8 @@ class TestResourceStorageVolume(TestCase):
             "size": 7000,
             "system": "cpc3lp52",
             "type": "DASD",
-            "volume_id": "3956",
+            # use uppercase letters to test conversion to lowercase
+            "volume_id": "39FF",
             "fcp_paths": '',
             "wwid": '',
         }
@@ -727,7 +738,7 @@ class TestResourceStorageVolume(TestCase):
 
         self._mock_logger.info.assert_any_call(
             'skipping volume %s/%s (no changes)', ref_entry['server'],
-            ref_entry['volume_id'])
+            ref_entry['volume_id'].lower())
 
         # scsi disk
         ref_entry_scsi = {
@@ -757,7 +768,7 @@ class TestResourceStorageVolume(TestCase):
 
         self._mock_logger.info.assert_any_call(
             'skipping volume %s/%s (no changes)', ref_entry['server'],
-            ref_entry['volume_id'])
+            ref_entry['volume_id'].lower())
     # test_update_no_change()
 
 # TestResourceStorageVolume

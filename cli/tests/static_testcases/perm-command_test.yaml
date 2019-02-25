@@ -7,8 +7,8 @@ tasks:
   base_add:
     # lab admin to create the lab resources
     - - perm project-list
-      - - ' *Name *| *Description'
-        - ' *Admins *|'
+      - - ' *Name *\| *Description'
+        - ' *Admins *\|'
     - - perm project-list --long
       - 'Name        : Admins'
     - - perm project-add --name='GEO_1 labadmins' --desc='GEO_1 lab admins'
@@ -18,8 +18,8 @@ tasks:
     - - perm role-list
       - 'Role            : USER'
     - - perm user-list
-      - - ' *Login *| *Fullname *| *Administrator *| *Restricted *| *Job title'
-        - ' *admin *|'
+      - - ' *Login *\| *Fullname *\| *Administrator *\| *Restricted *\| *Job title'
+        - ' *admin *\|'
     - - perm user-list --long
       - 'Login         : admin'
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 labadmins'
@@ -111,8 +111,8 @@ tasks:
     - - perm project-edit --name='GEO_3 testers' --newname='GEO_2 testers' --desc='3rd tester team'
       - 'request failed. Server answered: An item with the provided value'
     - - perm project-list
-      - - ' *Name *| *Description'
-        - ' *Admins *|'
+      - - ' *Name *\| *Description'
+        - ' *Admins *\|'
     - - perm project-list --long
       - 'Name        : Admins'
     - - perm project-list --name=
@@ -120,8 +120,8 @@ tasks:
     - - perm project-list --name='GEO_1 testers'
       - No results were found.
     - - perm project-list --name='GEO_2 testers'
-      - - ' *Name *| *Description'
-        - ' *GEO_2 testers *|'
+      - - ' *Name *\| *Description'
+        - ' *GEO_2 testers *\|'
     - - perm project-list --name='GEO_2 testers' --long
       - 'Name        : GEO_2 testers'
     - - perm project-del
@@ -218,12 +218,13 @@ tasks:
     - - perm user-edit --login=lab_admin5@example.com --admin=false
       - User successfully updated.
     - - perm user-list
-      - - ' *Login *| *Fullname *| *Administrator *| *Restricted *| *Job title'
-        - ' *admin *|'
+      - - ' *Login *\| *Fullname *\| *Administrator *\| *Restricted *\| *Job title'
+        - ' *admin *\|'
     - - perm user-list --long
       - 'Login         : admin'
     - - perm user-list --login=dev4@example.com
-      - ' *Login *| *Fullname *| *Administrator *| *Restricted *| *Job title *\n.*dev4@example.com'
+      - - ' *Login *\| *Fullname *\| *Administrator *\| *Restricted *\| *Job title'
+        - ' *dev4@example.com *\|'
     - - perm user-list --login=dev4@example.com --long
       - 'Login         : dev4@example.com'
     - - perm user-list --login=dev5@example.com
@@ -261,14 +262,14 @@ tasks:
     - - perm user-roles --role=XXX
       - No results were found.
     - - perm user-roles --login=lab_admin@example.com
-      - - ' User login *| *Project name *| *Role '
-        - ' *lab_admin@example.com *| *GEO_1 labadmins *| *ADMIN_LAB'
+      - - ' User login *\| *Project name *\| *Role '
+        - ' *lab_admin@example.com *\| *GEO_1 labadmins *\| *ADMIN_LAB'
     - - perm user-roles --login=lab_admin@example.com --long
       - 'Project name : GEO_1 labadmins'
     - - perm user-roles --project='GEO_1 labadmins'
-      - ' *lab_admin@example.com *| *GEO_1 labadmins *| *ADMIN_LAB'
+      - ' *lab_admin@example.com *\| *GEO_1 labadmins *\| *ADMIN_LAB'
     - - perm user-roles --role='USER'
-      - ' *dev1@example.com *| *GEO_1 developers *| *USER'
+      - ' *dev1@example.com *\| *GEO_1 developers *\| *USER'
     - - perm user-del
       - Missing option "--login".
     - - perm user-del --login=dev9@example.com

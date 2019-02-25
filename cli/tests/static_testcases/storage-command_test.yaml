@@ -70,8 +70,8 @@ tasks:
       - 'Usage: tess storage vol-types'
   storage_server:
     - - storage server-types
-      - - ' *Type name *| *Description'
-        - ' *DASD-FCP *|'
+      - - ' *Type name *\| *Description'
+        - ' *DASD-FCP *\|'
     - - storage server-types --long
       - 'Type name   : DASD-FCP'
     - - storage server-list
@@ -105,15 +105,15 @@ tasks:
       - "request failed. Server answered: No associated item found with value '' for field 'Project'"
     # 'storage server-list' subcommand
     - - storage server-list
-      - - ' *Name *| *Hostname *| *Model *| *Server type *| *Firmware level *| *Owner *| *Project *| *Last modified *| *Modified by *| *Description'
-        - ' *DS8K16 *|'
+      - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
+        - ' *DS8K16 *\|'
     - - storage server-list --long
       - 'Name           : DS8K16'
     - - storage server-list --name=
       - 'Invalid value for "--name": value may not be empty'
     - - storage server-list --name=DS8K22
-      - - ' *Name *| *Hostname *| *Model *| *Server type *| *Firmware level *| *Owner *| *Project *| *Last modified *| *Modified by *| *Description'
-        - ' *DS8K22 *|'
+      - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
+        - ' *DS8K22 *\|'
     - - storage server-list --name=DS8K22 --long
       - 'Name           : DS8K22'
     - - storage server-list --name=ds8k22
@@ -123,8 +123,8 @@ tasks:
     - - storage server-list --model=
       - 'Invalid value for "--model": value may not be empty'
     - - storage server-list --model=DS8000
-      - - ' *Name *| *Hostname *| *Model *| *Server type *| *Firmware level *| *Owner *| *Project *| *Last modified *| *Modified by *| *Description'
-        - ' *DS8K16 *|'
+      - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
+        - ' *DS8K16 *\|'
     - - storage server-list --model=DS8000 --long
       - 'Name           : DS8K16'
     - - storage server-list --model=DS8888
@@ -132,8 +132,8 @@ tasks:
     - - storage server-list --owner=
       - No results were found.
     - - storage server-list --owner lab_admin@example.com
-      - - ' *Name *| *Hostname *| *Model *| *Server type *| *Firmware level *| *Owner *| *Project *| *Last modified *| *Modified by *| *Description'
-        - ' *DS8K23 *|'
+      - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
+        - ' *DS8K23 *\|'
     - - storage server-list --owner lab_admin@example.com --long
       - 'Name           : DS8K23'
     - - storage server-list --owner dev1@example.com
@@ -141,8 +141,8 @@ tasks:
     - - storage server-list --project=
       - No results were found.
     - - storage server-list --project='GEO_1 labadmins'
-      - - ' *Name *| *Hostname *| *Model *| *Server type *| *Firmware level *| *Owner *| *Project *| *Last modified *| *Modified by *| *Description'
-        - ' *DS8K23 *|'
+      - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
+        - ' *DS8K23 *\|'
     - - storage server-list --project='GEO_1 labadmins' --long
       - 'Name           : DS8K23'
     - - storage server-list --project='GEO_1 developers'
@@ -152,15 +152,15 @@ tasks:
     - - storage server-list --type=
       - No results were found.
     - - storage server-list --type=DASD-FCP
-      - - ' *Name *| *Hostname *| *Model *| *Server type *| *Firmware level *| *Owner *| *Project *| *Last modified *| *Modified by *| *Description'
-        - ' *DS8K16 *|'
+      - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
+        - ' *DS8K16 *\|'
     - - storage server-list --type=DASD-FCP --long
       - 'Name           : DS8K16'
     - - storage server-list --type=DASD
       - No results were found.
     - - storage server-list --owner lab_admin@example.com --name=DS8K22
-      - - ' *Name *| *Hostname *| *Model *| *Server type *| *Firmware level *| *Owner *| *Project *| *Last modified *| *Modified by *| *Description'
-        - ' *DS8K22 *|'
+      - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
+        - ' *DS8K22 *\|'
     - - storage server-list --owner lab_admin@example.com --name=DS8K22 --long
       - 'Name           : DS8K22'
     # 'storage server-edit' subcommand
@@ -227,8 +227,8 @@ tasks:
       - Item successfully deleted.
   storage_vol:
     - - storage vol-types
-      - - ' *Type name *| *Description '
-        - ' *DASD *|'
+      - - ' *Type name *\| *Description '
+        - ' *DASD *\|'
     - - storage vol-types --long
       - 'Type name   : DASD'
     # 'storage vol-add' subcommand
@@ -314,28 +314,28 @@ tasks:
       - Item added successfully.
     # 'storage vol-list' subcommand
     - - storage vol-list
-      - ' *3955 *|'
+      - ' *3955 *\|'
     - - storage vol-list --server=DS8KKK
       - No results were found.
     - - storage vol-list --server=
       - No results were found.
     - - storage vol-list --server=DS8K16
-      - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
-        - ' *3955 *|'
+      - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
+        - ' *3955 *\|'
     - - storage vol-list --server=DS8K16 --long
       - 'Volume id                  : 3955'
     - - storage vol-list --system=
       - 'Invalid value for "--system": value may not be empty'
     - - storage vol-list --system=lpar69
-      - ' *3955 *|'
+      - ' *3955 *\|'
     - - storage vol-list --id=3955
-      - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
-        - ' *3955 *|'
+      - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
+        - ' *3955 *\|'
     - - storage vol-list --id=3955 --long
       - 'Volume id                  : 3955'
     - - storage vol-list --id=ED51
-      - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
-        - ' *ED51 *|'
+      - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
+        - ' *ed51 *\|'
     - - storage vol-list --id=ED51 --long
       - 'Volume id                  : ed51'
     - - storage vol-list --id=
@@ -345,15 +345,15 @@ tasks:
     - - storage vol-list --server=DS8K16 --owner=
       - No results were found.
     - - storage vol-list --server=DS8K16 --owner=dev1@example.com
-      - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
-        - ' *3955 *|'
+      - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
+        - ' *3955 *\|'
     - - storage vol-list --server=DS8K16 --owner=dev1@example.com --long
       - 'Volume id                  : 3955'
     - - storage vol-list --server=DS8K16 --owner=dev10@example.com
       - No results were found.
     - - storage vol-list --server=DS8K16 --owner=lab_admin@example.com
-      - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
-        - ' *3952 *|'
+      - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
+        - ' *3952 *\|'
     - - storage vol-list --server=DS8K16 --owner=lab_admin@example.com --long
       - 'Volume id                  : 3952'
       # the pool support is not implemented yet
@@ -362,8 +362,8 @@ tasks:
     - - storage vol-list --server=DS8K16 --project=
       - No results were found.
     - - storage vol-list --server=DS8K16 --project='GEO_1 developers'
-      - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
-        - ' *3955 *|'
+      - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
+        - ' *3955 *\|'
     - - storage vol-list --server=DS8K16 --project='GEO_1 developers' --long
       - 'Volume id                  : 3955'
     - - storage vol-list --server=DS8K16 --project='GEO_1'
@@ -371,8 +371,8 @@ tasks:
     - - storage vol-list --server=DS8K16 --type=
       - No results were found.
     - - storage vol-list --server=DS8K16 --type=DASD
-      - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
-        - ' *3955 *|'
+      - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
+        - ' *3955 *\|'
     - - storage vol-list --server=DS8K16 --type=DASD --long
       - 'Volume id                  : 3955'
     - - storage vol-list --server=DS8K16 --type=ISCSI
@@ -399,7 +399,7 @@ tasks:
       - Item successfully updated.
     # make sure update worked
     - - storage vol-list --system=lpar69
-      - ' *3955 *|'
+      - ' *3955 *\|'
     - - storage vol-edit --server=DS8K16 --id=3955 --newid=
       - 'Error: Invalid value for "--newid": value may not be empty'
     - - storage vol-edit --server=DS8K16 --id=3955 --newid=3955
@@ -439,8 +439,8 @@ tasks:
     - - storage vol-edit --server=DS8K16 --id=3952 --type=FCP
       - 'no such option: --type'
     - - storage vol-list --id=3952
-      - - ' *Volume id *| *Storage server *| *Volume size *| *Volume type *| *Attached to system *| *Owner *| *Project *| *Associated system profiles'
-        - ' *3952 *|'
+      - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
+        - ' *3952 *\|'
     - - storage vol-list --id=3952 --long
       - 'Volume id                  : 3952'
     - - storage vol-edit --server=DS8K16 --id=3955 --login=lab_admin@example.com
@@ -578,7 +578,7 @@ tasks:
       - Partition successfully added.
     # next two commands are to make sure not specifying size used all available space
     - - storage part-list --server=DS8K16 --id=3955
-      - "1 *| 6.52 GiB *| primary *| ext4 *| *| *\n"
+      - "1 *\\| 6.52 GiB *\\| primary *\\| ext4 *\\| / *\\| *\n"
     - - storage part-add --server=DS8K16 --id=3955 --fs=ext4
       - "Error: no available free size to create the partition"
     - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=3gb
@@ -589,7 +589,7 @@ tasks:
       - Partition successfully added.
     # resulting partition should be of 2gb
     - - storage part-list --server=DS8K16 --id=3952
-      - "3 *| 1.86 GiB *| primary *| ext4 *| *| *\n"
+      - "3 *\\| 1.86 GiB *\\| primary *\\| ext3 *\\| /home *\\| qqqq *\n"
     - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=7gb --mp=/
       - "Error: size specified is bigger than available free space 0MiB"
     - - storage part-add --server=DS8K16 --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=first
@@ -613,7 +613,7 @@ tasks:
     - - storage part-list --server=DS8K16 --id=9955
       - volume not found.
     - - storage part-list --server=DS8K16 --id=3955
-      - 'Partition table type: dasd(.|\n)+\n$'
+      - 'Partition table type: dasd'
     - - storage part-list --server=DS8K16 --id=3952
       - 'Partition table type: gpt'
     - - storage part-list --server=DS8K16 --id=1022400200000000

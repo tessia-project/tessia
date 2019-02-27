@@ -387,6 +387,8 @@ class ResourceHandlerStorageVolume(ResourceHandlerBase):
         entry = dict([
             (key, value) for key, value in entry.items()
             if key.upper() in FIELDS_CSV])
+        # volume ids are stored in db as lowercase
+        entry['volume_id'] = entry['volume_id'].lower()
 
         vol_obj = StorageVolume.query.join(
             'server_rel'

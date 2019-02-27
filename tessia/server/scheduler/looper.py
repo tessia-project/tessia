@@ -360,6 +360,15 @@ class Looper(object):
                     .format(resource, str(exc)))
                 self._session.commit()
                 return
+            # state must allow actions too
+            if system_obj.state != 'AVAILABLE':
+                request.state = SchedulerRequest.STATE_FAILED
+                request.result = (
+                    'System {} must be switched to a valid state before '
+                    'actions can be performed (current state: {})'.format(
+                        system_obj.name, system_obj.state))
+                self._session.commit()
+                return
 
         # create job object
         new_job = SchedulerJob(

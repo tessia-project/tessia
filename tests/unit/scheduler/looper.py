@@ -23,6 +23,7 @@ from datetime import datetime
 from tessia.server.db import connection
 from tessia.server.db.models import SchedulerRequest
 from tessia.server.db.models import SchedulerJob
+from tessia.server.db.models import System, SystemState
 from tessia.server.db.models import User
 from tessia.server.scheduler import looper
 from tessia.server.scheduler import resources_manager
@@ -1117,6 +1118,39 @@ class TestLooper(TestCase):
         self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
         self.assertRegex(request.result, error_msg)
     # test_submit_no_permission()
+
+    def test_submit_system_invalid_state(self):
+        """
+        Submit a job for a system which is not in a state which allows actions
+        """
+        error_msg = (
+            'System {} must be switched to a valid state before '
+            'actions can be performed (current state: {})')
+
+        sys_states = [st_obj.name for st_obj in SystemState.query.all()
+                      if st_obj.name != 'AVAILABLE']
+        sys_obj = System.query.filter_by(name='lpar0').one()
+        orig_state = sys_obj.state
+        for state in sys_states:
+            sys_obj.state = state
+            self._session.add(sys_obj)
+            self._session.commit()
+            try:
+                request = self._make_request(
+                    self._make_resources(['lpar0'], ['cpc0']),
+                    self._requester,
+                    commit=True)
+                self._looper.loop()
+            finally:
+                sys_obj.state = orig_state
+                self._session.add(sys_obj)
+                self._session.delete(request)
+                self._session.commit()
+
+            self.assertEqual(request.state, SchedulerRequest.STATE_FAILED)
+            self.assertEqual(
+                request.result, error_msg.format(sys_obj.name, state))
+    # test_submit_invalid_state()
 
     def test_signal_handler(self):
         """

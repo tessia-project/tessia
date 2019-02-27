@@ -194,9 +194,10 @@ SYSTEM_TYPES = [
 ]
 
 SYSTEM_STATES = [
-    'AVAILABLE,Available for use',
-    'LOCKED,Usage blocked',
-    'DEBUG,Temporarily disabled for debugging purposes',
+    'AVAILABLE,System can be used normally',
+    'LOCKED,System is protected by owner from unwanted actions',
+    'RESERVED,System is reserved for a project/team and cannot be used',
+    'UNASSIGNED,System does not belong to any user and cannot be used',
 ]
 
 VOLUME_TYPES = [

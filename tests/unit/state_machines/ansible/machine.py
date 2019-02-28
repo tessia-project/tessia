@@ -310,6 +310,7 @@ class TestAnsibleMachine(TestCase):
                 {
                     'name': lpar_system,
                     'groups': ['ioserver'],
+                    'profile': 'fcp1',
                 }
             ]
         }
@@ -466,6 +467,30 @@ class TestAnsibleMachine(TestCase):
         # check if directory was removed
         self.assertFalse(os.path.exists(machine_obj._temp_dir))
     # test_start_web()
+
+    def test_start_wrong_profile(self):
+        """
+        Try to run a playbook while specifying a system profile that does not
+        exist.
+        """
+        test_system = 'kvm054'
+
+        request = {
+            'source': 'https://example._com/ansible/ansible-example.tgz',
+            'playbook': 'workload1/site.yaml',
+            'systems': [
+                {
+                    'name': test_system,
+                    'groups': ['webservers', 'dbservers'],
+                    'profile': 'does_not_exist',
+                }
+            ],
+            'verbosity': 'DEBUG'
+        }
+        with self.assertRaisesRegex(ValueError, 'Profile .* not found'):
+            machine_obj = machine.AnsibleMachine(str(request))
+            machine_obj.start()
+    # test_start_wrong_profile()
 
     # TODO: simulate a signal kill and verify cleanup
 

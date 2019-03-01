@@ -89,7 +89,7 @@
             "gateway": null,
             "hypervisor_profile": null,
             "memory": 1024,
-            "name": "default",
+            "name": "fcp1",
             "operating_system": "sles12.1",
             "parameters": null,
             "system": "kvm054"

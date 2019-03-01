@@ -441,10 +441,15 @@ class AnsibleMachine(BaseMachine):
             profile_name = system.get('profile')
             # profile was specified: use it
             if profile_name is not None:
-                profile_obj = SystemProfile.query.filter_by(
-                    name=profile_name, system=system['name']).one_or_none()
+                profile_obj = SystemProfile.query.join(
+                    'system_rel'
+                ).filter(
+                    SystemProfile.name == profile_name
+                ).filter(
+                    System.name == system['name']
+                ).one_or_none()
                 if profile_obj is None:
-                    raise RuntimeError(
+                    raise ValueError(
                         'Profile {} of system {} not found'.format(
                             profile_name, system['name']))
             # no profile was specified: use default
@@ -454,7 +459,7 @@ class AnsibleMachine(BaseMachine):
                 ).filter(
                     SystemProfile.default == bool(True)
                 ).filter(
-                    SystemProfile.system == system['name']
+                    System.name == system['name']
                 ).one_or_none()
                 if profile_obj is None:
                     raise RuntimeError(

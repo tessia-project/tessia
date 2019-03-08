@@ -49,6 +49,19 @@
             ],
             "title": "osa card",
             "type": "object"
+        },
+        {
+            "properties": {
+                "fid": {
+                    "pattern": "^[a-f0-9]+$",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "fid"
+            ],
+            "title": "roce card",
+            "type": "object"
         }
     ],
     "type": "object"

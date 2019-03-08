@@ -32,12 +32,12 @@ TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates/"
 IFACE_TYPES = [
     'OSA,OSA card',
     'MACVTAP,KVM macvtap configured by libvirt',
+    'ROCE,PCI card',
 
     # TODO:
     #'OVS_BRIDGE,Openvswitch bridge',
     #'LINUX_BRIDGE,Linux bridge',
     #'HSI,Hipersocket',
-    #'ROCE,PCI card',
     #'OVS_VPORT,Openvswitch virtual port',
 ]
 

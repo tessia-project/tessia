@@ -48,6 +48,11 @@ class SmAutoyast(SmBase):
         super().__init__(
             os_entry, profile_entry, template_entry, *args, **kwargs)
         self._logger = logging.getLogger(__name__)
+
+        # roce card installations are not supported
+        if self._gw_iface['type'] == 'ROCE':
+            raise ValueError('Installations using a ROCE card as the gateway '
+                             'interface are not supported by AutoYast')
     # __init__()
 
     def _fetch_lines_until_end(self, shell, offset, logfile_path):
@@ -133,7 +138,8 @@ class SmAutoyast(SmBase):
             "kill -9 $(ps --no-header -o pid --ppid=`pgrep 'inst_setup'`)")
         try:
             shell.run(kill_cmd, timeout=1)
-        except TimeoutError:
+        # catch timeout errors and socket errors
+        except OSError:
             pass
         shell.close()
         ssh_client.logoff()

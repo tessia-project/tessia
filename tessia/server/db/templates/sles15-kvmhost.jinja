@@ -220,12 +220,14 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
       <interface>
         <bootproto>static</bootproto>
         <device>{{ iface["osname"] }}</device>
+        {% if iface["ip"] %}
         <ipaddr>{{ iface["ip"] }}</ipaddr>
+        <netmask>{{ iface["mask"] }}</netmask>
+        <prefixlen>{{ iface["mask_bits"] }}</prefixlen>
+        {% endif %}
         {% if iface["mac_addr"] %}
         <lladdr>{{ iface["mac_addr"] }}</lladdr>
         {% endif %}
-        <netmask>{{ iface["mask"] }}</netmask>
-        <prefixlen>{{ iface["mask_bits"] }}</prefixlen>
         <startmode>auto</startmode>
       </interface>
     {% endfor %}
@@ -237,7 +239,7 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
       {% for iface in config["ifaces"] %}
       <rule>
         <name>{{iface["osname"]}}</name>
-        {% if config["system_type"] != "KVM" %}
+        {% if iface["type"] == "OSA" %}
         <rule>KERNELS</rule>
         <value>{{ iface["attributes"]["ccwgroup"].split(',')[0] }}</value>
         {% else %}
@@ -250,15 +252,17 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
     {% if config["system_type"] != "KVM" %}
     <s390-devices config:type="list">
       {% for iface in config["ifaces"] %}
+        {% if iface["type"] == "OSA" %}
       <listentry>
         <chanids>{{ iface["attributes"]["ccwgroup"].replace(',', ' ') }}</chanids>
         <type>qeth</type>
-        {% if iface["attributes"]["layer2"] %}
+          {% if iface["attributes"]["layer2"] %}
         <layer2 config:type="boolean">true</layer2>
-        {% else %}
+          {% else %}
         <layer2 config:type="boolean">false</layer2>
-        {% endif %}
+          {% endif %}
       </listentry>
+        {% endif %}
       {% endfor %}
     </s390-devices>
     {% endif %}

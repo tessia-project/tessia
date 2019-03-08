@@ -79,9 +79,13 @@
 {% macro iface_add_ip(iface) -%}
    echo -e '' >> /target/etc/network/interfaces ; \
    echo -e 'auto {{iface['osname']}}' >> /target/etc/network/interfaces ; \
+  {% if iface['ip'] -%}
    echo -e 'iface {{iface['osname']}} inet static' >> /target/etc/network/interfaces ; \
    echo -e '    address {{iface['ip']}}' >> /target/etc/network/interfaces ; \
    echo -e '    netmask {{iface['mask']}}' >> /target/etc/network/interfaces ; \
+  {% else -%}
+   echo -e 'iface {{iface['osname']}} inet manual' >> /target/etc/network/interfaces ; \
+  {% endif -%}
 {%- endmacro -%}
 
 {% macro iface_append_hwaddress(iface) -%}
@@ -98,8 +102,8 @@
 {%- endif -%}
 {%- endmacro -%}
 
-{% macro iface_add_link_file(iface) -%}
-    echo -e '[Match]\nMACAddress={{iface['mac_addr']}}\n\n[Link]\nName={{iface['osname']}}\n' > /target/etc/systemd/network/70-persistent-{{iface['osname']}}.link ; \
+{% macro iface_add_udev_file(iface) -%}
+    echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="{{iface['mac_addr']}}", ATTR{dev_id}=="0x0", ATTR{type}=="1", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules; \
 {%- endmacro -%}
 
 {% macro configure_gw_iface(iface) -%}
@@ -107,9 +111,10 @@
     echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", KERNEL=="eth*", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
     sed -i 's/enc{{iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}}/{{iface['osname']}}/g' /target/etc/network/interfaces ; \
     {{iface_append_hwaddress(iface)}}
-{%- elif iface['type'] == 'MACVTAP' -%}
-    {{iface_add_link_file(iface)}}
-    sed -i 's/eth0/{{iface['osname']}}/g' /target/etc/network/interfaces ; \
+{%- else -%}
+    {{iface_add_udev_file(iface)}}
+    sed -i 's/auto [^l][^o]*$/auto {{iface['osname']}}/g' /target/etc/network/interfaces ; \
+    sed -i 's/iface [^l][^o][^ ]* \(.*\)$/iface {{iface['osname']}} \1/g' /target/etc/network/interfaces ; \
 {%- endif -%}
 {% endmacro %}
 
@@ -294,8 +299,8 @@ d-i preseed/late_command string \
      {{iface_add_ip(iface)}}
     {% if iface['type'] == "OSA" -%}
       {{iface_append_hwaddress(iface)}}
-    {% elif iface['type'] == 'MACVTAP' -%}
-      {{iface_add_link_file(iface)}}
+    {% else -%}
+      {{iface_add_udev_file(iface)}}
     {% endif -%}
    {% endif -%}
 {% endfor -%}

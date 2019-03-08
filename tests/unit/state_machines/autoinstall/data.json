@@ -33,6 +33,14 @@
             "subnet": "CPC3 shared"
         },
         {
+            "address": "192.168.161.227",
+            "desc": "Used by CPC3LP55 ROCE card",
+            "modifier": "admin",
+            "owner": "admin",
+            "project": "Admins",
+            "subnet": "CPC3 shared"
+        },
+        {
             "address": "10.100.54.2",
             "desc": null,
             "modifier": "admin",
@@ -1104,6 +1112,17 @@
         },
         {
             "attributes": {
+                "fid": "511"
+            },
+            "ip_address": "CPC3 shared/192.168.161.227",
+            "mac_address": "02:57:55:f1:71:05",
+            "name": "roce-1",
+            "osname": "pci01",
+            "system": "CPC3LP55",
+            "type": "ROCE"
+        },
+        {
+            "attributes": {
                 "ccwgroup": "0.0.f500,0.0.f501,0.0.f502",
                 "layer2": false
             },
@@ -1113,6 +1132,17 @@
             "osname": "enccwf500",
             "system": "vmguest01",
             "type": "OSA"
+        },
+        {
+            "attributes": {
+                "fid": "655"
+            },
+            "ip_address": null,
+            "mac_address": "05:01:00:00:00:01",
+            "name": "roce-1",
+            "osname": "pci01",
+            "system": "vmguest01",
+            "type": "ROCE"
         },
         {
             "attributes": {
@@ -1168,11 +1198,15 @@
             "profile": "CPC3LP55/default_CPC3LP55_one_scsi"
         },
         {
-            "iface": "CPC3LP55/external osa",
+            "iface": "CPC3LP55/roce-1",
             "profile": "CPC3LP55/default_CPC3LP55_SCSI"
         },
         {
             "iface": "vmguest01/gateway osa",
+            "profile": "vmguest01/default"
+        },
+        {
+            "iface": "vmguest01/roce-1",
             "profile": "vmguest01/default"
         },
         {

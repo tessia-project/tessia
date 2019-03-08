@@ -36,9 +36,9 @@ lang en_US.UTF-8
 
 # Network information
 {% for iface in config["ifaces"] %}
-network  --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["systemd_osname"]}} --ip={{iface["ip"]}} --netmask={{iface["mask"]}} --noipv6 --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}}{% endif %}
+network --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["systemd_osname"]}} {% if iface['ip'] %}--ip={{iface["ip"]}} --netmask={{iface["mask"]}}{% endif %} --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}}{% endif %}
 {% endfor %}
-network  --hostname={{config["hostname"]}}
+network --hostname={{config["hostname"]}}
 
 # Root password
 rootpw --iscrypted {{config["sha512rootpwd"]}}
@@ -91,7 +91,7 @@ python
 sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
 mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
   {% endif -%}
-  {% if iface["mac_addr"] and config["system_type"] != "KVM" -%}
+  {% if iface["mac_addr"] and iface["type"] == "OSA" -%}
 echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
   {% endif -%}
   {% if iface["search_list"] -%}

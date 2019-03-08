@@ -443,8 +443,7 @@ tasks:
     - - system iface-types
       - - ' *Type name *| *Description'
         - ' *OSA *|'
-    - - system iface-types --long
-      - 'Type name   : OSA'
+        - ' *ROCE *|'
     # 'system iface-add' subcommand
     - - system iface-add
       - Missing option "--system".
@@ -537,6 +536,13 @@ tasks:
       - Item added successfully.
     - - system iface-add --system=guest55 --name='default macvtap5' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm-guest.xml' --hostiface=enccw0.0.f500
       - 'one of --hostiface or --libvirt must be specified, but not both'
+    # ROCE card type
+    - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518
+      - 'Error: for ROCE cards --fid must be specified'
+    - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518 --fid=00111
+      - 'Error: for ROCE cards --mac must be specified'
+    - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518 --fid=00111 --mac=00:11:22:33:44:55
+      - Item added successfully.
    # 'system iface-list' subcommand
     - - system iface-list
       - at least one of --system or --name must be specified
@@ -602,6 +608,8 @@ tasks:
       - 'Invalid value for "--ip": 9152.161.222 is not a valid ip address'
     - - system iface-list --system=cpc3lp52 --ip=
       - 'Invalid value for "--ip": value may not be empty'
+    - - system iface-list --system=cpc3lp52 --name=roce-1
+      - " *{'fid': '111'} *|"
     # 'system iface-edit' subcommand
     - - system iface-edit
       - Missing option "--system".
@@ -623,14 +631,6 @@ tasks:
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa23' --newname='default osa2'
       - network interface not found.
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=dummy
-      - "request failed. Server answered: No associated item found with value 'DUMMY' for field 'Interface type'"
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=OS
-      - "request failed. Server answered: No associated item found with value 'OS' for field 'Interface type'"
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=macvtap
-      - Item successfully updated.
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --type=OSA
-      - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --devname=
       - 'Invalid value for "--devname": value may not be empty'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --devname=en0
@@ -659,8 +659,6 @@ tasks:
       - 'Invalid value for "--ip":  is not a valid ip address'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=
       - 'Invalid value for "--layer2":  is not a valid boolean'
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=fals
-      - 'Invalid value for "--layer2": fals is not a valid boolean'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=false
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=
@@ -685,9 +683,9 @@ tasks:
       - "No such file or directory: 'kvm.xml'"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='kvm-guest.xml'
       - invalid attribute for this iface type
-    - - system iface-edit --system=cpc3lp52 --name='default osa' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='' --ip=''
+    - - system iface-edit --system=cpc3lp52 --name='default osa' --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='' --ip=''
       - 'Invalid value for "--subnet": value may not be empty'
-    - - system iface-edit --system=cpc3lp52 --name='default osa' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --ip=''
+    - - system iface-edit --system=cpc3lp52 --name='default osa' --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --ip=''
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa' --ccwgroup=0xf500,0.0.f501,f502
       - Item successfully updated.
@@ -698,25 +696,25 @@ tasks:
     - - system iface-edit --system=guest55 --name='macvtap'
       - network interface not found.
       # with ip and without subnet
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --ip=192.168.160.55 --hostiface=enccw0.0.f500
+    - - system iface-edit --system=guest55 --name='default macvtap' --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --ip=192.168.160.55 --hostiface=enccw0.0.f500
       - '--subnet and --ip must be specified together'
       # with subnet and without ip
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --hostiface=enccw0.0.f500
+    - - system iface-edit --system=guest55 --name='default macvtap' --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --hostiface=enccw0.0.f500
       - '--subnet and --ip must be specified together'
       # without ip and without subnet
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --hostiface=enccw0.0.f500
+    - - system iface-edit --system=guest55 --name='default macvtap' --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --hostiface=enccw0.0.f500
       - Item successfully updated.
       # with ip and with subnet
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
+    - - system iface-edit --system=guest55 --name='default macvtap' --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
       - Item successfully updated.
       # invalid attribute for this iface type
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --layer2=true
+    - - system iface-edit --system=guest55 --name='default macvtap' --layer2=true
       - invalid attribute for this iface type
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --ccwgroup=f500,f501,f502
+    - - system iface-edit --system=guest55 --name='default macvtap' --ccwgroup=f500,f501,f502
       - invalid attribute for this iface type
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --portname=OSAE1
+    - - system iface-edit --system=guest55 --name='default macvtap' --portname=OSAE1
       - invalid attribute for this iface type
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=macvtap  --portno=0
+    - - system iface-edit --system=guest55 --name='default macvtap' --portno=0
       - invalid attribute for this iface type
       # no update criteria
     - - system iface-edit --system=guest55 --name='default macvtap'
@@ -731,11 +729,11 @@ tasks:
       - "No such file or directory: 'kvm.xml'"
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt=''
       - 'one of --hostiface or --libvirt must be present, but not both'
-      # change type to OSA
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=OSA
+      # change roce card's fid
+    - - system iface-edit --system=cpc3lp52 --name=roce-1 --fid=0222
       - Item successfully updated.
-    - - system iface-edit --system=guest55 --name='default macvtap' --type=OSA  --layer2=true
-      - '--ccwgroup must be present'
+    - - system iface-list --system=cpc3lp52 --name=roce-1
+      - " *{'fid': '222'} *|"
     # 'system iface-del' subcommand
     - - system iface-del
       - Missing option "--system".

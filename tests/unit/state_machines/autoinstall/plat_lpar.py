@@ -99,9 +99,9 @@ class TestPlatLpar(TestCase):
                                   self._parsed_gw_iface)
     # _create_plat_base()
 
-    def test_boot(self):
+    def test_boot_dasd_osa(self):
         """
-        Test the boot operation.
+        Test the boot operation with dasd as root and osa network iface.
         """
         mock_hyp = self._mock_hypervisor_cls.return_value
         plat = self._create_plat_lpar()
@@ -117,10 +117,24 @@ class TestPlatLpar(TestCase):
                                           mock.ANY)
     # test_boot()
 
-    def test_boot_fcp(self):
+    def test_boot_scsi_roce(self):
         """
-        Test the boot operation.
+        Test the boot operation with scsi as root, roce network iface, and live
+        image on a scsi disk.
         """
+        self._os_entry = utils.get_os("rhel7.2")
+        self._profile_entry = utils.get_profile(
+            "CPC3LP55/default_CPC3LP55_SCSI")
+        self._hyper_profile_entry = self._profile_entry.hypervisor_profile_rel
+        self._repo_entry = self._os_entry.repository_rel[0]
+        self._gw_iface_entry = self._profile_entry.gateway_rel
+        # gateway interface not defined: use first available
+        if self._gw_iface_entry is None:
+            self._gw_iface_entry = self._profile_entry.system_ifaces_rel[0]
+        self._parsed_gw_iface = (
+            SmBase._parse_iface(self._gw_iface_entry, True))
+
+        # test also live image on scsi disk
         assoc_model = models.StorageVolumeProfileAssociation
         assoc_obj = self.db.session.query(
             assoc_model
@@ -131,9 +145,8 @@ class TestPlatLpar(TestCase):
         ).one()
         orig_vol_id = assoc_obj.volume_id
 
-        vol_model = models.StorageVolume
-        vol_obj = self.db.session.query(
-            vol_model).filter_by(volume_id='CPCDISK2').one()
+        vol_obj = models.StorageVolume.query.filter_by(
+            volume_id='CPCDISK2').one()
         assoc_obj.volume_id = vol_obj.id
         self.db.session.add(assoc_obj)
         self.db.session.commit()
@@ -153,7 +166,7 @@ class TestPlatLpar(TestCase):
         assoc_obj.volume_id = orig_vol_id
         self.db.session.add(assoc_obj)
         self.db.session.commit()
-    # test_boot()
+    # test_boot_scsi_roce()
 
     def test_boot_no_liveimg(self):
         """

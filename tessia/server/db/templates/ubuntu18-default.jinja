@@ -76,20 +76,24 @@
    echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
 {%- endmacro -%}
 
-{% macro iface_add_ip(iface) -%}
+{% macro iface_add_config(iface) -%}
    echo -e 'network:' > /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
    echo -e '  version: 2' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
    echo -e '  renderer: networkd' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
    echo -e '  ethernets:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
    echo -e '    {{iface['osname']}}:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+  {% if iface['ip'] -%}
    echo -e '      addresses: [ {{iface['ip']}}/{{iface['mask_bits']}} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-{%- endmacro -%}
-
-{% macro iface_append_hwaddress(iface) -%}
-   {% if iface['mac_addr'] -%}
-    mkdir -p /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d; \
-    echo -e '[Match]\nName={{iface['osname']}}\n\n[Link]\nMACAddress={{iface['mac_addr']}}\n' > /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d/10-netplan-{{iface['osname']}}.conf; \
-   {% endif -%}
+  {% endif -%}
+  {% if iface['type'] != 'OSA' -%}
+   echo -e '      set-name: {{iface['osname']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '      match:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '        macaddress: {{iface['mac_addr']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+    {{netplan_workaround()}}
+  {% elif iface['mac_addr'] -%}
+   mkdir -p /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d; \
+   echo -e '[Match]\nName={{iface['osname']}}\n\n[Link]\nMACAddress={{iface['mac_addr']}}\n' > /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d/10-netplan-{{iface['osname']}}.conf; \
+  {% endif -%}
 {%- endmacro -%}
 
 {% macro change_ipl_device(system_type, svol) -%}
@@ -100,21 +104,19 @@
 {%- endif -%}
 {%- endmacro -%}
 
-{% macro iface_add_udev_file(iface) -%}
-    echo -e 'SUBSYSTEM=="net", ACTION=="add", ATTR{address}=="{{iface['mac_addr']}}", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
-{%- endmacro -%}
-
 {% macro configure_gw_iface(iface) -%}
 {% if iface['type'] == "OSA" -%}
     echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
     sed -i 's/enc{{iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}}:/{{iface['osname']}}:/g' /target/etc/netplan/01-netcfg.yaml; \
-    {{iface_append_hwaddress(iface)}}
-{%- elif iface['type'] == 'MACVTAP' -%}
-    {{iface_add_udev_file(iface)}}
-    sed -E -i 's/^    [a-zA-Z0-9_-]+:/    {{iface['osname']}}:/g' /target/etc/netplan/01-netcfg.yaml; \
-    {#- workaround for https://github.com/systemd/systemd/issues/7293 -#}
-    mkdir -p /target/etc/systemd/system/systemd-networkd.service.d; \
-    echo -e '[Service]\nExecStartPre=/sbin/udevadm settle\n' > /target/etc/systemd/system/systemd-networkd.service.d/01-after-udev.conf; \
+  {% if iface['mac_addr'] -%}
+    mkdir -p /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d; \
+    echo -e '[Match]\nName={{iface['osname']}}\n\n[Link]\nMACAddress={{iface['mac_addr']}}\n' > /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d/10-netplan-{{iface['osname']}}.conf; \
+  {% endif -%}
+{%- else -%}
+    echo -e '      set-name: {{iface['osname']}}' >> /target/etc/netplan/01-netcfg.yaml; \
+    echo -e '      match:' >> /target/etc/netplan/01-netcfg.yaml; \
+    echo -e '          macaddress: {{iface['mac_addr']}}' >> /target/etc/netplan/01-netcfg.yaml; \
+    {{netplan_workaround()}}
 {%- endif -%}
 {% endmacro %}
 
@@ -136,6 +138,15 @@ fd.close()"; \
 {% for repo in config["repos"][1:] -%}
     echo -e 'deb {{repo['apt_url']}}' >> /target/etc/apt/sources.list; \
 {% endfor -%}
+{% endmacro %}
+{% macro netplan_workaround() -%}
+    {#- workaround for https://bugs.launchpad.net/netplan/+bug/1768827 -#}
+    if [ ! -f "/target/etc/systemd/system/netplan-apply.service" ]; then \
+    echo -e '[Unit]\nAfter=network.target\n' > /target/etc/systemd/system/netplan-apply.service; \
+    echo -e '[Service]\nExecStart=/usr/sbin/netplan apply\n' >> /target/etc/systemd/system/netplan-apply.service; \
+    echo -e '[Install]\nWantedBy=multi-user.target\n' >> /target/etc/systemd/system/netplan-apply.service; \
+    chroot /target systemctl enable netplan-apply.service; \
+    fi; \
 {% endmacro %}
 
 {# Since only one disk and one network interface is supported during
@@ -293,15 +304,10 @@ d-i preseed/late_command string \
 {%- endfor -%}
 {% for iface in config['ifaces'] -%}
    {% if not iface['is_gateway'] -%}
-    {% if iface['type'] == "OSA" -%}
-     {{enable_osa(iface)}}
-    {% endif -%}
-     {{iface_add_ip(iface)}}
-    {% if iface['type'] == "OSA" -%}
-      {{iface_append_hwaddress(iface)}}
-    {% elif iface['type'] == 'MACVTAP' -%}
-      {{iface_add_udev_file(iface)}}
-    {% endif -%}
+     {% if iface['type'] == "OSA" -%}
+       {{enable_osa(iface)}}
+     {% endif -%}
+     {{iface_add_config(iface)}}
    {% endif -%}
 {% endfor -%}
     echo 'sclp_line0' >> /target/etc/securetty ; \

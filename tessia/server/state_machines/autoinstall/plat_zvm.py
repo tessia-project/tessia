@@ -83,15 +83,27 @@ class PlatZvm(PlatBase):
 
         Returns:
             dict: iface information as expected by baselib
+
+        Raises:
+            ValueError: in case interface type is not supported
         """
-        # use only the base address
-        ccw_base = []
-        for channel in iface_entry.attributes['ccwgroup'].split(','):
-            ccw_base.append(channel.split('.')[-1])
-        result = {
-            'id': ','.join(ccw_base),
-            'type': iface_entry.type.lower(),
-        }
+        # osa card: use only the base address
+        if iface_entry.type.lower() == 'osa':
+            ccw_base = []
+            for channel in iface_entry.attributes['ccwgroup'].split(','):
+                ccw_base.append(channel.split('.')[-1])
+            result = {
+                'id': ','.join(ccw_base),
+                'type': iface_entry.type.lower(),
+            }
+        elif iface_entry.type.lower() == 'roce':
+            result = {
+                'id': iface_entry.attributes['fid'],
+                'type': 'pci',
+            }
+        else:
+            raise ValueError('Unsupported network card type {}'
+                             .format(iface_entry.type))
         return result
     # _zvm_jsonify_iface()
 

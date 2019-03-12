@@ -670,6 +670,8 @@ class TestSecureResource(TestCase):
             login_add (str): user login to be used as owner
             logins_list (list): logins to be used for request
         """
+        time_range = [int(time.time())]
+
         # store the existing entries and add them to the new ones for
         # later validation
         resp = self._do_request(
@@ -679,10 +681,22 @@ class TestSecureResource(TestCase):
         # dict from the _create_many_entries return
         for entry in entries:
             entry['id'] = entry.pop('$uri').split('/')[-1]
+            try:
+                mod_datetime = int(entry['modified']['$date'] / 1000.0)
+            # target has no modified time: skip it
+            except KeyError:
+                continue
+            if mod_datetime < time_range[0]:
+                time_range[0] = mod_datetime
+        time_range[0] = time_range[0] - 5
 
         # create some more entries to work with
-        new_entries, time_range = self._create_many_entries(login_add, 5)
+        new_entries, create_time_range = self._create_many_entries(
+            login_add, 5)
+        # put existing and new entries together
         entries += new_entries
+        # use end time from create operation
+        time_range.append(create_time_range[1])
 
         # retrieve list
         for login in logins_list:

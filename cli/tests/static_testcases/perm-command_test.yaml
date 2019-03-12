@@ -24,10 +24,6 @@ tasks:
       - 'Login         : admin'
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1 labadmins'
       - User role added successfully.
-    - - perm user-roles --login=lab_admin@example.com
-      - ' *Project name *| *Role *\n.*GEO_1 labadmins'
-    - - perm user-roles --login=lab_admin@example.com --long
-      - 'Project name : GEO_1 labadmins'
     # create the target project
     - - perm project-add --name='GEO_1 developers' --desc='Developer team'
       - Item added successfully.
@@ -258,16 +254,21 @@ tasks:
       - 'no such option: --restructed'
     - - perm user-list --name='Developer 4'
       - 'no such option: --name'
-    - - perm user-roles
-      - Missing option "--login".
     - - perm user-roles --login=dev3@example.com
       - No results were found.
-    - - perm user-roles --login=XXX
+    - - perm user-roles --project=XXX
+      - No results were found.
+    - - perm user-roles --role=XXX
       - No results were found.
     - - perm user-roles --login=lab_admin@example.com
-      - ' *Project name *| *Role *\n.*GEO_1 labadmins'
+      - - ' User login *| *Project name *| *Role '
+        - ' *lab_admin@example.com *| *GEO_1 labadmins *| *ADMIN_LAB'
     - - perm user-roles --login=lab_admin@example.com --long
       - 'Project name : GEO_1 labadmins'
+    - - perm user-roles --project='GEO_1 labadmins'
+      - ' *lab_admin@example.com *| *GEO_1 labadmins *| *ADMIN_LAB'
+    - - perm user-roles --role='USER'
+      - ' *dev1@example.com *| *GEO_1 developers *| *USER'
     - - perm user-del
       - Missing option "--login".
     - - perm user-del --login=dev9@example.com

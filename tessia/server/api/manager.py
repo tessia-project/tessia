@@ -166,7 +166,29 @@ class ApiManager(SQLAlchemyManager):
                 query = self._query_filter(
                     query, self._and_expression(expressions))
 
+        # sort field(s) specified: add join to the fk fields as needed
         if sort:
+            for _, attribute, _ in sort:
+                column = getattr(self.model, attribute)
+                if (hasattr(column, 'property') and
+                        (column.property.expression.table.name !=
+                         self.model.__tablename__)
+                   ):
+                    query = query.join(attribute + '_rel')
+                # special case parent/child for systems
+                elif (self.model.__tablename__ == 'systems' and
+                      attribute == 'hypervisor'):
+                    parent = aliased(self.model)
+                    query = query.join(parent, 'hypervisor_rel')
+                    query = query.filter(parent.id == self.model.hypervisor_id)
+                # special case parent/child for system profiles
+                elif (self.model.__tablename__ == 'system_profiles' and
+                      attribute == 'hypervisor_profile'):
+                    parent = aliased(self.model)
+                    query = query.join(parent, 'hypervisor_profile_rel')
+                    query = query.filter(
+                        parent.id == self.model.hypervisor_profile_id)
+
             query = self._query_order_by(query, sort)
 
         return query

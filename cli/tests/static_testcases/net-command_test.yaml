@@ -43,6 +43,10 @@ tasks:
       - 'Usage: tess net ip-edit'
     - - net ip-list  -h
       - 'Usage: tess net ip-list'
+    - - net ip-export  -h
+      - 'Usage: tess net ip-export'
+    - - net ip-import  -h
+      - 'Usage: tess net ip-import'
     - - net subnet-add  -h
       - 'Usage: tess net subnet-add'
     - - net subnet-del  -h
@@ -295,6 +299,43 @@ tasks:
       - 'IP address *: 192.168.161.222'
     - - net ip-list --subnet='GEO_1-NE-1822' --owner=dev2@example.com
       - No results were found.
+    - - net ip-export
+      - - SUBNET,ADDRESS,SYSTEM,OWNER,PROJECT,DESC
+        - GEO_1-NE-1822,192.168.161.221,lpar69,dev1@example.com,GEO_1 developers,For use by lpar 51
+    - - net ip-export --owner
+      - '--owner option requires an argument'
+    - - net ip-export --owner=lab-admin
+      - SUBNET,ADDRESS,SYSTEM,OWNER,PROJECT,DESC
+    - - net ip-export --owner=lab_admin@example.com
+      - GEO 1-NE-1822,192.168.161.222,,lab_admin@example.com,GEO_1 labadmins,
+    - - net ip-export --subnet='GEO_1-NE-1822' --owner=dev2@example.com
+      - SUBNET,ADDRESS,SYSTEM,OWNER,PROJECT,DESC
+    - - net ip-export --subnet='GEO_1-NE-1822' --owner=dev1@example.com
+      - GEO_1-NE-1822,192.168.161.221,lpar69,dev1@example.com,GEO_1 developers,For use by lpar 51
+    - - net ip-export --project='GEO_1 labadmins'
+      - GEO 1-NE-1822,192.168.161.222,,lab_admin@example.com,GEO_1 labadmins,
+    - - net ip-export --system lpar69
+      - GEO_1-NE-1822,192.168.161.221,lpar69,dev1@example.com,GEO_1 developers,For use by lpar 51
+    - - net ip-export --ip 192.168.161.222
+      - GEO_1-NE-1822,192.168.161.222,,lab_admin@example.com,GEO_1 labadmins,
+    - - net ip-export --subnet='GEO_1-NE-1822'
+      - GEO_1-NE-1822,192.168.161.222,,lab_admin@example.com,GEO_1 labadmins,
+    - - net ip-import --file files/net-command_test/import-ip.csv
+      - operation finished successfully
+    - - net ip-export --subnet='GEO_1-NE-1822'
+      - GEO_1-NE-1822,192.168.161.222,,lab_admin@example.com,GEO_1 labadmins,
+    - - net ip-import --file files/net-command_test/import-ip.csv --commit --yes
+      - operation finished successfully
+    - - net ip-import --file files/net-command_test/import-ip.csv --commit --yes --verbosity debug
+      - operation finished successfully
+    - - net ip-export --subnet='GEO_1-NE-1822'
+      - GEO_1-NE-1822,192.168.161.228,,lab_admin@example.com,GEO_1 labadmins,
+    - - - net ip-import --file files/net-command_test/import-ip.csv --commit
+        # warning: this operation affects multiple entries, are you sure you want to proceed? [y/N]:
+        - y
+      - operation finished successfully
+    - - net ip-export --subnet='GEO_1-NE-1822'
+      - GEO_1-NE-1822,192.168.161.228,,lab_admin@example.com,GEO_1 labadmins,
     - - net ip-del --ip=192.168.161.221
       - Missing option "--subnet".
     - - net ip-del --subnet='GEO_1-NE-1822'

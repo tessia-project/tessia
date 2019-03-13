@@ -1,5 +1,5 @@
 description: Additional test for the 'system' command
-# An empty file ~/tessia/cli/tests/kvm-guest.xml is used to cover stmts 142-148 in types.py
+# An empty file ~/tessia/cli/tests/files/system-command_test/kvm-guest.xml is used to cover stmts 142-148 in types.py
 base_user: admin
 tasks_order:
   - base_add
@@ -9,6 +9,7 @@ tasks_order:
   - system_model
   - system_iface
   - system_prof
+  - system_export_import
   - set_os_manually
 tasks:
   base_add:
@@ -80,6 +81,10 @@ tasks:
       - 'Usage: tess system del'
     - - system edit -h
       - 'Usage: tess system edit'
+    - - system export -h
+      - 'Usage: tess system export'
+    - - system import -h
+      - 'Usage: tess system import'
     - - system iface-add -h
       - 'Usage: tess system iface-add'
     - - system iface-attach -h
@@ -453,6 +458,8 @@ tasks:
       - - ' *Type name *\| *Description'
         - ' *OSA *\|'
         - ' *ROCE *\|'
+    - - system iface-types --long
+      - 'Type name   : OSA'
     # 'system iface-add' subcommand
     - - system iface-add
       - Missing option "--system".
@@ -508,7 +515,7 @@ tasks:
       - 'Invalid value for "--ip": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --hostiface=enccw0.0.f500
       - invalid attribute for this iface type
-    - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --libvirt='kvm-guest.xml'
+    - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --libvirt='files/system-command_test/kvm-guest.xml'
       - invalid attribute for this iface type
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portname=OSAE1
       - Item added successfully.
@@ -539,11 +546,11 @@ tasks:
       - Item added successfully.
     - - system iface-add --system=guest55 --name='default macvtap3' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm.xml'
       - "No such file or directory: 'kvm.xml'"
-    - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='/GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm-guest.xml'
+    - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='/GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
       - 'Invalid value for "--subnet": /GEO_1-NE-1822 is not a valid subnet'
-    - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm-guest.xml'
+    - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
       - Item added successfully.
-    - - system iface-add --system=guest55 --name='default macvtap5' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm-guest.xml' --hostiface=enccw0.0.f500
+    - - system iface-add --system=guest55 --name='default macvtap5' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml' --hostiface=enccw0.0.f500
       - 'one of --hostiface or --libvirt must be specified, but not both'
     # ROCE card type
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518
@@ -692,7 +699,7 @@ tasks:
       - invalid attribute for this iface type
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='kvm.xml'
       - "No such file or directory: 'kvm.xml'"
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='kvm-guest.xml'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='files/system-command_test/kvm-guest.xml'
       - invalid attribute for this iface type
     - - system iface-edit --system=cpc3lp52 --name='default osa' --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='' --ip=''
       - 'Invalid value for "--subnet": value may not be empty'
@@ -734,7 +741,7 @@ tasks:
     - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=''
       - 'one of --hostiface or --libvirt must be present, but not both'
       # macvtap with libvirt; an empty file ~/tessia/cli/tests/kvm-guest.xml is used
-    - - system iface-edit --system=guest55 --name='default macvtap'  --hostiface= --libvirt='kvm-guest.xml'
+    - - system iface-edit --system=guest55 --name='default macvtap'  --hostiface= --libvirt='files/system-command_test/kvm-guest.xml'
       - Item successfully updated.
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='kvm.xml'
       - "No such file or directory: 'kvm.xml'"
@@ -1332,6 +1339,64 @@ tasks:
       - 'Profile name                : DASD4'
     - - system prof-del --system=cpc3lp52 --name=DASD4
       - Item successfully deleted.
+  system_export_import:
+    # 'system export' subcommand
+    - - system export
+      - - HYPERVISOR,NAME,TYPE,HOSTNAME,IP,IFACE,LAYER2,PORTNO,OWNER,PROJECT,STATE,DESC
+        - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,GEO_1 developers,AVAILABLE,Developer 1
+    - - system export --owner
+      - '--owner option requires an argument'
+    - - system export --owner dev2@example.com
+      - HYPERVISOR,NAME,TYPE,HOSTNAME,IP,IFACE,LAYER2,PORTNO,OWNER,PROJECT,STATE,DESC
+    - - system export --owner dev1@example.com
+      - dev1@example.com
+    - - system export --owner dev1@example.com --hyp cpc3
+      - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,GEO_1 developers,AVAILABLE,Developer 1
+    - - system export --hyp cpc3
+      - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,
+    - - system export --type KVM
+      - cpc3lp52,guest55,KVM,guest55.example.com,
+    - - system export --state available
+      - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,GEO_1 developers,AVAILABLE,Developer 1
+    - - system export --state AVAILABLE
+      - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,GEO_1 developers,AVAILABLE,Developer 1
+    - - system export --state LOCKED
+      - HYPERVISOR,NAME,TYPE,HOSTNAME,IP,IFACE,LAYER2,PORTNO,OWNER,PROJECT,STATE,DESC
+    - - system export --project 'GEO_1 developers'
+      - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,GEO_1 developers,
+    - - system export --name guest55
+      - cpc3lp52,guest55,KVM,guest55.example.com,
+    # 'system import' subcommand
+    - - system import
+      - 'Missing option "--file".'
+      # wrong file name
+    - - system import --file import-system-2.csv
+      - No such file or directory
+      # incorrect csv file
+    - - system import --file files/system-command_test/import-system-no_ips.csv
+      - A system must have an IP address assigned
+      # IP address doesn't exist
+    - - system import --file files/system-command_test/import-system.csv
+      - IP address specified not found
+    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.228  --project='GEO_1 developers' --desc='For use by lpar 58'
+      - Item added successfully.
+    - - system import --file files/system-command_test/import-system.csv
+      - operation finished successfully
+    - - system export
+      - - HYPERVISOR,NAME,TYPE,HOSTNAME,IP,IFACE,LAYER2,PORTNO,OWNER,PROJECT,STATE,DESC
+        - cpc3lp52,guest55,KVM,guest55.example.com,192.168.160.55,02:03:52:01:ff:01,,,dev1@example.com,GEO_1 developers,AVAILABLE,SVT Developer 1
+    - - system import --file files/system-command_test/import-system.csv --commit --yes
+      - operation finished successfully
+    - - system import --file files/system-command_test/import-system.csv --commit --yes --verbosity debug
+      - operation finished successfully
+    - - system export
+      - cpc3,cpc3lp58,LPAR,cpc3lp58.example.com,192.168.161.228,
+    - - - system import --file files/system-command_test/import-system.csv --commit
+        # warning: this operation affects multiple entries, are you sure you want to proceed? [y/N]:
+        - y
+      - operation finished successfully
+    - - system export
+      - cpc3,cpc3lp58,LPAR,cpc3lp58.example.com,192.168.161.228,
   # use case setting os manually
   set_os_manually:
     - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=

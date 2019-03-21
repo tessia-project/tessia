@@ -342,11 +342,17 @@ class PowerManagerMachine(BaseMachine):
 
         params = {}
         if root_vol.type.lower() == 'fcp':
+            # WARNING: so far with DS8K storage servers the wwid seems to
+            # correspond to the uuid by removing only the first digit, but this
+            # not documented so it might change in future or even be different
+            # with other storage types
+            vol_uuid = root_vol.specs['wwid'][1:]
             params['boot_params'] = {
                 'boot_method': 'scsi',
-                'zfcp_devicenr': root_vol.specs['adapters'][0]['devno'],
+                'devicenr': root_vol.specs['adapters'][0]['devno'],
                 'wwpn': root_vol.specs['adapters'][0]['wwpns'][0],
-                'lun': root_vol.volume_id
+                'lun': root_vol.volume_id,
+                'uuid': vol_uuid,
             }
         else:
             params['boot_params'] = {

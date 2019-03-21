@@ -507,7 +507,70 @@ class TestSystemProfile(TestSecureResource):
         2- update a profile to a name that already exists
         """
         self._test_add_update_conflict('user_user@domain.com', 'name')
-    # test_update_conflict()
+    # test_add_update_conflict()
+
+    def test_add_update_parameters(self):
+        """
+        Test scenarios concerning add/update of the parameters field
+        """
+        user_login = 'user_user@domain.com'
+
+        # create a new CPC system
+        system_obj = models.System(
+            name="cpc_y",
+            state="AVAILABLE",
+            modifier=user_login,
+            type="cpc",
+            hostname="hmc_y.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner=user_login,
+        )
+        self.db.session.add(system_obj)
+        self.db.session.commit()
+        system_id = system_obj.id
+        system_name = system_obj.name
+
+        test_params = {
+            'liveimg-insfile-url': 'ftp://user:pass@server._com/dir/image.ins'
+        }
+
+        # create profile with liveimg url for CPC
+        data = next(self._get_next_entry)
+        data['system'] = system_name
+        data['parameters'] = test_params
+
+        # first profile will be set as default
+        data['default'] = True
+        user_cred = '{}:a'.format(user_login)
+        prof_id = self._request_and_assert('create', user_cred, data)
+        # remove url
+        update_data = {'id': prof_id, 'parameters': {}}
+        self._request_and_assert('update', user_cred, update_data)
+        # add again
+        update_data = {'id': prof_id, 'parameters': test_params}
+        self._request_and_assert('update', user_cred, update_data)
+
+        # clean up
+        models.SystemProfile.query.filter_by(id=prof_id).delete()
+        models.System.query.filter_by(id=system_id).delete()
+        self.db.session.commit()
+
+        # try to create profile with liveimg url for non CPC - fails
+        data = next(self._get_next_entry)
+        data['parameters'] = test_params
+        resp = self._do_request('create', user_cred, data)
+        msg = 'Profile parameters can be only specified for CPCs'
+        self._validate_resp(resp, msg, 422)
+
+        # try to update profile with liveimg url for non CPC - fails
+        data['parameters'] = {}
+        prof_id = self._request_and_assert('create', user_cred, data)
+        update_data = {'id': prof_id, 'parameters': test_params}
+        resp = self._do_request('update', user_cred, update_data)
+        msg = 'Profile parameters can be only specified for CPCs'
+        self._validate_resp(resp, msg, 422)
+    # test_add_update_parameters()
 
     def test_add_update_wrong_field(self):
         """

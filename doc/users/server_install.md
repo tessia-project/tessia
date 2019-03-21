@@ -330,10 +330,17 @@ The tool is now ready for use. To learn how to install your first system, visit 
 
 # Deployment of the auxiliar live-image
 
-The HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
-For this reason, tessia makes use of an auxiliar live-image installed on a pre-allocated disk in order to enable this functionality.
-Perform these steps to deploy the live-image:
+For machines in classic mode the HMC does not expose a method in its API to perform network boot of the LPARs.
+Although there is network boot support in the API for machines in DPM mode, the field length allowed (256 characters only) for the kernel command line is not enough.
+
+For these reasons tessia makes use of an auxiliar live-image with different strategies for each operation mode in order to enable the network boot functionality:
+
+- Classic mode: the live image is installed on a pre-allocated disk which is used to IPL the target LPAR at installation time
+- DPM mode: the live image is hosted on an FTP server and used to start the partition via an FTP boot through the HMC API
+
+Perform these steps in order to deploy the live-image:
 
 - Follow the instructions at [Live image to enable HMC netboot](https://gitlab.com/tessia-project/tessia-baselib/blob/master/doc/users/live_image.md)
 - Enter the image's root password in the server's configuration file as explained in [Section auto_install](server_conf.md#section-auto_install).
-- Keep note of the disk used as you will associate it to the CPC in the tool configuration later as explained [here](getting_started.md#hypervisor-cpc).
+- For classic mode: keep note of the disk used as you will associate it to the CPC in the tool configuration later as explained [here](getting_started.md#cpc-in-classic-mode).
+- For DPM mode: keep note of the insfile URL on the FTP server as you will associate it to the CPC system profile in the tool configuration later as explained [here](getting_started.md#cpc-in-dpm-mode).

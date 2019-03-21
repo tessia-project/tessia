@@ -34,7 +34,7 @@ See the documentation's [Users section](doc/index.md#users) for detailed informa
 
 Hypervisors supported:
 
-- zHMC (classic mode)
+- zHMC (classic and DPM modes)
 - z/VM
 - KVM for IBM Z
 

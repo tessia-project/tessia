@@ -1,0 +1,12 @@
+{
+    "title": "System profile specialized information for CPCs",
+    "type": "object",
+    "properties": {
+        "liveimg-insfile-url": {
+            "description": "URL of live image insfile for partition installations (DPM only)",
+            "format": "uri",
+            "type": "string"
+        }
+    },
+    "additionalProperties": false
+}

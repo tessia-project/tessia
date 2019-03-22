@@ -244,7 +244,7 @@ class StaticExecutor(object):
             SyntaxError: if tasks_order entry is invalid
         """
         with open(test_path, 'r') as file_fd:
-            testcase = yaml.load(file_fd.read())
+            testcase = yaml.safe_load(file_fd.read())
 
         try:
             jsonschema.validate(testcase, STATIC_SCHEMA)

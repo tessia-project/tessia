@@ -14,4 +14,4 @@
 {%- endfor -%}
 {{ ' '.join(iface_line) }}
 {%- endmacro %}
-ro ramdisk_size=50000 {{ifaces_list(config['ifaces'])}} inst.repo={{config['repos'][0]['url']}} ip={{config["gw_iface"]['ip']}}::{{config["gw_iface"]['gateway']}}:{{config["gw_iface"]['mask_bits']}}:{{config['hostname']}}:{{config["gw_iface"]['osname'] if config["gw_iface"]["type"] != "OSA" else config["gw_iface"]['systemd_osname']}}:none nameserver={{config["gw_iface"]['dns_1']}} inst.sshd inst.ks={{config['autofile']}}
+ro ramdisk_size=50000 {% if config["system_type"] != "KVM" %}cio_ignore=all,!condev zfcp.allow_lun_scan=0{% endif %} {{ifaces_list(config['ifaces'])}} inst.repo={{config['repos'][0]['url']}} ip={{config["gw_iface"]['ip']}}::{{config["gw_iface"]['gateway']}}:{{config["gw_iface"]['mask_bits']}}:{{config['hostname']}}:{{config["gw_iface"]['osname'] if config["gw_iface"]["type"] != "OSA" else config["gw_iface"]['systemd_osname']}}:none nameserver={{config["gw_iface"]['dns_1']}} inst.sshd inst.ks={{config['autofile']}}

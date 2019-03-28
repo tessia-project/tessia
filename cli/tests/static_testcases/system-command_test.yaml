@@ -540,6 +540,8 @@ tasks:
       - 'Error: for ROCE cards --fid must be specified'
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518 --fid=00111
       - 'Error: for ROCE cards --mac must be specified'
+    - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518 --fid=@00111 --mac=00:11:22:33:44:55
+      - 'Invalid value for "--fid": @00111 is not a valid function ID'
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518 --fid=00111 --mac=00:11:22:33:44:55
       - Item added successfully.
    # 'system iface-list' subcommand

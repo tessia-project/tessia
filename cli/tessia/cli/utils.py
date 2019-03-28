@@ -105,7 +105,7 @@ def fetch_and_update(resource, search_fields, error_msg, update_dict):
     parsed_dict = {}
     for key, value in update_dict.items():
         # allow unsetting parameter
-        if value == '':
+        if not value and isinstance(value, str):
             parsed_dict[key] = None
         elif value is not None:
             parsed_dict[key] = value
@@ -197,21 +197,20 @@ def size_to_str(size):
     units = ['MiB', 'GiB', 'TiB']
     max_units = len(units) - 1
 
-    size = float(size)
+    cur_size = float(size)
 
-    old = size
+    prev_size = size
 
-    i = 0
+    index = 0
     while True:
-        old = size
-        size /= 1024
-        if size >= 1 and i < max_units:
-            i += 1
-        else:
-            break
-    old = round(old, 2)
+        prev_size = cur_size
+        cur_size /= 1024
+        if int(cur_size) == cur_size and index < max_units:
+            index += 1
+            continue
+        break
 
-    return '{} {}'.format(old, units[i])
+    return '{}{}'.format(int(prev_size), units[index])
 # size_to_str()
 
 def str_to_size(size_str):

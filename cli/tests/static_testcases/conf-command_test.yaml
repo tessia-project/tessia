@@ -68,8 +68,8 @@ tasks:
     - - conf show
       - 'Authentication key in use :'
     - - conf key-list
-      - - ' *Key Owner *| *Key ID *| *Date created *| *Last used *| *Description'
-        - ' *dev1@example.com *|'
+      - - ' *Key Owner *\| *Key ID *\| *Date created *\| *Last used *\| *Description'
+        - ' *dev1@example.com *\|'
     - - conf key-list --long
       - 'Key Owner    : dev1@example.com'
     - - - conf key-del

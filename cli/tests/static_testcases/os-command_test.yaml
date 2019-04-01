@@ -39,17 +39,17 @@ tasks:
       - "Error: request failed. Server answered: No associated item found with value 'wrong-template' for field 'Default install template'"
   list:
     - - os list
-      - - ' *OS identifier *| *OS type *| *Pretty name *| *Default install template *| *Major version *| *Minor version'
-        - ' *newos1.0 *|'
+      - - ' *OS identifier *\| *OS type *\| *Pretty name *\| *Default install template *\| *Major version *\| *Minor version'
+        - ' *newos1.0 *\|'
     - - os list --name=anotheros2.0
-      - - ' *OS identifier *| *OS type *| *Pretty name *| *Default install template *| *Major version *| *Minor version'
-        - ' *anotheros2.0 *|'
+      - - ' *OS identifier *\| *OS type *\| *Pretty name *\| *Default install template *\| *Major version *\| *Minor version'
+        - ' *anotheros2.0 *\|'
     - - os list --type=redhat
-      - - ' *OS identifier *| *OS type *| *Pretty name *| *Default install template *| *Major version *| *Minor version'
-        - ' *rhel7.2 *|'
+      - - ' *OS identifier *\| *OS type *\| *Pretty name *\| *Default install template *\| *Major version *\| *Minor version'
+        - ' *rhel7.2 *\|'
     - - os list --template=ubuntu16-default
-      - - ' *OS identifier *| *OS type *| *Pretty name *| *Default install template *| *Major version *| *Minor version'
-        - ' *ubuntu16.04.1 *|'
+      - - ' *OS identifier *\| *OS type *\| *Pretty name *\| *Default install template *\| *Major version *\| *Minor version'
+        - ' *ubuntu16.04.1 *\|'
     - - os list --long
       - 'OS identifier *: newos1.0'
     - - os list --name=anotheros2.0 --long
@@ -91,8 +91,8 @@ tasks:
         - password
       - Key successfully created and added to client configuration.
     - - os list --name=anotheros2.0
-      - - ' *OS identifier *| *OS type *| *Pretty name *| *Default install template *| *Major version *| *Minor version'
-        - ' *anotheros2.0 *|'
+      - - ' *OS identifier *\| *OS type *\| *Pretty name *\| *Default install template *\| *Major version *\| *Minor version'
+        - ' *anotheros2.0 *\|'
     - - os list --name=anotheros2.0 --long
       - 'OS identifier *: anotheros2.0'
     - - os del --name=anotheros2.0

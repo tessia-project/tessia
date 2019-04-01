@@ -206,7 +206,7 @@ tasks:
       - 'Hello, world!'
     # job list
     - - job list
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+      - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
     - - job list --params
       - 'for --params a job id must be specified'
     - - job list --id=1
@@ -226,15 +226,19 @@ tasks:
     - - job list --type=lpar
       - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
     - - job list --type=autoinstall
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+      - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
+        - '\| autoinstall \|'
     - - job list --type=AUTOINSTALL
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+      - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
+        - '\| autoinstall \|'
     - - job list --type=echo
-      - 'job_id | job_type |     submit_date     |      start_date     |       end_date'
+      - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
+        - '\| echo *\|'
     - - job list --owner
       - '--owner option requires an argument'
     - - job list --owner=dev1@example.com
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+      - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
+        - '\| dev1@example.com \|'
     - - job list --owner=test@example.com
       - 'No results were found.'
     - - job list --state
@@ -244,11 +248,14 @@ tasks:
     - - job list --state=xxxx
       - 'Invalid value for "--state": job state must be one of: canceled, cleaningup, completed, failed, running, waiting'
     - - job list --state=FAILED
-      - 'job_id(.|\n)+\n$'
+      - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
+        - '\| FAILED \|'
     - - job list --state=failed
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+      - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
+        - '\| FAILED \|'
     - - job list --state=COMPLETED
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+      - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
+        - '\| COMPLETED \|'
     # job output
     - - job output
       - Missing option "--id".
@@ -265,7 +272,7 @@ tasks:
       - 'Hello, world!'
     # job req-list
     - - job req-list
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
     - - job req-list --id
       - '--id option requires an argument'
     - - job req-list --id=7
@@ -280,9 +287,11 @@ tasks:
     - - job req-list --action
       - --action option requires an argument
     - - job req-list --action=SUBMIT
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| SUBMIT *\|'
     - - job req-list --action=submit
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| SUBMIT *\|'
     - - job req-list --action=
       - 'Invalid value for "--action": value may not be empty'
     - - job req-list --action=xxxx
@@ -292,15 +301,19 @@ tasks:
     - - job req-list --type=lpar
       - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
     - - job req-list --type=autoinstall
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| autoinstall \|'
     - - job req-list --type=AUTOINSTALL
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| autoinstall \|'
     - - job req-list --type=echo
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| echo *\|'
     - - job req-list --owner
       - '--owner option requires an argument'
     - - job req-list --owner=dev1@example.com
-      - 'request_id(.|\n)+\n$'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| dev1@example.com \|'
     - - job req-list --owner=test@example.com
       - 'No results were found.'
     - - job req-list --state
@@ -310,11 +323,14 @@ tasks:
     - - job req-list --state=xxxx
       - 'Invalid value for "--state": request state must be one of: completed, failed, pending'
     - - job req-list --state=COMPLETED
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| COMPLETED'
     - - job req-list --state=completed
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| COMPLETED'
     - - job req-list --state=FAILED
-      - 'request_id | action_type |   job_type  |     submit_date'
+      - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
+        - '\| FAILED'
     # job cancel
     - - job cancel
       - Missing option "--id".
@@ -333,7 +349,7 @@ tasks:
     - - job submit --type=echo --parmfile='test_parmfile_2' --timeout=1 --bg
       - 'Request accepted; job id is #13'
     - - job list
-      - 'job_id |   job_type  |     submit_date     |      start_date     |       end_date'
+      - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
     - - job list --id=13
       - 'Job ID         : 13'
 

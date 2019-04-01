@@ -53,18 +53,18 @@ tasks:
       - 'Usage: tess autotemplate print'
     # autotemplate list, autotemplate print
     - - autotemplate list
-      - - ' *Template name *| *Owner *| *Project *| *Description'
-        - ' *sles12-default *|'
+      - - ' *Template name *\| *Owner *\| *Project *\| *Description'
+        - ' *sles12-default *\|'
     - - autotemplate list --long
       - 'Template name : sles12-default'
     - - autotemplate list --name=rhel7-default
-      - - ' *Template name *| *Owner *| *Project *| *Description'
-        - ' *rhel7-default *|'
+      - - ' *Template name *\| *Owner *\| *Project *\| *Description'
+        - ' *rhel7-default *\|'
     - - autotemplate list --name=rhel7-default --long
       - 'Template name : rhel7-default'
     - - autotemplate list --owner=admin
-      - - ' *Template name *| *Owner *| *Project *| *Description'
-        - ' *sles12-default *| *admin *|'
+      - - ' *Template name *\| *Owner *\| *Project *\| *Description'
+        - ' *sles12-default *\| *admin *\|'
     - - autotemplate list --owner=admin --long
       - 'Template name : sles12-default'
     - - autotemplate print
@@ -111,17 +111,17 @@ tasks:
     - - autotemplate del --name
       - '--name option requires an argument'
     - - autotemplate list
-      - - ' *Template name *| *Owner *| *Project *| *Description'
-        - ' *sles12-default *|'
+      - - ' *Template name *\| *Owner *\| *Project *\| *Description'
+        - ' *sles12-default *\|'
     - - autotemplate list --long
       - 'Template name : sles12-default'
     - - autotemplate list --name=rhel7-default
-      - - ' *Template name *| *Owner *| *Project *| *Description'
-        - ' *rhel7-default *|'
+      - - ' *Template name *\| *Owner *\| *Project *\| *Description'
+        - ' *rhel7-default *\|'
     - - autotemplate list --name=rhel7-default --long
       - 'Template name : rhel7-default'
     - - autotemplate list --owner=admin
-      - - ' *Template name *| *Owner *| *Project *| *Description'
-        - ' *sles12-default *| *admin *|'
+      - - ' *Template name *\| *Owner *\| *Project *\| *Description'
+        - ' *sles12-default *\| *admin *\|'
     - - autotemplate list --owner=admin --long
       - 'Template name : sles12-default'

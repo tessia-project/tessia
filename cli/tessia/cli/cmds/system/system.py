@@ -22,6 +22,9 @@ Module for the system commands
 from tessia.cli.client import Client
 from tessia.cli.cmds.job.job import cancel as job_cancel
 from tessia.cli.cmds.job.job import output as job_output
+from tessia.cli.cmds.storage.vol import vol_list
+from tessia.cli.cmds.system.iface import iface_list
+from tessia.cli.cmds.system.prof import prof_list
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
@@ -216,6 +219,28 @@ def import_(ctx, **kwargs):
     submit_csv_job(Client(), ctx, **kwargs)
 # _import_()
 
+@click.command(name='info')
+@click.option('--system', required=True, type=NAME,
+              help='system of which more info should be shown')
+@click.pass_context
+def info(ctx, **kwargs):
+    """
+    show additional system info
+    """
+    # list info
+    click.echo('System\n------', nl=False)
+    ctx.invoke(list_, name=kwargs['system'], long_info=True)
+    # storage info
+    click.echo('\nStorage volumes\n---------------', nl=False)
+    ctx.invoke(vol_list, system=kwargs['system'])
+    # profiles info
+    click.echo('\nProfiles\n--------', nl=False)
+    ctx.invoke(prof_list, system=kwargs['system'])
+    # iface info
+    click.echo('\nNetwork interfaces\n------------------', nl=False)
+    ctx.invoke(iface_list, system=kwargs['system'])
+# info()
+
 @click.command(name='list')
 @click.option('--name', type=NAME, help="filter by system name")
 @click.option('hypervisor', '--hyp', type=NAME,
@@ -403,5 +428,5 @@ def states(**kwargs):
                     PrintMode.TABLE)
 # states()
 
-CMDS = [add, del_, edit, export, import_, autoinstall, list_, poweroff,
-        poweron, types, states]
+CMDS = [add, autoinstall, del_, edit, export, import_, info, list_, poweroff,
+        poweron, states, types]

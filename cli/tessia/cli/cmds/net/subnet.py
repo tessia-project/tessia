@@ -23,6 +23,7 @@ from tessia.cli.client import Client
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
+from tessia.cli.types import CustomIntRange
 from tessia.cli.types import SUBNET
 from tessia.cli.types import TEXT
 from tessia.cli.utils import fetch_and_delete
@@ -42,6 +43,7 @@ FIELDS_TABLE = (
     'name', 'zone', 'address', 'gateway', 'dns_1', 'vlan', 'owner', 'project',
     'desc'
 )
+VLAN_TYPE = CustomIntRange(min=0)
 
 #
 # CODE
@@ -57,7 +59,7 @@ FIELDS_TABLE = (
 @click.option('dns_1', '--dns1', help="primary dns address (i.e. 192.168.0.5)")
 @click.option('dns_2', '--dns2',
               help="secondary dns address (i.e. 192.168.0.6)")
-@click.option('--vlan', type=click.INT, help="vlan identifier")
+@click.option('--vlan', type=VLAN_TYPE, help="VLAN identifier")
 @click.option('search_list', '--search', type=TEXT,
               help="search hostname list")
 @click.option('--owner', help="owner login")
@@ -103,7 +105,7 @@ def subnet_del(**kwargs):
 @click.option('dns_1', '--dns1', help="primary dns address (i.e. 192.168.0.5)")
 @click.option('dns_2', '--dns2',
               help="secondary dns address (i.e. 192.168.0.6)")
-@click.option('--vlan', type=click.INT, help="vlan identifier")
+@click.option('--vlan', help="VLAN identifier")
 @click.option('search_list', '--search', type=TEXT,
               help="search hostname list")
 @click.option('--owner', help="owner login")
@@ -113,6 +115,16 @@ def subnet_edit(zone, cur_name, **kwargs):
     """
     change properties of an existing subnet
     """
+    if kwargs['vlan']:
+        cur_ctx = click.get_current_context()
+        param_obj = None
+        # we need the option object to pass in the convert call
+        for cmd_opt in cur_ctx.command.params:
+            if cmd_opt.name == 'vlan':
+                param_obj = cmd_opt
+                break
+        kwargs['vlan'] = VLAN_TYPE.convert(kwargs['vlan'], param_obj, cur_ctx)
+
     client = Client()
     fetch_and_update(
         client.Subnets,
@@ -130,7 +142,7 @@ def subnet_edit(zone, cur_name, **kwargs):
               help='filter by subnet name')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
-@click.option('--vlan', type=click.INT, help="filter by specified vlan")
+@click.option('--vlan', type=VLAN_TYPE, help="filter by specified VLAN")
 @click.option('--zone', help='the network zone to list')
 def subnet_list(**kwargs):
     """

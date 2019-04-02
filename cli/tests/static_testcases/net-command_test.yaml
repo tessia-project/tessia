@@ -158,6 +158,8 @@ tasks:
       - Item successfully updated.
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1823' --vlan=VLAN1
       - 'Invalid value for "--vlan": VLAN1 is not a valid integer'
+    - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1822' --vlan=
+      - Item successfully updated.
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1823' --owner=dev2@example.com
       - "request failed. Server answered: No associated item found with value 'dev2@example.com' for field 'Owner'"
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1823' --owner=dev1@example.com
@@ -184,6 +186,8 @@ tasks:
         - ' *GEO_1-NE-1823 *\|'
     - - net subnet-list --zone=GEO_1-NE --vlan=1820 --long
       - 'Subnet name *: GEO_1-NE-1823'
+    - - net subnet-list --zone=GEO_1-NE --name='GEO_1-NE-1822' --long
+      - 'VLAN *: *\n'
     - - net subnet-list --zone=GEO_1-NE --owner=dev1@example.com
       - - ' *Subnet name *\| *Network zone *\| *Network address *\| *Gateway *\| *DNS server 1 *\| *VLAN *\| *Owner *\| *Project *\| *Description'
         - ' *GEO_1-NE-1823 *\|'

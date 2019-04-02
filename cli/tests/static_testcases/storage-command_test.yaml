@@ -578,7 +578,7 @@ tasks:
       - Partition successfully added.
     # next two commands are to make sure not specifying size used all available space
     - - storage part-list --server=DS8K16 --id=3955
-      - "1 *\\| 6.52 GiB *\\| primary *\\| ext4 *\\| / *\\| *\n"
+      - "1 *\\| 6675MiB *\\| primary *\\| ext4 *\\| / *\\| *\n"
     - - storage part-add --server=DS8K16 --id=3955 --fs=ext4
       - "Error: no available free size to create the partition"
     - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=3gb
@@ -589,7 +589,7 @@ tasks:
       - Partition successfully added.
     # resulting partition should be of 2gb
     - - storage part-list --server=DS8K16 --id=3952
-      - "3 *\\| 1.86 GiB *\\| primary *\\| ext3 *\\| /home *\\| qqqq *\n"
+      - "3 *\\| 1907MiB *\\| primary *\\| ext3 *\\| /home *\\| qqqq *\n"
     - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=7gb --mp=/
       - "Error: size specified is bigger than available free space 0MiB"
     - - storage part-add --server=DS8K16 --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=first

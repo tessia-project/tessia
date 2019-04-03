@@ -64,6 +64,10 @@ tasks:
       - 'Usage: tess storage vol-del'
     - - storage vol-edit -h
       - 'Usage: tess storage vol-edit'
+    - - storage vol-export -h
+      - 'Usage: tess storage vol-export'
+    - - storage vol-import -h
+      - 'Usage: tess storage vol-import'
     - - storage vol-list -h
       - 'Usage: tess storage vol-list'
     - - storage vol-types -h
@@ -489,6 +493,48 @@ tasks:
       - Item successfully updated.
     - - storage vol-edit --server=DS8K16 --id=1022400300000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002203
       - Item successfully updated.
+    # 'storage vol-export' subcommand
+    - - storage vol-export
+      - - SERVER,VOLUME_ID,TYPE,SIZE,SYSTEM,FCP_PATHS,WWID,OWNER,PROJECT,DESC
+        - DS8K16,3951,DASD,6675,,,,lab_admin@example.com,GEO_1 labadmins,
+    - - storage vol-export --owner
+      - '--owner option requires an argument'
+    - - storage vol-export --owner dev2@example.com
+      - SERVER,VOLUME_ID,TYPE,SIZE,SYSTEM,FCP_PATHS,WWID,OWNER,PROJECT,DESC
+    - - storage vol-export --owner dev1@example.com
+      - dev1@example.com
+    - - storage vol-export --server DS8K16 --owner dev1@example.com
+      - DS8K16,3953,DASD,6675,,,,dev1@example.com,GEO_1 developers,
+    - - storage vol-export --project 'GEO_1 developers'
+      - DS8K16,3952,DASD,6675,,,,lab_admin@example.com,GEO_1 developers,
+    - - storage vol-export --system lpar69
+      - DS8K16,3955,DASD,6675,lpar69,
+    - - storage vol-export --type dasd
+      - SERVER,VOLUME_ID,TYPE,SIZE,SYSTEM,FCP_PATHS,WWID,OWNER,PROJECT,DESC
+    - - storage vol-export --type DASD
+      - DS8K16,3951,DASD,6675,
+    - - storage vol-export --id 3952
+      - DS8K16,3952,DASD,6675,
+    - - storage vol-export --pool=
+      - SERVER,VOLUME_ID,TYPE,SIZE,SYSTEM,FCP_PATHS,WWID,OWNER,PROJECT,DESC
+    # 'storage vol-import' subcommand
+    - - storage vol-import --file files/storage-command_test/import-vol.csv
+      - operation finished successfully
+    - - storage vol-export --server DS8K16
+      - - SERVER,VOLUME_ID,TYPE,SIZE,SYSTEM,FCP_PATHS,WWID,OWNER,PROJECT,DESC
+        - DS8K16,3953,DASD,6675,,,,dev1@example.com,GEO_1 developers,
+    - - storage vol-import --file files/storage-command_test/import-vol.csv --commit --yes
+      - operation finished successfully
+    - - storage vol-import --file files/storage-command_test/import-vol.csv --commit --yes --verbosity debug
+      - operation finished successfully
+    - - storage vol-export --server DS8K16
+      - DS8K16,3960,DASD,6675,,,,lab_admin@example.com,GEO_1 developers,belongs to LPAR
+    - - - storage vol-import --file files/storage-command_test/import-vol.csv --commit
+        # warning: this operation affects multiple entries, are you sure you want to proceed? [y/N]:
+        - y
+      - operation finished successfully
+    - - storage vol-export --server DS8K16
+      - DS8K16,3960,DASD,6675,,,,lab_admin@example.com,GEO_1 developers,belongs to LPAR
     # 'storage vol-del' subcommand
     - - storage vol-del
       - Missing option "--server".

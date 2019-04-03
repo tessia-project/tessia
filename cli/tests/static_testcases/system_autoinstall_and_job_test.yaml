@@ -1,5 +1,5 @@
 description: Additional test for the commands 'system autoinstall' and 'job'
-# test_parmfile and test_parmfile_2 are used to check 'job' command (located in the directory ~/tessia/cli/tests)
+# test_parmfile-empty and test_parmfile-echo are used to check 'job' command (located in the directory ~/tessia/cli/tests/files/system_autoinstall_and_job_test/)
 base_user: admin
 tasks_order:
   - base_add
@@ -167,40 +167,40 @@ tasks:
     - - job submit -h
       - 'Usage: tess job submit'
    # job submit
-      # an empty file ~/tessia/cli/tests/test_parmfile is used
+      # an empty file ~/tessia/cli/tests/files/system_autoinstall_and_job_test/test_parmfile-empty is used
     - - job submit
       - Missing option "--type".
     - - job submit --type=autoinstall
       - Missing option "--parmfile".
-    - - job submit --parmfile='test_parmfile'
+    - - job submit --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
       - Missing option "--type".
-    - - job submit --type=autoinstall --parmfile='test_parmfile'
+    - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
       - 'request failed, reason is: Parsing of parameters failed with: Invalid request parameters'
-    - - job submit --type= --parmfile='test_parmfile'
+    - - job submit --type= --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
       - 'Invalid value for "--type": value may not be empty'
     - - job submit --type=autoinstall --parmfile=
       - 'Invalid value for "--parmfile": Could not open file: : No such file or directory'
-    - - job submit --type=autoinst --parmfile='test_parmfile'
+    - - job submit --type=autoinst --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
       - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
-    - - job submit --type=echo --parmfile='test_parmfile'
+    - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
       - Waiting for job output
     - - job submit --type=autoinstall --parmfile='test'
       - 'Invalid value for "--parmfile": Could not open file: test: No such file or directory'
-    - - job submit --type=autoinstall --parmfile='test_parmfile' --timeout
+    - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --timeout
       - '--timeout option requires an argument'
-    - - job submit --type=autoinstall --parmfile='test_parmfile' --timeout=A
+    - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --timeout=A
       - 'Invalid value for "--timeout": A is not a valid integer'
-    - - job submit --type=autoinstall --parmfile='test_parmfile' --prio
+    - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --prio
       - '--prio option requires an argument'
-    - - job submit --type=autoinstall --parmfile='test_parmfile' --prio=50
+    - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --prio=50
       - 'Invalid value for "--prio": 50 is not in the valid range of 0 to 9'
-    - - job submit --type=autoinstall --parmfile='test_parmfile' --startdate
+    - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --startdate
       - '--startdate option requires an argument'
-    - - job submit --type=autoinstall --parmfile='test_parmfile' --startdate=yesterday
+    - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --startdate=yesterday
       - "Error: Invalid value for \"--startdate\": yesterday does not match expected format '%Y-%m-%d %H:%M:%S'"
-    - - job submit --type=autoinstall --parmfile='test_parmfile_2' --startdate="1970-10-10 10:10:10"
+    - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --startdate="1970-10-10 10:10:10"
       - "Error: jobs with start date must have --timeout specified"
-    - - job submit --type=echo --parmfile='test_parmfile_2' --startdate="1970-10-10 10:10:10" --timeout=60 --prio=2
+    - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --startdate="1970-10-10 10:10:10" --timeout=60 --prio=2
       - "To see the output after the job starts, type 'tess job output --id=10'"
     - - job output --id=10
       - 'Hello, world!'
@@ -266,7 +266,7 @@ tasks:
     - - job output --id=1
       - 'Process Process-1:'
       # cover stmt 148 in job.py
-    - - job submit --type=echo --parmfile='test_parmfile_2' --bg
+    - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --bg
       - 'Request accepted; job id is #11'
     - - job output --id=11
       - 'Hello, world!'
@@ -340,13 +340,13 @@ tasks:
       - 'request failed, reason is: Cannot cancel job because it already ended'
     - - job cancel --id=27
       - 'request failed. Server answered: Job id provided does not exist'
-    - - job submit --type=echo --parmfile='test_parmfile_2' --bg
+    - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --bg
       - 'Request accepted; job id is #12'
     - - job cancel --id=12
       - 'Request accepted; job #\d+ canceled'
     - - job list --id=12
       - 'Job ID         : 12'
-    - - job submit --type=echo --parmfile='test_parmfile_2' --timeout=1 --bg
+    - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --timeout=1 --bg
       - 'Request accepted; job id is #13'
     - - job list
       - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'

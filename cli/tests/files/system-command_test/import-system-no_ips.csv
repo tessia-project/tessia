@@ -1,0 +1,2 @@
+HYPERVISOR,NAME,TYPE,HOSTNAME,IP,IFACE,LAYER2,PORTNO,OWNER,PROJECT,STATE,DESC
+cpc3,cpc3lp58,LPAR,cpc3lp58.example.com,,,,,dev1@example.com,GEO_1 developers,AVAILABLE,Developer 1

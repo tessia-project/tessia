@@ -20,9 +20,9 @@ cio_ignore=all,!condev,{{ cio_ignore_devnos | join(',') }}
 {% macro iface_parse(iface) -%}
 {% if iface['type'] == 'OSA' -%}
   {% if iface['attributes']['layer2'] -%}
-    {% set layer2 = "1" -%}
+    {% set layer2 = "true" -%}
   {% else -%}
-    {% set layer2 = "0" -%}
+    {% set layer2 = "false" -%}
   {% endif -%}
 s390-netdevice/choose_networktype=qeth s390-netdevice/qeth/choose={{'-'.join(iface['attributes']['ccwgroup'].split(','))}} s390-netdevice/qeth/layer2={{layer2}} s390-netdevice/qeth/port={{iface['attributes']['portno']}} netcfg/choose_interface={{iface['systemd_osname']}}
 {%- else -%}

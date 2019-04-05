@@ -101,7 +101,8 @@ class SystemProfileResource(SecureResource):
             title=DESC['cpu'], description=DESC['cpu'], minimum=0)
         memory = fields.Integer(
             title=DESC['memory'], description=DESC['memory'], minimum=0)
-        parameters = fields.Object(
+        parameters = fields.Custom(
+            schema=SystemProfile.get_schema('parameters'),
             title=DESC['parameters'], description=DESC['parameters'],
             nullable=True)
         credentials = fields.Custom(
@@ -277,6 +278,24 @@ class SystemProfileResource(SecureResource):
             raise BaseHttpError(422, msg=msg)
     # _verify_cred()
 
+    @staticmethod
+    def _verify_params(target_system, params_dict):
+        """
+        Verifies the validity of the parameters dictionary.
+
+        Args:
+            target_system (System): db object
+            params_dict (dict): dict in format defined by schema
+
+        Raises:
+            BaseHttpError: if dict is not valid for system type
+        """
+        # parameters specified for a non CPC system: invalid
+        if params_dict and target_system.type != 'CPC':
+            msg = 'Profile parameters can be only specified for CPCs'
+            raise BaseHttpError(422, msg=msg)
+    # _verify_params()
+
     def do_create(self, properties):
         """
         Custom implementation of creation. Perform some sanity checks and
@@ -316,6 +335,7 @@ class SystemProfileResource(SecureResource):
             API_DB.db.session.add(def_profile)
 
         self._verify_cred(target_system, properties['credentials'])
+        self._verify_params(target_system, properties['parameters'])
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
@@ -480,6 +500,9 @@ class SystemProfileResource(SecureResource):
             update_creds.update(properties['credentials'])
             self._verify_cred(item.system_rel, update_creds)
             properties['credentials'] = update_creds
+
+        if 'parameters' in properties:
+            self._verify_params(item.system_rel, properties['parameters'])
 
         # profile set as default: unset the current one
         if properties.get('default'):

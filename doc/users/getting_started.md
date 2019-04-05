@@ -331,12 +331,16 @@ The concept of profiles is explained in more detail later during the creation of
 **Note**: as of today the cpu and memory parameters for CPC systems are only for information purposes and not used.
 
 The user `hmc_user` entered above must be allowed in the HMC configuration to use the Web Services API and must have access to the management tasks
- (activate, deactivate, load, and customize/delete activation profiles) of the LPARs to be installed.
+(activate, deactivate, load, and customize/delete activation profiles) for the LPARs to be installed when in classic mode or the equivalent actions
+for the partitions to be installed when in DPM mode.
 
-As mentioned in the [installation](server_install.md) instructions, the HMC in classic mode does not expose a method in its API to perform network boot of the LPARs.
-For this reason, tessia makes use of an auxiliar live-image installed on a pre-allocated disk in order to enable this functionality.
-If you haven't deployed this live-image disk yet, refer to [Deployment of the auxiliar live-image](server_install.md#deployment-of-the-auxiliar-live-image)
-for instructions on how to do it.
+As mentioned in the [installation](server_install.md) instructions, tessia makes use of an auxiliar live image in order to network boot LPARs at installation time.
+The strategy adopted to load the live image depends on the machine operation mode (classic or DPM mode). The next sections explain how to set it up for each operation mode.
+
+### CPC in Classic mode
+
+For machines in classic mode the live image must be deployed in a pre-allocated disk. If you haven't deployed it yet, refer to
+[Deployment of the auxiliar live-image](server_install.md#deployment-of-the-auxiliar-live-image) for instructions on how to do it.
 
 The pre-allocated live-image disk must be assigned to the CPC so that the tool knows which disk to use when LPARs are to be installed.
 This is done by attaching the disk to the CPC's system profile:
@@ -357,6 +361,34 @@ Memory                      : 800.0 GiB
 Parameters                  : 
 Credentials                 : {'admin-password': '****', 'admin-user': '****'}
 Storage volumes             : [ds8k16/7e2d]
+Network interfaces          : 
+Gateway interface           : 
+```
+
+## CPC in DPM mode
+
+For machines in DPM mode the live image is loaded directly from an FTP server on the network. If you haven't built the live image yet, refer to
+[Deployment of the auxiliar live-image](server_install.md#deployment-of-the-auxiliar-live-image) for instructions on how to do it.
+
+Once the image is available on an FTP server, we enter the URL of the insfile in the CPC system profile so that the tool knows from where to boot
+the image when performing a partition installation. This is done by entering the URL in the CPC's system profile parameters:
+
+```
+$ tess system prof-edit --system=cpc3 --name='default' --liveimg=ftp://my-ftp-server.example.com/live-image/live-img.ins
+Item successfully updated.
+
+$ tess system prof-list --long --system=cpc3
+
+Profile name                : default
+System                      : cpc3
+Required hypervisor profile : 
+Operating system            : 
+Default                     : True
+CPU(s)                      : 43
+Memory                      : 800.0 GiB
+Parameters                  : {'liveimg-insfile-url': 'ftp://my-ftp-server.example.com/live-image/live-img.ins'}
+Credentials                 : {'admin-password': '****', 'admin-user': '****'}
+Storage volumes             : 
 Network interfaces          : 
 Gateway interface           : 
 ```

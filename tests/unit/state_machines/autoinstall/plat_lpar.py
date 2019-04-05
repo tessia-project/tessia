@@ -27,6 +27,7 @@ from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tests.unit.state_machines.autoinstall import utils
 from unittest import mock, TestCase
 from unittest.mock import patch, Mock
+from urllib.parse import urlsplit
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -115,7 +116,67 @@ class TestPlatLpar(TestCase):
         # dictionary generated inside the init function.
         mock_hyp.start.assert_called_with(guest_name, cpu, memory,
                                           mock.ANY)
-    # test_boot()
+    # test_boot_dasd_osa()
+
+    def test_boot_insfile(self):
+        """
+        Test the boot operation for a DPM machine using a URL for network boot
+        """
+        liveimg_url = 'ftp://server._com/dir/file.ins'
+        cpc_prof_obj = models.SystemProfile(
+            name='test_boot_insfile',
+            system_id=self._hyper_profile_entry.system_rel.id,
+            default=False,
+            parameters={'liveimg-insfile-url': liveimg_url},
+            credentials={'admin-user': 'hmcuser', 'admin-password': 'password'}
+        )
+        self.db.session.add(cpc_prof_obj)
+        lpar_prof_obj = models.SystemProfile(
+            name='test_boot_insfile',
+            hypervisor_profile_id=cpc_prof_obj.id,
+            system_id=self._profile_entry.system_rel.id,
+            default=False,
+            parameters=None,
+            credentials=self._profile_entry.credentials,
+        )
+        self.db.session.add(lpar_prof_obj)
+        self.db.session.commit()
+
+        plat_obj = plat_lpar.PlatLpar(
+            cpc_prof_obj, lpar_prof_obj, self._os_entry, self._repo_entry,
+            self._parsed_gw_iface)
+
+        plat_obj.boot("some kargs")
+
+        guest_name = lpar_prof_obj.system_rel.name
+        cpu = lpar_prof_obj.cpu
+        memory = lpar_prof_obj.memory
+
+        parsed_url = urlsplit(liveimg_url)
+        start_args = (self._mock_hypervisor_cls.return_value.start.
+                      mock_calls[-1][1])
+        self.assertEqual(start_args[0], guest_name)
+        self.assertEqual(start_args[1], cpu)
+        self.assertEqual(start_args[2], memory)
+        self.assertEqual(start_args[3]['boot_params']['boot_method'],
+                         parsed_url.scheme)
+        self.assertEqual(start_args[3]['boot_params']['insfile'],
+                         ''.join(parsed_url[1:]))
+
+        patcher_url = patch.object(plat_lpar, 'urlsplit')
+        mock_url = patcher_url.start()
+        self.addCleanup(patcher_url.stop)
+        exc_msg = 'Invalid URL'
+        mock_url.side_effect = ValueError(exc_msg)
+        msg = 'Live image URL {} is invalid: {}'.format(liveimg_url, exc_msg)
+        with self.assertRaisesRegex(ValueError, msg):
+            plat_obj.boot("some kargs")
+
+        # clean up
+        self.db.session.delete(lpar_prof_obj)
+        self.db.session.delete(cpc_prof_obj)
+        self.db.session.commit()
+    # test_boot_insfile()
 
     def test_boot_scsi_roce(self):
         """
@@ -183,8 +244,8 @@ class TestPlatLpar(TestCase):
         self.db.session.delete(assoc_obj)
         self.db.session.commit()
 
-        with self.assertRaisesRegex(
-            ValueError, 'CPC .* has no disk configured to serve live-image'):
+        msg = 'CPC .* has neither an auxiliary disk '
+        with self.assertRaisesRegex(ValueError, msg):
             self._create_plat_lpar()
 
         # restore association

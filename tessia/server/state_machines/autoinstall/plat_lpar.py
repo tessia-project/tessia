@@ -21,8 +21,9 @@ Module to deal with operations on LPARs
 #
 from copy import deepcopy
 from tessia.server.config import Config
+from tessia.server.db.models import StorageVolume
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 
 import logging
 
@@ -48,11 +49,17 @@ class PlatLpar(PlatBase):
 
         # make sure the CPC of the LPAR has a live-image disk configured
         try:
-            self._live_disk = self._hyp_prof.storage_volumes_rel[0]
+            self._live_src = self._hyp_prof.storage_volumes_rel[0]
         except IndexError:
-            raise ValueError(
-                'CPC {} has no disk configured to serve live-image'
-                .format(self._hyp_prof.system_rel.name)) from None
+            try:
+                self._live_src = (
+                    self._hyp_prof.parameters['liveimg-insfile-url'])
+            except (KeyError, TypeError):
+                raise ValueError(
+                    'CPC {} has neither an auxiliary disk (DPM and classic '
+                    ' mode) nor an insfile URL (DPM only) registered to '
+                    'serve the live-image required for installation'
+                    .format(self._hyp_prof.system_rel.name)) from None
         config = Config.get_config()
         try:
             self._live_passwd = config['auto_install']['live_img_passwd']
@@ -83,17 +90,37 @@ class PlatLpar(PlatBase):
 
         # parameters argument, see baselib schema for details
         params = {}
-        if self._live_disk.type.lower() == 'fcp':
-            params['boot_params'] = {
-                'boot_method': 'scsi',
-                'zfcp_devicenr': self._live_disk.specs['adapters'][0]['devno'],
-                'wwpn': self._live_disk.specs['adapters'][0]['wwpns'][0],
-                'lun': self._live_disk.volume_id
-            }
+        # serve live image from aux disk
+        if isinstance(self._live_src, StorageVolume):
+            if self._live_src.type.lower() == 'fcp':
+                # WARNING: so far with DS8K storage servers the wwid seems to
+                # correspond to the uuid by removing only the first digit, but
+                # this not documented so it might change in future or even be
+                # different with other storage types
+                vol_uuid = self._live_src.specs['wwid'][1:]
+                params['boot_params'] = {
+                    'boot_method': 'scsi',
+                    'devicenr': (
+                        self._live_src.specs['adapters'][0]['devno']),
+                    'wwpn': self._live_src.specs['adapters'][0]['wwpns'][0],
+                    'lun': self._live_src.volume_id,
+                    'uuid': vol_uuid,
+                }
+            else:
+                params['boot_params'] = {
+                    'boot_method': 'dasd',
+                    'devicenr': self._live_src.volume_id
+                }
+        # serve live image from network (DPM only)
         else:
+            try:
+                parsed_url = urlsplit(self._live_src)
+            except ValueError as exc:
+                raise ValueError('Live image URL {} is invalid: {}'
+                                 .format(self._live_src, str(exc)))
             params['boot_params'] = {
-                'boot_method': 'dasd',
-                'devicenr': self._live_disk.volume_id
+                'boot_method': parsed_url.scheme,
+                'insfile': ''.join(parsed_url[1:]),
             }
         params['boot_params']['netboot'] = {
             "kernel_url": kernel_uri,

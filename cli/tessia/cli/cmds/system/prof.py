@@ -66,6 +66,8 @@ ZVM_PROMPT = 'z/VM password'
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('hypervisor_profile', '--hyp', type=NAME,
               help="hypervisor profile required for activation")
+@click.option('--liveimg', 'liveimg_url', type=TEXT,
+              help="URL to Live image insfile (CPCs in DPM mode only)")
 @click.option('--login', type=USER_PASSWD,
               help="set the admin credentials to access the OS")
 @click.option('operating_system', '--os', type=NAME,
@@ -115,6 +117,13 @@ def prof_add(**kwargs):
         raise click.ClickException(
             'zVM credentials should be provided for zVM guests only')
 
+    liveimg_url = kwargs.pop('liveimg_url')
+    if liveimg_url:
+        if system.type.lower() != 'cpc':
+            raise click.ClickException(
+                'A live image URL can only be provided for CPCs')
+        kwargs['parameters'] = {'liveimg-insfile-url': liveimg_url}
+
     item = client.SystemProfiles()
     for key, value in kwargs.items():
         setattr(item, key, value)
@@ -152,6 +161,8 @@ def prof_del(**kwargs):
 @click.option('--gateway', help='name of interface to use as gateway')
 @click.option('hypervisor_profile', '--hyp', type=NAME,
               help="hypervisor profile required for activation")
+@click.option('--liveimg', 'liveimg_url',
+              help="URL to Live image insfile (CPCs in DPM mode only)")
 @click.option('--login', type=USER_PASSWD,
               help="set the admin credentials to access the OS")
 @click.option('--ask-login', is_flag=True,
@@ -211,6 +222,33 @@ def prof_edit(system, cur_name, **kwargs):
     # a credential is updated: add to request
     if creds:
         kwargs['credentials'] = creds
+
+    liveimg_url = kwargs.pop('liveimg_url')
+    if liveimg_url is not None:
+        sys_obj = fetch_item(
+            client.Systems, {'name': system}, 'system specified not found.')
+        if sys_obj.type.lower() != 'cpc':
+            raise click.ClickException(
+                'A live image URL can only be provided for CPCs')
+
+        sys_prof_obj = fetch_item(
+            client.SystemProfiles,
+            {'system': system, 'name': cur_name},
+            'system profile not found.')
+
+        if isinstance(sys_prof_obj.parameters, dict):
+            kwargs['parameters'] = sys_prof_obj.parameters
+        else:
+            kwargs['parameters'] = {}
+        if liveimg_url:
+            kwargs['parameters']['liveimg-insfile-url'] = liveimg_url
+        else:
+            kwargs['parameters'].pop('liveimg-insfile-url', None)
+
+        # dict is now empty: set field to null (fetch_and_update converts empty
+        # string to null)
+        if not kwargs['parameters']:
+            kwargs['parameters'] = ''
 
     fetch_and_update(
         client.SystemProfiles,

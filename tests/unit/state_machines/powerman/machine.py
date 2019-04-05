@@ -194,9 +194,10 @@ class TestPowerManagerMachine(TestCase):
             if guest_prof_obj.name == 'fcp1':
                 params['boot_params'] = {
                     'boot_method': 'scsi',
-                    'zfcp_devicenr': '0.0.1800',
+                    'devicenr': '0.0.1800',
                     'wwpn': '100207630503c1ae',
                     'lun': '1022400000000000',
+                    'uuid': '11002076305aac1a0000000000002200'[1:],
                 }
             elif guest_prof_obj.name == 'dasd1':
                 params['boot_params'] = {

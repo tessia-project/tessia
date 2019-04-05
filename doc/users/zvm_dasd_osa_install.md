@@ -306,9 +306,9 @@ tess storage server-add --name=DS8K22 --model=DS8800 --type=DASD-FCP --project=T
 Let's see if perhaps our disks are already registered:
 
 ```
-$ tess storage vol-list --long --server=DS8K22 --id=e1ab
+$ tess storage vol-list --long --id=e1ab
 No results were found.
-$ tess storage vol-list --long --server=DS8K22 --id=e1ac
+$ tess storage vol-list --long --id=e1ac
 No results were found.
 ```
 
@@ -322,7 +322,7 @@ $ tess storage vol-add --server=DS8K22 --type=DASD --id=e1ab --size=20gb --proje
 Item added successfully.
 $ tess storage vol-add --server=DS8K22 --type=DASD --id=e1ac --size=20gb --project=Testing --desc='belongs to zVM guest vm70002'
 Item added successfully.
-$ tess storage vol-list --long --server=DS8K22 --id=e1ab
+$ tess storage vol-list --long --id=e1ab
 
 Volume id                  : e1ab
 Storage server             : DS8K22
@@ -338,7 +338,7 @@ Project                    : Testing
 Last modified              : 2018-03-23 09:27:17
 Modified by                : admin
 Description                : belongs to zVM guest vm70002
-$ tess storage vol-list --long --server=DS8K22 --id=e1ac
+$ tess storage vol-list --long --id=e1ac
 
 Volume id                  : e1ac
 Storage server             : DS8K22
@@ -359,27 +359,27 @@ Description                : belongs to zVM guest vm70002
 The disks are registered but they are not ready yet. We also need to initialize a partition table and to create partitions:
 
 ```
-$ tess storage part-init --server=DS8K22 --id=e1ab --label=dasd
+$ tess storage part-init --id=e1ab --label=dasd
 Partition table successfully initialized.
-$ tess storage part-init --server=DS8K22 --id=e1ac --label=dasd
+$ tess storage part-init --id=e1ac --label=dasd
 Partition table successfully initialized.
 ```
 
 To perform the installation we should have at least two partitions - root and swap:
 
 ```
-$ tess storage part-add --server=DS8K22 --id=e1ab --fs=ext4 --size=10gb --mp=/
+$ tess storage part-add --id=e1ab --fs=ext4 --size=10gb --mp=/
 Partition successfully added.
-$ tess storage part-add --server=DS8K22 --id=e1ac --fs=swap --size=10gb
+$ tess storage part-add --id=e1ac --fs=swap --size=10gb
 Partition successfully added.
-$ tess storage part-list --server=DS8K22 --id=e1ab
+$ tess storage part-list --id=e1ab
 
 Partition table type: dasd
 
  number |   size   |   type  | filesystem | mount point | mount options
 --------+----------+---------+------------+-------------+---------------
  1      | 9.31 GiB | primary | ext4       | /           |
-$ tess storage part-list --server=DS8K22 --id=e1ac
+$ tess storage part-list --id=e1ac
 
 Partition table type: dasd
 
@@ -489,11 +489,11 @@ Description                : default gateway interface
 Let's also attach the disks to the system profile:
 
 ```
-$ tess system vol-attach --system=vm70002 --profile=vm_profile --server=DS8K22 --vol=e1ab
+$ tess system vol-attach --system=vm70002 --profile=vm_profile --vol=e1ab
 Volume attached successfully.
-$ tess system vol-attach --system=vm70002 --profile=vm_profile --server=DS8K22 --vol=e1ac
+$ tess system vol-attach --system=vm70002 --profile=vm_profile --vol=e1ac
 Volume attached successfully.
-$ tess storage vol-list --long --server=DS8K22 --id=e1ab
+$ tess storage vol-list --long --id=e1ab
 
 Volume id                  : e1ab
 Storage server             : DS8K22
@@ -509,7 +509,7 @@ Project                    : Testing
 Last modified              : 2018-03-23 13:50:37
 Modified by                : admin
 Description                : belongs to zVM guest vm70002
-$ tess storage vol-list --long --server=DS8K22 --id=e1ac
+$ tess storage vol-list --long --id=e1ac
 
 Volume id                  : e1ac
 Storage server             : DS8K22

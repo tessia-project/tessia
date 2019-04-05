@@ -34,9 +34,9 @@ tasks:
     # zvm guest related entries
     - - storage vol-add --type=DASD --server=ds8k10 --id=0123 --size=7gib --desc='To exercise reusing already existing volume'
       - Item added successfully.
-    - - storage part-init --server=ds8k10 --id=0123 --label=dasd
+    - - storage part-init --id=0123 --label=dasd
       - Partition table successfully initialized.
-    - - storage part-add --server=ds8k10 --id=0123 --fs=ext4 --mp=/ --size=7gib
+    - - storage part-add --id=0123 --fs=ext4 --mp=/ --size=7gib
       - Partition successfully added.
     - - system add --name=cp1lp01 --type=LPAR --hyp=cpc1 --hostname=cpc1lp01.example._com --project=lab-admins --desc='zvm hypervisor'
       - Item added successfully.

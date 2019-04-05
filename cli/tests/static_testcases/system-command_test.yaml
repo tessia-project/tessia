@@ -54,21 +54,26 @@ tasks:
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3950 --size=7gb --project='GEO_1 labadmins' --desc='live-image disk for cpc cpc3'
       - Item added successfully.
+    # create additional storage server and volume with same id to test conflicting volumes with same id
+    - - storage server-add --name=DS8K26 --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
+      - Item added successfully.
+    - - storage vol-add --server=DS8K26 --type=DASD --id=3950 --size=7gb --project='GEO_1 labadmins' --desc='same id, different server'
+      - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3951 --size=7gb --project='GEO_1 labadmins' --desc='second live-image disk for cpc cpc3'
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3952 --size=7gb --owner= --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3956 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
-    - - storage part-init --server=DS8K16 --id=3956 --label=dasd
+    - - storage part-init --id=3956 --label=dasd
       - Partition table successfully initialized.
-    - - storage part-add --server=DS8K16 --id=3956 --fs=ext4 --size=7gb --mp=/
+    - - storage part-add --id=3956 --fs=ext4 --size=7gb --mp=/
       - Partition successfully added.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3957 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
-    - - storage part-init --server=DS8K16 --id=3957 --label=dasd
+    - - storage part-init --id=3957 --label=dasd
       - Partition table successfully initialized.
-    - - storage part-add --server=DS8K16 --id=3957 --fs=swap --size=7gb
+    - - storage part-add --id=3957 --fs=swap --size=7gb
       - Partition successfully added.
   system_help:
     - - system -h
@@ -1145,50 +1150,54 @@ tasks:
       - Missing option "--system".
     - - system vol-attach --profile=DASD4 --vol=3956
       - Missing option "--system".
-    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --vol=3956
-      - Missing option "--server".
-    - - system vol-attach --system= --profile=DASD4 --server=DS8K16 --vol=3956
+    - - system vol-attach --system= --profile=DASD4 --vol=3956
       - 'Invalid value for "--system": value may not be empty'
-    - - system vol-attach --system=cpc3lp52 --profile= --server=DS8K16 --vol=3956
+    - - system vol-attach --system=cpc3lp52 --profile= --vol=3956
       - 'Invalid value for "--profile": value may not be empty'
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
-      - no storage volume found.
-    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=
+      - 'Error: Invalid value for "--server": value may not be empty'
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --vol=
       - 'Invalid value for "--vol": value may not be empty'
-    - - system vol-attach --system=cpc3lp55 --profile=DASD4 --server=DS8K16 --vol=3956
+    - - system vol-attach --system=cpc3lp55 --profile=DASD4 --vol=3956
       - no profile found.
-    - - system vol-attach --system=cpc3lp52 --profile=DASD44 --server=DS8K16 --vol=3956
+    - - system vol-attach --system=cpc3lp52 --profile=DASD44 --vol=3956
       - no profile found.
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K66 --vol=3956
-      - no storage volume found.
+      - storage volume not found.
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3966
-      - no storage volume found.
-    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3956
+      - storage volume not found.
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --vol=3956
       - Volume attached successfully.
       # add partitions so that we can test (root)(swap) in prof-list
-    - - storage part-init --server=DS8K16 --id=3956 --label=dasd
+    - - storage part-init --id=3956 --label=dasd
       - Partition table successfully initialized
-    - - storage part-add --server=DS8K16 --id=3956 --fs=ext4 --mp=/ --size=5gb
+    - - storage part-add --id=3956 --fs=ext4 --mp=/ --size=5gb
       - Partition successfully added
-    - - storage part-add --server=DS8K16 --id=3956 --fs=swap
+    - - storage part-add --id=3956 --fs=swap
       - Partition successfully added
     - - system prof-list --name=DASD4 --system=cpc3lp52
       - '.*\|.*\|.*\|.*\|.*\| *\[DS8K16/3956\]\(root\)\(swap\) *\|'
-    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
+    - - system vol-attach --system=cpc3lp52 --profile=DASD4 --vol=3952
       - Volume attached successfully.
-    - - storage part-init --server=DS8K16 --id=3952 --label=dasd
+    - - storage part-init --id=3952 --label=dasd
       - Partition table successfully initialized
-    - - storage part-add --server=DS8K16 --id=3952 --fs=swap
+    - - storage part-add --id=3952 --fs=swap
       - Partition successfully added
-    - - storage part-del --server=DS8K16 --id=3956 --num=2
+    - - storage part-del --id=3956 --num=2
       - Partition successfully deleted
     - - system prof-list --name=DASD4 --system=cpc3lp52
       - '.*\|.*\|.*\|.*\|.*\| *\[DS8K16/3952\]\(swap\), \[DS8K16/3956\]\(root\) *\|'
       # end testing (root)(swap) in in prof-list
+    - - system vol-attach --system=cpc3 --profile='default cpc3' --vol=3950
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
     - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3950
       - Volume attached successfully.
-    - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3951
+    - - system vol-attach --system=cpc3 --profile='default cpc3' --vol=3951
       - A CPC profile can have only one volume associated
+    - - system vol-detach --system=cpc3 --profile='default cpc3' --vol=3950
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
+    - - system vol-detach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3950
+      - Volume detached successfully.
     # 'system poweron' subcommand
     - - system poweron
       - Missing option "--name".
@@ -1294,29 +1303,25 @@ tasks:
       - Missing option "--system".
     - - system vol-detach --profile=DASD4 --vol=3956
       - Missing option "--system".
-    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --vol=3956
-      - Missing option "--server".
-    - - system vol-detach --system= --profile=DASD4 --server=DS8K16 --vol=3956
+    - - system vol-detach --system= --profile=DASD4 --vol=3956
       - 'Invalid value for "--system": value may not be empty'
-    - - system vol-detach --system=cpc3lp52 --profile= --server=DS8K16 --vol=3956
+    - - system vol-detach --system=cpc3lp52 --profile= --vol=3956
       - 'Invalid value for "--profile": value may not be empty'
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
-      - no storage volume found.
-    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=
+      - 'Error: Invalid value for "--server": value may not be empty'
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --vol=
       - 'Invalid value for "--vol": value may not be empty'
-    - - system vol-detach --system=cpc3lp55 --profile=DASD4 --server=DS8K16 --vol=3956
-      - no profile found.
-    - - system vol-detach --system=cpc3lp52 --profile=DASD44 --server=DS8K16 --vol=3956
+    - - system vol-detach --system=cpc3lp55 --profile=DASD4 --vol=3956
       - no profile found.
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K66 --vol=3956
-      - no storage volume found.
+      - storage volume not found.
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3966
-      - no storage volume found.
-    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3956
+      - storage volume not found.
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --vol=3956
       - Volume detached successfully.
-    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3957
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --vol=3957
       - 'Error: request failed. Server answered: The volume specified is not attached to the profile'
-    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K16 --vol=3952
+    - - system vol-detach --system=cpc3lp52 --profile=DASD4 --vol=3952
       - Volume detached successfully.
       # delete default profile if it is the last one
     - - system prof-list --system=cpc3lp52

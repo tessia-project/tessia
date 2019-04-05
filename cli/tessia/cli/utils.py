@@ -19,7 +19,7 @@ Miscellaneous utilities that can be consumed by different modules
 #
 # IMPORTS
 #
-from potion_client.exceptions import ItemNotFound
+from potion_client.exceptions import ItemNotFound, MultipleItemsFound
 from tessia.cli.config import CONF
 
 import click
@@ -49,14 +49,15 @@ def build_expect_header():
     return header
 # build_expect_header()
 
-def fetch_item(resource, search_fields, error_msg):
+def fetch_item(resource, search_fields, error_msg, multi_msg=None):
     """
     Helper function to fetch a single item from server
 
     Args:
         resource (Client.Resource): rest resource model
         search_fields (dict): filters for search criteria
-        error_msg (str): error message in case of error
+        not_found_msg (str): error message if item is not found
+        multi_msg (str): error message if multiple entries are found
 
     Returns:
         abc: metaclass representing the item fetched
@@ -65,13 +66,18 @@ def fetch_item(resource, search_fields, error_msg):
         ClickException: in case request fails
     """
     try:
-        item = resource.first(where=search_fields)
+        item = resource.one(where=search_fields)
     except ItemNotFound:
         raise click.ClickException(error_msg)
+    except MultipleItemsFound:
+        # no msg specified: use the one from the potion lib
+        if not multi_msg:
+            raise
+        raise click.ClickException(multi_msg)
     return item
 # fetch_item()
 
-def fetch_and_delete(resource, search_fields, error_msg):
+def fetch_and_delete(resource, search_fields, error_msg, multi_msg=None):
     """
     Utility function to fetch an item from server and delete it
 
@@ -79,8 +85,9 @@ def fetch_and_delete(resource, search_fields, error_msg):
         resource (Client.Resource): rest resource model
         search_fields (dict): filters for search criteria
         error_msg (str): error message in case of error
+        multi_msg (str): error message if multiple entries are found
     """
-    item = fetch_item(resource, search_fields, error_msg)
+    item = fetch_item(resource, search_fields, error_msg, multi_msg)
     item.destroy()
 # fetch_and_delete()
 

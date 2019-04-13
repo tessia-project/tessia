@@ -11,6 +11,8 @@ RUN apt-get -q update > /dev/null && \
     # Install the distro dependencies.
     # ATTENTION: make sure to keep a comment for each on why is it needed.
     apt-get -yq install --no-install-recommends \
+    # enable autocomplete for tessia client
+    bash-completion \
     # to manage the system locale
     locales \
     # used to install python libraries
@@ -30,7 +32,9 @@ RUN apt-get -q update > /dev/null && \
     # remove pip from distro to avoid conflicts
     apt-get -y remove python3-pip && hash -r && \
     # add the admin user for administrative work
-    useradd --create-home --shell /bin/bash admin
+    useradd --create-home --shell /bin/bash admin && \
+    # enable autocomplete for tessia client
+    echo 'eval "$(_TESS_COMPLETE=source tess)"' > /etc/bash_completion.d/tessia-cli
 
 # set the locale/encoding for the session
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8

@@ -4,7 +4,6 @@ FROM ubuntu:latest
 # but it is also possible to use this dockerfile directly and override the variables
 # to point to another location
 ARG git_repo=file:///assets/tessia.git
-ARG baselib_repo=file:///assets/tessia-baselib.git
 
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -61,9 +60,6 @@ COPY assets /assets/
 RUN cd /assets && \
     git clone $git_repo repo-tessia && \
     cd repo-tessia && \
-    # use the custom url as the baselib's repository might not be accessible
-    # from the builder
-    sed -i "/egg=tessia-baselib/ s,^.*\(@.*$\),git\+${baselib_repo}\1,g" requirements.txt && \
     # server installation
     pip3 install -U -r requirements.txt -r dev-requirements.txt . && \
     ./setup.py -q install_data && \

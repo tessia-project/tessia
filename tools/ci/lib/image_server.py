@@ -35,45 +35,6 @@ class DockerImageServer(DockerImage):
     """
     Specialized class for dealing with the tessia-server image
     """
-    def _prepare_context(self, git_name, work_dir):
-        """
-        Prepare the context directory in the work dir of the builder
-
-        Args:
-            git_name (str): repository name where source code is located
-            work_dir (str): path to work dir
-
-        Returns:
-            str: path to the context dir created
-
-        Raises:
-            RuntimeError: in case the git repo copy fails
-        """
-        # let the base class do it's work
-        context_dir = super()._prepare_context(git_name, work_dir)
-
-        # add the specific bits: we need to download the tessia-baselib repo
-        self._logger.info(
-            '[build] downloading tessia-baselib to context dir')
-
-        ret_code, output = self._session.run(
-            "grep 'egg=tessia-baselib' {}/requirements.txt".format(ROOT_DIR))
-        if ret_code != 0:
-            raise RuntimeError(
-                'Failed to determine tessia-baselib source url: {}'
-                .format(output))
-        baselib_url = output.strip().rsplit('@', 1)[0]
-
-        ret_code, output = self._session.run(
-            'git clone --mirror {} {}/assets/tessia-baselib.git'.format(
-                baselib_url, context_dir))
-        if ret_code != 0:
-            raise RuntimeError(
-                'Failed to download tessia-baselib source: {}'.format(output))
-
-        return context_dir
-    # _prepare_context()
-
     def unit_test(self):
         """
         Run a container from the image to perform unit testing.

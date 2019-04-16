@@ -167,8 +167,17 @@ class PlatLpar(PlatBase):
         """
         Given a volume entry, return the correspondent device path on operating
         system.
+
+        Args:
+            vol_obj (StorageVolume): db entry
+
+        Returns:
+            str: device path
+
+        Raises:
+            RuntimeError: in case the volume type is unknown
         """
-        if vol_obj.type == 'DASD':
+        if vol_obj.type in ('DASD', 'HPAV'):
             vol_id = vol_obj.volume_id
             if vol_id.find('.') < 0:
                 vol_id = '0.0.' + vol_id

@@ -29,6 +29,10 @@ import click
 #
 # CONSTANTS AND DEFINITIONS
 #
+# error messages when fetching a volume
+VOL_NOT_FOUND_MSG = 'storage volume not found.'
+VOL_MULTI_MSG = ('multiple volumes match the entered ID, specify the storage '
+                 'server with --server')
 
 #
 # CODE
@@ -40,8 +44,7 @@ import click
 @click.option('--system', required=True, type=NAME, help='target system')
 @click.option('--profile', required=True, type=NAME,
               help='target activation profile')
-@click.option('--server', required=True,
-              help='storage server containing volume')
+@click.option('--server', type=NAME, help='storage server containing volume')
 @click.option('--vol', required=True, type=VOLUME_ID, help='volume id')
 def vol_attach(system, profile, server, vol):
     """
@@ -55,11 +58,12 @@ def vol_attach(system, profile, server, vol):
         {'system': system, 'name': profile},
         'no profile found.'
     )
+    search_params = {'volume_id': vol}
+    if server:
+        search_params['server'] = server
     vol_obj = fetch_item(
-        client.StorageVolumes,
-        {'server': server, 'volume_id': vol},
-        'no storage volume found.'
-    )
+        client.StorageVolumes, search_params,
+        VOL_NOT_FOUND_MSG, VOL_MULTI_MSG)
 
     # perform operation
     prof_obj.vol_attach({'unique_id': vol_obj.unique_id})
@@ -72,8 +76,7 @@ def vol_attach(system, profile, server, vol):
 @click.option('--system', required=True, type=NAME, help='target system')
 @click.option('--profile', required=True, type=NAME,
               help='target activation profile')
-@click.option('--server', required=True,
-              help='storage server containing volume')
+@click.option('--server', type=NAME, help='storage server containing volume')
 @click.option('--vol', required=True, type=VOLUME_ID, help='volume id')
 def vol_detach(system, profile, server, vol):
     """
@@ -87,11 +90,12 @@ def vol_detach(system, profile, server, vol):
         {'system': system, 'name': profile},
         'no profile found.'
     )
+    search_params = {'volume_id': vol}
+    if server:
+        search_params['server'] = server
     vol_obj = fetch_item(
-        client.StorageVolumes,
-        {'server': server, 'volume_id': vol},
-        'no storage volume found.'
-    )
+        client.StorageVolumes, search_params,
+        VOL_NOT_FOUND_MSG, VOL_MULTI_MSG)
 
     # since the lib does not support to pass the unique id on the url for a
     # instance we need to use the class method directly

@@ -65,6 +65,11 @@ TYPE_FIELDS = (
     'name', 'desc'
 )
 
+# error messages when fetching a volume
+VOL_NOT_FOUND_MSG = 'volume not found.'
+VOL_MULTI_MSG = ('multiple volumes match the entered ID, specify the storage '
+                 'server with --server')
+
 WRONG_USAGE_FCP_PARAM = (
     "FCP parameters can't be applied to a non FCP disk."
 )
@@ -72,6 +77,20 @@ WRONG_USAGE_FCP_PARAM = (
 #
 # CODE
 #
+
+def _fetch_vol(vol_id, server):
+    """
+    Helper to fetch a volume from the server
+    """
+    client = Client()
+    search_params = {'volume_id': vol_id}
+    if server:
+        search_params['server'] = server
+    item = fetch_item(
+        client.StorageVolumes, search_params,
+        VOL_NOT_FOUND_MSG, VOL_MULTI_MSG)
+    return item
+# _fetch_vol()
 
 def _process_fcp_path(prop_dict, value):
     """
@@ -112,7 +131,7 @@ def _process_fcp_path(prop_dict, value):
 
 # partition table related functions
 @click.command(name='part-add')
-@click.option('--server', required=True, help='target storage server')
+@click.option('--server', type=NAME, help='target storage server')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
 @click.option('--size', type=MIB_SIZE, help=SIZE_HELP)
@@ -126,11 +145,7 @@ def part_add(server, volume_id, **kwargs):
     """
     add a partition to volume's partition table
     """
-    client = Client()
-    item = fetch_item(
-        client.StorageVolumes,
-        {'volume_id': volume_id, 'server': server},
-        'volume not found.')
+    item = _fetch_vol(volume_id, server)
     part_table = item.part_table
     if (not isinstance(part_table, dict) or not
             isinstance(part_table.get('table'), list)):
@@ -156,20 +171,14 @@ def part_add(server, volume_id, **kwargs):
 # part_add()
 
 @click.command(name='part-clear')
-@click.option('--server', required=True,
-              help='storage server containing volume')
+@click.option('--server', type=NAME, help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
 def part_clear(server, volume_id):
     """
     clear (remove) a volume's partition table
     """
-    client = Client()
-    item = fetch_item(
-        client.StorageVolumes,
-        {'volume_id': volume_id, 'server': server},
-        'volume not found.')
-
+    item = _fetch_vol(volume_id, server)
     item.update({'part_table': None})
 
     click.echo('partition table cleared; to initialize it, use the part-init '
@@ -180,8 +189,7 @@ def part_clear(server, volume_id):
     name='part-del',
     # short help is needed to avoid truncation
     short_help="Remove a partition from volume's partition table")
-@click.option('--server', required=True,
-              help='storage server containing volume')
+@click.option('--server', type=NAME, help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
 @click.option('--num', required=True, type=CustomIntRange(min=1),
@@ -190,11 +198,7 @@ def part_del(server, volume_id, num):
     """
     remove a partition from volume's partition table
     """
-    client = Client()
-    item = fetch_item(
-        client.StorageVolumes,
-        {'volume_id': volume_id, 'server': server},
-        'volume not found.')
+    item = _fetch_vol(volume_id, server)
     part_table = item.part_table
 
     try:
@@ -209,8 +213,7 @@ def part_del(server, volume_id, num):
 # part_del()
 
 @click.command(name='part-edit')
-@click.option('--server', required=True,
-              help='storage server containing volume')
+@click.option('--server', type=NAME, help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
 @click.option('--num', type=CustomIntRange(min=1), required=True,
@@ -230,17 +233,13 @@ def part_edit(server, volume_id, num, **kwargs):
     for key, value in kwargs.items():
         if value is not None:
             # empty value: convert to None to allow field to be unset
-            if value == '':
+            if not value and isinstance(value, str):
                 value = None
             parsed_args[key] = value
     if not parsed_args:
         raise click.ClickException('nothing to update.')
 
-    client = Client()
-    item = fetch_item(
-        client.StorageVolumes,
-        {'volume_id': volume_id, 'server': server},
-        'volume not found.')
+    item = _fetch_vol(volume_id, server)
     part_table = item.part_table
 
     try:
@@ -255,8 +254,7 @@ def part_edit(server, volume_id, num, **kwargs):
 # part_edit()
 
 @click.command(name='part-init')
-@click.option('--server', required=True,
-              help='storage server containing volume')
+@click.option('--server', type=NAME, help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
 @click.option(
@@ -268,31 +266,21 @@ def part_init(server, volume_id, label):
     """
     part_table = {'type': label, 'table': []}
 
-    client = Client()
-    item = fetch_item(
-        client.StorageVolumes,
-        {'volume_id': volume_id, 'server': server},
-        'volume not found.')
-
+    item = _fetch_vol(volume_id, server)
     item.update({'part_table': part_table})
 
     click.echo('Partition table successfully initialized.')
 # part_init()
 
 @click.command(name='part-list')
-@click.option('--server', required=True,
-              help='storage server containing volume')
+@click.option('--server', type=NAME, help='storage server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help="volume id")
 def part_list(server, volume_id):
     """
     print the volume's partition table
     """
-    client = Client()
-    item = fetch_item(
-        client.StorageVolumes,
-        {'volume_id': volume_id, 'server': server},
-        'volume not found.')
+    item = _fetch_vol(volume_id, server)
 
     part_table = item.part_table
     if (not isinstance(part_table, dict) or not
@@ -320,8 +308,8 @@ def part_list(server, volume_id):
 # part_list()
 
 @click.command('vol-add')
-# set the parameter name after the model's attribute name to save on typing
-@click.option('--server', required=True, help='target storage server')
+@click.option('--server', type=NAME, required=True,
+              help='target storage server')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help='volume id')
 @click.option('--size', type=MIB_SIZE, help=SIZE_HELP)
@@ -403,30 +391,29 @@ def vol_add(**kwargs):
 # vol_add()
 
 @click.command(name='vol-del')
-@click.option('--server', required=True, help='server containing volume')
+@click.option('--server', type=NAME, help='server containing volume')
 @click.option('volume_id', '--id', required=True, type=VOLUME_ID,
               help='volume id')
-def vol_del(**kwargs):
+def vol_del(server, volume_id):
     """
     remove an existing storage volume
     """
     client = Client()
 
-    fetch_and_delete(
-        client.StorageVolumes,
-        kwargs,
-        'volume not found.'
-    )
+    search_params = {'volume_id': volume_id}
+    if server:
+        search_params['server'] = server
+    fetch_and_delete(client.StorageVolumes, search_params,
+                     VOL_NOT_FOUND_MSG, VOL_MULTI_MSG)
     click.echo('Item successfully deleted.')
 # vol_del()
 
 @click.command(
     'vol-edit',
     short_help='change properties of an existing storage volume')
-@click.option('--server', required=True, help='server containing volume')
+@click.option('--server', type=NAME, help='server containing volume')
 @click.option('cur_id', '--id', required=True, type=VOLUME_ID,
               help='volume id')
-# set the parameter name after the model's attribute name to save on typing
 @click.option('volume_id', '--newid', type=VOLUME_ID,
               help="new volume's id in form volume-id")
 @click.option('--size', type=MIB_SIZE, help=SIZE_HELP)
@@ -450,12 +437,7 @@ def vol_edit(server, cur_id, **kwargs):
     """
     change properties of an existing storage volume
     """
-    client = Client()
-    item = fetch_item(
-        client.StorageVolumes,
-        {'volume_id': cur_id, 'server': server},
-        'volume not found.'
-    )
+    item = _fetch_vol(cur_id, server)
     update_dict = {}
 
     for key, value in kwargs.items():
@@ -559,7 +541,7 @@ def vol_edit(server, cur_id, **kwargs):
 # vol_edit()
 
 @click.command(name='vol-export')
-@click.option('--server', help='filter by storage server')
+@click.option('--server', type=NAME, help='filter by storage server')
 @click.option('volume_id', '--id', type=VOLUME_ID, help='filter by volume id')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--pool', help="list volumes assigned to this pool")
@@ -607,8 +589,7 @@ def vol_import(ctx, **kwargs):
 @click.command(name='vol-list')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
-# set the parameter name after the model's attribute name to save on typing
-@click.option('--server', help='filter by storage server')
+@click.option('--server', type=NAME, help='filter by storage server')
 @click.option('volume_id', '--id', type=VOLUME_ID, help='filter by volume id')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--pool', help="list volumes assigned to this pool")

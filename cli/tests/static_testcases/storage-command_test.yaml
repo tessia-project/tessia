@@ -245,7 +245,7 @@ tasks:
     - - storage vol-add --server=DS8K16 --id=3951 --type=DASD
       - Missing option "--size".
     - - storage vol-add --server= --id=3951 --size=7gb --type=DASD
-      - "request failed. Server answered: No associated item found with value '' for field 'Storage server'"
+      - 'Error: Invalid value for "--server": value may not be empty'
     - - storage vol-add --server=DS8K16 --id= --size=7gb --type=DASD
       - 'Error: Invalid value for "--id": value may not be empty'
     - - storage vol-add --server=DS8K16 --id=3951 --size= --type=DASD
@@ -280,6 +280,9 @@ tasks:
     - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers'  --wwid=11002076305aac1a0000000000002206 --desc=
       - "Error: FCP parameters can't be applied to a non FCP disk."
     - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc=
+      - Item added successfully.
+    # create storage volume with same id on different server to test conflicting volumes with same id
+    - - storage vol-add --server=DS8K23 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc=
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR' --system=lpar69
       - Item added successfully.
@@ -322,11 +325,11 @@ tasks:
     - - storage vol-list --server=DS8KKK
       - No results were found.
     - - storage vol-list --server=
-      - No results were found.
+      - 'Error: Invalid value for "--server": value may not be empty'
     - - storage vol-list --server=DS8K16
       - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
         - ' *3955 *\|'
-    - - storage vol-list --server=DS8K16 --long
+    - - storage vol-list --long
       - 'Volume id                  : 3955'
     - - storage vol-list --system=
       - 'Invalid value for "--system": value may not be empty'
@@ -346,152 +349,153 @@ tasks:
       - 'Error: Invalid value for "--id": value may not be empty'
     - - storage vol-list --id=4000
       - No results were found.
-    - - storage vol-list --server=DS8K16 --owner=
+    - - storage vol-list --owner=
       - No results were found.
-    - - storage vol-list --server=DS8K16 --owner=dev1@example.com
+    - - storage vol-list --owner=dev1@example.com
       - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
         - ' *3955 *\|'
-    - - storage vol-list --server=DS8K16 --owner=dev1@example.com --long
+    - - storage vol-list --owner=dev1@example.com --long
       - 'Volume id                  : 3955'
-    - - storage vol-list --server=DS8K16 --owner=dev10@example.com
+    - - storage vol-list --owner=dev10@example.com
       - No results were found.
-    - - storage vol-list --server=DS8K16 --owner=lab_admin@example.com
+    - - storage vol-list --owner=lab_admin@example.com
       - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
         - ' *3952 *\|'
-    - - storage vol-list --server=DS8K16 --owner=lab_admin@example.com --long
+    - - storage vol-list --owner=lab_admin@example.com --long
       - 'Volume id                  : 3952'
       # the pool support is not implemented yet
-    - - storage vol-list --server=DS8K16 --pool=
+    - - storage vol-list --pool=
       - No results were found.
-    - - storage vol-list --server=DS8K16 --project=
+    - - storage vol-list --project=
       - No results were found.
-    - - storage vol-list --server=DS8K16 --project='GEO_1 developers'
+    - - storage vol-list --project='GEO_1 developers'
       - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
         - ' *3955 *\|'
-    - - storage vol-list --server=DS8K16 --project='GEO_1 developers' --long
+    - - storage vol-list --project='GEO_1 developers' --long
       - 'Volume id                  : 3955'
-    - - storage vol-list --server=DS8K16 --project='GEO_1'
+    - - storage vol-list --project='GEO_1'
       - No results were found.
-    - - storage vol-list --server=DS8K16 --type=
+    - - storage vol-list --type=
       - No results were found.
-    - - storage vol-list --server=DS8K16 --type=DASD
+    - - storage vol-list --type=DASD
       - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
         - ' *3955 *\|'
-    - - storage vol-list --server=DS8K16 --type=DASD --long
+    - - storage vol-list --type=DASD --long
       - 'Volume id                  : 3955'
-    - - storage vol-list --server=DS8K16 --type=ISCSI
+    - - storage vol-list --type=ISCSI
       - No results were found.
-    - - storage vol-list --server=DS8K16 --type=FFF
+    - - storage vol-list --type=FFF
       - No results were found.
     # 'storage vol-edit' subcommand for DASD
     - - storage vol-edit
-      - Missing option "--server".
-    - - storage vol-edit --server=DS8K16
       - Missing option "--id".
-    - - storage vol-edit --id=3955
-      - Missing option "--server".
-    - - storage vol-edit --server=DS8K16 --id=4444
+    - - storage vol-edit --id=4444
       - volume not found.
-    - - storage vol-edit --server=DS8K16 --id=3955
+    - - storage vol-edit --id=3955
       - no update criteria provided.
-    - - storage vol-edit --server=DS8K16 --id=3955 --system=
+    - - storage vol-edit --id=3955 --system=
       - Item successfully updated.
     # make sure update worked
     - - storage vol-list --system=lpar69
       - No results were found.
-    - - storage vol-edit --server=DS8K16 --id=3955 --system=lpar69
+    - - storage vol-edit --id=3955 --system=lpar69
       - Item successfully updated.
     # make sure update worked
     - - storage vol-list --system=lpar69
       - ' *3955 *\|'
-    - - storage vol-edit --server=DS8K16 --id=3955 --newid=
+    - - storage vol-edit --id=3955 --newid=
       - 'Error: Invalid value for "--newid": value may not be empty'
-    - - storage vol-edit --server=DS8K16 --id=3955 --newid=3955
+    - - storage vol-edit --id=3955 --newid=3955
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=3955 --size=7gb
+    - - storage vol-edit --id=3955 --size=7gb
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=3955 --size=7g
+    - - storage vol-edit --id=3955 --size=7g
       - 'Error: Invalid value for "--size": 7g is not a valid size'
-    - - storage vol-edit --server=DS8K16 --id=3955 --type=DASD
+    - - storage vol-edit --id=3955 --type=DASD
       - 'no such option: --type'
-    - - storage vol-edit --server=DS8K16 --id=3950 --size=7gb
+    - - storage vol-edit --id=3950 --size=7gb
       - volume not found.
-    - - storage vol-edit --server=DS8K16 --id=3955 --owner=
+    - - storage vol-edit --id=3955 --owner=
       - "Error: request failed. Server answered: No associated item found with value '' for field 'Owner'"
-    - - storage vol-edit --server=DS8K16 --id=3955 --owner=lab_admin@example.com
+    - - storage vol-edit --id=3955 --owner=lab_admin@example.com
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=3955 --project=
+    - - storage vol-edit --id=3955 --project=
       - "request failed. Server answered: No associated item found with value '' for field 'Project'"
-    - - storage vol-edit --server=DS8K16 --id=3955 --project='GEO_1 developers'
+    - - storage vol-edit --id=3955 --project='GEO_1 developers'
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=3955 --project=GEO_1
+    - - storage vol-edit --id=3955 --project=GEO_1
       - "request failed. Server answered: No associated item found with value 'GEO_1' for field 'Project'"
-    - - storage vol-edit --server=DS8K16 --id=3955 --desc=
+    - - storage vol-edit --id=3955 --desc=
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=3955 --desc='belongs to LPAR'
+    - - storage vol-edit --id=3955 --desc='belongs to LPAR'
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=3955 --mpath=TRUE
+    - - storage vol-edit --id=3955 --mpath=TRUE
       - "FCP parameters can't be applied to a non FCP disk."
-    - - storage vol-edit --server=DS8K16 --id=3952 --addpath='1800,100207630503c1ae'
+    - - storage vol-edit --id=3952 --addpath='1800,100207630503c1ae'
       - "FCP parameters can't be applied to a non FCP disk."
-    - - storage vol-edit --server=DS8K16 --id=3952 --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --id=3952 --wwid=11002076305aac1a0000000000002202
       - "FCP parameters can't be applied to a non FCP disk."
-    - - storage vol-edit --server=DS8K16 --id=3952 --addpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --id=3952 --addpath='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
       - "FCP parameters can't be applied to a non FCP disk."
-    - - storage vol-edit --server=DS8K16 --id=3952 --delpath='1800,100207630503c1ae'
+    - - storage vol-edit --id=3952 --delpath='1800,100207630503c1ae'
       - "FCP parameters can't be applied to a non FCP disk."
-    - - storage vol-edit --server=DS8K16 --id=3952 --type=FCP
+    - - storage vol-edit --id=3952 --type=FCP
       - 'no such option: --type'
     - - storage vol-list --id=3952
       - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
         - ' *3952 *\|'
     - - storage vol-list --id=3952 --long
       - 'Volume id                  : 3952'
-    - - storage vol-edit --server=DS8K16 --id=3955 --login=lab_admin@example.com
+    - - storage vol-edit --id=3955 --login=lab_admin@example.com
       - 'no such option: --login'
     # 'storage vol-edit' subcommand for HPAV
-    - - storage vol-edit --server=DS8K16 --id=ED52 --size=7gb
+    - - storage vol-edit --id=ED52 --size=7gb
       - 'Error: HPAV type does not support --size'
-    - - storage vol-edit --server=DS8K16 --id=ED52 --newid=XXXX
+    - - storage vol-edit --id=ED52 --newid=XXXX
       - 'Error: Invalid value: xxxx is not a valid devno'
     # 'storage vol-edit' subcommand for FCP
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --type=DASD
+    - - storage vol-edit --id=1022400200000000 --type=DASD
       - 'no such option: --type'
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=
+    - - storage vol-edit --id=1022400200000000 --mpath=
       - 'Invalid value for "--mpath":  is not a valid boolean'
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --mpath=TRU
+    - - storage vol-edit --id=1022400200000000 --mpath=TRU
       - 'Invalid value for "--mpath": tru is not a valid boolean'
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --path='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --id=1022400200000000 --path='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
       - 'no such option: --path'
        # add the same path as exists
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630513c1ae'
+    - - storage vol-edit --id=1022400200000000 --addpath='1800,100207630513c1ae'
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630523c1ae' --mpath=true
+    - - storage vol-edit --id=1022400200000000 --addpath='1800,100207630523c1ae' --mpath=true
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630513c1ae' --delpath='1800,100207630523c1ae'
+    - - storage vol-edit --id=1022400200000000 --delpath='1800,100207630513c1ae' --delpath='1800,100207630523c1ae'
       - Item successfully updated.
        # delete the only path
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630503c1ae'
+    - - storage vol-edit --id=1022400200000000 --delpath='1800,100207630503c1ae'
       - fcp volume must have at least one path
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --wwid=
+    - - storage vol-edit --id=1022400200000000 --wwid=
       - 'Invalid value for "--wwid":  is not a valid wwid'
         # wwpn not found: no error message
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,0x100207630503c1a1'
+    - - storage vol-edit --id=1022400200000000 --delpath='1800,0x100207630503c1a1'
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,0x5555'
+    - - storage vol-edit --id=1022400200000000 --delpath='1800,0x5555'
       - 'Invalid value for "--delpath": 0x5555 is not a valid wwpn'
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='55,100207630503c1a1'
+    - - storage vol-edit --id=1022400200000000 --delpath='55,100207630503c1a1'
       - 'Invalid value for "--delpath": 55 is not a valid devno'
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800 100207630503c1a1'
+    - - storage vol-edit --id=1022400200000000 --delpath='1800 100207630503c1a1'
       - 'Invalid value for "--delpath": 1800 100207630503c1a1 is not a valid FCP path'
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1800,100207630503c1a1'
+    - - storage vol-edit --id=1022400200000000 --delpath='1800,100207630503c1a1'
       - Item successfully updated.
         # adapter not found: no error message
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --delpath='1900,100207630503c1ae'
+    - - storage vol-edit --id=1022400200000000 --delpath='1900,100207630503c1ae'
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=1022400200000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=false --wwid=11002076305aac1a0000000000002202
+    - - storage vol-edit --id=1022400200000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=false --wwid=11002076305aac1a0000000000002202
       - Item successfully updated.
-    - - storage vol-edit --server=DS8K16 --id=1022400300000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002203
+    - - storage vol-edit --id=1022400300000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002203
+      - Item successfully updated.
+    # test conflicting ids
+    - - storage vol-edit --id=3953 --desc='volume description'
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
+    - - storage vol-edit --id=3953 --server=DS8K16 --desc='volume description'
       - Item successfully updated.
     # 'storage vol-export' subcommand
     - - storage vol-export
@@ -504,7 +508,7 @@ tasks:
     - - storage vol-export --owner dev1@example.com
       - dev1@example.com
     - - storage vol-export --server DS8K16 --owner dev1@example.com
-      - DS8K16,3953,DASD,6675,,,,dev1@example.com,GEO_1 developers,
+      - DS8K16,3953,DASD,6675,,,,dev1@example.com,GEO_1 developers,volume description
     - - storage vol-export --project 'GEO_1 developers'
       - DS8K16,3952,DASD,6675,,,,lab_admin@example.com,GEO_1 developers,
     - - storage vol-export --system lpar69
@@ -522,7 +526,7 @@ tasks:
       - operation finished successfully
     - - storage vol-export --server DS8K16
       - - SERVER,VOLUME_ID,TYPE,SIZE,SYSTEM,FCP_PATHS,WWID,OWNER,PROJECT,DESC
-        - DS8K16,3953,DASD,6675,,,,dev1@example.com,GEO_1 developers,
+        - DS8K16,3953,DASD,6675,,,,dev1@example.com,GEO_1 developers,volume description
     - - storage vol-import --file files/storage-command_test/import-vol.csv --commit --yes
       - operation finished successfully
     - - storage vol-import --file files/storage-command_test/import-vol.csv --commit --yes --verbosity debug
@@ -537,195 +541,195 @@ tasks:
       - DS8K16,3960,DASD,6675,,,,lab_admin@example.com,GEO_1 developers,belongs to LPAR
     # 'storage vol-del' subcommand
     - - storage vol-del
-      - Missing option "--server".
-    - - storage vol-del --server=DS8K16
       - Missing option "--id".
-    - - storage vol-del --id=3953
-      - Missing option "--server".
     - - storage vol-del --server= --id=9953
-      - volume not found.
-    - - storage vol-del --server=DS8K16 --id=
+      - 'Error: Invalid value for "--server": value may not be empty'
+    - - storage vol-del --id=
       - 'Error: Invalid value for "--id": value may not be empty'
-    - - storage vol-del --server=DS8K16 --id=9953
+    - - storage vol-del --id=9953
       - volume not found.
+    - - storage vol-del --id=ED51
+      - Item successfully deleted.
+    # test conflicting ids
+    - - storage vol-del --id=3953
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
     - - storage vol-del --server=DS8K16 --id=3953
       - Item successfully deleted.
-    - - storage vol-del --server=DS8K16 --id=ED51
-      - Item successfully deleted.
+    # add back so that test with other commands can be done
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3953 --size=7gb --owner=dev1@example.com --project='GEO_1 developers'
+      - Item added successfully.
   storage_part:
-    - - storage part-list --server=DS8K16 --id=3955
+    - - storage part-list --id=3955
       - partition table undefined; initialize it with the part-init command.
-    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7gb --mp=/
+    - - storage part-add --id=3955 --fs=ext4 --size=7gb --mp=/
       - partition table undefined; initialize it with the part-init command.
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=ext4 --size=7gb --mp=/
+    - - storage part-edit --id=3955 --num=1 --fs=ext4 --size=7gb --mp=/
       - 'partition table undefined; initialize it with the part-init command.'
-    - - storage part-del --server=DS8K16 --id=3955 --num=1
+    - - storage part-del --id=3955 --num=1
       - 'partition table undefined; initialize it with the part-init command.'
     # 'storage part-clear' subcommand
-    - - storage part-init --server=DS8K16 --id=3955 --label=dasd
+    - - storage part-init --id=3955 --label=dasd
       - Partition table successfully initialized.
-    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7gb --mp=/
+    - - storage part-add --id=3955 --fs=ext4 --size=7gb --mp=/
       - Partition successfully added.
-    - - storage part-clear --server=DS8K16 --id=3955
+    - - storage part-clear --id=3955
       - 'partition table cleared; to initialize it, use the part-init command.'
-    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7gb --mp=/
+    - - storage part-add --id=3955 --fs=ext4 --size=7gb --mp=/
       - 'partition table undefined; initialize it with the part-init command.'
     # 'storage part-init' subcommand
     - - storage part-init
-      - Missing option "--server".
-    - - storage part-init --server=DS8K16
       - Missing option "--id".
-    - - storage part-init --server=DS8K16 --id=3955
+    - - storage part-init --id=3955
       - 'Missing option "--label".  Choose from:[ \n\t]*dasd,[ \n\t]*gpt,[ \n\t]*msdos\.'
-    - - storage part-init --server=DS8K16 --label=dasd
+    - - storage part-init --label=dasd
       - Missing option "--id".
-    - - storage part-init --id=3955 --label=dasd
-      - Missing option "--server".
-    - - storage part-init --server=DS8K88 --id=3955 --label=dasd
-      - volume not found.
     - - storage part-init --server= --id=3955 --label=dasd
+      - 'Error: Invalid value for "--server": value may not be empty'
+    - - storage part-init --id=9955 --label=dasd
       - volume not found.
-    - - storage part-init --server=DS8K16 --id=9955 --label=dasd
-      - volume not found.
-    - - storage part-init --server=DS8K16 --id= --label=dasd
+    - - storage part-init --id= --label=dasd
       - 'Error: Invalid value for "--id": value may not be empty'
-    - - storage part-init --server=DS8K16 --id=3955 --label=
+    - - storage part-init --id=3955 --label=
       - 'Invalid value for "--label": invalid choice: .'
-    - - storage part-init --server=DS8K16 --id=3955 --label=disk
+    - - storage part-init --id=3955 --label=disk
       - 'Invalid value for "--label": invalid choice: disk.'
-    - - storage part-init --server=DS8K16 --id=3955 --label=dasd
+    - - storage part-init --id=3955 --label=dasd
       - Partition table successfully initialized.
-    - - storage part-init --server=DS8K16 --id=3955 --label=dasd
+    - - storage part-init --id=3955 --label=dasd
       - Partition table successfully initialized.
-    - - storage part-init --server=DS8K16 --id=3952 --label=gpt
+    - - storage part-init --id=3952 --label=gpt
       - Partition table successfully initialized.
-    - - storage part-init --server=DS8K16 --id=1022400200000000 --label=msdos
+    - - storage part-init --id=1022400200000000 --label=msdos
+      - Partition table successfully initialized.
+    # test conflicting ids
+    - - storage part-init --id=3953 --label=dasd
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
+    - - storage part-init --server=DS8K16 --id=3953 --label=dasd
       - Partition table successfully initialized.
     # 'storage part-add' subcommand
     - - storage part-add
-      - Missing option "--server".
-    - - storage part-add --server=DS8K16
       - Missing option "--id".
-    - - storage part-add --server=DS8K16 --id=3955
+    - - storage part-add --id=3955
       - Missing option "--fs".
-    - - storage part-add --server=DS8K16 --id=3955 --size=7gb
+    - - storage part-add --id=3955 --size=7gb
       - Missing option "--fs".
     - - storage part-add --server= --id=3955 --fs=ext4 --size=7gb
-      - volume not found.
-    - - storage part-add --server=DS8K16 --id= --fs=ext4 --size=7gb
+      - 'Error: Invalid value for "--server": value may not be empty'
+    - - storage part-add --id= --fs=ext4 --size=7gb
       - 'Error: Invalid value for "--id": value may not be empty'
-    - - storage part-add --server=DS8K16 --id=9955 --fs=ext4 --size=7gb
+    - - storage part-add --id=9955 --fs=ext4 --size=7gb
       - volume not found.
-    - - storage part-add --server=DS8K16 --id=3955 --fs=axt4 --size=7gb
+    - - storage part-add --id=3955 --fs=axt4 --size=7gb
       - "The server did not accept our request. The response is: Bad Request"
-    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --size=7g
+    - - storage part-add --id=3955 --fs=ext4 --size=7g
       - 'Error: Invalid value for "--size": 7g is not a valid size'
-    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4 --mp=/
+    - - storage part-add --id=3955 --fs=ext4 --mp=/
       - Partition successfully added.
     # next two commands are to make sure not specifying size used all available space
-    - - storage part-list --server=DS8K16 --id=3955
+    - - storage part-list --id=3955
       - "1 *\\| 6675MiB *\\| primary *\\| ext4 *\\| / *\\| *\n"
-    - - storage part-add --server=DS8K16 --id=3955 --fs=ext4
+    - - storage part-add --id=3955 --fs=ext4
       - "Error: no available free size to create the partition"
-    - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=3gb
+    - - storage part-add --id=3952 --fs=ext4 --size=3gb
       - Partition successfully added.
-    - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=2gb --mp=/
+    - - storage part-add --id=3952 --fs=ext4 --size=2gb --mp=/
       - Partition successfully added.
-    - - storage part-add --server=DS8K16 --id=3952 --fs=ext3 --mp=/home --mo=qqqq
+    - - storage part-add --id=3952 --fs=ext3 --mp=/home --mo=qqqq
       - Partition successfully added.
     # resulting partition should be of 2gb
-    - - storage part-list --server=DS8K16 --id=3952
+    - - storage part-list --id=3952
       - "3 *\\| 1907MiB *\\| primary *\\| ext3 *\\| /home *\\| qqqq *\n"
-    - - storage part-add --server=DS8K16 --id=3952 --fs=ext4 --size=7gb --mp=/
+    - - storage part-add --id=3952 --fs=ext4 --size=7gb --mp=/
       - "Error: size specified is bigger than available free space 0MiB"
-    - - storage part-add --server=DS8K16 --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=first
+    - - storage part-add --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=first
       - 'Invalid value for "--type": invalid choice: first.'
-    - - storage part-add --server=DS8K16 --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=primary
+    - - storage part-add --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=primary
       - Partition successfully added.
-    - - storage part-add --server=DS8K16 --id=1022400200000000 --fs=swap --size=1gb
+    - - storage part-add --id=1022400200000000 --fs=swap --size=1gb
+      - Partition successfully added.
+    # test conflicting ids
+    - - storage part-add --id=3953 --fs=ext4 --size=7gb --mp=/
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
+    - - storage part-add --server=DS8K16 --id=3953 --fs=ext4 --size=7gb --mp=/
       - Partition successfully added.
     # 'storage part-list' subcommand
     - - storage part-list
-      - Missing option "--server".
-    - - storage part-list --id=3955
-      - Missing option "--server".
-    - - storage part-list --server=DS8K16
       -  Missing option "--id".
-    - - storage part-list --server= --id=3955
-      - volume not found.
-      # should be 'volume not found.'
     - - storage part-edit --server= --id=3955 --num=1
-      - nothing to update.
-    - - storage part-list --server=DS8K16 --id=9955
+      - 'Error: Invalid value for "--server": value may not be empty'
+    - - storage part-list --id=9955
       - volume not found.
-    - - storage part-list --server=DS8K16 --id=3955
+    - - storage part-list --id=3955
       - 'Partition table type: dasd'
-    - - storage part-list --server=DS8K16 --id=3952
+    - - storage part-list --id=3952
       - 'Partition table type: gpt'
-    - - storage part-list --server=DS8K16 --id=1022400200000000
+    - - storage part-list --id=1022400200000000
       - 'Partition table type: msdos'
+    # test conflicting ids
+    - - storage part-list --id=3953
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
+    - - storage part-list --server=DS8K16 --id=3953
+      - 'Partition table type: dasd'
     # 'storage part-edit' subcommand
     - - storage part-edit
-      - Missing option "--server".
-    - - storage part-edit --server=DS8K16
       - Missing option "--id".
-    - - storage part-edit --id=3955 --num=1
-      - Missing option "--server".
-    - - storage part-edit --server=DS8K16 --id=3955
+    - - storage part-edit --id=3955
       - Missing option "--num".
-      # should be 'volume not found.'
     - - storage part-edit --server= --id=3955 --num=1
-      - nothing to update.
-    - - storage part-list --server=DS8K16 --id=
+      - 'Error: Invalid value for "--server": value may not be empty'
+    - - storage part-list --id=
       - 'Error: Invalid value for "--id": value may not be empty'
-    - - storage part-edit --server=DS8K16 --id= --num=1
+    - - storage part-edit --id= --num=1
       - 'Error: Invalid value for "--id": value may not be empty'
-    - - storage part-edit --server=DS8K16 --id=3955 --num=0
+    - - storage part-edit --id=3955 --num=0
       - 'Invalid value for "--num": 0 is smaller than the minimum valid value 1.'
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1
+    - - storage part-edit --id=3955 --num=1
       - nothing to update.
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --size=7g
+    - - storage part-edit --id=3955 --num=1 --size=7g
       - 'Error: Invalid value for "--size": 7g is not a valid size'
-    - - storage part-edit --server=DS8K16 --id=3955 --num=2 --size=7gb
+    - - storage part-edit --id=3955 --num=2 --size=7gb
       - specified partition not found
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --size=7gb
+    - - storage part-edit --id=3955 --num=1 --size=7gb
       - Partition successfully updated.
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=ext4
+    - - storage part-edit --id=3955 --num=1 --fs=ext4
       - Partition successfully updated.
       # part-edit: for stmt 142
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=extt
+    - - storage part-edit --id=3955 --num=1 --fs=extt
       - "The server did not accept our request. The response is: Bad Request"
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --fs=
+    - - storage part-edit --id=3955 --num=1 --fs=
       - "The server did not accept our request. The response is: Bad Request"
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --mp= --mo=auto
+    - - storage part-edit --id=3955 --num=1 --mp= --mo=auto
       - Partition successfully updated.
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --mp=/ --mo=
+    - - storage part-edit --id=3955 --num=1 --mp=/ --mo=
       - Partition successfully updated.
-    - - storage part-edit --server=DS8K16 --id=3955 --num=1 --mp=/ --mo=auto
+    - - storage part-edit --id=3955 --num=1 --mp=/ --mo=auto
       - Partition successfully updated.
-    - - storage part-edit --server=DS8K16 --id=1022400200000000 --num=2 --type=logic
+    - - storage part-edit --id=1022400200000000 --num=2 --type=logic
       - 'Invalid value for "--type": invalid choice: logic.'
-    - - storage part-edit --server=DS8K16 --id=1022400200000000 --num=2 --type=logical
+    - - storage part-edit --id=1022400200000000 --num=2 --type=logical
+      - Partition successfully updated.
+    # test conflicting ids
+    - - storage part-edit --id=3953 --num=1 --fs=swap
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
+    - - storage part-edit --server=DS8K16 --id=3953 --num=1 --fs=swap
       - Partition successfully updated.
     # 'storage part-del' subcommand
     - - storage part-del
-      - Missing option "--server".
-    - - storage part-del --id=3955
-      - Missing option "--server".
-    - - storage part-del --server=DS8K16
       - Missing option "--id".
-    - - storage part-del --server=DS8K16 --id=3955
+    - - storage part-del --id=3955
       - Missing option "--num".
-    - - storage part-del --id=3955 --num=3
-      - Missing option "--server".
     - - storage part-del --server= --id=3955 --num=3
-      - volume not found.
-    - - storage part-del --server=DS8K16 --id= --num=3
+      - 'Error: Invalid value for "--server": value may not be empty'
+    - - storage part-del --id= --num=3
       - 'Error: Invalid value for "--id": value may not be empty'
-    - - storage part-del --server=DS8K16 --id=3955 --num=
+    - - storage part-del --id=3955 --num=
       - 'Invalid value for "--num":  is not a valid integer'
-    - - storage part-del --server=DS8K16 --id=3955 --num=3
+    - - storage part-del --id=3955 --num=3
       - specified partition not found
-    - - storage part-del --server=DS8K16 --id=3955 --num=1
+    - - storage part-del --id=3955 --num=1
       - Partition successfully deleted.
-
+    # test conflicting ids
+    - - storage part-del --id=3953 --num=1
+      - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
+    - - storage part-del --server=DS8K16 --id=3953 --num=1
+      - Partition successfully deleted.

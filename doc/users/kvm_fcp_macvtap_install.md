@@ -198,7 +198,7 @@ tess storage server-add --name=DS8K22 --model=DS8800 --type=DASD-FCP --project=T
 Let's see if perhaps our disk is already registered:
 
 ```
-$ tess storage vol-list --long --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --long --id=1020304500000000
 No results were found.
 ```
 
@@ -234,7 +234,7 @@ In our case we will use multipathing enabled, and we will define two FCP paths:
 ```
 $ tess storage vol-add --server=DS8K22 --type=FCP --id=1020304500000000 --size=20gb --project=Testing --path 1900,0x50050555050555e3 --path 1940,0x50050555051555e3 --mpath=true --wwid=33005566777fff5f30000000000008888
 Item added successfully.
-$ tess storage vol-list --long --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --long --id=1020304500000000
 
 Volume id                  : 1020304500000000
 Storage server             : DS8K22
@@ -255,18 +255,18 @@ Description                :
 The disk is ready but it is empty. We also need to initialize a partition table and to create partitions:
 
 ```
-$ tess storage part-init --server=DS8K22 --id=1020304500000000 --label=msdos
+$ tess storage part-init --id=1020304500000000 --label=msdos
 Partition table successfully initialized.
 ```
 
 To perform the installation it would be enough to have two partitions - root and swap:
 
 ```
-$ tess storage part-add --server=DS8K22 --id=1020304500000000 --fs=ext4 --size=10gb --mp=/
+$ tess storage part-add --id=1020304500000000 --fs=ext4 --size=10gb --mp=/
 Partition successfully added.
-$ tess storage part-add --server=DS8K22 --id=1020304500000000 --fs=swap --size=10gb
+$ tess storage part-add --id=1020304500000000 --fs=swap --size=10gb
 Partition successfully added.
-$ tess storage part-list --server=DS8K22 --id=1020304500000000
+$ tess storage part-list --id=1020304500000000
 
 Partition table type: msdos
 
@@ -520,9 +520,9 @@ Description                : KVM macvtap interface
 Let's also attach the FCP disk to the system profile:
 
 ```
-$ tess system vol-attach --system=kvm25 --profile=profile2 --server=DS8K22 --vol=1020304500000000
+$ tess system vol-attach --system=kvm25 --profile=profile2 --vol=1020304500000000
 Volume attached successfully.
-$ tess storage vol-list --long --server=DS8K22 --id=1020304500000000
+$ tess storage vol-list --long --id=1020304500000000
 
 Volume id                  : 1020304500000000
 Storage server             : DS8K22

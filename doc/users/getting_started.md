@@ -346,7 +346,7 @@ The pre-allocated live-image disk must be assigned to the CPC so that the tool k
 This is done by attaching the disk to the CPC's system profile:
 
 ```
-$ tess system vol-attach --system=cpc3 --profile='default' --server=ds8k16 --vol=7e2d
+$ tess system vol-attach --system=cpc3 --profile='default' --vol=7e2d
 Volume attached successfully.
 
 $ tess system prof-list --long --system=cpc3
@@ -435,9 +435,9 @@ $ tess system prof-add --system=cpc3lp25 --name='default' --cpu=2 --memory=4gib 
 Item added successfully.
 
 # attach the volumes previously created
-$ tess system vol-attach --system=cpc3lp25 --profile=default --server=ds8k16 --vol=7e2e
+$ tess system vol-attach --system=cpc3lp25 --profile=default --vol=7e2e
 Volume attached successfully.
-$ tess system vol-attach --system=cpc3lp25 --profile=default --server=ds8k16 --vol=7e2f
+$ tess system vol-attach --system=cpc3lp25 --profile=default --vol=7e2f
 Volume attached successfully.
 
 
@@ -467,11 +467,11 @@ Initialize the partition tables and define a simple setup with one root partitio
 
 ```
 # root disk
-$ tess storage part-init --server=ds8k16 --id=7e2e --label=dasd
+$ tess storage part-init --id=7e2e --label=dasd
 Partition table successfully initialized.
-$ tess storage part-add --server=ds8k16 --id=7e2e --fs=ext4 --size=7gb --mp=/
+$ tess storage part-add --id=7e2e --fs=ext4 --size=7gb --mp=/
 Partition successfully added.
-$ tess storage part-list --server=ds8k16 --id=7e2e
+$ tess storage part-list --id=7e2e
 
 Partition table type: dasd
 
@@ -481,11 +481,11 @@ Partition table type: dasd
 
 
 # swap disk
-$ tess storage part-init --server=ds8k16 --id=7e2f --label=dasd
+$ tess storage part-init --id=7e2f --label=dasd
 Partition table successfully initialized.
-$ tess storage part-add --server=ds8k16 --id=7e2f --fs=swap --size=7gb
+$ tess storage part-add --id=7e2f --fs=swap --size=7gb
 Partition successfully added.
-$ tess storage part-list --server=ds8k16 --id=7e2f
+$ tess storage part-list --id=7e2f
 
 Partition table type: dasd
 

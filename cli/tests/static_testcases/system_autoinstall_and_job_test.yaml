@@ -58,23 +58,23 @@ tasks:
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3956 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
-    - - storage part-init --server=DS8K16 --id=3956 --label=dasd
+    - - storage part-init --id=3956 --label=dasd
       - Partition table successfully initialized.
-    - - storage part-add --server=DS8K16 --id=3956 --fs=ext4 --size=7gb --mp=/
+    - - storage part-add --id=3956 --fs=ext4 --size=7gb --mp=/
       - Partition successfully added.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3957 --size=7gb --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
-    - - storage part-init --server=DS8K16 --id=3957 --label=dasd
+    - - storage part-init --id=3957 --label=dasd
       - Partition table successfully initialized.
-    - - storage part-add --server=DS8K16 --id=3957 --fs=swap --size=7gb
+    - - storage part-add --id=3957 --fs=swap --size=7gb
       - Partition successfully added.
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400100000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c1ae' --path='1800,100207630508c1ae' --path='1800,100207630510c1ae' --path='1800,100207630513c1ae' --path='1880,100207630503c1ae' --path='1880,100207630508c1ae' --path='1880,100207630510c1ae' --path='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002201
       - Item added successfully.
-    - - storage part-init --server=DS8K16 --id=1022400100000000 --label=msdos
+    - - storage part-init --id=1022400100000000 --label=msdos
       - Partition table successfully initialized.
-    - - storage part-add --server=DS8K16 --id=1022400100000000 --fs=ext4 --size=9gb --mp=/
+    - - storage part-add --id=1022400100000000 --fs=ext4 --size=9gb --mp=/
       - Partition successfully added.
-    - - storage part-add --server=DS8K16 --id=1022400100000000 --fs=swap --size=1gb
+    - - storage part-add --id=1022400100000000 --fs=swap --size=1gb
       - Partition successfully added.
     # create the system resources
     - - system add --name=cpc3 --type=cpc --hostname=_hmcserver.zzz --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
@@ -86,21 +86,21 @@ tasks:
     # create activation profiles
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136gb --login='DEVEL1:somepwd'
       - Item added successfully.
-    - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3951
+    - - system vol-attach --system=cpc3 --profile='default cpc3' --vol=3951
       - Volume attached successfully.
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mb --login='root:mypasswd' --hyp='default cpc3'
       - Item added successfully.
     - - system iface-attach --system=cpc3lp52 --profile='DASD root1' --iface='default osa'
       - Network interface attached successfully.
-    - - system vol-attach --system=cpc3lp52 --profile='DASD root1' --server=DS8K16 --vol=3956
+    - - system vol-attach --system=cpc3lp52 --profile='DASD root1' --vol=3956
       - Volume attached successfully.
-    - - system vol-attach --system=cpc3lp52 --profile='DASD root1' --server=DS8K16 --vol=3957
+    - - system vol-attach --system=cpc3lp52 --profile='DASD root1' --vol=3957
       - Volume attached successfully.
     - - system prof-add --system=cpc3lp52 --name='FCP root1' --cpu=4 --memory=2048mb --login='root:mypasswd' --hyp='default cpc3'
       - Item added successfully.
     - - system iface-attach --system=cpc3lp52 --profile='FCP root1' --iface='default osa'
       - Network interface attached successfully.
-    - - system vol-attach --system=cpc3lp52 --profile='FCP root1' --server=DS8K16 --vol=1022400100000000
+    - - system vol-attach --system=cpc3lp52 --profile='FCP root1' --vol=1022400100000000
       - Volume attached successfully.
     # switch to target user
     - - - conf key-gen

@@ -451,6 +451,11 @@ class SmBase(metaclass=abc.ABCMeta):
             'hostname': self._system.hostname,
             'autofile': self._autofile_url,
             'gw_iface': self._gw_iface,
+            'operating_system': {
+                'major': self._os.major,
+                'minor': self._os.minor,
+                'pretty_name': self._os.pretty_name,
+            }
         }
         # add repo entries
         for repo_obj in self._repos:

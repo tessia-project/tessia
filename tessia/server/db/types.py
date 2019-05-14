@@ -43,17 +43,26 @@ IFACE_TYPES = [
 
 OPERATING_SYSTEMS = [
     'cms,cms,0,0,z/VM Conversational Monitor System (CMS),,',
+    'fedora29,redhat,29,0,Fedora 29 (Twenty Nine),fedora-default',
+    'fedora30,redhat,30,0,Fedora 30 (Thirty),fedora-default',
     'rhel7.2,redhat,7,2,Red Hat Enterprise Linux Server 7.2 (Maipo),'
     'rhel7-default',
     'rhel7.3,redhat,7,3,Red Hat Enterprise Linux Server 7.3 (Maipo),'
     'rhel7-default',
     'rhel7.4,redhat,7,4,Red Hat Enterprise Linux Server 7.4 (Maipo),'
     'rhel7-default',
+    'rhel7.5,redhat,7,5,Red Hat Enterprise Linux Server 7.5 (Maipo),'
+    'rhel7-default',
+    'rhel7.6,redhat,7,6,Red Hat Enterprise Linux Server 7.6 (Maipo),'
+    'rhel7-default',
+    'rhel8.0,redhat,8,0,Red Hat Enterprise Linux 8.0 (Ootpa),rhel8-default',
     'sles12.1,suse,12,1,SUSE Linux Enterprise Server 12 SP1,'
     'sles12-default',
     'sles12.2,suse,12,2,SUSE Linux Enterprise Server 12 SP2,'
     'sles12-default',
     'sles12.3,suse,12,3,SUSE Linux Enterprise Server 12 SP3,'
+    'sles12-default',
+    'sles12.4,suse,12,4,SUSE Linux Enterprise Server 12 SP4,'
     'sles12-default',
     'sles15,suse,15,0,SUSE Linux Enterprise Server 15,sles15-default',
     'ubuntu16.04.1,debian,1604,1,Ubuntu 16.04.1 LTS,ubuntu16-default',
@@ -61,7 +70,9 @@ OPERATING_SYSTEMS = [
     'ubuntu16.04.3,debian,1604,3,Ubuntu 16.04.3 LTS,ubuntu16-default',
     'ubuntu18.04,debian,1804,0,Ubuntu 18.04 LTS,ubuntu18-default',
     'ubuntu18.04.1,debian,1804,1,Ubuntu 18.04.1 LTS,ubuntu18-default',
+    'ubuntu18.04.2,debian,1804,2,Ubuntu 18.04.2 LTS,ubuntu18-default',
     'ubuntu18.10,debian,1810,0,Ubuntu 18.10,ubuntu18-default',
+    'ubuntu19.04,debian,1904,0,Ubuntu 19.04,ubuntu18-default',
 ]
 
 USERS = [
@@ -77,6 +88,7 @@ TEMPLATES = [
     "fedora-default,Default template for Fedora installations,admin,Admins",
     "fedora-kvmhost,Fedora KVM hypervisor profile,admin,Admins",
     "rhel7-default,Default template for RHEL7 installations,admin,Admins",
+    "rhel8-default,Default template for RHEL8 installations,admin,Admins",
     "sles12-default,Default template for SLES12 installations,admin,Admins",
     "sles12-kvmhost,SLES12 KVM hypervisor profile,admin,Admins",
     "sles15-default,Default template for SLES15 installations,admin,Admins",

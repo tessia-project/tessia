@@ -1,0 +1,177 @@
+{%- macro list_devs_with_ptable(vols) -%}
+{% set dev_list = [] -%}
+{% for vol in vols -%}
+  {%- if vol["part_table"] -%}
+    {% set _ = dev_list.append(vol["system_attributes"]["device"].replace('/dev/', '')) -%}
+  {% endif -%}
+{% endfor -%}
+{{ dev_list | join(',') }}
+{% endmacro -%}
+
+{%- macro list_real_devs(vols) -%}
+{% set dev_list = [] -%}
+{% for vol in vols -%}
+  {%- if vol["type"] != "HPAV" -%}
+    {% set _ = dev_list.append(vol["system_attributes"]["device"].replace('/dev/', '')) -%}
+  {% endif -%}
+{% endfor -%}
+{{ dev_list | join(',') }}
+{% endmacro -%}
+
+# System authorization information
+auth --enableshadow --passalgo=sha512
+sshpw --username=root {{config["sha512rootpwd"]}} --iscrypted
+# Use network installation
+url --url="{{config["repos"][0]['url']}}"
+# Use graphical install
+graphical
+vnc --password={{config["credentials"]["vnc-password"]}}
+# Run the Setup Agent on first boot
+firstboot --enable
+
+# Keyboard layouts
+keyboard --vckeymap=us --xlayouts='us'
+# System language
+lang en_US.UTF-8
+
+# Network information
+{% for iface in config["ifaces"] %}
+network --bootproto=static --device={{iface["osname"] if iface["type"] != "OSA" else iface["systemd_osname"]}} {% if iface['ip'] %}--ip={{iface["ip"]}} --netmask={{iface["mask"]}}{% endif %} --activate {% if iface["is_gateway"] %}--gateway={{iface["gateway"]}} --nameserver={{iface["dns_1"]}}{% endif %}
+{% endfor %}
+network --hostname={{config["hostname"]}}
+
+# Root password
+rootpw --iscrypted {{config["sha512rootpwd"]}}
+# System timezone
+timezone Europe/Berlin
+
+# Activate fcp paths before partitioning section
+{% if config["system_type"] != "KVM" %}
+{% for volume in config["svols"] %}
+{% if volume['type'] == 'FCP' -%}
+{% for adapter in volume['specs']['adapters'] -%}
+{% for wwpn in adapter['wwpns'] -%}
+zfcp --devnum={{adapter['devno'].replace('0.0.', '')}} --wwpn={{wwpn}} --fcplun={{volume['volume_id']}}
+{% endfor -%}
+{% endfor -%}
+{% endif -%}
+{% endfor -%}
+{% endif -%}
+
+# Partition clearing information
+ignoredisk --only-use={{list_real_devs(config["svols"])}}
+clearpart --initlabel --all --drives={{list_devs_with_ptable(config["svols"])}}
+{% for volume in config["svols"] %}
+{% if volume["is_root"] %}
+# System bootloader configuration
+bootloader --append=" zfcp.allow_lun_scan=0" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
+{% endif %}
+# Disk partitioning information
+{% for entry in volume["part_table"]["table"] %}
+part {% if entry["fs"] == "swap" %}swap{% else %}{{entry["mp"]}}{% endif %} --fstype="{{entry["fs"]}}" --ondisk={{volume["system_attributes"]["device"]}} --size={{entry["size"]}} {% if entry.get("mo") %} --fsoptions="{{entry["mo"]}}" {% endif %}
+{% endfor %}
+{% endfor %}
+%packages
+@^minimal-environment
+@core
+kexec-tools
+python2
+%end
+
+%addon com_redhat_kdump --enable
+
+%end
+
+%post
+#!/bin/bash
+# network configuration adjustments
+{% for iface in config["ifaces"] -%}
+  {% if iface["systemd_osname"] and iface["osname"] != iface["systemd_osname"] -%}
+sed -i s/DEVICE=.*/DEVICE={{iface["osname"]}}/ /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}}
+mv /etc/sysconfig/network-scripts/ifcfg-{{iface["systemd_osname"]}} /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
+  {% endif -%}
+  {% if iface["mac_addr"] and iface["type"] == "OSA" -%}
+echo "MACADDR={{iface["mac_addr"]}}" >> /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
+  {% endif -%}
+  {% if iface["search_list"] -%}
+echo 'DOMAIN="{{iface["search_list"]}}"' >> /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
+  {% endif -%}
+{% endfor -%}
+%end
+
+{% if config["system_type"] != "KVM" -%}
+%pre
+#!/bin/bash
+# disk configuration adjustments
+  {% for volume in config["svols"] -%}
+    {%- if volume['type'] == 'DASD' -%}
+chzdev -e dasd {{volume['volume_id']}}
+      {% if volume["part_table"] -%}
+grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{volume['volume_id']}}/status && \
+/sbin/dasdfmt -y -d cdl -b 4096 {{volume["system_attributes"]["device"]}}
+      {% endif -%}
+    {% elif volume['type'] == 'FCP' -%}
+      {% for adapter in volume['specs']['adapters'] -%}
+chzdev -e {{adapter['devno']}}
+        {% for wwpn in adapter['wwpns'] -%}
+chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}}
+        {% endfor -%}
+      {% endfor -%}
+    {% elif volume['type'] == 'HPAV' -%}
+chzdev -e dasd {{volume['volume_id']}}
+    {% endif -%}
+  {% endfor -%}
+%end
+{% endif -%}
+
+%post
+#!/bin/bash
+# repositories configuration adjustments
+cat <<EOF > /etc/yum.repos.d/{{config['repos'][0]['name']}}-baseos.repo
+[{{config['repos'][0]['name']}}_baseos]
+name={{config['repos'][0]['desc']}} BaseOS
+baseurl={{config['repos'][0]['url']}}/BaseOS
+enabled=1
+gpgcheck=0
+skip_if_unavailable=False
+EOF
+
+cat <<EOF > /etc/yum.repos.d/{{config['repos'][0]['name']}}-appstream.repo
+[{{config['repos'][0]['name']}}_appstream]
+name={{config['repos'][0]['desc']}} AppStream
+baseurl={{config['repos'][0]['url']}}/AppStream
+enabled=1
+gpgcheck=0
+skip_if_unavailable=False
+EOF
+
+{% for repo in config["repos"][1:] %}
+cat <<EOF > /etc/yum.repos.d/{{repo['name']}}.repo
+[{{repo['name']}}]
+name={{repo['desc']}}
+baseurl={{repo['url']}}
+enabled=1
+gpgcheck=0
+skip_if_unavailable=False
+EOF
+{% endfor %}
+
+# storage configuration adjustments
+{% if config["system_type"] != "KVM" %}
+{% for volume in config["svols"] %}
+  {%- if volume['type'] == 'DASD' -%}
+chzdev -e dasd {{volume['volume_id']}} -y
+  {% elif volume['type'] == 'FCP' -%}
+    {% for adapter in volume['specs']['adapters'] -%}
+chzdev -e {{adapter['devno']}} -y
+      {% for wwpn in adapter['wwpns'] -%}
+chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}} -y
+      {% endfor -%}
+    {% endfor -%}
+  {% endif -%}
+{% endfor -%}
+{% endif -%}
+
+# for ansible to work
+ln -s /usr/bin/python2 /usr/bin/python
+%end

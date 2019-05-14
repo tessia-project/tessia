@@ -63,7 +63,7 @@
 {%- endmacro -%}
 
 {% macro enable_osa(iface) -%}
-   chzedev --enable --base /etc=/target/etc qeth {{iface['attributes']['ccwgroup']}} ;\
+   chzdev --enable --base /etc=/target/etc qeth {{iface['attributes']['ccwgroup']}} ;\
    {% if iface['attributes']['layer2'] -%}
    chzdev --base /etc=/target/etc qeth {{iface['attributes']['ccwgroup']}} layer2=1 ; \
    {% else -%}
@@ -190,7 +190,7 @@ d-i passwd/root-password-crypted password {{config['sha512rootpwd']}}
 d-i passwd/shadow boolean true
 
 # User setup
-d-i passwd/user-fullname string Ubuntu 18.04 test user
+d-i passwd/user-fullname string {{config['operating_system']['pretty_name']}} test user
 d-i passwd/username string ubuntu
 d-i passwd/user-password password ubuntu
 d-i passwd/user-password-again password ubuntu

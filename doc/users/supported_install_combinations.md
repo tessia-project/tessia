@@ -15,7 +15,7 @@ limitations under the License.
 -->
 # Supported installation combinations
 
-This page contains a detailed view of the current supported combinations and usage restrictions regarding system installation.
+This page contains a detailed view of the current supported combinations and usage restrictions regarding system installation with default templates.
 
 - [Network and volumes on LPAR](#network-and-volumes-on-lpar)
 - [Network and volumes on z/VM](#network-and-volumes-on-zvm)
@@ -37,7 +37,7 @@ This page contains a detailed view of the current supported combinations and usa
 | layer2 on (OSA only)     | Y    | Y    | Y      | Y      |
 | layer2 off (OSA only)    | Y    | Y    | Y      | Y      |
 
-[*] Except Ubuntu 16.04 (GA) due to distro installer issues, for details see [ReleaseNotes](https://wiki.ubuntu.com/XenialXerus/ReleaseNotes#IBM_LinuxONE_and_z_Systems_specific_known_issues)
+[*] - Except Ubuntu 16.04 (GA) due to distro installer issues, for details see [ReleaseNotes](https://wiki.ubuntu.com/XenialXerus/ReleaseNotes#IBM_LinuxONE_and_z_Systems_specific_known_issues)
 
 # Network and volumes on z/VM
 
@@ -110,6 +110,8 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 
 | Distro                         | RHEL | SLES | Ubuntu | Fedora |
 | ------                         | ---  | ---  | -----  | -----  |
-| using distro as KVM hypervisor | Y*   | Y    | Y      | Y      |
+| using distro as KVM hypervisor | Y*   | Y    | Y      | N**    |
 
-[*] - Except RHEL7.4 and lower.
+[*] - Except RHEL7.4 and lower
+
+[**] - Starting with fedora28 and higher

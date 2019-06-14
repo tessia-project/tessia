@@ -25,6 +25,7 @@ from tessia.cli.utils import fetch_item
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
 from tessia.cli.types import CONSTANT
+from tessia.cli.types import IFACE_NAME
 from tessia.cli.types import IPADDRESS
 from tessia.cli.types import LIBVIRT_XML
 from tessia.cli.types import MACADDRESS
@@ -73,7 +74,7 @@ ATTR_BY_TYPE = {
 @click.option('--name', required=True, type=NAME, help="interface name")
 @click.option('--type', required=True, type=CONSTANT,
               help="interface type (see iface-types)")
-@click.option('osname', '--devname', required=True, type=NAME,
+@click.option('osname', '--devname', required=True, type=IFACE_NAME,
               help="network device name in operating system (i.e. net0)")
 @click.option('mac_address', '--mac', type=MACADDRESS, help="mac address")
 @click.option('--subnet', type=SUBNET,
@@ -86,7 +87,8 @@ ATTR_BY_TYPE = {
 @click.option('--ccwgroup', type=QETH_GROUP, help="device channels (OSA only)")
 @click.option('--portno', type=QETH_PORTNO, help="port number (OSA only)")
 @click.option('--portname', help="port name (OSA only)")
-@click.option('--hostiface', help="host iface to bind (KVM only)")
+@click.option('--hostiface', type=IFACE_NAME,
+              help="host iface to bind (KVM only)")
 @click.option('--libvirt', type=LIBVIRT_XML,
               help="libvirt definition file (KVM only)")
 @click.option('--desc', help="free form field describing interface")
@@ -102,7 +104,7 @@ def iface_add(**kwargs):
         raise click.ClickException(
             '--subnet and --ip must be specified together')
     # both parameters specified: set value for item creation
-    elif subnet is not None and ip_addr is not None:
+    if subnet is not None and ip_addr is not None:
         kwargs['ip_address'] = '{}/{}'.format(subnet, ip_addr)
 
     client = Client()
@@ -134,24 +136,11 @@ def iface_add(**kwargs):
             raise click.ClickException('--ccwgroup must be specified')
     # KVM macvtap cards
     elif kwargs['type'] == 'MACVTAP':
-        try:
-            item.attributes['hostiface']
-        except KeyError:
-            set_hostiface = False
-        else:
-            set_hostiface = True
-
-        try:
-            item.attributes['libvirt']
-        except KeyError:
-            set_libvirt = False
-        else:
-            set_libvirt = True
-
-        if set_hostiface ^ set_libvirt is False:
+        if not (('hostiface' in item.attributes) ^
+                ('libvirt' in item.attributes)):
             raise click.ClickException(
-                'one of --hostiface or --libvirt must be specified, '
-                'but not both')
+                '--hostiface and --libvirt are mutually exclusive (specify '
+                'one but not both)')
     # ROCE (pci cards)
     elif kwargs['type'] == 'ROCE':
         try:
@@ -256,7 +245,7 @@ def iface_detach(system, profile, iface):
 @click.option('cur_name', '--name', required=True, type=NAME,
               help="interface name")
 @click.option('name', '--newname', type=NAME, help="new interface name")
-@click.option('osname', '--devname', type=NAME,
+@click.option('osname', '--devname', type=IFACE_NAME,
               help="network device name in operating system (i.e. net0)")
 @click.option('mac_address', '--mac', help="mac address")
 @click.option('--subnet', type=SUBNET,
@@ -270,7 +259,8 @@ def iface_detach(system, profile, iface):
               help="device channels (OSA only)")
 @click.option('--portno', type=QETH_PORTNO, help="port number (OSA only)")
 @click.option('--portname', help="port name (OSA only)")
-@click.option('--hostiface', help="host iface to bind (KVM only)")
+@click.option('--hostiface', type=IFACE_NAME,
+              help="host iface to bind (KVM only)")
 @click.option('--libvirt', type=LIBVIRT_XML,
               help="libvirt definition file (KVM only)")
 @click.option('--desc', help="free form field describing interface")
@@ -293,12 +283,10 @@ def iface_edit(system, cur_name, **kwargs):
     if (subnet and ip_addr is None) or (ip_addr and not subnet):
         raise click.ClickException(
             '--subnet and --ip must be specified together')
-
     # to unassign existing ip address
-    elif subnet is None and ip_addr is not None and not ip_addr:
+    if subnet is None and ip_addr is not None and not ip_addr:
         if not ip_addr:
             update_dict['ip_address'] = None
-
     # both parameters specified: set value for update on item
     elif subnet is not None and ip_addr is not None:
         try:
@@ -308,6 +296,13 @@ def iface_edit(system, cur_name, **kwargs):
                 'Invalid value for "--ip": {} is not '
                 'a valid ip address'.format(ip_addr))
         update_dict['ip_address'] = '{}/{}'.format(subnet, ip_addr)
+
+    # hostiface and libvirt are mutually exclusive, make sure they are not
+    # specified together
+    if kwargs['hostiface'] and kwargs['libvirt']:
+        raise click.ClickException(
+            '--hostiface and --libvirt are mutually exclusive (specify one '
+            'but not both)')
 
     for key, value in kwargs.items():
 
@@ -359,15 +354,12 @@ def iface_edit(system, cur_name, **kwargs):
             except KeyError:
                 raise click.ClickException('--ccwgroup must be present')
         elif iface_type == 'MACVTAP':
-            try:
-                update_dict['attributes']['hostiface']
-            except KeyError:
-                try:
-                    update_dict['attributes']['libvirt']
-                except KeyError:
-                    raise click.ClickException(
-                        'one of --hostiface or --libvirt must be present, '
-                        'but not both')
+            # hostiface specified: make sure libvirt parameter is cleared
+            if kwargs['hostiface']:
+                update_dict['attributes'].pop('libvirt', None)
+            # libvirt specified: make sure hostiface parameter is cleared
+            elif kwargs['libvirt']:
+                update_dict['attributes'].pop('hostiface', None)
         elif iface_type == 'ROCE':
             try:
                 update_dict['attributes']['fid']

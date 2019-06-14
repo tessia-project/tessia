@@ -1,5 +1,4 @@
 description: Additional test for the 'system' command
-# An empty file ~/tessia/cli/tests/files/system-command_test/kvm-guest.xml is used to cover stmts 142-148 in types.py
 base_user: admin
 tasks_order:
   - base_add
@@ -492,10 +491,10 @@ tasks:
       - 'Invalid value for "--type": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=os --devname=en0 --mac=02:57:52:00:70:00
       - 'invalid interface type \(see iface-types\)'
-    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=MACVTAP --devname=en0 --mac=02:57:52:00:70:00
-      - 'one of --hostiface or --libvirt must be specified, but not both'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=osa --devname= --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - 'Invalid value for "--devname": value may not be empty'
+    - - system iface-add --system=cpc3lp52 --name='osa iface' --type=osa --devname='wrong name' --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
+      - "Invalid value for \"--devname\": 'wrong name' is not a valid interface name"
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --devname=en0 --mac=  --ccwgroup=f500,f501,f502
       - 'Invalid value for "--mac": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --devname=en0 --mac=0257:52:00:70:00 --ccwgroup=f500,f501,f502
@@ -542,21 +541,26 @@ tasks:
       - invalid attribute for this iface type
       # iface-add: macvtap without libvirt or hostiface
     - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55
-      - 'one of --hostiface or --libvirt must be specified, but not both'
+      - '--hostiface and --libvirt are mutually exclusive \(specify one but not both\)'
+      # iface-add: macvtap with both libvirt and hostiface
+    - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500 --libvirt='files/system-command_test/kvm-guest.xml'
+      - '--hostiface and --libvirt are mutually exclusive \(specify one but not both\)'
     - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
       - Item added successfully.
     - - system iface-add --system=guest55 --name='default macvtap1' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=
-      - Item added successfully.
+      - 'Invalid value for "--hostiface": value may not be empty'
+    - - system iface-add --system=guest55 --name='default macvtap1' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface='wrong name'
+      - "Invalid value for \"--hostiface\": 'wrong name' is not a valid interface name"
     - - system iface-add --system=guest55 --name='default macvtap2' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt=
-      - Item added successfully.
+      - 'Invalid value for "--libvirt": value may not be empty'
     - - system iface-add --system=guest55 --name='default macvtap3' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm.xml'
       - "No such file or directory: 'kvm.xml'"
+    - - system iface-add --system=guest55 --name='default macvtap3' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest-empty.xml'
+      - 'Invalid value for "--libvirt": libvirt definition cannot be empty'
     - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='/GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
       - 'Invalid value for "--subnet": /GEO_1-NE-1822 is not a valid subnet'
     - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
       - Item added successfully.
-    - - system iface-add --system=guest55 --name='default macvtap5' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml' --hostiface=enccw0.0.f500
-      - 'one of --hostiface or --libvirt must be specified, but not both'
     # ROCE card type
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518
       - 'Error: for ROCE cards --fid must be specified'
@@ -656,6 +660,8 @@ tasks:
       - network interface not found.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --devname=
       - 'Invalid value for "--devname": value may not be empty'
+    - - system iface-edit --system=cpc3lp52 --name='default osa2' --devname='wrong*name'
+      - "Invalid value for \"--devname\": 'wrong\\*name' is not a valid interface name"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --devname=en0
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=
@@ -696,14 +702,8 @@ tasks:
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --desc='gateway interface'
       - Item successfully updated.
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --hostiface=
-      - invalid attribute for this iface type
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --hostiface=enccw0.0.f500
       - invalid attribute for this iface type
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt=
-      - invalid attribute for this iface type
-    - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='kvm.xml'
-      - "No such file or directory: 'kvm.xml'"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='files/system-command_test/kvm-guest.xml'
       - invalid attribute for this iface type
     - - system iface-edit --system=cpc3lp52 --name='default osa' --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='' --ip=''
@@ -742,16 +742,27 @@ tasks:
       # no update criteria
     - - system iface-edit --system=guest55 --name='default macvtap'
       - no update criteria provided.
-      # macvtap without libvirt or hostiface
     - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=''
-      - 'one of --hostiface or --libvirt must be present, but not both'
-      # macvtap with libvirt; an empty file ~/tessia/cli/tests/kvm-guest.xml is used
-    - - system iface-edit --system=guest55 --name='default macvtap'  --hostiface= --libvirt='files/system-command_test/kvm-guest.xml'
-      - Item successfully updated.
+      - 'Invalid value for "--hostiface": value may not be empty'
+      # macvtap with libvirt and hostiface
+    - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=enccw0.0.f500 --libvirt='files/system-command_test/kvm-guest.xml'
+      - '--hostiface and --libvirt are mutually exclusive \(specify one but not both\)'
+    - - system iface-edit --system=guest55 --name='default macvtap' --libvirt=
+      - 'Invalid value for "--libvirt": value may not be empty'
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='kvm.xml'
       - "No such file or directory: 'kvm.xml'"
-    - - system iface-edit --system=guest55 --name='default macvtap' --libvirt=''
-      - 'one of --hostiface or --libvirt must be present, but not both'
+    - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='files/system-command_test/kvm-guest.xml'
+      - Item successfully updated.
+      # make sure hostiface was cleared in attributes
+    - - system iface-list --system=guest55 --name='default macvtap' --long
+      - - "Attributes *: {'libvirt': .*"
+        - 'Attributes *: ((?!hostiface).)*\n'
+    - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=enccw0.0.f500
+      - Item successfully updated.
+      # make sure libvirt was cleared in attributes
+    - - system iface-list --system=guest55 --name='default macvtap' --long
+      - - "Attributes *: {'hostiface': 'enccw0\\.0\\.f500'}"
+        - 'Attributes *: ((?!libvirt).)*\n'
       # change roce card's fid
     - - system iface-edit --system=cpc3lp52 --name=roce-1 --fid=0222
       - Item successfully updated.

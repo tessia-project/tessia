@@ -1,0 +1,8 @@
+<interface type='direct'>
+  <mac address='02:03:52:01:ff:01'/>
+  <source dev='enccw0.0.f500' mode='bridge'/>
+  <target dev='macvtap0'/>
+  <model type='virtio'/>
+  <alias name='net0'/>
+  <address type='ccw' cssid='0xfe' ssid='0x0' devno='0x0003'/>
+</interface>

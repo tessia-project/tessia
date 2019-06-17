@@ -89,6 +89,7 @@ TEMPLATES = [
     "fedora-kvmhost,Fedora KVM hypervisor profile,admin,Admins",
     "rhel7-default,Default template for RHEL7 installations,admin,Admins",
     "rhel8-default,Default template for RHEL8 installations,admin,Admins",
+    "rhel8-kvmhost,RHEL8 KVM hypervisor profile,admin,Admins",
     "sles12-default,Default template for SLES12 installations,admin,Admins",
     "sles12-kvmhost,SLES12 KVM hypervisor profile,admin,Admins",
     "sles15-default,Default template for SLES15 installations,admin,Admins",

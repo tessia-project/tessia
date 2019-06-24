@@ -1,3 +1,6 @@
+{% macro iface_name(iface, with_vlan=True) -%}
+{% if iface['vlan'] and with_vlan %}{{iface['osname']}}.{{iface['vlan']}}{% elif iface["type"] != "OSA" %}{{iface['osname']}}{% else %}{{iface['systemd_osname']}}{% endif %}
+{%- endmacro %}
 {% macro ifaces_list(ifaces) -%}
 {% set iface_line = [] -%}
 {% for iface in ifaces -%}
@@ -14,4 +17,7 @@
 {%- endfor -%}
 {{ ' '.join(iface_line) }}
 {%- endmacro %}
-ro ramdisk_size=50000 {% if config["system_type"] != "KVM" %}cio_ignore=all,!condev zfcp.allow_lun_scan=0{% endif %} {{ifaces_list(config['ifaces'])}} inst.repo={{config['repos'][0]['url']}} ip={{config["gw_iface"]['ip']}}::{{config["gw_iface"]['gateway']}}:{{config["gw_iface"]['mask_bits']}}:{{config['hostname']}}:{{config["gw_iface"]['osname'] if config["gw_iface"]["type"] != "OSA" else config["gw_iface"]['systemd_osname']}}:none nameserver={{config["gw_iface"]['dns_1']}} inst.sshd inst.ks={{config['autofile']}}
+{% macro ip_format(ip_address) -%}
+{% if ':' in ip_address %}[{{ip_address}}]{% else %}{{ip_address}}{% endif %}
+{%- endmacro %}
+ro ramdisk_size=50000 {% if config["system_type"] != "KVM" %}cio_ignore=all,!condev zfcp.allow_lun_scan=0{% endif %} {{ifaces_list(config['ifaces'])}} inst.repo={{config['repos'][0]['url']}} ip={{ip_format(config["gw_iface"]['ip'])}}::{{ip_format(config["gw_iface"]['gateway'])}}:{{config["gw_iface"]['mask_bits']}}:{{ip_format(config['hostname'])}}:{{iface_name(config["gw_iface"])}}:none {% if config["gw_iface"]['vlan'] %}vlan={{iface_name(config["gw_iface"])}}:{{iface_name(config["gw_iface"], False)}}{% endif %} nameserver={{config["gw_iface"]['dns_1']}} inst.sshd inst.ks={{config['autofile']}}

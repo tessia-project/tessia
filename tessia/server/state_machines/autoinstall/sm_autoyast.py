@@ -50,7 +50,7 @@ class SmAutoyast(SmBase):
         self._logger = logging.getLogger(__name__)
 
         # roce card installations are not supported
-        if self._gw_iface['type'] == 'ROCE':
+        if self._gw_iface.type == 'ROCE':
             raise ValueError('Installations using a ROCE card as the gateway '
                              'interface are not supported by AutoYast')
     # __init__()

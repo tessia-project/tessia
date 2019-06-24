@@ -812,7 +812,7 @@ ID=xxxxx
                         .ip_address_rel.subnet_rel)
         with self._mock_db_obj(subnet_entry, 'dns_2', '8.8.8.8'):
             error_msg = self._mismatch_msg.format(
-                'iface enccw0.0.f500 nameservers', '8.8.8.8', '<not found>')
+                'iface enccw0.0.f nameservers', '8.8.8.8', '<not found>')
             checker = post_install.PostInstallChecker(fcp_prof_entry)
             with self.assertRaisesRegex(
                 post_install.Misconfiguration, error_msg):
@@ -832,7 +832,7 @@ ID=xxxxx
             'Command failed, output: cpc3lp52.domain.com | FAILED!')
         self._mock_check_output.side_effect = test_outputs
         error_msg = self._mismatch_msg.format(
-            'iface enccw0.0.f500 nameservers', '192.168.200.241',
+            'iface enccw0.0.f nameservers', '192.168.200.241',
             '<not found>')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
@@ -857,7 +857,7 @@ ID=xxxxx
             'Command failed, output: cpc3lp52.domain.com | FAILED!')
         self._mock_check_output.side_effect = test_outputs
         error_msg = self._mismatch_msg.format(
-            'iface enccw0.0.f500 nameservers', '192.168.200.241',
+            'iface enccw0.0.f nameservers', '192.168.200.241',
             '<not found>')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
@@ -1079,7 +1079,7 @@ Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
         with self._mock_db_obj(subnet_entry, 'address',
                                'fe80::/64'):
             with self._mock_db_obj(address_entry, 'address',
-                                   'fe80::57:52ff:fe00:7600'):
+                                   'fe80::ff:fe6b:97c4'):
                 checker = post_install.PostInstallChecker(profile_entry)
                 checker.verify(areas=['network'])
     # test_ipv6()

@@ -25,6 +25,7 @@ from tessia.server.db.models import StorageVolume
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin, urlsplit
 
+import ipaddress
 import logging
 
 #
@@ -127,36 +128,41 @@ class PlatLpar(PlatBase):
             "initrd_url": initrd_uri,
             "cmdline": kargs
         }
+        subnet_pyobj = ipaddress.ip_network(
+            self._gw_iface.ip_address_rel.subnet_rel.address, strict=True)
         # network configuration
         params['boot_params']['netsetup'] = {
-            "mac": self._gw_iface['mac_addr'],
-            "ip": self._gw_iface['ip'],
-            "mask": self._gw_iface["mask"],
-            "gateway": self._gw_iface['gateway'],
+            "mac": self._gw_iface.mac_address,
+            "ip": self._gw_iface.ip_address_rel.address,
+            "mask": subnet_pyobj.prefixlen,
+            "gateway": self._gw_iface.ip_address_rel.subnet_rel.gateway,
             "password": self._live_passwd,
         }
+        if self._gw_iface.ip_address_rel.subnet_rel.vlan:
+            params['boot_params']['netsetup']['vlan'] = (
+                self._gw_iface.ip_address_rel.subnet_rel.vlan)
         # osa cards
-        if self._gw_iface['type'].lower() == 'osa':
+        if self._gw_iface.type.lower() == 'osa':
             params['boot_params']['netsetup']['type'] = 'osa'
             params['boot_params']['netsetup']['device'] = (
-                self._gw_iface['attributes']['ccwgroup']
+                self._gw_iface.attributes['ccwgroup']
                 .split(",")[0].split('.')[-1])
-            options = deepcopy(self._gw_iface['attributes'])
+            options = deepcopy(self._gw_iface.attributes)
             options.pop('ccwgroup')
             params['boot_params']['netsetup']['options'] = options
         # roce cards
-        elif self._gw_iface['type'].lower() == 'roce':
+        elif self._gw_iface.type.lower() == 'roce':
             params['boot_params']['netsetup']['type'] = 'pci'
             params['boot_params']['netsetup']['device'] = (
-                self._gw_iface['attributes']['fid'])
+                self._gw_iface.attributes['fid'])
         else:
             raise ValueError('Unsupported network card type {}'
-                             .format(self._gw_iface['type']))
+                             .format(self._gw_iface.type))
         dns_servers = []
-        if self._gw_iface.get('dns_1'):
-            dns_servers.append(self._gw_iface['dns_1'])
-        if self._gw_iface.get('dns_2'):
-            dns_servers.append(self._gw_iface['dns_2'])
+        if self._gw_iface.ip_address_rel.subnet_rel.dns_1:
+            dns_servers.append(self._gw_iface.ip_address_rel.subnet_rel.dns_1)
+        if self._gw_iface.ip_address_rel.subnet_rel.dns_2:
+            dns_servers.append(self._gw_iface.ip_address_rel.subnet_rel.dns_2)
         if dns_servers:
             params['boot_params']['netsetup']['dns'] = dns_servers
 

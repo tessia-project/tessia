@@ -203,7 +203,7 @@ FCP_PATH = FcpPath()
 
 class IfaceName(click.ParamType):
     """
-    Represents the name of a network interface (on Linux)
+    Represents the name of a network interface on Linux
     """
     name = 'iface_name'
 
@@ -214,11 +214,11 @@ class IfaceName(click.ParamType):
         if not value:
             self.fail('value may not be empty', param, ctx)
 
-        ret = re.match(r'^\w+[\w.\-]+$', value)
-        if ret is None:
+        ret = re.match(r'^[a-zA-Z][a-zA-Z0-9_\.\-]+$', value)
+        if ret is None or len(value) > 15:
             msg = ("'{}' is not a valid interface name, it must start with a "
-                   "letter or number, have at least 2 characters and may only "
-                   "contain letters, numbers, '.', and '-'".format(value))
+                   "letter, have between 2 and 15 characters and may only "
+                   "contain letters, numbers, '_', '.', and '-'".format(value))
             self.fail(msg, param, ctx)
 
         return value

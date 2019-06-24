@@ -82,9 +82,7 @@
    echo -e '  renderer: networkd' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
    echo -e '  ethernets:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
    echo -e '    {{iface['osname']}}:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-  {% if iface['ip'] -%}
-   echo -e '      addresses: [ {{iface['ip']}}/{{iface['mask_bits']}} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-  {% endif -%}
+   echo -e '      addresses: [ {% if iface['ip'] and not iface['vlan'] %}"{{iface['ip']}}/{{iface['mask_bits']}}"{% endif %} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
   {% if iface['type'] != 'OSA' -%}
    echo -e '      set-name: {{iface['osname']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
    echo -e '      match:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
@@ -93,6 +91,17 @@
   {% elif iface['mac_addr'] -%}
    mkdir -p /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d; \
    echo -e '[Match]\nName={{iface['osname']}}\n\n[Link]\nMACAddress={{iface['mac_addr']}}\n' > /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d/10-netplan-{{iface['osname']}}.conf; \
+  {% endif -%}
+  {% if iface['vlan'] -%}
+   echo -e '  vlans:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '    {{iface['osname']}}.{{iface['vlan']}}:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '      id: {{iface['vlan']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '      link: {{iface['osname']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '      addresses: [ {% if iface['ip'] %}"{{iface['ip']}}/{{iface['mask_bits']}}"{% endif %} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+  {% endif -%}
+  {% if iface['dns_1'] -%}
+   echo -e '      nameservers:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
+   echo -e '        addresses: [ "{{iface['dns_1']}}"{% if iface['dns_2'] %}, "{{iface['dns_2']}}"{% endif %} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
   {% endif -%}
 {%- endmacro -%}
 
@@ -107,7 +116,7 @@
 {% macro configure_gw_iface(iface) -%}
 {% if iface['type'] == "OSA" -%}
     echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
-    sed -i 's/enc{{iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}}:/{{iface['osname']}}:/g' /target/etc/netplan/01-netcfg.yaml; \
+    sed -i 's/{{iface['systemd_osname']}}/{{iface['osname']}}/g' /target/etc/netplan/01-netcfg.yaml; \
   {% if iface['mac_addr'] -%}
     mkdir -p /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d; \
     echo -e '[Match]\nName={{iface['osname']}}\n\n[Link]\nMACAddress={{iface['mac_addr']}}\n' > /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d/10-netplan-{{iface['osname']}}.conf; \
@@ -139,6 +148,15 @@ fd.close()"; \
     echo -e 'deb {{repo['apt_url']}}' >> /target/etc/apt/sources.list; \
 {% endfor -%}
 {% endmacro %}
+{% macro netplan_workaround() -%}
+    {#- workaround for https://bugs.launchpad.net/netplan/+bug/1768827 -#}
+    if [ ! -f "/target/etc/systemd/system/netplan-apply.service" ]; then \
+    echo -e '[Unit]\nAfter=network.target\n' > /target/etc/systemd/system/netplan-apply.service; \
+    echo -e '[Service]\nExecStart=/usr/sbin/netplan apply\n' >> /target/etc/systemd/system/netplan-apply.service; \
+    echo -e '[Install]\nWantedBy=multi-user.target\n' >> /target/etc/systemd/system/netplan-apply.service; \
+    chroot /target systemctl enable netplan-apply.service; \
+    fi; \
+{% endmacro %}
 
 {# Since only one disk and one network interface is supported during
 installation we create these auxiliary variables #}
@@ -150,7 +168,7 @@ d-i preseed/early_command string set -x; \
     {% if gw_iface['type'] == "OSA" and gw_iface['mac_addr'] -%}
     {# s390-netdevice does not provide a way to set mac address in layer2 mode so
     we do it manually here #}
-    ip link set addr {{gw_iface['mac_addr']}} dev enc{{gw_iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}} ; \
+    ip link set addr {{gw_iface['mac_addr']}} dev {{gw_iface['systemd_osname']}} ; \
     {% endif -%}
     {# in case server is in same subnet update its arp cache to avoid losing connectivity #}
     ping -c1 -w 90 {{config['server_hostname']}} ; \

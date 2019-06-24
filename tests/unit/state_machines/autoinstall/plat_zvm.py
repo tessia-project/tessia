@@ -20,7 +20,6 @@ Unit test for the platform zvm module
 # IMPORTS
 #
 from tessia.baselib.hypervisors.zvm import HypervisorZvm
-from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tessia.server.state_machines.autoinstall import plat_zvm
 from tests.unit.state_machines.autoinstall import utils
 from unittest import TestCase
@@ -71,13 +70,9 @@ class TestPlatZvm(TestCase):
         if self._gw_iface_entry is None:
             self._gw_iface_entry = self._prof_entry.system_ifaces_rel[0]
 
-        # get the parsed iface so that we can create the platform object
-        self._parsed_gw_iface = (
-            SmBase._parse_iface(self._gw_iface_entry, True))
-
         self._plat = plat_zvm.PlatZvm(
             self._hyper_prof_entry, self._prof_entry,
-            self._os_entry, self._repo_entry, self._parsed_gw_iface)
+            self._os_entry, self._repo_entry, self._gw_iface_entry)
     # setUp()
 
     def test_boot(self):
@@ -151,7 +146,7 @@ class TestPlatZvm(TestCase):
             ValueError, 'zVM password not available in profile'):
             plat_zvm.PlatZvm(
                 self._hyper_prof_entry, self._prof_entry, self._os_entry,
-                self._repo_entry, self._parsed_gw_iface)
+                self._repo_entry, self._gw_iface_entry)
 
         # restore value
         self._prof_entry.credentials = orig_cred

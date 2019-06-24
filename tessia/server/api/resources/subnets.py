@@ -85,7 +85,8 @@ class SubnetResource(SecureResource):
         dns_2 = fields.String(
             title=DESC['dns_2'], description=DESC['dns_2'], nullable=True)
         vlan = fields.PositiveInteger(
-            title=DESC['vlan'], description=DESC['vlan'], nullable=True)
+            title=DESC['vlan'], description=DESC['vlan'], maximum=4095,
+            nullable=True)
         search_list = fields.String(
             title=DESC['search_list'], description=DESC['search_list'],
             nullable=True)

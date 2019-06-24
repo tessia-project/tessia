@@ -201,6 +201,32 @@ class FcpPath(click.ParamType):
 
 FCP_PATH = FcpPath()
 
+class IfaceName(click.ParamType):
+    """
+    Represents the name of a network interface (on Linux)
+    """
+    name = 'iface_name'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern for network interface names on Linux
+        """
+        if not value:
+            self.fail('value may not be empty', param, ctx)
+
+        ret = re.match(r'^\w+[\w.\-]+$', value)
+        if ret is None:
+            msg = ("'{}' is not a valid interface name, it must start with a "
+                   "letter or number, have at least 2 characters and may only "
+                   "contain letters, numbers, '.', and '-'".format(value))
+            self.fail(msg, param, ctx)
+
+        return value
+    # convert()
+# IfaceName
+
+IFACE_NAME = IfaceName()
+
 class Hostname(click.ParamType):
     """
     Represents a hostname or ip address
@@ -326,21 +352,22 @@ class Libvirtxml(click.ParamType):
     """
     Represents a libvirt xml content extracted from a local file
     """
-    name = 'xml_file'
+    name = 'xml_file_path'
 
     def convert(self, value, param, ctx):
         """
         Read the file and validate the xml content before returning it.
         """
-        # no file specified: return empty string so that the caller can
-        # interpret it as unsetting the parameter.
         if not value:
-            return value
+            self.fail('value may not be empty', param, ctx)
 
         with click.open_file(value, 'r') as file_stream:
             xml_content = file_stream.read()
 
-        # TODO: perform some sanity checks
+        # TODO: perform some xml sanity checks
+        if not xml_content:
+            self.fail('libvirt definition cannot be empty', param, ctx)
+
         return xml_content
     # convert()
 # Libvirtxml

@@ -150,12 +150,14 @@ class RepoDownloader(object):
             process_env = os.environ.copy()
             process_env['GIT_SSL_NO_VERIFY'] = 'true'
             try:
-                subprocess.run(
-                    ['git', 'ls-remote', repo['url']],
-                    stdout=subprocess.DEVNULL,
+                git_output = subprocess.run(
+                    ['git', 'ls-remote', '--heads', 
+                     repo['url'], repo['git_branch']],
+                    stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     env=process_env,
                     check=True,
+                    universal_newlines=True
                 )
             except subprocess.CalledProcessError as exc:
                 raise ValueError('Source url is not accessible: {}'.format(
@@ -163,6 +165,16 @@ class RepoDownloader(object):
                         source_url, repo['url_obs'])))
             except OSError as exc:
                 raise ValueError('Failed to execute git: {}'.format(str(exc)))
+            
+            reflist = git_output.stdout.splitlines()
+            if not reflist:
+                raise ValueError('Branch not found in reflist: {}'.format(
+                    str(repo['git_branch'])))
+            # reflist looks like "hash<TAB>ref", we display both;
+            # see https://git-scm.com/docs/git-ls-remote.html#_examples
+            # Note that the same hash can be referred by multiple refs,
+            # so reflist may contain several elements
+            repo['git_refhead'] = reflist[0].split("\t")[0]
 
         # http source: use the requests lib to verify it
         elif repo['type'] == 'web':
@@ -197,7 +209,9 @@ class RepoDownloader(object):
         Download a repository from a git url
         """
         repo = self._repo_info
-        self._logger.info('cloning git repo from %s', repo['url_obs'])
+        self._logger.info('cloning git repo from %s branch %s/%s commit %s',
+                          repo['url_obs'], repo['git_branch'], 
+                          repo['git_refhead'], repo['git_commit'])
 
         # Since git doesn't allow to clone specific commit and for
         # optimal resources usage, we set the depth of cloning.

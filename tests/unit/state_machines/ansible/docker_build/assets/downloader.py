@@ -22,6 +22,7 @@ Unittest for RepoDownloader class from downloader module
 from tessia.server.state_machines.ansible import machine
 
 from importlib import util
+from itertools import chain, cycle
 from unittest import mock
 from unittest import TestCase
 
@@ -109,6 +110,14 @@ class TestRepoDownloader(TestCase):
         self._mock_subproc.CalledProcessError.side_effect = Exception()
         self._mock_proc = mock.Mock(spec=['stdout', 'poll', 'returncode'])
         self._mock_subproc.Popen.return_value = self._mock_proc
+
+        # Return a specific value for git ls-remote
+        # It is only checked in test_download_git,
+        # in other cases it should be non-empty
+        self._mock_subproc.run.return_value.stdout.splitlines.side_effect = (
+            chain([['mocked-commit-id\trefs/heads/master']],
+                  cycle(['unchecked'])))
+
         # prepare the playbook exec for the usual case (read two lines then
         # process ends)
         self._mock_proc.stdout.readline.side_effect = [
@@ -131,7 +140,8 @@ class TestRepoDownloader(TestCase):
         tmp_downloader.download()
 
         # validate call to logger
-        down_msg = ('cloning git repo from %s', exp_url_obs)
+        down_msg = ('cloning git repo from %s branch %s/%s commit %s',
+                    exp_url_obs, 'master', 'mocked-commit-id', 'HEAD')
         self.assertIn(mock.call(*down_msg), self._mock_logger.info.mock_calls)
 
         # validate stage download

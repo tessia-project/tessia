@@ -49,7 +49,8 @@ class Manager():
     def __init__(self, stage, docker_tag, images=None, registry_url=None,
                  field_tests=None, img_passwd_file=None,
                  install_server_hostname=None, custom_cli_subnet=None,
-                 custom_db_subnet=None, verbose=True, **stage_args):
+                 custom_db_subnet=None, verbose=True, builder_hostname=None,
+                 **stage_args):
         # pylint: disable=too-many-arguments
         """
         Create the image objects and set necessary configuration parameters
@@ -75,6 +76,8 @@ class Manager():
             custom_db_subnet (str): subnet in cidr notation to be used in
                                     docker compose definition of db container
             verbose (bool): whether to print output from commands
+            builder_hostname (str): for remote builder (docker host) use this
+                                    hostname instead of automatic detection
             stage_args (any): additional specific arguments to the stage
 
         Raises:
@@ -126,11 +129,14 @@ class Manager():
                              'provided for auxiliar live-image')
 
         # determine builder's fqdn
-        ret_code, output = self._session.run('hostname -f')
-        if ret_code != 0:
-            raise RuntimeError(
-                "failed to determine system's FQDN: {}".format(output))
-        self._fqdn = output.strip()
+        if builder_hostname:
+            self._fqdn = builder_hostname
+        else:
+            ret_code, output = self._session.run('hostname -f')
+            if ret_code != 0:
+                raise RuntimeError(
+                    "failed to determine system's FQDN: {}".format(output))
+            self._fqdn = output.strip()
 
         # docker tag specified: use it
         if docker_tag:

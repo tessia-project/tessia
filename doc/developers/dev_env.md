@@ -20,6 +20,7 @@ The best and simplest way is the docker approach, where your environment is depl
 There's also the python virtualenv approach which demands more manual steps, this method is currently deprecated in favour of the container based approach.
 
 - [Complete dev environment via docker containers](#complete-dev-environment-via-docker-containers)
+- [Complete dev environment with remote docker host](#complete-dev-environment-with-remote-docker-host)
 - [Server-side dev environment via virtualenv (deprecated)](#server-side-dev-environment-via-virtualenv-deprecated)
 - [Client-side dev environment via virtualenv (deprecated)](#client-side-dev-environment-via-virtualenv-deprecated)
 
@@ -182,6 +183,52 @@ admin@tessia-cli:/$
 
 When you are done you can use docker's own command `docker-compose stop` to stop all containers. If you want to cleanup everything (images, containers, volumes, networks) after
 the services were stopped, type `tools/ci/orc cleanup`.
+
+## Complete dev environment with remote docker host
+
+In case you prefer to have a Docker environment on a remote host, it is possible to do so with some more configuration.
+
+Enable remote connections on docker host by adding a `tcp://` port in docker service unit `/lib/systemd/system/docker.service`
+```ini
+[Service]
+...
+ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock -H tcp://dockerhost:2375
+```
+
+On your local machine export a DOCKER_HOST environment variable:
+```
+echo export DOCKER_HOST=tcp://dockerhost:2375 >> .bashrc
+```
+
+*Note*: this opens an unsecured docker service. To achieve additional protection with client/server certificates please follow [Docker documentation](https://docs.docker.com/engine/security/https/).
+
+If necessary, add docker host user ('tessia' in the example below) to the docker group:
+```
+sudo usermod -aG docker tessia
+```
+
+Tessia build process requires source to be available, so it has to be remote mounted or rsync-ed to docker host. You can use the following script to continuously sync changes from project directory. In this example, local tessia source is at `C:\Projects\tessia\tessia` and is mounted into WSL under `/c/Projects/tessia/tessia`:
+```bash
+while inotifywait -r -e modify,create,delete /c/Projects/tessia/tessia; do 
+   rsync -rltvz /c/Projects/tessia/tessia tessia@dockerhost:/c/Projects/tessia/
+   date +'Last updated: %F %R'
+done
+```
+
+`tools/ci/orc` provides an additional flag, `--builder`, where you can specify dockerhost. With this flag you can continue as in the [previous step](#complete-dev-environment-with-remote-docker), e.g.:
+
+ ```
+$ tools/ci/orc run --devmode --tag 18.06.post221.dev0-commitg3df6a1c7.dirty --builder dockerhost
+INFO: [init] tag for images is 18.06.post221.dev0-commitg3df6a1c7.dirty
+...
+     Name                    Command              State                     Ports                   
+----------------------------------------------------------------------------------------------------
+tessia_cli_1      /entrypoint                     Up                                                
+tessia_db_1       docker-entrypoint.sh postgres   Up      5432/tcp                                  
+tessia_server_1   /entrypoint                     Up      0.0.0.0:5000->5000/tcp, 0.0.0.0:80->80/tcp
+INFO: done
+ ```
+
 
 ## Server-side dev environment via virtualenv (deprecated)
 

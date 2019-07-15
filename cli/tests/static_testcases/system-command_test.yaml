@@ -795,8 +795,6 @@ tasks:
       - 'Invalid value for "--system": value may not be empty'
     - - system prof-add --system=cpc3lp52 --name='DASD'  --login='root:mypasswd'
       - Item added successfully.
-    - - system prof-list --name='DASD'
-      - 'Missing option "--system"'
     - - system prof-add --system= --name='DASD1' --login='root:mypasswd'
       - 'Invalid value for "--system": value may not be empty'
     - - system prof-add --system=cpc3lp52 --name= --login='root:mypasswd'
@@ -911,7 +909,7 @@ tasks:
       - Item added successfully.
     # 'system prof-list' subcommand
     - - system prof-list
-      - 'Missing option "--system"'
+      - 'At least one of --system or --os must be specified'
     - - system prof-list --system=cpc3lp66
       - No results were found.
     - - system prof-list --system=
@@ -924,7 +922,7 @@ tasks:
     - - system prof-list --name=
       - 'Invalid value for "--name": value may not be empty'
     - - system prof-list --name='DASD root1'
-      - 'Missing option "--system"'
+      - 'At least one of --system or --os must be specified'
     - - system prof-list --system=cpc3lp52 --name='DASD4'
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD4 *\|'
@@ -1431,7 +1429,7 @@ tasks:
       - "Error: request failed. Server answered: No associated item found with value 'wrong-os' for field 'Operating system'"
     - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=rhel7.4
       - "Item added successfully."
-    - - system prof-list --system=cpc3lp52 --name='Manual install'
+    - - system prof-list --system=cpc3lp52 --name='Manual install' --os=rhel7.4
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - '.*\|.*\| *rhel7.4'
     - - system prof-list --system=cpc3lp52 --name='Manual install' --long

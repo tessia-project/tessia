@@ -58,15 +58,19 @@ except ImportError:
          'not reachable by installed systems)')
 @click.option('--quiet', is_flag=True, default=False,
               help='suppress output from commands')
+@click.option(
+    '--builder', default=None,
+    help='optional fqdn for docker host, if it is on a different machine')
 def all_(tag, field_tests, img_passwd_file, registry, install_server_hostname,
-         quiet):
+         quiet, builder):
     """
     execute all ci stages in one run
     """
     manager = Manager(
         'all', tag, registry_url=registry, field_tests=field_tests,
         img_passwd_file=img_passwd_file,
-        install_server_hostname=install_server_hostname, verbose=not quiet)
+        install_server_hostname=install_server_hostname, verbose=not quiet,
+        builder_hostname=builder)
     manager.run()
 # all_()
 
@@ -110,11 +114,15 @@ def build(images, tag, quiet):
 @click.option('tag', '--tag', help='docker tag to locate images/containers')
 @click.option('--keepimg', is_flag=True, default=False,
               help='do not delete images')
-def cleanup(tag, keepimg):
+@click.option(
+    '--builder', default=None,
+    help='optional fqdn for docker host, if it is on a different machine')
+def cleanup(tag, keepimg, builder):
     """
     execute the cleanup stage
     """
-    manager = Manager('cleanup', tag, keepimg=keepimg)
+    manager = Manager('cleanup', tag, keepimg=keepimg,
+                      builder_hostname=builder)
     manager.run()
 # cleanup()
 
@@ -140,8 +148,11 @@ def cleanup(tag, keepimg):
     'custom_db_subnet', '--custom-db-subnet',
     help='custom subnet for network between server and db docker container'
          ' e.g. 172.29.0.0/16')
+@click.option(
+    '--builder', default=None,
+    help='optional fqdn for docker host, if it is on a different machine')
 def clitest(tag, field_tests, img_passwd_file, install_server_hostname,
-            custom_cli_subnet, custom_db_subnet):
+            custom_cli_subnet, custom_db_subnet, builder):
     """
     execute the client integration tests
     """
@@ -149,7 +160,8 @@ def clitest(tag, field_tests, img_passwd_file, install_server_hostname,
         'clitest', tag, field_tests=field_tests,
         img_passwd_file=img_passwd_file,
         install_server_hostname=install_server_hostname,
-        custom_cli_subnet=custom_cli_subnet, custom_db_subnet=custom_db_subnet)
+        custom_cli_subnet=custom_cli_subnet, custom_db_subnet=custom_db_subnet,
+        builder_hostname=builder)
     manager.run()
 # clitest()
 
@@ -175,8 +187,11 @@ def clitest(tag, field_tests, img_passwd_file, install_server_hostname,
          ' e.g. 172.29.0.0/16')
 @click.option('clitests', '--clitests', is_flag=True, default=False,
               help='execute all client tests')
+@click.option(
+    '--builder', default=None,
+    help='optional fqdn for docker host, if it is on a different machine')
 def run(tag, devmode, img_passwd_file, install_server_hostname,
-        custom_cli_subnet, custom_db_subnet, clitests):
+        custom_cli_subnet, custom_db_subnet, clitests, builder):
     """
     start and keep services running until manually stopped
     """
@@ -184,7 +199,7 @@ def run(tag, devmode, img_passwd_file, install_server_hostname,
         'run', tag, devmode=devmode, img_passwd_file=img_passwd_file,
         install_server_hostname=install_server_hostname,
         custom_cli_subnet=custom_cli_subnet, custom_db_subnet=custom_db_subnet,
-        clitests=clitests)
+        clitests=clitests, builder_hostname=builder)
     manager.run()
 # run()
 
@@ -235,14 +250,17 @@ def push(images, tag, registry):
     'custom_db_subnet', '--custom-db-subnet',
     help='custom subnet for network between server and db docker container'
          ' e.g. 172.29.0.0/16')
-def unittest(tag, path, custom_cli_subnet, custom_db_subnet):
+@click.option(
+    '--builder', default=None,
+    help='optional fqdn for docker host, if it is on a different machine')
+def unittest(tag, path, custom_cli_subnet, custom_db_subnet, builder):
     """
     execute unit test on docker images
     """
     manager = Manager(
         'unittest', tag, images=['server'],
         custom_cli_subnet=custom_cli_subnet, custom_db_subnet=custom_db_subnet,
-        unittest_path=path)
+        unittest_path=path, builder_hostname=builder)
     manager.run()
 # unittest()
 

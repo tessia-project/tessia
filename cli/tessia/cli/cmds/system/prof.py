@@ -261,11 +261,13 @@ def prof_edit(system, cur_name, **kwargs):
 @click.command(name='prof-list')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
-@click.option('--system', required=True, type=NAME, help="the system to list")
+@click.option('--system', type=NAME, help="the system to list")
 @click.option('--name', type=NAME, help="filter by profile-name")
 @click.option('--cpu', type=CustomIntRange(min=0),
               help="filter by specified number of cpus")
 @click.option('--memory', type=MIB_SIZE, help=MEM_HELP)
+@click.option('operating_system', '--os', type=NAME,
+              help="filter by associated operating system")
 @click.option('--default', is_flag=True, help="list only default profiles")
 @click.option('hypervisor_profile', '--hyp', type=NAME,
               help="filter by required hypervisor profile")
@@ -277,6 +279,10 @@ def prof_list(**kwargs):
     # only non defaults
     if kwargs['default'] is False:
         kwargs.pop('default')
+
+    if kwargs['system'] is None and kwargs['operating_system'] is None:
+        raise click.ClickException(
+            'At least one of --system or --os must be specified')
 
     # fetch data from server
     client = Client()

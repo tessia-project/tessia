@@ -279,7 +279,9 @@ def list_(**kwargs):
 @click.option('--name', required=True, type=NAME, help="system name")
 @click.option('--verbosity', type=VERBOSITY_LEVEL,
               help='output verbosity level')
-def poweroff(ctx, name, verbosity):
+@click.option('bg_flag', '--bg', is_flag=True,
+              help="do not wait for output after submitting")
+def poweroff(ctx, name, verbosity, bg_flag):
     """
     poweroff (deactivate) a system
     """
@@ -300,6 +302,9 @@ def poweroff(ctx, name, verbosity):
     }
 
     job_id = wait_scheduler(client, request)
+    # bg flag: do not wait for output, just return to prompt
+    if bg_flag:
+        return
     try:
         wait_job_exec(client, job_id)
         ctx.invoke(job_output, job_id=job_id)
@@ -332,6 +337,8 @@ def poweroff(ctx, name, verbosity):
     help="stop ALL other systems under same hypervisor, USE WITH CARE!")
 @click.option('--verbosity', type=VERBOSITY_LEVEL,
               help='output verbosity level')
+@click.option('--bg', is_flag=True,
+              help="do not wait for output after submitting")
 def poweron(ctx, name, **kwargs):
     """
     poweron (activate) a system
@@ -374,6 +381,9 @@ def poweron(ctx, name, **kwargs):
         'parameters': json.dumps(req_params)
     }
     job_id = wait_scheduler(client, request)
+    # bg flag: do not wait for output, just return to prompt
+    if kwargs['bg']:
+        return
     try:
         wait_job_exec(client, job_id)
         ctx.invoke(job_output, job_id=job_id)

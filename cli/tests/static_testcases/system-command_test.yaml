@@ -1286,6 +1286,8 @@ tasks:
       - 'no such option: --exclus  Did you mean --exclusive?'
     - - system poweron --name=cpc3lp52 --exclusive
       - Default profile for system cpc3lp53 does not exist.
+    - - system poweron --name=cpc3lp52 --bg
+      - 'Request accepted; job id is #'
     # 'system poweroff' subcommand
     - - system poweroff
       - Missing option "--name".
@@ -1311,6 +1313,8 @@ tasks:
       - 'Failed to establish a new connection'
     - - system poweroff --name=cpc3lp52 --verbosity warn
       - Invalid value for "--verbosity"
+    - - system poweroff --name=cpc3lp52 --bg
+      - 'Request accepted; job id is #'
     # 'system vol-detach' subcommand
     - - system vol-detach
       - Missing option "--system".

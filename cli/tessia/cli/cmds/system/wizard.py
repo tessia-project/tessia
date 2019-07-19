@@ -821,7 +821,8 @@ def _create_iface(client, ctx, sys_item, prof_item):
         params['type'] = iface_type_item.name
 
         params['devname'] = _prompt(
-            WIZ_NET_IFACE_DEVNAME, default=params['devname'], type=types.NAME)
+            WIZ_NET_IFACE_DEVNAME, default=params['devname'],
+            type=types.IFACE_NAME)
 
         # osa card: gather specific info
         if params['type'].lower() == 'osa':

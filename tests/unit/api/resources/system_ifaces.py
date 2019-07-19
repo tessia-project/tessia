@@ -366,6 +366,7 @@ class TestSystemIface(TestSecureResource):
             ('osname', ''),
             ('osname', ' '),
             ('osname', 'name_with_*_symbol'),
+            ('osname', 'name_with_more_than_15_chars'),
             ('osname', 5),
             ('osname', False),
             ('osname', None),

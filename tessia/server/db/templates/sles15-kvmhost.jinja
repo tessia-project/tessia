@@ -200,27 +200,32 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
         {% set host_domain = config["hostname"].split('.', 1) %}
         <domain>{{ host_domain[1] }}</domain>
         <hostname>{{ host_domain[0] }}</hostname>
-        <nameservers config:type="list">
-          <nameserver>{{ iface["dns_1"] }}</nameserver>
-        </nameservers>
-        {% if iface["search_list"] -%}
-          <searchlist config:type="list">
-            {% for search_entry in iface["search_list"].split() -%}
-              <search>{{ search_entry }}</search>
-            {% endfor -%}
-          </searchlist>
-        {% endif -%}
         {% endif %}
       {% endfor %}
       <resolv_conf_policy>auto</resolv_conf_policy>
       <write_hostname config:type="boolean">false</write_hostname>
+      <nameservers config:type="list">
+      {% for iface in config["ifaces"] -%}
+        {% if iface["dns_1"] %}<nameserver>{{ iface["dns_1"] }}</nameserver>{% endif %}
+        {% if iface["dns_2"] %}<nameserver>{{ iface["dns_2"] }}</nameserver>{% endif %}
+      {% endfor -%}
+      </nameservers>
+      <searchlist config:type="list">
+      {% for iface in config["ifaces"] -%}
+        {% if iface["search_list"] -%}
+          {% for search_entry in iface["search_list"].split() -%}
+        <search>{{ search_entry }}</search>
+          {% endfor -%}
+        {% endif -%}
+      {% endfor -%}
+      </searchlist>
     </dns>
     <interfaces config:type="list">
     {% for iface in config["ifaces"] %}
       <interface>
         <bootproto>static</bootproto>
         <device>{{ iface["osname"] }}</device>
-        {% if iface["ip"] %}
+        {% if iface["ip"] and not iface['vlan'] %}
         <ipaddr>{{ iface["ip"] }}</ipaddr>
         <netmask>{{ iface["mask"] }}</netmask>
         <prefixlen>{{ iface["mask_bits"] }}</prefixlen>
@@ -230,6 +235,20 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
         {% endif %}
         <startmode>auto</startmode>
       </interface>
+      {% if iface["vlan"] %}
+      <interface>
+        <etherdevice>{{ iface["osname"] }}</etherdevice>
+        <device>{{ iface["osname"] }}.{{iface['vlan']}}</device>
+        <vlan_id>{{iface['vlan']}}</vlan_id>
+        <bootproto>static</bootproto>
+        {% if iface["ip"] %}
+        <ipaddr>{{ iface["ip"] }}</ipaddr>
+        <netmask>{{ iface["mask"] }}</netmask>
+        <prefixlen>{{ iface["mask_bits"] }}</prefixlen>
+        {% endif %}
+        <startmode>auto</startmode>
+      </interface>
+      {% endif %}
     {% endfor %}
     </interfaces>
     <ipv6 config:type="boolean">true</ipv6>
@@ -274,7 +293,11 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
           <destination>default</destination>
           {% for iface in config["ifaces"] %}
             {% if iface["is_gateway"] %}
+              {% if iface["vlan"] %}
+            <device>{{ iface["osname"] }}.{{ iface["vlan"] }}</device>
+              {% else %}
             <device>{{ iface["osname"] }}</device>
+              {% endif %}
             <gateway>{{ iface["gateway"] }}</gateway>
             {% endif %}
           {% endfor %}

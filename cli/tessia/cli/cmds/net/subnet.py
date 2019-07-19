@@ -43,7 +43,7 @@ FIELDS_TABLE = (
     'name', 'zone', 'address', 'gateway', 'dns_1', 'vlan', 'owner', 'project',
     'desc'
 )
-VLAN_TYPE = CustomIntRange(min=0)
+VLAN_ID = CustomIntRange(min=1, max=4095)
 
 #
 # CODE
@@ -59,7 +59,7 @@ VLAN_TYPE = CustomIntRange(min=0)
 @click.option('dns_1', '--dns1', help="primary dns address (i.e. 192.168.0.5)")
 @click.option('dns_2', '--dns2',
               help="secondary dns address (i.e. 192.168.0.6)")
-@click.option('--vlan', type=VLAN_TYPE, help="VLAN identifier")
+@click.option('--vlan', type=VLAN_ID, help="VLAN identifier")
 @click.option('search_list', '--search', type=TEXT,
               help="search hostname list")
 @click.option('--owner', help="owner login")
@@ -123,7 +123,7 @@ def subnet_edit(zone, cur_name, **kwargs):
             if cmd_opt.name == 'vlan':
                 param_obj = cmd_opt
                 break
-        kwargs['vlan'] = VLAN_TYPE.convert(kwargs['vlan'], param_obj, cur_ctx)
+        kwargs['vlan'] = VLAN_ID.convert(kwargs['vlan'], param_obj, cur_ctx)
 
     client = Client()
     fetch_and_update(
@@ -142,7 +142,7 @@ def subnet_edit(zone, cur_name, **kwargs):
               help='filter by subnet name')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
-@click.option('--vlan', type=VLAN_TYPE, help="filter by specified VLAN")
+@click.option('--vlan', type=VLAN_ID, help="filter by specified VLAN")
 @click.option('--zone', help='the network zone to list')
 def subnet_list(**kwargs):
     """

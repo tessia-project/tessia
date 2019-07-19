@@ -82,7 +82,7 @@ class Misconfiguration(RuntimeError):
     # __str__()
 # Misconfiguration
 
-class PostInstallChecker(object):
+class PostInstallChecker:
     """
     Implementation of the post install checker
     """
@@ -489,6 +489,7 @@ class PostInstallChecker(object):
         except KeyError:
             self._report(
                 'iface {} ip'.format(iface_name), exp_addr['address'], None)
+            return
 
         # validate address
         self._pass_or_report(
@@ -525,9 +526,10 @@ class PostInstallChecker(object):
         try:
             actual_entry = actual_iface['ipv6'][0]
         # no ip assigned to the interface
-        except IndexError:
+        except (KeyError, IndexError):
             self._report(
                 'iface {} ip'.format(iface_name), exp_addr['address'], None)
+            return
 
         # validate address
         exp_ip_obj = ipaddress.ip_address(exp_addr['address'])
@@ -678,7 +680,7 @@ class PostInstallChecker(object):
         """
         iface = {
             'attributes': deepcopy(iface_obj.attributes),
-            'osname': iface_obj.osname,
+            'osname': iface_obj.osname[:15],
             'mac': iface_obj.mac_address,
             'type': iface_obj.type,
             'addresses': [],
@@ -687,6 +689,12 @@ class PostInstallChecker(object):
 
         # ip address associated: parse it
         if iface_obj.ip_address_rel:
+            iface['vlan'] = iface_obj.ip_address_rel.subnet_rel.vlan
+            # truncate the interface name to accomodate for the vlan id
+            if iface['vlan']:
+                iface['osname'] = (
+                    iface['osname'][:15-(len(str(iface['vlan']))+1)]
+                )
             # today the db schema allows only one ip associated, in future when
             # this changes to allow multiple addresses we can point to the
             # relationship directly
@@ -759,9 +767,15 @@ class PostInstallChecker(object):
                 pass
             else:
                 params['network']['gateway'] = {
-                    'iface': gw_iface.osname,
+                    'iface': gw_iface.osname[:15],
                     'address': gw_address
                 }
+                if gw_iface.ip_address_rel.subnet_rel.vlan:
+                    vlan_id = str(gw_iface.ip_address_rel.subnet_rel.vlan)
+                    params['network']['gateway']['iface'] = (
+                        '{}.{}'.format(
+                            gw_iface.osname[:15-(len(vlan_id)+1)], vlan_id)
+                    )
 
         params['storage'] = []
         # storage volumes exist: parse them
@@ -964,6 +978,22 @@ class PostInstallChecker(object):
                     self._pass_or_report(
                         'iface {} nameservers'.format(exp_iface['osname']),
                         name_server_obj, None)
+
+            if exp_iface['vlan']:
+                raw_iface = actual_iface
+                try:
+                    actual_iface = self._facts['ansible_{}.{}'.format(
+                        exp_iface['osname'], exp_iface['vlan'])]
+                # interface not present
+                except KeyError:
+                    self._report('iface', '{}.{}'.format(
+                        exp_iface['osname'], exp_iface['vlan']), None)
+                    continue
+                # assert vlan's base device by comparing the mac addresses
+                self._pass_or_report(
+                    'iface {}.{} mac'.format(
+                        exp_iface['osname'], exp_iface['vlan']),
+                    raw_iface['macaddress'], actual_iface['macaddress'])
 
             # verify ip address assigned to interface
             # TODO: verify multiple addresses (with alias i.e. eth0:0)

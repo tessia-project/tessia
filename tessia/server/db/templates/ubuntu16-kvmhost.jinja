@@ -79,18 +79,35 @@
 {% macro iface_add_ip(iface) -%}
    echo -e '' >> /target/etc/network/interfaces ; \
    echo -e 'auto {{iface['osname']}}' >> /target/etc/network/interfaces ; \
-  {% if iface['ip'] -%}
-   echo -e 'iface {{iface['osname']}} inet static' >> /target/etc/network/interfaces ; \
+  {% if iface['ip'] and not iface['vlan'] -%}
+   echo -e 'iface {{iface['osname']}} {{'inet6' if iface['ip_type'] == 'ipv6' else 'inet'}} static' >> /target/etc/network/interfaces ; \
    echo -e '    address {{iface['ip']}}' >> /target/etc/network/interfaces ; \
-   echo -e '    netmask {{iface['mask']}}' >> /target/etc/network/interfaces ; \
+   echo -e '    netmask {{iface['mask_bits'] if iface['ip_type'] == 'ipv6' else iface['mask']}}' >> /target/etc/network/interfaces ; \
   {% else -%}
    echo -e 'iface {{iface['osname']}} inet manual' >> /target/etc/network/interfaces ; \
+  {% endif -%}
+  {% if iface['vlan'] -%}
+   echo -e 'auto {{iface['osname']}}.{{iface['vlan']}}' >> /target/etc/network/interfaces ; \
+   {% if iface['ip'] -%}
+    echo -e 'iface {{iface['osname']}}.{{iface['vlan']}} inet static' >> /target/etc/network/interfaces ; \
+    echo -e '    address {{iface['ip']}}' >> /target/etc/network/interfaces ; \
+    echo -e '    netmask {{iface['mask']}}' >> /target/etc/network/interfaces ; \
+   {% else -%}
+    echo -e 'iface {{iface['osname']}}.{{iface['vlan']}} inet manual' >> /target/etc/network/interfaces ; \
+   {% endif -%}
+   echo -e '    vlan-raw-device {{iface['osname']}}' >> /target/etc/network/interfaces ; \
+  {% endif -%}
+  {% if iface['dns_1'] -%}
+   echo -e '    dns-nameserver {{iface['dns_1']}}' >> /target/etc/network/interfaces ; \
+  {% endif  -%}
+  {% if iface['dns_2'] -%}
+   echo -e '    dns-nameserver {{iface['dns_2']}}' >> /target/etc/network/interfaces ; \
   {% endif -%}
 {%- endmacro -%}
 
 {% macro iface_append_hwaddress(iface) -%}
    {% if iface['mac_addr'] -%}
-    sed -i '/iface {{iface['osname']}} inet static/a     hwaddress {{iface['mac_addr']}}' /target/etc/network/interfaces ; \
+    sed -i '/iface {{iface['osname']}} /a     hwaddress {{iface['mac_addr']}}' /target/etc/network/interfaces ; \
    {% endif -%}
 {%- endmacro -%}
 
@@ -109,12 +126,17 @@
 {% macro configure_gw_iface(iface) -%}
 {% if iface['type'] == "OSA" -%}
     echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", KERNEL=="eth*", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
-    sed -i 's/enc{{iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}}/{{iface['osname']}}/g' /target/etc/network/interfaces ; \
+    sed -i 's/{{iface['systemd_osname']}}/{{iface['osname']}}/g' /target/etc/network/interfaces ; \
+  {% if iface['vlan'] -%}
+    echo -e '' >> /target/etc/network/interfaces ; \
+    echo -e 'auto {{iface['osname']}}' >> /target/etc/network/interfaces ; \
+    echo -e 'iface {{iface['osname']}} inet manual' >> /target/etc/network/interfaces ; \
+  {% endif -%}
     {{iface_append_hwaddress(iface)}}
 {%- else -%}
     {{iface_add_udev_file(iface)}}
     sed -i 's/auto [^l][^o]*$/auto {{iface['osname']}}/g' /target/etc/network/interfaces ; \
-    sed -i 's/iface [^l][^o][^ ]* \(.*\)$/iface {{iface['osname']}} \1/g' /target/etc/network/interfaces ; \
+    sed -i 's/iface [^l][^o][^ ]* \(.*\)$/iface {{iface['osname']}}{% if iface['vlan'] %}.{{iface['vlan']}}{% endif %} \1/g' /target/etc/network/interfaces ; \
 {%- endif -%}
 {% endmacro %}
 
@@ -148,7 +170,7 @@ d-i preseed/early_command string set -x; \
     {% if gw_iface['type'] == "OSA" and gw_iface['mac_addr'] -%}
     {# s390-netdevice does not provide a way to set mac address in layer2 mode so
     we do it manually here #}
-    ip link set addr {{gw_iface['mac_addr']}} dev enc{{gw_iface['attributes']['ccwgroup'].split(',')[0].replace("0.0.","")}} ; \
+    ip link set addr {{gw_iface['mac_addr']}} dev {{gw_iface['systemd_osname']}} ; \
     {% endif -%}
     {# in case server is in same subnet update its arp cache to avoid losing connectivity #}
     ping -c1 -w 90 {{config['server_hostname']}} ; \
@@ -262,8 +284,10 @@ d-i apt-setup/source        boolean true
 
 # Software selection
 d-i tasksel/first multiselect standard system utilities, OpenSSH server, Basic Ubuntu server
-# needed for ansible
+# python: needed for ansible
 d-i pkgsel/include string python
+# vlan: needed for vlan based connections
+d-i pkgsel/include string python vlan
 
 # tasksel tasksel/first multiselect standard
   # d-i finish-install/reboot_in_progress note

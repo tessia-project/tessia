@@ -51,7 +51,7 @@ class PlatBase(metaclass=abc.ABCMeta):
             guest_profile (SystemProfile): guest profile's db entry
             os_entry (OperatingSystem): db's entry
             repo_entry (Repository): entry of install source repository
-            gw_iface (dict): gateway network interface
+            gw_iface (SystemIface): gateway network interface
 
         Raises:
             RuntimeError: if hypervisor type in profile is unknown

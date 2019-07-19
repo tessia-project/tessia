@@ -83,8 +83,8 @@ class SystemIfaceResource(SecureResource):
         name = fields.String(
             title=DESC['name'], description=DESC['name'], pattern=NAME_PATTERN)
         osname = fields.String(
-            title=DESC['osname'], description=DESC['osname'],
-            pattern=r'^[a-zA-Z0-9_\.\-]+$')
+            title=DESC['osname'], description=DESC['osname'], max_length=15,
+            pattern=r'^[a-zA-Z][a-zA-Z0-9_\.\-]+$')
         attributes = fields.Custom(
             schema=SystemIface.get_schema('attributes'),
             title=DESC['attributes'], description=DESC['attributes'])

@@ -23,7 +23,6 @@ from sqlalchemy.orm.session import make_transient
 from tessia.server.db import models
 from tessia.server.db.connection import MANAGER
 from tessia.server.state_machines.autoinstall import plat_base, plat_lpar
-from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tests.unit.state_machines.autoinstall import utils
 from unittest import mock, TestCase
 from unittest.mock import patch, Mock
@@ -82,11 +81,6 @@ class TestPlatLpar(TestCase):
         # gateway interface not defined: use first available
         if self._gw_iface_entry is None:
             self._gw_iface_entry = self._profile_entry.system_ifaces_rel[0]
-
-        # TODO: this is very ugly, but it is the only way to create
-        # the parameters necessary for the creation of the PlatLpar.
-        self._parsed_gw_iface = (
-            SmBase._parse_iface(self._gw_iface_entry, True))
     # setUp()
 
     def _create_plat_lpar(self):
@@ -97,7 +91,7 @@ class TestPlatLpar(TestCase):
         return plat_lpar.PlatLpar(self._hyper_profile_entry,
                                   self._profile_entry,
                                   self._os_entry, self._repo_entry,
-                                  self._parsed_gw_iface)
+                                  self._gw_iface_entry)
     # _create_plat_base()
 
     def test_boot_dasd_osa(self):
@@ -144,7 +138,7 @@ class TestPlatLpar(TestCase):
 
         plat_obj = plat_lpar.PlatLpar(
             cpc_prof_obj, lpar_prof_obj, self._os_entry, self._repo_entry,
-            self._parsed_gw_iface)
+            self._gw_iface_entry)
 
         plat_obj.boot("some kargs")
 
@@ -192,8 +186,6 @@ class TestPlatLpar(TestCase):
         # gateway interface not defined: use first available
         if self._gw_iface_entry is None:
             self._gw_iface_entry = self._profile_entry.system_ifaces_rel[0]
-        self._parsed_gw_iface = (
-            SmBase._parse_iface(self._gw_iface_entry, True))
 
         # test also live image on scsi disk
         assoc_model = models.StorageVolumeProfileAssociation

@@ -23,7 +23,7 @@ from copy import deepcopy
 from datetime import datetime
 from functools import cmp_to_key
 from tessia.baselib.common.ssh.client import SshClient
-from socket import inet_ntoa, gethostbyname
+from socket import gethostbyname
 from tessia.server.config import Config
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import Repository, System, SystemProfile
@@ -79,15 +79,7 @@ class SmBase(metaclass=abc.ABCMeta):
         self._system = profile_entry.system_rel
         self._logger = logging.getLogger(__name__)
 
-        gw_iface = self._profile.gateway_rel
-        # gateway interface not defined: use first available
-        if gw_iface is None:
-            try:
-                gw_iface = self._profile.system_ifaces_rel[0]
-            except IndexError:
-                msg = 'No network interface attached to perform installation'
-                raise RuntimeError(msg)
-        self._gw_iface = self._parse_iface(gw_iface, True)
+        self._gw_iface = self._get_gw_iface()
 
         # prepare the list of repositories
         self._repos = self._get_repos(custom_repos)
@@ -141,6 +133,21 @@ class SmBase(metaclass=abc.ABCMeta):
         # set during collect_info state
         self._info = None
     # __init__()
+
+    def _get_gw_iface(self):
+        """
+        Return the gateway interface object assigned to this installation
+        """
+        gw_iface = self._profile.gateway_rel
+        # gateway interface not defined: use first available
+        if gw_iface is None:
+            try:
+                gw_iface = self._profile.system_ifaces_rel[0]
+            except IndexError:
+                msg = 'No network interface attached to perform installation'
+                raise RuntimeError(msg)
+        return gw_iface
+    # _get_gw_iface()
 
     def _get_repos(self, custom_repos):
         """
@@ -202,7 +209,7 @@ class SmBase(metaclass=abc.ABCMeta):
             # list
             else:
                 repos.append(repo_obj)
-        # no install repo defined by user: find one automatically
+        # no install repo defined by user: try to find one automatically
         if not install_repo:
             # no install repos available for this os: abort, can't install
             if not self._os.repository_rel:
@@ -226,7 +233,7 @@ class SmBase(metaclass=abc.ABCMeta):
                         strict=True)
                     # ip assigned to iface is in same subnet as repo's
                     # hostname: use this repo as install media
-                    if address_pyobj in subnet_pyobj.hosts():
+                    if address_pyobj in subnet_pyobj:
                         install_repo = repo_obj
                         break
                 if install_repo:
@@ -270,8 +277,7 @@ class SmBase(metaclass=abc.ABCMeta):
             "Timeout occurred while trying to connect to the target system.")
     # _get_ssh_conn()
 
-    @staticmethod
-    def _parse_iface(iface, gateway_iface):
+    def _parse_iface(self, iface, gateway_iface):
         """
         Auxiliary method to parse the information of a network interface
 
@@ -292,24 +298,43 @@ class SmBase(metaclass=abc.ABCMeta):
             result["subnet"] = None
             result["mask_bits"] = None
             result["mask"] = None
+            result["vlan"] = None
         else:
+            subnet_pyobj = ipaddress.ip_network(
+                iface.ip_address_rel.subnet_rel.address, strict=True)
             result["ip"] = iface.ip_address_rel.address
-            cidr_addr = iface.ip_address_rel.subnet_rel.address
-            result["subnet"], result["mask_bits"] = cidr_addr.split("/")
-            # We need to convert the network mask from the cidr prefix format
-            # to an ip mask format.
-            result["mask"] = inet_ntoa(
-                ((0xffffffff << (32 - int(result["mask_bits"])))
-                 & 0xffffffff).to_bytes(4, byteorder="big")
-            )
+            result["ip_type"] = (
+                "ipv6" if isinstance(subnet_pyobj, ipaddress.IPv6Network)
+                else "ipv4")
+            result["subnet"] = str(subnet_pyobj.network_address)
+            result["mask"] = str(subnet_pyobj.netmask)
+            result["mask_bits"] = str(subnet_pyobj.prefixlen)
             result["search_list"] = iface.ip_address_rel.subnet_rel.search_list
+            result["vlan"] = iface.ip_address_rel.subnet_rel.vlan
+            result["dns_1"] = iface.ip_address_rel.subnet_rel.dns_1
+            result["dns_2"] = iface.ip_address_rel.subnet_rel.dns_2
+
+        # determine whether device name must be truncated due to kernel limit
         result["osname"] = iface.osname
+        if result["vlan"]:
+            osname_maxlen = 15 - (len(str(result["vlan"])) + 1)
+            trunc_name = '{}.{}'.format(
+                result["osname"][:osname_maxlen], result["vlan"])
+        else:
+            osname_maxlen = 15
+            trunc_name = result["osname"][:osname_maxlen]
+        if len(result["osname"]) > osname_maxlen:
+            result["osname"] = result["osname"][:osname_maxlen]
+            self._logger.warning(
+                "Truncating device name of network interface '%s' from '%s' "
+                "to '%s' to fit the 15 characters limit of the Linux kernel. "
+                "Consider setting a device name for the interface within that "
+                "limit.", iface.name, iface.osname, trunc_name)
+
         result["is_gateway"] = gateway_iface
         if gateway_iface:
             # gateway interface was checked in parse for ip address existence
             result["gateway"] = iface.ip_address_rel.subnet_rel.gateway
-            result["dns_1"] = iface.ip_address_rel.subnet_rel.dns_1
-            result["dns_2"] = iface.ip_address_rel.subnet_rel.dns_2
 
         # osa: add some sensitive defaults
         if result['type'] == 'OSA':
@@ -450,7 +475,6 @@ class SmBase(metaclass=abc.ABCMeta):
                 crypt.crypt(self._profile.credentials["admin-password"])),
             'hostname': self._system.hostname,
             'autofile': self._autofile_url,
-            'gw_iface': self._gw_iface,
             'operating_system': {
                 'major': self._os.major,
                 'minor': self._os.minor,
@@ -499,7 +523,9 @@ class SmBase(metaclass=abc.ABCMeta):
 
         for iface in self._profile.system_ifaces_rel:
             info['ifaces'].append(self._parse_iface(
-                iface, iface.osname == self._gw_iface['osname']))
+                iface, iface == self._gw_iface))
+            if info['ifaces'][-1]['is_gateway']:
+                info['gw_iface'] = info['ifaces'][-1]
 
         self._info = info
     # collect_info()

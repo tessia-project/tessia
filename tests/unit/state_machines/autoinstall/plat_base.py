@@ -22,7 +22,6 @@ Module for the TestPlatBase class.
 
 from tessia.server.db.connection import MANAGER
 from tessia.server.state_machines.autoinstall import plat_base
-from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tests.unit.state_machines.autoinstall import utils
 from unittest import TestCase
 from unittest.mock import patch, Mock
@@ -99,11 +98,6 @@ class TestPlatBase(TestCase):
         # gateway interface not defined: use first available
         if self._gw_iface_entry is None:
             self._gw_iface_entry = self._profile_entry.system_ifaces_rel[0]
-
-        # TODO: this is very ugly, but it is the only way to create
-        # the parameters necessary for the creation of the PlatBase.
-        self._parsed_gw_iface = (
-            SmBase._parse_iface(self._gw_iface_entry, True))
     # setUp()
 
     def _create_plat_base(self):
@@ -113,7 +107,7 @@ class TestPlatBase(TestCase):
         """
         return self._child_cls(self._hyper_profile_entry, self._profile_entry,
                                self._os_entry, self._repo_entry,
-                               self._parsed_gw_iface)
+                               self._gw_iface_entry)
     # _create_plat_base()
 
     def test_init(self):

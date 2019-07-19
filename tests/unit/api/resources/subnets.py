@@ -193,7 +193,7 @@ class TestSubnet(TestSecureResource):
                 '200.255.256.1',
                 error_re.format('dns_2', '200.255.256.1'),
             ),
-            ('vlan', -5),
+            ('vlan', 5000),
             ('desc', False),
             ('project', 5),
             ('owner', False),
@@ -339,7 +339,7 @@ class TestSubnet(TestSecureResource):
         """
         # a netzone has to be created first so that association works
         net_zone = models.NetZone(
-            name='some_zone_for_filter',
+            name='some_zone_for_list_filtered',
             owner='user_hw_admin@domain.com',
             modifier='user_hw_admin@domain.com',
             project=self._db_entries['Project'][0]['name'],
@@ -351,13 +351,13 @@ class TestSubnet(TestSecureResource):
         filter_values = {
             'owner': 'user_user@domain.com',
             'project': self._db_entries['Project'][1]['name'],
-            'name': 'some_name_for_filter',
-            'desc': 'some_desc_for_filter',
+            'name': 'some_name_for_list_filtered',
+            'desc': 'some_desc_for_list_filtered',
             'address': '10.0.0.0/22',
             'gateway': '10.0.0.1',
             'dns_1': '10.0.0.2',
             'dns_2': '10.0.0.3',
-            'vlan': 5000,
+            'vlan': 4000,
             'zone': net_zone.name
         }
         self._test_list_filtered('user_hw_admin@domain.com', filter_values)
@@ -381,7 +381,7 @@ class TestSubnet(TestSecureResource):
         """
         # a type has to be created first so that association works
         net_zone = models.NetZone(
-            name='some_zone_for_filter',
+            name='some_zone_for_update_valid_fields',
             owner='user_hw_admin@domain.com',
             modifier='user_hw_admin@domain.com',
             project=self._db_entries['Project'][0]['name'],
@@ -398,7 +398,7 @@ class TestSubnet(TestSecureResource):
             'gateway': '10.0.0.1',
             'dns_1': '10.0.0.2',
             'dns_2': '10.0.0.3',
-            'vlan': 5000,
+            'vlan': 4000,
             'zone': net_zone.name
         }
 

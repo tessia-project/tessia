@@ -385,6 +385,9 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
       <pattern>kvm_server</pattern>
       <pattern>kvm_tools</pattern>
     </patterns>
+    <products config:type="list">
+      <product>SLES</product>
+    </products>
   </software>
   <users config:type="list">
     <user>

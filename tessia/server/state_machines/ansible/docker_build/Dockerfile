@@ -16,6 +16,8 @@ RUN apt-get -q update > /dev/null && \
     build-essential libssl-dev libffi-dev python3-dev \
     # so that rsync module in ansible works
     rsync \
+    # and ssh login with password
+    sshpass openssh-client \
     # clone repositories
     git > /dev/null && \
     # clean the cache to free up space

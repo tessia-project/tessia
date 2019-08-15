@@ -24,4 +24,4 @@ ansible>=2.5.0
 requests>=2.13.0
 docker>=3.5.0
 # tessia-baselib and its dependencies
-git+https://gitlab.com/tessia-project/tessia-baselib.git@0.3.3#egg=tessia-baselib
+git+https://gitlab.com/tessia-project/tessia-baselib.git@0.3.4#egg=tessia-baselib

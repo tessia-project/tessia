@@ -197,7 +197,7 @@ ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
 
 On your local machine export a DOCKER_HOST environment variable:
 ```
-echo export DOCKER_HOST=tcp://dockerhost:2375 >> .bashrc
+echo export DOCKER_HOST=tcp://dockerhost:2375 >> ~/.bashrc
 ```
 
 *Note*: this opens an unsecured docker service. To achieve additional protection with client/server certificates please follow [Docker documentation](https://docs.docker.com/engine/security/https/).

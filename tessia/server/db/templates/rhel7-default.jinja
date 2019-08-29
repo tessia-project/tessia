@@ -64,7 +64,7 @@ clearpart --initlabel --all --drives={{list_devs_with_ptable(config["svols"])}}
 {% for volume in config["svols"] %}
 {% if volume["is_root"] %}
 # System bootloader configuration
-bootloader --append=" zfcp.allow_lun_scan=0" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
+bootloader --append=" " --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
 {% endif %}
 # Disk partitioning information
 {% for entry in volume["part_table"]["table"] %}
@@ -108,7 +108,7 @@ sed -i s/IPV6_AUTOCONF=.*/IPV6_AUTOCONF=no/ /etc/sysconfig/network-scripts/ifcfg
   {% if iface["search_list"] -%}
 echo 'DOMAIN="{{iface["search_list"]}}"' >> /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
   {% endif -%}
-{% endfor -%}
+{% endfor %}
 %end
 
 {% if config["system_type"] != "KVM" -%}
@@ -128,7 +128,7 @@ grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{ volume['volume_id'] }}/status 
     {% elif volume['type'] == 'HPAV' -%}
 cio_ignore -r {{ volume['volume_id'] }}; chccwdev -e {{ volume['volume_id'] }}
     {% endif -%}
-  {% endfor -%}
+  {% endfor %}
 %end
 {% endif -%}
 

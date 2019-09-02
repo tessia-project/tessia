@@ -53,7 +53,7 @@ Except Ubuntu16.04.1 which won't boot its installer's initrd on z/VM, the suppor
 | multipath off (FCP only)          | Y    | Y    | Y      | Y      |
 | network interface MACVTAP         | Y    | Y    | Y      | Y      |
 
-[*] - Except SLES15 due to an AutoYaST bug
+[*] - Except SLES15.0 due to an AutoYaST bug
 
 # Partitioning on LPAR
 

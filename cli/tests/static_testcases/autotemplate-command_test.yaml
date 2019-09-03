@@ -62,6 +62,8 @@ tasks:
         - ' *rhel7-default *\|'
     - - autotemplate list --name=rhel7-default --long
       - 'Template name : rhel7-default'
+    - - autotemplate list --my
+      - No results were found.
     - - autotemplate list --owner=admin
       - - ' *Template name *\| *Owner *\| *Project *\| *Description'
         - ' *sles12-default *\| *admin *\|'

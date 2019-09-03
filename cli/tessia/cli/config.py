@@ -84,6 +84,9 @@ class Config():
     # authentication key
     _auth_key = None
 
+    # login username
+    _login = None
+
     # modules should not instantiate the class since configuration content
     # is the same for everyone and we want a single access point to
     # configuration parameters.
@@ -312,7 +315,7 @@ class Config():
 
         try:
             key_fd = open_private_file(cls.KEY_PATH, 'r')
-            key_id, key_secret = key_fd.read().strip().split(':')
+            login, key_id, key_secret = key_fd.read().strip().split(':')
             key_fd.close()
         except FileNotFoundError:
             return None
@@ -324,8 +327,31 @@ class Config():
             raise ValueError('Authentication key is corrupted')
 
         cls._auth_key = (key_id, key_secret)
+        cls._login = login
         return cls._auth_key
     # get_key()
+
+    @classmethod
+    def get_login(cls):
+        """
+        Return the login username
+
+        Args:
+            None
+
+        Returns:
+            str: login
+            None: if no token file exists
+
+        Raises:
+            IOError: in case token file is not accessible
+            OSError: see IOError
+            ValueError: in case key is not in expected format
+        """
+        if not cls._login:
+            get_key();
+        return cls._login
+    # get_login()
 
     @classmethod
     def log_config(cls):
@@ -389,11 +415,12 @@ class Config():
     # update_config()
 
     @classmethod
-    def update_key(cls, key_id, key_secret):
+    def update_key(cls, login, key_id, key_secret):
         """
         store a new user authentication key
 
         Args:
+            login (str): user login
             key_id (str): key id
             key_secret (str): key secret
 
@@ -407,7 +434,7 @@ class Config():
         """
         try:
             key_fd = open_private_file(cls.KEY_PATH, 'w')
-            key_fd.write('{}:{}'.format(key_id, key_secret))
+            key_fd.write('{}:{}:{}'.format(login, key_id, key_secret))
             key_fd.close()
         except IOError as exc:
             msg = 'Failed to access authentication key file: {}'.format(

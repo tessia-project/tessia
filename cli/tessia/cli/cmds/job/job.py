@@ -20,6 +20,7 @@ Module for the job (scheduler jobs) command
 # IMPORTS
 #
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
@@ -215,6 +216,8 @@ def submit(ctx, job_type, parmfile, **kwargs):
     name='list',
     short_help='show the queue of jobs or details of a job')
 @click.option('job_id', '--id', type=int, help="show details of a job id")
+@click.option('--my', help="show only my own jobs", is_flag=True,
+              default=False)
 @click.option('--params', is_flag=True, help="show the job parameters")
 @click.option('job_type', '--type', type=JOB_TYPE,
               help='filter by execution machine type')
@@ -229,6 +232,10 @@ def list_(job_id, params, **kwargs):
             'for --params a job id must be specified')
 
     client = Client()
+
+    only_mine = kwargs.pop('my')
+    if only_mine:
+        kwargs.update({'requester': CONF.get_login()})
 
     # id specified: print specific information
     if job_id is not None:

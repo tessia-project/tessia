@@ -20,6 +20,7 @@ Module for the server (storage servers) command
 # IMPORTS
 #
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
@@ -118,6 +119,8 @@ def server_edit(cur_name, **kwargs):
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
 @click.option('--model', type=CONSTANT, help="filter by specified model")
+@click.option('--my', help="show only my own servers", is_flag=True,
+              default=False)
 @click.option('--name', type=NAME, help="filter by specified name")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
@@ -130,6 +133,9 @@ def server_list(**kwargs):
     client = Client()
 
     long_info = kwargs.pop('long_info')
+    only_mine = kwargs.pop('my')
+    if only_mine:
+        kwargs.update({'owner': CONF.get_login()})
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     parsed_filter['sort'] = {'name': False}

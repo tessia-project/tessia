@@ -20,6 +20,7 @@ Module for package repositories commands
 # IMPORTS
 #
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
@@ -126,6 +127,8 @@ def edit(cur_name, **kwargs):
 @click.option('--kernel', help="filter by kernel path")
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
+@click.option('--my', help="show only my own repos", is_flag=True,
+              default=False)
 @click.option('--name', type=NAME, help="filter by repository name")
 @click.option('operating_system', '--os', help="filter by operating system")
 @click.option('--owner', help="filter by owner")
@@ -138,6 +141,9 @@ def list_(**kwargs):
     client = Client()
 
     long_info = kwargs.pop('long_info')
+    only_mine = kwargs.pop('my')
+    if only_mine:
+        kwargs.update({'owner': CONF.get_login()})
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     parsed_filter['sort'] = {'name': False}

@@ -234,6 +234,9 @@ tasks:
     - - job list --type=echo
       - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
         - '\| echo *\|'
+    - - job list --my
+      - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
+        - '\| dev1@example.com \|'
     - - job list --owner
       - '--owner option requires an argument'
     - - job list --owner=dev1@example.com

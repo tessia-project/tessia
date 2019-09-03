@@ -103,6 +103,8 @@ tasks:
         - ' *GEO_2 *\|'
     - - net zone-list --name=GEO_2 --long
       - 'Zone name *: GEO_2'
+    - - net zone-list --my
+      - ' *Zone name *\| *Owner *\| *Project *\| *Description'
     - - net zone-list --owner=dev1@example.com
       - - ' *Zone name *\| *Owner *\| *Project *\| *Description'
         - ' *GEO_3 *\|'
@@ -192,6 +194,8 @@ tasks:
       - 'Subnet name *: GEO_1-NE-1823'
     - - net subnet-list --zone=GEO_1-NE --name='GEO_1-NE-1822' --long
       - 'VLAN *: *\n'
+    - - net subnet-list --zone=GEO_1-NE --my
+      - ' *Subnet name *\| *Network zone *\| *Network address *\| *Gateway *\| *DNS server 1 *\| *VLAN *\| *Owner *\| *Project *\| *Description'
     - - net subnet-list --zone=GEO_1-NE --owner=dev1@example.com
       - - ' *Subnet name *\| *Network zone *\| *Network address *\| *Gateway *\| *DNS server 1 *\| *VLAN *\| *Owner *\| *Project *\| *Description'
         - ' *GEO_1-NE-1823 *\|'
@@ -280,6 +284,8 @@ tasks:
       - 'IP address *: 192.168.161.222'
     - - net ip-list --ip=192.168.161.223
       - No results were found.
+    - - net ip-list --my
+      - ' *IP address *\| *Part of subnet *\| *Assigned to system *\| *Owner *\| *Project *\| *Description'
     - - net ip-list --system=
       - 'Invalid value for "--system": value may not be empty'
     - - net ip-list --subnet='GEO_1-NE-1822' --project='GEO_1 developers'

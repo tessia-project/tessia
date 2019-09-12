@@ -285,6 +285,10 @@ d-i tasksel/first multiselect standard system utilities, OpenSSH server, Basic U
 # needed for ansible
 d-i pkgsel/include string python
 
+# automatically restart ssh service in case of libssl upgrade
+d-i libraries/restart-without-asking true
+d-i libssl1.1/restart-services ssh
+
 # tasksel tasksel/first multiselect standard
   # d-i finish-install/reboot_in_progress note
 # d-i debian-installer/exit/poweroff boolean true
@@ -327,3 +331,4 @@ d-i preseed/late_command string \
     chroot /target ln -s /usr/bin/qemu-system-s390x /usr/bin/qemu-kvm && \
     chroot /target usermod -a -G kvm root && \
     echo "/usr/bin/qemu-kvm rmix" >> /target/etc/apparmor.d/local/usr.sbin.libvirtd
+

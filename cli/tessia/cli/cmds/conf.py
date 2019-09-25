@@ -19,8 +19,8 @@ Module for the conf command
 #
 # IMPORTS
 #
-from tessia.cli.config import CONF
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.output import print_items
 from tessia.cli.output import print_hor_table
 from tessia.cli.output import PrintMode
@@ -80,7 +80,7 @@ def key_gen(login, password, desc):
             'authentication failed. Make sure your login and password '
             'are correct.')
 
-    CONF.update_key(key_id, key_secret)
+    CONF.update_key(login, key_id, key_secret)
     click.echo('Key successfully created and added to client configuration.')
 # key_gen()
 

@@ -20,6 +20,7 @@ Module for the ip (ip addresses) command
 # IMPORTS
 #
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.cmds.job.job import cancel as job_cancel
 from tessia.cli.cmds.job.job import output as job_output
 from tessia.cli.filters import dict_to_filter
@@ -164,6 +165,8 @@ def ip_import(ctx, **kwargs):
               help='filter by ip address')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
+@click.option('--my', help="show only my own ips", is_flag=True,
+              default=False)
 @click.option('--system', type=NAME, help="list ips assigned to this system")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
@@ -176,6 +179,10 @@ def ip_list(**kwargs):
     client = Client()
 
     long_info = kwargs.pop('long_info')
+    only_mine = kwargs.pop('my')
+    if only_mine:
+        kwargs.update({'owner': CONF.get_login()})
+
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     parsed_filter['sort'] = {'address': False}

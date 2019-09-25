@@ -20,6 +20,7 @@ Module for the subnet command
 # IMPORTS
 #
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
@@ -138,6 +139,8 @@ def subnet_edit(zone, cur_name, **kwargs):
 @click.option('--address', help="filter by specified address")
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
+@click.option('--my', help="show only my own subnets", is_flag=True,
+              default=False)
 @click.option('--name', type=SUBNET,
               help='filter by subnet name')
 @click.option('--owner', help="filter by specified owner login")
@@ -159,6 +162,9 @@ def subnet_list(**kwargs):
     client = Client()
 
     long_info = kwargs.pop('long_info')
+    only_mine = kwargs.pop('my')
+    if only_mine:
+        kwargs.update({'owner': CONF.get_login()})
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     entries = client.Subnets.instances(**parsed_filter)

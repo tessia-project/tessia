@@ -20,6 +20,7 @@ Module for the system commands
 # IMPORTS
 #
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.cmds.job.job import cancel as job_cancel
 from tessia.cli.cmds.job.job import output as job_output
 from tessia.cli.cmds.storage.vol import vol_list
@@ -248,6 +249,8 @@ def info(ctx, **kwargs):
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
 @click.option('--model', type=CONSTANT, help="filter by specified model")
+@click.option('--my', help="show only my own systems", is_flag=True,
+              default=False)
 @click.option('--type', type=CONSTANT, help="filter by specified type")
 @click.option('--state', type=CONSTANT, help="filter by specified state")
 @click.option('--owner', help="filter by specified owner login")
@@ -260,6 +263,9 @@ def list_(**kwargs):
     client = Client()
 
     long_info = kwargs.pop('long_info')
+    only_mine = kwargs.pop('my')
+    if only_mine:
+        kwargs.update({'owner': CONF.get_login()})
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     parsed_filter['sort'] = {'name': False}

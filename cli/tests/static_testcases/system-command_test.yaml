@@ -259,6 +259,9 @@ tasks:
         - ' *cpc4 *\|'
     - - system list --state=LOCKED --long
       - 'Name            : cpc4'
+    - - system list --my
+      - - ' *Name *\| *Hostname *\| *Type *\| *Model *\| *Current state *\| *Owner *\| *Project'
+        - ' *\|'
     - - system list --owner=
       - No results were found.
       # There is a system with an empty name, created before

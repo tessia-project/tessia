@@ -117,6 +117,9 @@ tasks:
       - 'Repository name : SLES12.1-GA'
     - - repo list --initrd='/boot/xxx/initrd'
       - No results were found.
+    - - repo list --my
+      - - ' *Repository name *\| *Installable OS *\| *Network URL *\| *Kernel path *\| *Initrd path *\| *Owner *\| *Project'
+        - ' *SLES12.2 *\|'
     - - repo list --owner=lab_admin@example.com
       - - ' *Repository name *\| *Installable OS *\| *Network URL *\| *Kernel path *\| *Initrd path *\| *Owner *\| *Project'
         - ' *SLES12.2 *\|'

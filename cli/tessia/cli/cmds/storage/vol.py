@@ -21,6 +21,7 @@ Module for the vol (storage volumes) commands
 #
 from collections import namedtuple
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.cmds.job.job import cancel as job_cancel
 from tessia.cli.cmds.job.job import output as job_output
 from tessia.cli.filters import dict_to_filter
@@ -589,6 +590,8 @@ def vol_import(ctx, **kwargs):
 @click.command(name='vol-list')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
+@click.option('--my', help="show only my own volumes", is_flag=True,
+              default=False)
 @click.option('--server', type=NAME, help='filter by storage server')
 @click.option('volume_id', '--id', type=VOLUME_ID, help='filter by volume id')
 @click.option('--owner', help="filter by specified owner login")
@@ -605,6 +608,9 @@ def vol_list(**kwargs):
     client = Client()
 
     long_info = kwargs.pop('long_info')
+    only_mine = kwargs.pop('my')
+    if only_mine:
+        kwargs.update({'owner': CONF.get_login()})
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
     parsed_filter['sort'] = {'volume_id': False}

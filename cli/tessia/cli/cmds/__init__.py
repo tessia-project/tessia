@@ -200,7 +200,13 @@ def root(ctx=None):
         # compatible execution will stop here
         version_verify(logger, resp)
 
-    auth_key = CONF.get_key()
+    try:
+        auth_key = CONF.get_key()
+    except ValueError as exc:
+        click.echo(
+            'The client encountered an problem, '
+            'the error is: {}'.format(str(exc)), err=True)
+        auth_key = None
     # authorization key is missing and command is not to create one: force new
     # key generation
     if auth_key is None and not (

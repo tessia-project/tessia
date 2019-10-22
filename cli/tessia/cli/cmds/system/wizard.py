@@ -843,7 +843,8 @@ def _create_iface(client, ctx, sys_item, prof_item):
         # kvm macvtap: need to choose a host interface
         if params['type'].lower() == 'macvtap':
             hyp_ifaces = client.SystemIfaces.instances(
-                where={'system': sys_item.hypervisor})
+                where={'system': sys_item.hypervisor},
+                sort={'name': False})
             host_iface_item = None
             while not host_iface_item:
                 host_iface_item = _choice_menu(

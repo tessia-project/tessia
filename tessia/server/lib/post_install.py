@@ -156,7 +156,7 @@ class PostInstallChecker:
             # we use the default 'minimal' stdout callback for stable output
             # parsing
             cmd = ['ansible', '-i', file_fd.name, self._hostname, '-m', module,
-                   '--ssh-extra-args', '-oUserKnownHostsFile=/dev/null']
+                   '--ssh-extra-args', '"-oUserKnownHostsFile=/dev/null"']
             if args:
                 cmd.extend(['-a', args])
             try:

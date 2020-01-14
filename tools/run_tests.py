@@ -73,7 +73,7 @@ def main():
         subcmd_unittest = SUBCMD_UNITTEST_DISCOVER.format('tests/unit')
         cmds.append(CMD_COVERAGE.format(
             import_method='source',
-            source_path='tessia.server',
+            source_path='tessia/server',
             subcmd=subcmd_unittest
         ))
 

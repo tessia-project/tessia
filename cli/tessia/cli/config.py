@@ -253,11 +253,11 @@ class Config():
         Raises:
             None
         """
-        ca_file = '/etc/tessia-cli/ca.crt'
+        ca_file = '{}/ca.crt'.format(os.path.dirname(cls.USER_CONF_PATH))
         if os.path.exists(ca_file):
             return ca_file
 
-        ca_file = '{}/ca.crt'.format(os.path.dirname(cls.USER_CONF_PATH))
+        ca_file = '/etc/tessia-cli/ca.crt'
         if os.path.exists(ca_file):
             return ca_file
 

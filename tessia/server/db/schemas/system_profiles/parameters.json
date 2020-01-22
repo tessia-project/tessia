@@ -1,12 +1,40 @@
 {
-    "title": "System profile specialized information for CPCs",
-    "type": "object",
-    "properties": {
-        "liveimg-insfile-url": {
-            "description": "URL of live image insfile for partition installations (DPM only)",
-            "format": "uri",
-            "type": "string"
+    "definitions": {
+        "cpc": {
+                "title": "System profile specialized information for CPCs",
+                "type": "object",
+                "properties": {
+                    "liveimg-insfile-url": {
+                        "description": "URL of live image insfile for partition installations (DPM only)",
+                        "format": "uri",
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
+        },
+        "other": {
+                "title": "Additional parameters for system activation or installation",
+                "type": "object",
+                "properties": {
+                    "linux-kargs-target": {
+                        "description": "Custom kernel command line arguments for the deployed (installed) system",
+                        "type": "string"
+                    },
+                    "linux-kargs-installer": {
+                        "description": "Custom kernel command line arguments to use in the Linux installer during installation time",
+                        "type": "string"
+                    }
+                },
+                "additionalProperties": false
         }
     },
-    "additionalProperties": false
+    "oneOf": [
+        {
+            "$ref": "#/definitions/cpc"
+        },
+        {
+            "$ref": "#/definitions/other"
+        }
+    ],
+    "type": "object"
 }

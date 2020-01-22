@@ -109,6 +109,9 @@ class SchemaMixin(object):
                     cls._cache[field_name] = json.loads(file_fd.read())
             except FileNotFoundError:
                 cls._cache[field_name] = None
+            # the id property is required to resolve '$ref' entries in the
+            # json schema
+            cls._cache[field_name]['id'] = "file://{}".format(file_path)
 
         return cls._cache[field_name]
     # get_schema()

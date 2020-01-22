@@ -869,13 +869,15 @@ tasks:
       # The next default profile changes the status of the existing default profile to 'not default'
     - - system prof-add --system=cpc3lp52 --name='DASD10' --default --cpu=4 --memory=1024mib --login='root:mypasswd'
       - Item added successfully.
-    - - system prof-add --system=cpc3lp52 --name='DASD11' --default --memory=2gib --login='root:mypasswd'
+    - - system prof-add --system=cpc3lp52 --name='DASD11' --default --memory=2gib --login='root:mypasswd' --kargs-target='selinux=0 nosmt=true' --kargs-installer='novnc zfcp.allow_lun_scan=1'
       - Item added successfully.
     - - system prof-list --system=cpc3lp52
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD *\|'
     - - system prof-list --system=cpc3lp52 --long
-      - 'Profile name                : DASD'
+      - - 'Profile name                : DASD'
+        - "Parameters *: .*'linux-kargs-target': 'selinux=0 nosmt=true'"
+        - "Parameters *: .*'linux-kargs-installer': 'novnc zfcp.allow_lun_scan=1'"
     - - system prof-list --system=cpc3lp52 --memory=12
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=AAAmb
@@ -908,6 +910,8 @@ tasks:
       - 'Invalid value for "--memory": 0.5mib is not a valid size'
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='default cpc3' --zvm-pass=vmpassword
       - zVM credentials should be provided for zVM guests only
+    - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --liveimg=ftp://user:pass@ftpserver.example._com/dir/image.ins
+      - A live image URL can only be provided for CPCs
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='default cpc3'
       - Item added successfully.
     # 'system prof-list' subcommand
@@ -1134,8 +1138,25 @@ tasks:
       - Network interface attached successfully.
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa3'
       - "request failed. Server answered: No associated item found with value 'default osa3' for field 'Gateway interface'"
-    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa2'
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --liveimg=ftp://user:pass@ftpserver.example._com/dir/image.ins
+      - A live image URL can only be provided for CPCs
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa2' --kargs-target='selinux=0 nosmt=true'
       - Item successfully updated.
+    - - system prof-list --system=cpc3lp52 --name=DASD4 --long
+      - "Parameters *: {'linux-kargs-target': 'selinux=0 nosmt=true'} *\n"
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --kargs-installer='novnc zfcp.allow_lun_scan=1'
+      - Item successfully updated.
+    - - system prof-list --system=cpc3lp52 --name=DASD4 --long
+      - - "Parameters *: .*'linux-kargs-target': 'selinux=0 nosmt=true'"
+        - "Parameters *: .*'linux-kargs-installer': 'novnc zfcp.allow_lun_scan=1'"
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --kargs-target=''
+      - Item successfully updated.
+    - - system prof-list --system=cpc3lp52 --name=DASD4 --long
+      - "Parameters *: {'linux-kargs-installer': 'novnc zfcp.allow_lun_scan=1'} *\n"
+    - - system prof-edit --system=cpc3lp52 --name=DASD4 --kargs-installer=''
+      - Item successfully updated.
+    - - system prof-list --system=cpc3lp52 --name=DASD4 --long
+      - "Parameters *: *\n"
     # 'system iface-detach' subcommand
     - - system iface-detach
       - Missing option "--system".

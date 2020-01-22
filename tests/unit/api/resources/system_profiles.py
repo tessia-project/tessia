@@ -61,7 +61,7 @@ class TestSystemProfile(TestSecureResource):
                 'memory': 1024,
                 'cpu': 2,
                 'default': False,
-                'parameters': {},
+                'parameters': None,
                 'credentials': {
                     'admin-user': 'root', 'admin-password': 'mypasswd'},
                 'operating_system': 'rhel7.2'
@@ -531,24 +531,40 @@ class TestSystemProfile(TestSecureResource):
         system_id = system_obj.id
         system_name = system_obj.name
 
-        test_params = {
+        test_liveimg = {
             'liveimg-insfile-url': 'ftp://user:pass@server._com/dir/image.ins'
         }
+        test_kargs = {'linux-kargs-target': 'nosmt=true selinux=0 ro'}
 
-        # create profile with liveimg url for CPC
+        # create profile for CPC
         data = next(self._get_next_entry)
         data['system'] = system_name
-        data['parameters'] = test_params
-
-        # first profile will be set as default
-        data['default'] = True
         user_cred = '{}:a'.format(user_login)
+
+        # try to create profile with custom kargs for CPC - fails
+        error_msg = 'Field "parameters" is not in valid format'
+        data['parameters'] = {'linux-kargs-target': 'selinux=0'}
+        resp = self._do_request('create', user_cred, data)
+        self._validate_resp(resp, error_msg, 400)
+
+        # create profile with liveimg url - works
+        test_liveimg = {
+            'liveimg-insfile-url': 'ftp://user:pass@server._com/dir/image.ins'
+        }
+        data['parameters'] = test_liveimg
+        data['default'] = True
         prof_id = self._request_and_assert('create', user_cred, data)
-        # remove url
-        update_data = {'id': prof_id, 'parameters': {}}
+        # remove liveimg url
+        update_data = {'id': prof_id, 'parameters': None}
         self._request_and_assert('update', user_cred, update_data)
-        # add again
-        update_data = {'id': prof_id, 'parameters': test_params}
+
+        # try to update with custom kargs - fails
+        update_data = {'id': prof_id, 'parameters': test_kargs}
+        resp = self._do_request('update', user_cred, update_data)
+        self._validate_resp(resp, error_msg, 400)
+
+        # add liveimg url again (update)
+        update_data = {'id': prof_id, 'parameters': test_liveimg}
         self._request_and_assert('update', user_cred, update_data)
 
         # clean up
@@ -556,20 +572,30 @@ class TestSystemProfile(TestSecureResource):
         models.System.query.filter_by(id=system_id).delete()
         self.db.session.commit()
 
-        # try to create profile with liveimg url for non CPC - fails
+        # create profile for non CPC
         data = next(self._get_next_entry)
-        data['parameters'] = test_params
+        data['parameters'] = test_liveimg
+        # try to create profile with liveimg url for non CPC - fails
         resp = self._do_request('create', user_cred, data)
-        msg = 'Profile parameters can be only specified for CPCs'
-        self._validate_resp(resp, msg, 422)
+        self._validate_resp(resp, error_msg, 400)
 
-        # try to update profile with liveimg url for non CPC - fails
-        data['parameters'] = {}
+        # create profile with kargs - works
+        data['parameters'] = test_kargs
+        data['default'] = True
         prof_id = self._request_and_assert('create', user_cred, data)
-        update_data = {'id': prof_id, 'parameters': test_params}
+        # remove kargs
+        update_data = {'id': prof_id, 'parameters': None}
+        self._request_and_assert('update', user_cred, update_data)
+
+        # try to update profile with liveimg url - fails
+        update_data = {'id': prof_id, 'parameters': test_liveimg}
         resp = self._do_request('update', user_cred, update_data)
-        msg = 'Profile parameters can be only specified for CPCs'
-        self._validate_resp(resp, msg, 422)
+        self._validate_resp(resp, error_msg, 400)
+
+        # add kargs again (update)
+        update_data = {'id': prof_id, 'parameters': test_kargs}
+        self._request_and_assert('update', user_cred, update_data)
+
     # test_add_update_parameters()
 
     def test_add_update_wrong_field(self):
@@ -595,6 +621,7 @@ class TestSystemProfile(TestSecureResource):
             ('parameters', 5),
             ('parameters', 'something'),
             ('parameters', True),
+            ('parameters', {}),
             ('credentials', 5),
             ('credentials', 'something_wrong'),
             ('credentials', {'wrong_key': 'something_wrong'}),

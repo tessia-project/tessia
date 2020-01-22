@@ -20,7 +20,8 @@ cpc3lp52.domain.com | SUCCESS => {
             "rd.dasd": "0.0.3957",
             "rd.znet": "qeth,0.0.f500,0.0.f501,0.0.f502,layer2=1,portno=0,portname=OSAPORT",
             "root": "/dev/disk/by-path/ccw-0.0.3956-part1",
-            "nosmt": true
+            "nosmt": true,
+            "selinux": "0"
         },
         "ansible_date_time": {
             "date": "2017-08-22",

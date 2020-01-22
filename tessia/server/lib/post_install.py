@@ -324,6 +324,9 @@ class PostInstallChecker:
         # DASD aliases - not provided by ansible
         params['dasd_aliases'] = self._fetch_alias()
 
+        # kernel cmdline string
+        params['ansible_cmdline_str'] = self._fetch_kernel_cmdline()
+
         self._facts = params
     # _fetch_facts()
 
@@ -387,6 +390,14 @@ class PostInstallChecker:
 
         return memory
     # _fetch_memory()
+
+    def _fetch_kernel_cmdline(self):
+        """
+        Extract the kernel cmdline string
+        """
+        file_content = self._exec_ansible('command', 'cat /proc/cmdline')
+        return file_content.strip()
+    # _fetch_kernel_cmdline()
 
     def _fetch_os(self):
         """
@@ -784,11 +795,14 @@ class PostInstallChecker:
                 params['storage'].append(self._parse_obj_svol(entry))
 
         # misc parameters
-        if not profile_obj.parameters:
-            params['kernel_version'] = None
-        else:
+        if profile_obj.parameters:
             params['kernel_version'] = profile_obj.parameters.get(
                 'kernel_version')
+            params['kernel_cmdline'] = profile_obj.parameters.get(
+                'linux-kargs-target')
+        else:
+            params['kernel_version'] = None
+            params['kernel_cmdline'] = None
 
         return params
     # _parse_obj_profile()
@@ -871,14 +885,17 @@ class PostInstallChecker:
         """
         Check the kernel running in a target instance.
         """
-        # TODO: kargs verification
+        expected_cmdline = self._expected_params['kernel_cmdline']
+        if expected_cmdline and (
+                expected_cmdline not in self._facts['ansible_cmdline_str']):
+            self._report('kernel cmdline', expected_cmdline,
+                         self._facts['ansible_cmdline_str'])
 
         expected_kernel = self._expected_params['kernel_version']
-        # no kernel specified: nothing to check
-        if not expected_kernel:
-            return
-        actual_kernel = self._facts['ansible_kernel']
-        self._pass_or_report('kernel version', expected_kernel, actual_kernel)
+        if expected_kernel:
+            actual_kernel = self._facts['ansible_kernel']
+            self._pass_or_report(
+                'kernel version', expected_kernel, actual_kernel)
     # _verify_kernel()
 
     def _verify_os(self):

@@ -330,5 +330,9 @@ d-i preseed/late_command string \
 {% endfor -%}
     echo 'sclp_line0' >> /target/etc/securetty ; \
     sed -i 's/^[# ]*PermitRootLogin .*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config ; \
+{% if config["profile_parameters"]["linux-kargs-target"] -%}
+    sed -i 's,parameters =\(.*\)$,parameters =\1 {{config["profile_parameters"]["linux-kargs-target"]}},g' /target/etc/zipl.conf ; \
+    in-target /sbin/zipl -V ; \
+{%- endif -%}
     {{configure_repos()}}
     rm -f /bin/nohup ; ln -s /target/usr/bin/nohup /bin/nohup; sync

@@ -353,7 +353,9 @@
             "memory": 4096,
             "name": "dasd1",
             "operating_system": "rhel7.2",
-            "parameters": null,
+            "parameters": {
+                "linux-kargs-target": "nosmt=true selinux=0"
+            },
             "system": "cpc3lp52"
         }
     ]

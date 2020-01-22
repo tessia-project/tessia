@@ -25,6 +25,8 @@ from flask_potion import fields
 from flask_potion.routes import Route
 from flask_potion.contrib.alchemy.fields import InlineModel
 from flask_potion.instances import Pagination
+from jsonschema import validate
+from jsonschema.exceptions import ValidationError
 from sqlalchemy.exc import IntegrityError
 from tessia.server.api.db import API_DB
 from tessia.server.api.exceptions import BaseHttpError
@@ -38,6 +40,8 @@ from tessia.server.db.models import SystemProfile
 from tessia.server.db.models import StorageVolume
 from tessia.server.db.models import StorageVolumeProfileAssociation
 from werkzeug.exceptions import Forbidden
+
+import logging
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -178,6 +182,18 @@ class SystemProfileResource(SecureResource):
 
     # section for storage volumes collection operations
 
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor, loads the necessary json schemas to validate the
+        'parameter' field.
+        """
+        super().__init__(*args, **kwargs)
+        self._logger = logging.getLogger(__name__)
+
+        self._param_schemas = (
+            SystemProfile.get_schema('parameters')['definitions'])
+    # __init__()
+
     def _fetch_and_assert_item(self, model, item_id, item_id_key,
                                item_desc, prof_id):
         """
@@ -278,8 +294,7 @@ class SystemProfileResource(SecureResource):
             raise BaseHttpError(422, msg=msg)
     # _verify_cred()
 
-    @staticmethod
-    def _verify_params(target_system, params_dict):
+    def _verify_params(self, target_system, params_dict):
         """
         Verifies the validity of the parameters dictionary.
 
@@ -288,12 +303,22 @@ class SystemProfileResource(SecureResource):
             params_dict (dict): dict in format defined by schema
 
         Raises:
-            BaseHttpError: if dict is not valid for system type
+            BaseHttpError: if dict is not in valid format
         """
-        # parameters specified for a non CPC system: invalid
-        if params_dict and target_system.type != 'CPC':
-            msg = 'Profile parameters can be only specified for CPCs'
-            raise BaseHttpError(422, msg=msg)
+        if not params_dict:
+            return
+        if target_system.type == 'CPC':
+            schema = self._param_schemas['cpc']
+        else:
+            schema = self._param_schemas['other']
+        try:
+            validate(params_dict, schema)
+        except ValidationError:
+            self._logger.debug(
+                "Schema validation for 'parameters' failed, info: ",
+                exc_info=True)
+            raise BaseHttpError(
+                400, msg='Field "parameters" is not in valid format')
     # _verify_params()
 
     def do_create(self, properties):

@@ -28,8 +28,8 @@ import sys
 try:
     import click
 except ImportError:
-    print('You need the click library installed to run this script',
-          stderr=True)
+    print('error: you need the click library installed to run this script',
+          file=sys.stderr)
     sys.exit(1)
 
 #

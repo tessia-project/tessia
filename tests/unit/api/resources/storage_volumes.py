@@ -23,6 +23,7 @@ from copy import deepcopy
 from tessia.server.api.resources.storage_volumes import \
     MSG_PTABLE_SIZE_MISMATCH
 from tessia.server.api.resources.storage_volumes import MSG_INVALID_TYPE
+from tessia.server.api.resources.storage_volumes import MSG_INVALID_PTABLE
 from tessia.server.api.resources.storage_volumes import StorageVolumeResource
 from tessia.server.api.resources.storage_volumes import MSG_PTABLE_BAD_PLACE
 from tessia.server.api.resources.storage_volumes import MSG_PTABLE_MANY_PARTS
@@ -280,7 +281,7 @@ class TestStorageVolume(TestSecureResource):
              'msg': 'HPAV type cannot have specs'},
             {'field': 'size', 'value': 1,
              'msg': 'HPAV type must have size 0'},
-            {'field': 'part_table', 'value': {'type': 'dasd', 'table': []},
+            {'field': 'part_table', 'value': {'type': 'msdos', 'table': []},
              'msg': 'HPAV type cannot have partition table'},
             {'field': 'system_attributes', 'value': {'libvirt': 'xxxx'},
              'msg': 'HPAV type cannot have system_attributes'},
@@ -514,6 +515,9 @@ class TestStorageVolume(TestSecureResource):
         # prepare a new entry for creation
         data = next(self._get_next_entry)
         part_size = int(data['size'] / 4)
+        data['type'] = 'DASD'
+        data['volume_id'] = 'ffff'
+        data['specs'] = {}
         data['part_table'] = {
             'type': 'dasd',
             'table': [
@@ -560,6 +564,7 @@ class TestStorageVolume(TestSecureResource):
         update_fields = {
             'id': entry['id'],
             'part_table': entry['part_table'],
+            'type': 'DASD'
         }
         resp = self._do_request(
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
@@ -713,6 +718,44 @@ class TestStorageVolume(TestSecureResource):
             'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
         self._assert_failed_req(resp, 400, MSG_PTABLE_BAD_PLACE)
     # test_add_update_wrong_ptable_msdos_sparsed_logicals()
+
+    def test_update_wrong_parttable_for_volume(self):
+        """
+        Test the Scenario where you apply a DASD ptable to an FCP type Volume
+        """
+        # prepare some Data
+        data = next(self._get_next_entry)
+        data['part_table'] = {
+            'type': 'dasd',
+            'table': [
+                {
+                    'mp': '/',
+                    'size': int(data['size']),
+                    'fs':'ext4',
+                    'type':'primary',
+                    'mo': None
+                }
+            ],
+        }
+        #perform create request and check if it returns an exception
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+        self._assert_failed_req(resp, 400, MSG_INVALID_PTABLE)
+        #prepare an existing entry
+        entry = self._create_many_entries(
+            'user_hw_admin@domain.com', 1)[0][0]
+        entry['part_table'] = data['part_table']
+        #prepare data for update requests
+        update_fields = {
+            'id': entry['id'],
+            'part_table': entry['part_table'],
+        }
+        # perform update request and check if it returns an exception
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields
+        )
+        self._assert_failed_req(resp, 400, MSG_INVALID_PTABLE)
+    # test_update_wrong_parttable_for_volume()
 
     def test_add_update_wrong_ptable_size(self):
         """

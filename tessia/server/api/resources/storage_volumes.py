@@ -89,6 +89,9 @@ MSG_INVALID_TYPE = (
     "The value 'type={}' is invalid: it does not match storage server "
     "type '{}'"
 )
+MSG_INVALID_PTABLE = (
+    "DASD is not applicable as Table type for an FCP-Volume"
+)
 
 # when the volume is assigned to a system and the user has permission to update
 # that system they are entitled to update these attributes on the volume
@@ -237,19 +240,23 @@ class StorageVolumeResource(SecureResource):
     # _assert_hpav()
 
     @staticmethod
-    def _assert_ptable(part_table, vol_size):
+    def _assert_ptable(part_table, vol_size, vol_type):
         """
         Perform validations to make sure the partition table is valid.
 
         Args:
             part_table (dict): partition table
             vol_size (int): volume size
-
+            vol_type (str): volume type
         Raises:
             BaseHttpError: in case of validation errors
         """
         if part_table is None:
             return
+
+        # asserting that dasd is not used as a parttable for an fcp volume
+        if part_table['type'] == 'dasd' and vol_type != 'DASD':
+            raise BaseHttpError(code=400, msg=MSG_INVALID_PTABLE)
 
         # dict format was already validated by schema
         table_size = sum([part['size'] for part in part_table['table']])
@@ -446,8 +453,9 @@ class StorageVolumeResource(SecureResource):
 
         self._assert_hpav(None, properties)
 
-        self._assert_ptable(
-            properties.get('part_table'), properties['size'])
+        self._assert_ptable(properties.get('part_table'),
+                            properties['size'],
+                            properties['type'])
 
         self._assert_system(None, properties.get('system'))
 
@@ -557,8 +565,13 @@ class StorageVolumeResource(SecureResource):
 
             # partition table changed: validate partitions' sizes
             if 'part_table' in properties:
+                if 'type' in properties:
+                    vol_type = properties['type']
+                else:
+                    vol_type = vol_obj.type
                 self._assert_ptable(properties.get('part_table'),
-                                    properties.get('size', vol_obj.size))
+                                    properties.get('size', vol_obj.size),
+                                    vol_type)
 
             updated_item = self.manager.update(vol_obj, properties)
             return updated_item.id
@@ -583,7 +596,13 @@ class StorageVolumeResource(SecureResource):
                 size = properties['size']
             else:
                 size = vol_obj.size
-            self._assert_ptable(properties.get('part_table'), size)
+            if 'type' in properties:
+                vol_type = properties['type']
+            else:
+                vol_type = vol_obj.type
+            self._assert_ptable(properties.get('part_table'),
+                                size,
+                                vol_type)
 
         # system assignment changed: validate permissions and remove any
         # profiles attached

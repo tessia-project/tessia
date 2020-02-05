@@ -54,7 +54,7 @@ def autotemplate():
 # autotemplate()
 
 @autotemplate.command('add')
-@click.option('--name', required=True, type=NAME,
+@click.option('--name', '--template', required=True, type=NAME,
               help="template's name identifier")
 @click.option('--content', required=True, type=AUTO_TEMPLATE,
               help="template content file path")
@@ -76,7 +76,8 @@ def template_add(**kwargs):
 # template_add()
 
 @autotemplate.command(name='del')
-@click.option('--name', required=True, type=NAME, help="template to delete")
+@click.option('--name', '--template', required=True, type=NAME,
+              help="template to delete")
 def template_del(name):
     """
     remove an existing auto template
@@ -91,7 +92,7 @@ def template_del(name):
 @autotemplate.command(
     'edit',
     short_help='change properties of an existing template')
-@click.option('cur_name', '--name', required=True, type=NAME,
+@click.option('cur_name', '--name', '--template', required=True, type=NAME,
               help="template's name identifier")
 @click.option('name', '--newname', type=NAME,
               help="new template's name identifier")
@@ -118,7 +119,8 @@ def template_edit(cur_name, **kwargs):
               is_flag=True, default=False)
 @click.option('--my', help="show only my own templates", is_flag=True,
               default=False)
-@click.option('--name', type=NAME, help="filter by template name")
+@click.option('--name', '--template', type=NAME,
+              help="filter by template name")
 @click.option('--owner', help="filter by owner")
 @click.option('--project', help="filter by project")
 def template_list(**kwargs):
@@ -149,7 +151,7 @@ def template_list(**kwargs):
 # template_list()
 
 @autotemplate.command(name='print')
-@click.option('--name', type=NAME,
+@click.option('--name', '--template', type=NAME,
               required=True, help="template to print content")
 def template_print(**kwargs):
     """

@@ -42,7 +42,7 @@ FIELDS = (
 #
 
 @click.command(name='project-add')
-@click.option('--name', required=True, type=NAME, help="project's name")
+@click.option('--name', '--project', required=True, type=NAME, help="project's name")
 @click.option('--desc', required=True, type=TEXT,
               help="free form field describing project")
 def project_add(**kwargs):
@@ -60,7 +60,7 @@ def project_add(**kwargs):
 # project_add()
 
 @click.command(name='project-del')
-@click.option('--name', required=True, type=NAME,
+@click.option('--name', '--project', required=True, type=NAME,
               help="name of project to delete")
 def project_del(name):
     """
@@ -74,7 +74,7 @@ def project_del(name):
 # project_del()
 
 @click.command(name='project-edit')
-@click.option('cur_name', '--name', required=True, type=NAME,
+@click.option('cur_name', '--name', '--project', required=True, type=NAME,
               help="name of project to edit")
 @click.option('name', '--newname', type=NAME,
               help="new name of project")
@@ -96,7 +96,7 @@ def project_edit(cur_name, **kwargs):
 @click.command(name='project-list')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
-@click.option('--name', type=NAME, help="list specified project only")
+@click.option('--name', '--project', type=NAME, help="list specified project only")
 def project_list(**kwargs):
     """
     list registered projects

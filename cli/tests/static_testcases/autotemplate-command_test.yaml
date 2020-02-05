@@ -5,6 +5,7 @@ tasks_order:
   - tessia_help
   - base_add
   - autotemplate_subcommands
+  - template_alias
 tasks:
   tessia_help:
     - - -h
@@ -70,14 +71,14 @@ tasks:
     - - autotemplate list --owner=admin --long
       - 'Template name : sles12-default'
     - - autotemplate print
-      - 'Missing option "--name".'
+      - 'Missing option "--name" / "--template".'
     - - autotemplate print --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--template": value may not be empty'
     - - autotemplate print --name=rhel7-default
       - '# System authorization information'
     # autotemplate add, edit and del
     - - autotemplate add
-      - Missing option "--name".
+      - Missing option "--name" / "--template".
     - - autotemplate add --name=RHEL7.3
       - Missing option "--content".
     - - autotemplate add --name=RHEL7.3 --content
@@ -93,7 +94,7 @@ tasks:
     - - autotemplate add --name=UBUNTU16.04 --content='files/autotemplate-command_test/ubuntu16-default.jinja' --desc='Template for Ubuntu 16.04' --project='GEO_1 developers'
       - Item added successfully.
     - - autotemplate edit
-      - Missing option "--name".
+      - Missing option "--name" / "--template".
     - - autotemplate edit --name=rhel7-default
       - no update criteria provided.
     - - autotemplate edit --name=rhel7-default --newname=RHEL7.2_GEO_1
@@ -127,3 +128,18 @@ tasks:
         - ' *sles12-default *\| *admin *\|'
     - - autotemplate list --owner=admin --long
       - 'Template name : sles12-default'
+  template_alias:
+    # performing the same tests again but with alias options
+    - - autotemplate add --template=UBUNTU16.08 --content='files/autotemplate-command_test/ubuntu16-default.jinja' --desc='Template for Ubuntu 16.08' --project='GEO_1 developers'
+      - Item added successfully.
+    - - autotemplate edit --template=UBUNTU16.08 --newname=UBUNTU16.10
+      - Item successfully updated.
+    - - autotemplate edit --template=UBUNTU16.10 --desc='Template for Ubuntu 16.10'
+      - Item successfully updated.
+    - - autotemplate del --template=UBUNTU16.10
+      - Item successfully deleted.
+    - - autotemplate list --template=rhel7-default --long
+      - 'Template name : rhel7-default'
+    - - autotemplate print --template=rhel7-default
+      - '# System authorization information'
+

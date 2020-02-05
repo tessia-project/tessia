@@ -52,7 +52,7 @@ VLAN_ID = CustomIntRange(min=1, max=4095)
 @click.command('subnet-add')
 # set the parameter name after the model's attribute name to save on typing
 @click.option('--zone', required=True, help='target network zone')
-@click.option('--name', required=True, type=SUBNET,
+@click.option('--name', '--subnet', required=True, type=SUBNET,
               help="name of subnet to create")
 @click.option('--address', required=True,
               help="subnet address (i.e. 192.168.0.0/24)")
@@ -82,7 +82,7 @@ def subnet_add(**kwargs):
 
 @click.command(name='subnet-del')
 @click.option('--zone', required=True, help='network zone containing subnet')
-@click.option('--name', required=True, type=SUBNET,
+@click.option('--name', '--subnet', required=True, type=SUBNET,
               help='name of subnet to delete')
 def subnet_del(**kwargs):
     """
@@ -97,7 +97,7 @@ def subnet_del(**kwargs):
 
 @click.command(name='subnet-edit')
 @click.option('--zone', required=True, help='network zone containing subnet')
-@click.option('cur_name', '--name', required=True, type=SUBNET,
+@click.option('cur_name', '--name', '--subnet', required=True, type=SUBNET,
               help='name of subnet to edit')
 @click.option('name', '--newname', type=SUBNET,
               help="new subnet name")
@@ -141,7 +141,7 @@ def subnet_edit(zone, cur_name, **kwargs):
               is_flag=True, default=False)
 @click.option('--my', help="show only my own subnets", is_flag=True,
               default=False)
-@click.option('--name', type=SUBNET,
+@click.option('--name', '--subnet', type=SUBNET,
               help='filter by subnet name')
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")

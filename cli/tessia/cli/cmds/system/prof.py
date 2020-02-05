@@ -59,7 +59,7 @@ ZVM_PROMPT = 'z/VM password'
 
 @click.command(name='prof-add')
 @click.option('--system', required=True, type=NAME, help='target system')
-@click.option('--name', required=True, type=NAME, help="profile name")
+@click.option('--name', '--profile', required=True, type=NAME, help="profile name")
 @click.option('--cpu', default=0, type=CustomIntRange(min=0),
               help="number of cpus")
 @click.option('--kargs-installer', 'kargs_installer',
@@ -146,7 +146,7 @@ def prof_add(**kwargs):
 
 @click.command(name='prof-del')
 @click.option('--system', required=True, type=NAME, help='system name')
-@click.option('--name', required=True, type=NAME,
+@click.option('--name', '--profile', required=True, type=NAME,
               help="profile name to delete")
 def prof_del(**kwargs):
     """
@@ -164,7 +164,7 @@ def prof_del(**kwargs):
 
 @click.command(name='prof-edit')
 @click.option('--system', required=True, type=NAME, help='system name')
-@click.option('cur_name', '--name', required=True, type=NAME,
+@click.option('cur_name', '--name', '--profile', required=True, type=NAME,
               help="profile name")
 @click.option('name', '--newname', type=NAME,
               help="new name (i.e. new-profile-name)")
@@ -286,7 +286,7 @@ def prof_edit(system, cur_name, **kwargs):
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
 @click.option('--system', type=NAME, help="the system to list")
-@click.option('--name', type=NAME, help="filter by profile-name")
+@click.option('--name', '--profile', type=NAME, help="filter by profile-name")
 @click.option('--cpu', type=CustomIntRange(min=0),
               help="filter by specified number of cpus")
 @click.option('--memory', type=MIB_SIZE, help=MEM_HELP)

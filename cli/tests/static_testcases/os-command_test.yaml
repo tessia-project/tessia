@@ -5,6 +5,7 @@ tasks_order:
   - list
   - edit
   - del
+  - os_alias  
   - no_admin
 tasks:
   add:
@@ -14,7 +15,7 @@ tasks:
         - password
       - Key successfully created and added to client configuration.
     - - os add
-      - 'Missing option "--name".'
+      - 'Missing option "--name" / "--os".'
     - - os add --name=newos1.0
       - 'Missing option "--type".'
     - - os add --name=newos1.0 --type=newos
@@ -60,7 +61,7 @@ tasks:
       - 'OS identifier *: ubuntu16.04.1'
   edit:
     - - os edit
-      - 'Error: Missing option "--name".'
+      - 'Error: Missing option "--name" / "--os".'
     - - os edit --name=newos1.0
       - 'Error: no update criteria provided.'
     - - os edit --name=newos1.0 --newname=newsuperos5.7
@@ -77,7 +78,7 @@ tasks:
       - 'Item successfully updated.'
   del:
     - - os del
-      - 'Error: Missing option "--name".'
+      - 'Error: Missing option "--name" / "--os".'
     - - os del --name='wrong-name'
       - 'Error: OS not found.'
     - - os del --name='newsuperos5.7'
@@ -101,3 +102,15 @@ tasks:
       - 'Error: permission denied. Server answered: You need administrator privileges to perform this operation'
     - - os add --name=cantdoit1.0 --type=cms --major=1 --minor=0 --pname='Cant do it 1.0'
       - 'Error: permission denied. Server answered: You need administrator privileges to perform this operation'
+  os_alias:
+    # performing the same tests again but with alias option
+    - - os add --os=anotheros12.1 --type=redhat --major=12 --minor=1 --pname='Another OS 2.1' --template='rhel7-default'
+      - 'Item added successfully.' 
+    - - os list --os=anotheros12.1
+      - - ' *OS identifier *\| *OS type *\| *Pretty name *\| *Default install template *\| *Major version *\| *Minor version'
+        - ' *anotheros12.1 *\|'        
+    - - os edit --os=anotheros12.1 --newname=anotherbetteros12.1
+      - 'Item successfully updated.'
+    - - os del --os=anotherbetteros12.1
+      - 'Item successfully deleted'
+

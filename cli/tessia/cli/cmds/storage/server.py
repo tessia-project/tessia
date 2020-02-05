@@ -50,7 +50,7 @@ TYPE_FIELDS = ('name', 'desc')
 #
 
 @click.command(name='server-add')
-@click.option('--name', required=True, type=NAME, help="server's name")
+@click.option('--name', '--server', required=True, type=NAME, help="server's name")
 @click.option('--model', required=True, type=CONSTANT,
               help="string describing server's model")
 @click.option('--type', required=True, help="type of volume offered by server")
@@ -74,7 +74,7 @@ def server_add(**kwargs):
 # server_add()
 
 @click.command(name='server-del')
-@click.option('--name', required=True, type=NAME, help="server to delete")
+@click.option('--name', '--server', required=True, type=NAME, help="server to delete")
 def server_del(name):
     """
     remove an existing storage server
@@ -89,7 +89,7 @@ def server_del(name):
 @click.command(
     name='server-edit',
     short_help='change properties of an existing storage server')
-@click.option('cur_name', '--name', required=True, type=NAME,
+@click.option('cur_name', '--name', '--server', required=True, type=NAME,
               help="name of server to be updated")
 # set the parameter name after the model's attribute name to save on typing
 @click.option('name', '--newname', type=NAME, help="new name of server")
@@ -121,7 +121,7 @@ def server_edit(cur_name, **kwargs):
 @click.option('--model', type=CONSTANT, help="filter by specified model")
 @click.option('--my', help="show only my own servers", is_flag=True,
               default=False)
-@click.option('--name', type=NAME, help="filter by specified name")
+@click.option('--name', '--server', type=NAME, help="filter by specified name")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 @click.option('--type', help="filter by specified volume type")

@@ -71,7 +71,7 @@ ATTR_BY_TYPE = {
 
 @click.command(name='iface-add')
 @click.option('--system', required=True, type=NAME, help="target system")
-@click.option('--name', required=True, type=NAME, help="interface name")
+@click.option('--name', '--iface', required=True, type=NAME, help="interface name")
 @click.option('--type', required=True, type=CONSTANT,
               help="interface type (see iface-types)")
 @click.option('osname', '--devname', required=True, type=IFACE_NAME,
@@ -190,7 +190,7 @@ def iface_attach(system, profile, iface):
 
 @click.command(name='iface-del')
 @click.option('--system', required=True, type=NAME, help="system name")
-@click.option('--name', required=True, type=NAME, help="interface name")
+@click.option('--name', '--iface', required=True, type=NAME, help="interface name")
 def iface_del(**kwargs):
     """
     remove an existing network interface
@@ -242,7 +242,7 @@ def iface_detach(system, profile, iface):
     short_help='change properties of an existing network interface')
 @click.option('--system', required=True, type=NAME,
               help="system containing interface")
-@click.option('cur_name', '--name', required=True, type=NAME,
+@click.option('cur_name', '--name', '--iface', required=True, type=NAME,
               help="interface name")
 @click.option('name', '--newname', type=NAME, help="new interface name")
 @click.option('osname', '--devname', type=IFACE_NAME,
@@ -378,7 +378,7 @@ def iface_edit(system, cur_name, **kwargs):
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
 @click.option('--system', type=NAME, help='the system to list')
-@click.option('--name', type=NAME, help="filter by interface name")
+@click.option('--name', '--iface', type=NAME, help="filter by interface name")
 @click.option('--type', type=CONSTANT,
               help="filter by specified interface type")
 @click.option('osname', '--devname', type=NAME,

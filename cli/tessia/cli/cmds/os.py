@@ -56,7 +56,7 @@ def _os():
 
 @_os.command('add',
              short_help='add a supported operating system (admin only)')
-@click.option('--name', required=True, type=NAME, help="OS identifier")
+@click.option('--name', '--os', required=True, type=NAME, help="OS identifier")
 @click.option('--type', required=True, type=OS_TYPES, help="OS type")
 @click.option('--major', required=True, type=VERSION_TYPE,
               help="major version number")
@@ -81,7 +81,7 @@ def os_add(**kwargs):
 
 @_os.command('del',
              short_help='remove a supported operating system (admin only)')
-@click.option('--name', required=True, type=NAME, help="OS to delete")
+@click.option('--name', '--os', required=True, type=NAME, help="OS to delete")
 def os_del(name):
     """
     remove a supported operating system (admin only)
@@ -96,7 +96,7 @@ def os_del(name):
 @_os.command(
     'edit',
     short_help='change properties of an operating system (admin only)')
-@click.option('cur_name', '--name', required=True, type=NAME,
+@click.option('cur_name', '--name', '--os', required=True, type=NAME,
               help="OS identifier")
 @click.option('name', '--newname', type=NAME, help="new OS name identifier")
 @click.option('--type', type=OS_TYPES, help="OS type")
@@ -121,7 +121,7 @@ def os_edit(cur_name, **kwargs):
 @_os.command('list')
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
-@click.option('--name', type=NAME, help="filter by OS identifier")
+@click.option('--name', '--os', type=NAME, help="filter by OS identifier")
 @click.option('--type', type=OS_TYPES, help="filter by OS type")
 @click.option('--template', type=NAME, help="filter by default template")
 def os_list(**kwargs):

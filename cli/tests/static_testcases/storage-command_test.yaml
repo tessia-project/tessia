@@ -6,6 +6,7 @@ tasks_order:
   - storage_server
   - storage_vol
   - storage_part
+  - server-alias
 tasks:
   base_add:
     # lab admin to create the lab resources
@@ -84,17 +85,17 @@ tasks:
     - - storage server-add --name=DS8K16 --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
       - Item added successfully.
     - - storage server-add
-      - Missing option "--name".
+      - Missing option "--name" / "--server".
     - - storage server-add --name=DS8K22
       - Missing option "--model".
     - - storage server-add --name=DS8K22 --model=DS8000
       - Missing option "--type".
     - - storage server-add --name= --model= --type=DASD-FCP --project='GEO_1 labadmins'
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--server": value may not be empty'
     - - storage server-add --name=DS8K22 --model= --type=DASD-FCP --project='GEO_1 labadmins'
       - 'Invalid value for "--model": value may not be empty'
     - - storage server-add --name='' --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--server": value may not be empty'
     - - storage server-add --name=DS8K22 --model=DS8000 --type= --project='GEO_1 labadmins'
       - "request failed. Server answered: No associated item found with value '' for field 'Server type'"
     - - storage server-add --name=DS8K22 --model=DS8000 --type=DASD-FCP
@@ -114,7 +115,7 @@ tasks:
     - - storage server-list --long
       - 'Name           : DS8K16'
     - - storage server-list --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--server": value may not be empty'
     - - storage server-list --name=DS8K22
       - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
         - ' *DS8K22 *\|'
@@ -172,11 +173,11 @@ tasks:
       - 'Name           : DS8K22'
     # 'storage server-edit' subcommand
     - - storage server-edit --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--server": value may not be empty'
     - - storage server-edit --name= --model=DS8000
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--server": value may not be empty'
     - - storage server-edit
-      - Missing option "--name".
+      - Missing option "--name" / "--server".
     - - storage server-edit --name=DS8K22
       - no update criteria provided.
     - - storage server-edit --name=DS8888
@@ -225,9 +226,9 @@ tasks:
       - "request failed. Server answered: No associated item found with value 'DASD' for field 'Server type'"
     # 'storage server-del' subcommand
     - - storage server-del
-      - Missing option "--name".
+      - Missing option "--name" / "--server".
     - - storage server-del --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--server": value may not be empty'
     - - storage server-del --name=DS8K22
       - server not found.
     - - storage server-del --name=DS8K32
@@ -603,6 +604,8 @@ tasks:
       - Partition table successfully initialized.
     - - storage part-init --id=3955 --label=dasd
       - Partition table successfully initialized.
+    - - storage part-init --id=1022400200000000 --label=dasd
+      - 'The server did not accept our request. The response is: DASD is not applicable as Table type for an FCP-Volume'
     - - storage part-init --id=3952 --label=gpt
       - Partition table successfully initialized.
     - - storage part-init --id=1022400200000000 --label=msdos
@@ -739,3 +742,15 @@ tasks:
       - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
     - - storage part-del --server=DS8K16 --id=3953 --num=1
       - Partition successfully deleted.
+  server-alias:
+    # server subcommand with server alias
+    - - storage server-add --server=DS8K36 --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
+      - Item added successfully.
+    - - storage server-edit --server=DS8K36 --newname=DS8K48
+      - Item successfully updated.
+    - - storage server-list --server=DS8K48
+      - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
+        - ' *DS8K48 *\|'
+    - - storage server-del --server=DS8K48
+      - Item successfully deleted.
+

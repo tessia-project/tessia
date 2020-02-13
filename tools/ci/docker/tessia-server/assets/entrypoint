@@ -86,17 +86,92 @@ function _ssl_config() {
     fi
     echo "info: generating self-signed ssl certificate"
 
-    local config="
-[req]
-prompt=no
-distinguished_name=req_dn
-[req_dn]
-CN=${fqdn}
-OU=TESSIA
-[v3_ca]
-subjectAltName=DNS:${fqdn}
+    local ca_config="
+[ ca ]
+default_ca    = tessia_CA      # The default ca section
+
+[ tessia_CA ]
+default_days     = 3650         # How long to certify for
+default_crl_days = 30           # How long before next CRL
+default_md       = sha256       # Use public key default MD
+preserve         = no           # Keep passed DN ordering
+
+x509_extensions  = ca_extensions # The extensions to add to the cert
+
+email_in_dn      = no            # Don't concat the email in the DN
+copy_extensions  = copy          # Required to copy SANs from CSR to cert
+policy           = signing_policy
+
+certificate      = /etc/tessia/ca.crt       # The CA certifcate
+private_key      = /etc/tessia/ca.key       # The CA private key
+new_certs_dir    = /etc/tessia              # Location for new certs after signing
+database         = /tmp/index.txt           # Database index file
+serial           = /tmp/serial.txt          # The current serial number
+unique_subject   = no
+
+[ ca_distinguished_name ]
+countryName            = DE
+organizationName       = Example Org
+commonName             = Tessia Root CA
+
+[ ca_extensions ]
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always, issuer
+basicConstraints       = critical, CA:true
+keyUsage               = keyCertSign, cRLSign
+
+[ req ]
+prompt             = no
+distinguished_name = ca_distinguished_name
+x509_extensions    = ca_extensions
+string_mask        = utf8only
+
+[ signing_policy ]
+countryName            = match
+stateOrProvinceName    = optional
+localityName           = optional
+organizationName       = match
+organizationalUnitName = optional
+commonName             = supplied
+emailAddress           = optional
+
+[ signing_req ]
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid,issuer
+basicConstraints       = CA:FALSE
+keyUsage               = digitalSignature, keyEncipherment
 "
-    openssl req -new -nodes -x509 -newkey rsa:4098 -keyout /etc/tessia/ssl.key -out /etc/tessia/ssl.crt -days 3650 -reqexts v3_ca -extensions v3_ca -config <(printf "$config")
+    local server_config="
+[ server_distinguished_name ]
+countryName            = DE
+organizationName       = Example Org
+commonName             = Tessia Server
+
+[ server_extensions ]
+subjectKeyIdentifier   = hash
+basicConstraints       = CA:FALSE
+nsCertType             = server
+nsComment              = Tessia Server Certificate
+keyUsage               = critical, digitalSignature, keyEncipherment
+extendedKeyUsage       = serverAuth
+subjectAltName         = @alternate_names
+
+[ req ]
+prompt             = no
+distinguished_name = server_distinguished_name
+req_extensions     = server_extensions
+string_mask        = utf8only
+
+[ alternate_names ]
+DNS.1 = ${fqdn}
+"
+    touch /tmp/index.txt
+    echo '01' > /tmp/serial.txt
+    openssl req -x509 -new -config <(printf "$ca_config") -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout /etc/tessia/ca.key -out /etc/tessia/ca.crt -days 3650
+    openssl req -new -config <(printf "$server_config") -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout /etc/tessia/ssl.key -out server.csr
+    yes | openssl ca -config <(printf "$ca_config") -extensions signing_req -out /etc/tessia/ssl.crt -infiles server.csr
+    rm server.csr
+    cat /etc/tessia/ca.crt >> /etc/tessia/ssl.crt
 
     # set appropriate permissions
     chown tessia. /etc/tessia/ssl.crt /etc/tessia/ssl.key

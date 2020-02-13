@@ -319,12 +319,15 @@ class ComposeInstance():
             raise RuntimeError('timed out while waiting for api')
 
         # download ssl certificate to client
+        # showcerts will give the whole chain, and with sed we extract
+        # the last certificate, which is the CA
         cmd = (
             'docker exec {} bash -c \''
             'openssl s_client -showcerts -connect {}:5000 '
             '< /dev/null 2>/dev/null | '
-            'sed -ne "/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p" '
-            '> /etc/tessia-cli/ca.crt\''.format(client_id, self._fqdn)
+            'sed -ne {} '
+            '> /etc/tessia-cli/ca.crt\''.format(client_id, self._fqdn,
+                r'"/-BEGIN/{:1;\$!{/-END/!{N;b1};h}};\${x;p}"')
         )
         ret_code, output = self._session.run(cmd)
         if ret_code != 0:

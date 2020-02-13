@@ -9,3 +9,7 @@ build/
 # created by orc for docker-compose
 .env
 .docker-compose*.yaml
+# code editors setttings and temporary files
+.idea
+.vscode
+*.patch

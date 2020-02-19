@@ -19,6 +19,7 @@ Base state machine for auto installation of operating systems
 #
 # IMPORTS
 #
+from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from functools import cmp_to_key
@@ -479,7 +480,8 @@ class SmBase(metaclass=abc.ABCMeta):
                 'major': self._os.major,
                 'minor': self._os.minor,
                 'pretty_name': self._os.pretty_name,
-            }
+            },
+            'profile_parameters': self._profile.parameters,
         }
         # add repo entries
         for repo_obj in self._repos:
@@ -583,6 +585,27 @@ class SmBase(metaclass=abc.ABCMeta):
 
         template_obj = jinja2.Template(template_content)
         kargs = template_obj.render(config=self._info).strip()
+        if self._profile.parameters and (
+                self._profile.parameters.get('linux-kargs-installer')):
+            custom_kargs = self._profile.parameters['linux-kargs-installer']
+            # below we use a dict to remove duplicated parameters, the code
+            # assumes no kernel params have empty spaces as values
+            # (i.e. param="foo bar") so if this is ever to be supported
+            # the implementation below needs to be improved
+            kargs_dict = OrderedDict()
+            for param in kargs.split() + custom_kargs.split():
+                try:
+                    name, value = param.split('=', 1)
+                except ValueError:
+                    name, value = param, None
+                kargs_dict[name] = value
+            custom_kargs = []
+            for name, value in kargs_dict.items():
+                if value is None:
+                    custom_kargs.append(name)
+                else:
+                    custom_kargs.append('{}={}'.format(name, value))
+            kargs = ' '.join(custom_kargs)
         self._logger.info('kernel cmdline for installer is: %s', kargs)
 
         self._platform.boot(kargs)

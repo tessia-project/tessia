@@ -344,6 +344,43 @@ class TestSmBase(TestCase):
         self.assertEqual(profile_entry.operating_system_id, os_entry.id)
     # test_machine_execution()
 
+    def test_machine_execution_custom_kargs(self):
+        """
+        Test usage of custom kernel cmdline arguments specified in the
+        activation profile for the Linux installer.
+        """
+        os_entry = utils.get_os("rhel7.2")
+        profile_entry = utils.get_profile("CPC3LP55/default_CPC3LP55")
+        template_entry = utils.get_template("rhel7-default")
+        system_entry = profile_entry.system_rel
+        hyp_type = system_entry.type_rel.name.lower()
+
+        test_kargs = {
+            'linux-kargs-installer': 'novnc zfcp.allow_lun_scan=0',
+        }
+        # expected cmdline content
+        cmdline_template = self._mock_open(
+            ).__enter__.return_value.read.return_value = (
+                'ro ramdisk_size=50000 zfcp.allow_lun_scan=1')
+        self._mock_jinja2.Template.return_value.render.return_value = (
+            cmdline_template)
+        cmdline_content = 'ro ramdisk_size=50000 zfcp.allow_lun_scan=0 novnc'
+
+        # execute machine
+        with self._mock_db_obj(profile_entry, 'parameters', test_kargs):
+            mach = self._child_cls(os_entry, profile_entry, template_entry)
+            mach.start()
+
+        # validate behavior
+        self._mock_jinja2.Template.assert_has_calls([
+            call(template_entry.content),
+            call().render(config=mock.ANY),
+            call(cmdline_template),
+            call().render(config=mock.ANY),
+        ])
+        mock_hyper_class = self._mocked_supported_platforms[hyp_type]
+        mock_hyper_class.return_value.boot.assert_called_with(cmdline_content)
+
     def test_machine_execution_custom_repo_install(self):
         """
         Test usage of custom repositories specified by the user when an install

@@ -299,9 +299,15 @@ Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
 ==============================================================================
 """)
 
+        kernel_cmdline = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+crashkernel=196M root=UUID=f0057090-da7c-470f-bc34-93c29aebafe1
+""")
+
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
-            lscpu_output, lsmem_output, realp_output, resolv_output, lsdasd]
+            lscpu_output, lsmem_output, realp_output, resolv_output, lsdasd,
+            kernel_cmdline]
     # _set_mocks_lpar_fcp()
 
     def _set_mocks_lpar_dasd(self, prof_obj):
@@ -449,9 +455,18 @@ Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
 0.0.3957   active      dasdb     94:4    ECKD  4096   7000MB    1792000
 """)
 
+        kernel_cmdline = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+BOOT_IMAGE=0 LANG=en_US.UTF-8 cio_ignore=all,!condev crashkernel=auto """\
+"""rd.dasd=0.0.3957 rd.znet=qeth,0.0.f500,0.0.f501,0.0.f502,layer2=1,"""\
+"""portno=0,portname=OSAPORT root=/dev/disk/by-path/ccw-0.0.3956-part1 """\
+"""nosmt=true selinux=0
+""")
+
         self._mock_check_output.side_effect = [
             facts, parted_1, lsblk_1, parted_2, lsblk_2, lszfcp, os_release,
-            lscpu_output, RuntimeError(), lsmem_output, realp_output, lsdasd]
+            lscpu_output, RuntimeError(), lsmem_output, realp_output, lsdasd,
+            kernel_cmdline]
     # _set_mocks_lpar_dasd()
 
     def test_facts_fail(self):
@@ -1027,6 +1042,32 @@ Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
                 dasd_prof_entry, permissive=True)
             checker.verify(areas=['kernel'])
             self._mock_logger.warning.assert_called_with(error_msg)
+
+        # kernel args mismatch
+        fcp_prof_entry = self._get_profile('cpc3lp52', 'fcp1')
+        self._set_mocks_lpar_fcp(fcp_prof_entry)
+        params_content = {
+            'linux-kargs-target': 'somearg=somevalue'
+        }
+        actual_content = (
+            'crashkernel=196M root=UUID=f0057090-da7c-470f-bc34-93c29aebafe1')
+        with self._mock_db_obj(dasd_prof_entry, 'parameters', params_content):
+            error_msg = self._mismatch_msg.format(
+                'kernel cmdline', params_content['linux-kargs-target'],
+                actual_content)
+            checker = post_install.PostInstallChecker(dasd_prof_entry)
+            with self.assertRaisesRegex(
+                post_install.Misconfiguration, error_msg):
+                checker.verify(areas=['kernel'])
+
+            # permissive - only logging occurs
+            self._set_mocks_lpar_fcp(fcp_prof_entry)
+            self._mock_logger.reset_mock()
+            checker = post_install.PostInstallChecker(
+                dasd_prof_entry, permissive=True)
+            checker.verify(areas=['kernel'])
+            self._mock_logger.warning.assert_called_with(error_msg)
+
     # test_misconfiguration_kernel()
 
     def test_missing_profile_params(self):

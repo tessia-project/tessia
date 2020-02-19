@@ -86,6 +86,26 @@ $ tess system autoinstall --os=os_version --system=cpc3lp25 --repo=packages-1 --
 $ tess system autoinstall --os=os_version --system=cpc3lp25 --repo=osinstall-1 --repo=packages-1 --repo=http://myserver.com/packages/mydistro/
 ```
 
+# Custom kernel command line arguments
+
+For Linux systems you can specify additional kernel command line arguments both for the target (installed) system as well as for the Linux distro's installer during installation time.
+
+To define additional custom kernel command line arguments for your installed system (final state), edit the desired system activation profile with the `--kargs-target` parameter. Example:
+
+```
+$ tess system prof-edit --name=default --system=cpc3lp25 --kargs-target='selinux=0 nosmt=false'
+```
+
+These arguments will then be added to the generated autofile and included in the boot loader configuration of the resulting installation by the distro installer.
+
+If you want to define additional kernel arguments for the distro installer to be used only during installation time, edit the desired profile with the `--kargs-installer` parameter. Example:
+
+```
+$ tess system prof-edit --name=default --system=cpc3lp25 --kargs-installer='nosmt=true zfcp.allow_lun_scan=0'
+```
+
+Any kernel arguments for the distro installer defined in this manner will take precedence over default values used by the autoinstall machine.
+
 # Autotemplate variables
 
 TODO

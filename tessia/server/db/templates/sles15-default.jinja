@@ -12,6 +12,7 @@
   </add-on>
   <bootloader>
     <global>
+      <append><![CDATA[{{config["profile_parameters"]["linux-kargs-target"]}}]]></append>
       <gfxmode>auto</gfxmode>
       <os_prober>false</os_prober>
       <terminal>console</terminal>

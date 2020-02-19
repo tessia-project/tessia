@@ -17,7 +17,7 @@
     </device_map>
     <global>
       <activate>false</activate>
-      <append> hvc_iucv=8 TERM=dumb</append>
+      <append> hvc_iucv=8 TERM=dumb <![CDATA[{{config["profile_parameters"]["linux-kargs-target"]}}]]></append>
       <boot_boot>false</boot_boot>
       <boot_extended>false</boot_extended>
       <boot_mbr>false</boot_mbr>

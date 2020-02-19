@@ -62,6 +62,10 @@ ZVM_PROMPT = 'z/VM password'
 @click.option('--name', required=True, type=NAME, help="profile name")
 @click.option('--cpu', default=0, type=CustomIntRange(min=0),
               help="number of cpus")
+@click.option('--kargs-installer', 'kargs_installer',
+              help=("custom kernel cmdline for the Linux installer"))
+@click.option('--kargs-target', 'kargs_target',
+              help=("custom kernel cmdline for the installed system"))
 @click.option('--memory', default='0', type=MIB_SIZE, help=MEM_HELP)
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('hypervisor_profile', '--hyp', type=NAME,
@@ -117,12 +121,21 @@ def prof_add(**kwargs):
         raise click.ClickException(
             'zVM credentials should be provided for zVM guests only')
 
+    param_fields = {}
     liveimg_url = kwargs.pop('liveimg_url')
     if liveimg_url:
         if system.type.lower() != 'cpc':
             raise click.ClickException(
                 'A live image URL can only be provided for CPCs')
-        kwargs['parameters'] = {'liveimg-insfile-url': liveimg_url}
+        param_fields['liveimg-insfile-url'] = liveimg_url
+    kargs_installer = kwargs.pop('kargs_installer')
+    if kargs_installer:
+        param_fields['linux-kargs-installer'] = kargs_installer
+    kargs_target = kwargs.pop('kargs_target')
+    if kargs_target:
+        param_fields['linux-kargs-target'] = kargs_target
+    if param_fields:
+        kwargs['parameters'] = param_fields
 
     item = client.SystemProfiles()
     for key, value in kwargs.items():
@@ -156,6 +169,10 @@ def prof_del(**kwargs):
 @click.option('name', '--newname', type=NAME,
               help="new name (i.e. new-profile-name)")
 @click.option('--cpu', type=CustomIntRange(min=0), help="number of cpus")
+@click.option('--kargs-installer', 'kargs_installer',
+              help=("custom kernel cmdline for the Linux installer"))
+@click.option('--kargs-target', 'kargs_target',
+              help=("custom kernel cmdline for the installed system"))
 @click.option('--memory', type=MIB_SIZE, help=MEM_HELP)
 @click.option('--default', is_flag=True, help="set as default for system")
 @click.option('--gateway', help='name of interface to use as gateway')
@@ -223,6 +240,7 @@ def prof_edit(system, cur_name, **kwargs):
     if creds:
         kwargs['credentials'] = creds
 
+    param_fields = []
     liveimg_url = kwargs.pop('liveimg_url')
     if liveimg_url is not None:
         sys_obj = fetch_item(
@@ -230,21 +248,27 @@ def prof_edit(system, cur_name, **kwargs):
         if sys_obj.type.lower() != 'cpc':
             raise click.ClickException(
                 'A live image URL can only be provided for CPCs')
-
+        param_fields.append(('liveimg-insfile-url', liveimg_url))
+    kargs_installer = kwargs.pop('kargs_installer')
+    if kargs_installer is not None:
+        param_fields.append(('linux-kargs-installer', kargs_installer))
+    kargs_target = kwargs.pop('kargs_target')
+    if kargs_target is not None:
+        param_fields.append(('linux-kargs-target', kargs_target))
+    if param_fields:
         sys_prof_obj = fetch_item(
             client.SystemProfiles,
             {'system': system, 'name': cur_name},
             'system profile not found.')
-
         if isinstance(sys_prof_obj.parameters, dict):
             kwargs['parameters'] = sys_prof_obj.parameters
         else:
             kwargs['parameters'] = {}
-        if liveimg_url:
-            kwargs['parameters']['liveimg-insfile-url'] = liveimg_url
-        else:
-            kwargs['parameters'].pop('liveimg-insfile-url', None)
-
+        for key, value in param_fields:
+            if value:
+                kwargs['parameters'][key] = value
+            else:
+                kwargs['parameters'].pop(key, None)
         # dict is now empty: set field to null (fetch_and_update converts empty
         # string to null)
         if not kwargs['parameters']:

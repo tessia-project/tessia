@@ -55,7 +55,7 @@ def repo():
 # repo()
 
 @repo.command('add')
-@click.option('--name', required=True, type=NAME, help="repository name")
+@click.option('--name', '--repo', required=True, type=NAME, help="repository name")
 @click.option('--url', required=True, type=URL, help="network url")
 @click.option('operating_system', '--os', help="installable operating system")
 @click.option('--kernel', help="kernel path (when --os is specified)")
@@ -86,7 +86,8 @@ def add(**kwargs):
 # add()
 
 @repo.command(name='del')
-@click.option('--name', required=True, type=NAME, help="repository to delete")
+@click.option('--name', '--repo', required=True, type=NAME,
+              help="repository to delete")
 def del_(name):
     """
     remove an existing repository
@@ -99,7 +100,7 @@ def del_(name):
 # del_()
 
 @repo.command('edit', help='change properties of a repository')
-@click.option('cur_name', '--name', required=True, type=NAME,
+@click.option('cur_name', '--name', '--repo', required=True, type=NAME,
               help="repository name")
 @click.option('name', '--newname', type=NAME, help="new repository name")
 @click.option('--url', type=URL, help="network url")
@@ -129,7 +130,7 @@ def edit(cur_name, **kwargs):
               is_flag=True, default=False)
 @click.option('--my', help="show only my own repos", is_flag=True,
               default=False)
-@click.option('--name', type=NAME, help="filter by repository name")
+@click.option('--name', '--repo', type=NAME, help="filter by repository name")
 @click.option('operating_system', '--os', help="filter by operating system")
 @click.option('--owner', help="filter by owner")
 @click.option('--project', help="filter by project")

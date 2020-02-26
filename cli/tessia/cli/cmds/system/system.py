@@ -63,7 +63,7 @@ SYSTEM_FIELDS_TABLE = (
 #
 
 @click.command()
-@click.option('--name', required=True, type=NAME, help="system name")
+@click.option('--name', '--system', required=True, type=NAME, help="system name")
 @click.option('--hostname', required=True, type=HOSTNAME,
               help="resolvable hostname or ip address")
 @click.option('hypervisor', '--hyp', type=NAME, help="system's hypervisor")
@@ -88,7 +88,7 @@ def add(**kwargs):
 # add()
 
 @click.command(name='del')
-@click.option('--name', required=True, type=NAME, help='system to delete')
+@click.option('--name', '--system', required=True, type=NAME, help='system to delete')
 def del_(name):
     """
     remove an existing system
@@ -148,7 +148,7 @@ def autoinstall(ctx, **kwargs):
 # autoinstall()
 
 @click.command(name='edit')
-@click.option('cur_name', '--name', required=True, type=NAME,
+@click.option('cur_name', '--name', '--system', required=True, type=NAME,
               help='system to edit')
 @click.option('name', '--newname', type=NAME, help="new system name")
 @click.option('hypervisor', '--hyp', type=NAME, help="hypervisor's name")
@@ -175,7 +175,7 @@ def edit(cur_name, **kwargs):
 # edit()
 
 @click.command(name='export')
-@click.option('--name', type=NAME, help="filter by system name")
+@click.option('--name', '--system', type=NAME, help="filter by system name")
 @click.option('hypervisor', '--hyp', type=NAME,
               help="filter by specified hypervisor")
 @click.option('--model', type=CONSTANT, help="filter by specified model")
@@ -243,7 +243,7 @@ def info(ctx, **kwargs):
 # info()
 
 @click.command(name='list')
-@click.option('--name', type=NAME, help="filter by system name")
+@click.option('--name', '--system', type=NAME, help="filter by system name")
 @click.option('hypervisor', '--hyp', type=NAME,
               help="filter by specified hypervisor")
 @click.option('--long', 'long_info', help="show extended information",
@@ -282,7 +282,7 @@ def list_(**kwargs):
 
 @click.command(name='poweroff')
 @click.pass_context
-@click.option('--name', required=True, type=NAME, help="system name")
+@click.option('--name', '--system', required=True, type=NAME, help="system name")
 @click.option('--verbosity', type=VERBOSITY_LEVEL,
               help='output verbosity level')
 @click.option('bg_flag', '--bg', is_flag=True,
@@ -325,7 +325,7 @@ def poweroff(ctx, name, verbosity, bg_flag):
 
 @click.command(name='poweron')
 @click.pass_context
-@click.option('--name', required=True, type=NAME, help="system name")
+@click.option('--name', '--system', required=True, type=NAME, help="system name")
 @click.option('--profile', type=NAME,
               help="activation profile to use, if not specified uses default")
 @click.option('--cpu', type=CustomIntRange(min=1),

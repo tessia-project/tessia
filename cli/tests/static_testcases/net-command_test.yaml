@@ -3,6 +3,7 @@ base_user: admin
 tasks_order:
   - base_add
   - net_command
+  - zone_and_subnet_aliases
 tasks:
   base_add:
     # lab admin to create the lab resources
@@ -77,12 +78,12 @@ tasks:
     - - net zone-edit --name=GEO_2-NE --newname=GEO_2
       - Item successfully updated.
     - - net zone-add --project='GEO_1 labadmins' --desc='GEO-NE, VLAN 1822'
-      - Missing option "--name".
+      - Missing option "--name" / "--zone".
     - - net zone-add --name=GEO_3
       - Item added successfully.
       # Empty name
     - - net zone-add --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--zone": value may not be empty'
     - - net zone-add --name=GEO_3 --owner=dev1@example.com
       - 'request failed. Server answered: An item with the provided value'
     - - net zone-del --name=GEO_3
@@ -129,7 +130,7 @@ tasks:
     - - net subnet-add --zone=GEO_1-NE --name='GEO 1-NE-1822' --address=192.168.160.0/22
       - Item added successfully.
     - - net subnet-add --zone=GEO_1-NE --name='GEO/1-NE-1822' --address=192.168.160.0/22
-      - Invalid value for "--name"
+      - Invalid value for "--name" / "--subnet"
     - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1822' --address=192.168.160.0/22  --gw=192.168.160.1 --dns1=192.168.200.241 --vlan=1822 --project='GEO_1 labadmins' --desc='Shared zone vlan 1822'
       - Item added successfully.
     - - net subnet-list --zone=GEO_1-NE
@@ -149,7 +150,7 @@ tasks:
       - 'request failed. Server answered: An item with the provided value'
       # Empty name
     - - net subnet-add --zone=GEO_1-NE --name= --address=192.168.160.0/22
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--subnet": value may not be empty'
     - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1820' --search='new_test_example.com' --desc='Shared zone vlan 1823'
       - Item successfully updated.
     - - net subnet-edit --zone=GEO_1 --name='GEO_1-NE-1820' --newname='GEO_1-NE-1823'
@@ -209,7 +210,7 @@ tasks:
     - - net subnet-list --name='GEO_1-NE-1822' --vlan=1820
       - No results were found.
     - - net subnet-del --zone=GEO_1-NE
-      - Missing option "--name".
+      - Missing option "--name" / "--subnet".
     - - net subnet-del --name='GEO_1-NE-1823'
       - Missing option "--zone".
     - - net subnet-del --zone=GEO_1 --name='GEO_1-NE-1823'
@@ -358,3 +359,25 @@ tasks:
       - 'no such option: --net'
     - - net ip-del --subnet='GEO_1-NE-1822' --ip=192.168.161.221
       - Item successfully deleted.
+  zone_and_subnet_aliases:
+    # net zone subcommand with alias
+    - - net zone-add --zone=GEO_7-NE --desc='GEO-NE'
+      - Item added successfully.
+    - - net zone-edit --zone=GEO_7-NE --newname=GEO_6-NE --desc='GEO-NE'
+      - Item successfully updated.
+    - - net zone-list --zone=GEO_6-NE
+      - - ' *Zone name *\| *Owner *\| *Project *\| *Description'
+        - ' *GEO_6-NE *\|'
+    - - net zone-del --zone=GEO_6-NE
+      - Item successfully deleted.
+    # net subnet subcommand with alias
+    - - net subnet-add --zone=GEO_1-NE --subnet='GEO_1-NE-1825' --address=192.168.160.128/25
+      - Item added successfully.
+    - - net subnet-edit --zone=GEO_1-NE --subnet='GEO_1-NE-1825' --newname='GEO_1-NE-1821' 
+      - Item successfully updated. 
+    - - net subnet-list --zone=GEO_1-NE --subnet='GEO_1-NE-1821'
+      - - ' *Subnet name *\| *Network zone *\| *Network address *\| *Gateway *\| *DNS server 1 *\| *VLAN *\| *Owner *\| *Project *\| *Description'
+        - ' *GEO_1-NE-1821 *\|'
+    - - net subnet-del --zone=GEO_1-NE --subnet='GEO_1-NE-1821'
+      - Item successfully deleted.
+    

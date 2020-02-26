@@ -39,7 +39,7 @@ MODEL_FIELDS = (
 #
 
 @click.command('model-add')
-@click.option('--name', required=True, help="model's name identifier")
+@click.option('--name', '--model', required=True, help="model's name identifier")
 @click.option('model', '--title', required=True, help="model's title")
 @click.option('--arch', required=True, help="architecture (i.e. s390x)")
 @click.option('--submodel', help="model's sub-classification")
@@ -59,7 +59,7 @@ def model_add(**kwargs):
 # model_add()
 
 @click.command(name='model-del')
-@click.option('--name', required=True, help="model to delete")
+@click.option('--name', '--model', required=True, help="model to delete")
 def model_del(name):
     """
     remove an existing system model (admin only)
@@ -74,7 +74,7 @@ def model_del(name):
 @click.command(
     'model-edit',
     short_help='change properties of an existing system model (admin only)')
-@click.option('cur_name', '--name', required=True,
+@click.option('cur_name', '--name', '--model', required=True,
               help="model's name identifier")
 @click.option('name', '--newname', help="new model's name identifier")
 @click.option('model', '--title', help="model's title")

@@ -10,6 +10,10 @@ tasks_order:
   - system_prof
   - system_export_import
   - set_os_manually
+  - system-alias
+  - model-alias
+  - prof-alias
+  - iface-alias
 tasks:
   base_add:
     # lab admin to create the lab resources
@@ -152,7 +156,7 @@ tasks:
       - No results were found.
     # 'system add' subcommand
     - - system add
-      - Missing option "--name".
+      - Missing option "--name" / "--system".
     - - system add --name=cpc1
       - Missing option "--hostname".
     - - system add --name=cpc1 --type=cpc
@@ -160,9 +164,9 @@ tasks:
     - - system add --name=cpc1 --hostname=hosthmc1.example.com
       - Missing option "--type".
     - - system add --type=cpc --hostname=hosthmc1.example.com
-      - Missing option "--name".
+      - Missing option "--name" / "--system".
     - - system add --name= --type=cpc --hostname=hosthmc1.example.com
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--system": value may not be empty'
     - - system add --name=cpc1 --type= --hostname=hosthmc1.example.com
       - 'Invalid value for "--type": value may not be empty'
     - - system add --name=cpc1 --type=cpc --hostname=
@@ -178,7 +182,7 @@ tasks:
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=available
       - Item added successfully.
     - - system add --name=cpc+2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
-      - 'Invalid value for "--name":'
+      - 'Invalid value for "--name" / "--system":'
     - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=locked
       - Item added successfully.
     - - system add --name=cpc3 --type=cpc --hostname=hmcserver.example.com --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
@@ -286,7 +290,7 @@ tasks:
       - No results were found.
     # 'system edit' subcommand
     - - system edit
-      - Missing option "--name".
+      - Missing option "--name" / "--system".
     - - system edit --name=cpc3lp52
       - no update criteria provided.
     - - system edit --name=cpc3lp52 --desc='Developer 1'
@@ -294,7 +298,7 @@ tasks:
     - - system edit --name=cpc3lp50 --desc='Developer 1'
       - system not found.
     - - system edit --name= --desc='Developer 1'
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--system": value may not be empty'
     - - system edit --name=cpc3lp54 --newname=cpc3lp54
       - Item successfully updated.
     - - system edit --name=cpc3lp54 --newname=
@@ -359,9 +363,9 @@ tasks:
       - Item successfully updated.
     # 'system del' subcommand
     - - system del
-      - Missing option "--name".
+      - Missing option "--name" / "--system".
     - - system del --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--system": value may not be empty'
     - - system del --name=xxx
       - system not found.
     - - system del --name=cpc3lp56
@@ -471,7 +475,7 @@ tasks:
     - - system iface-add
       - Missing option "--system".
     - - system iface-add --system=cpc3lp52
-      - Missing option "--name".
+      - Missing option "--name" / "--iface".
     - - system iface-add --name='osa iface'
       - Missing option "--system".
     - - system iface-add --system=cpc3lp52 --name='osa iface'
@@ -485,7 +489,7 @@ tasks:
     - - system iface-add --system=xxxx --name='osa iface' --type=OSA --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - "request failed. Server answered: No associated item found with value 'xxxx' for field 'System'"
     - - system iface-add --system=cpc3lp52 --name= --type=osa --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--iface": value may not be empty'
     - - system iface-add --system=cpc3lp52 --name=dummy --type=osa --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - 'Error: request failed. Server answered: When layer2 is off no MAC address should be defined'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type= --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
@@ -587,7 +591,7 @@ tasks:
     - - system iface-list --name=xxx
       - No results were found.
     - - system iface-list --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--iface": value may not be empty'
     - - system iface-list --system=guest55
       - - ' *Interface name *\| *Network device name *\| *System *\| *Interface type *\| *IP address *\| *MAC address *\| *Attributes *\| *Associated system profiles'
         - ' *default macvtap *\|'
@@ -644,7 +648,7 @@ tasks:
     - - system iface-edit
       - Missing option "--system".
     - - system iface-edit --system=cpc3lp52
-      - Missing option "--name".
+      - Missing option "--name" / "--iface".
     - - system iface-edit --name='default osa2'
       - Missing option "--system".
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --newname=
@@ -656,7 +660,7 @@ tasks:
     - - system iface-edit --system= --name='default osa22' --newname='default osa2'
       - 'Invalid value for "--system": value may not be empty'
     - - system iface-edit --system=cpc3lp52 --name= --newname='default osa2'
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--iface": value may not be empty'
     - - system iface-edit --system=cpc3lp52 --name='osa iface2' --newname='default osa2'
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa23' --newname='default osa2'
@@ -775,7 +779,7 @@ tasks:
     - - system iface-del
       - Missing option "--system".
     - - system iface-del --system=guest55
-      - Missing option "--name".
+      - Missing option "--name" / "--iface".
     - - system iface-del --name='default macvtap'
       - Missing option "--system".
     - - system iface-del --system=guest55 --name='macvtap'
@@ -789,7 +793,7 @@ tasks:
     - - system prof-add
       - Missing option "--system".
     - - system prof-add --system=cpc3lp52
-      - Missing option "--name".
+      - Missing option "--name" / "--profile".
     - - system prof-add --name='DASD'
       - Missing option "--system".
     - - system prof-add --system=cpc3lp52 --name='DASD' --login=
@@ -801,7 +805,7 @@ tasks:
     - - system prof-add --system= --name='DASD1' --login='root:mypasswd'
       - 'Invalid value for "--system": value may not be empty'
     - - system prof-add --system=cpc3lp52 --name= --login='root:mypasswd'
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--profile": value may not be empty'
     - - system prof-add --system=cpc3lp60 --name='DASD2' --login='root:mypasswd'
       - "Error: system specified not found"
     - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu= --login='root:mypasswd'
@@ -927,7 +931,7 @@ tasks:
     - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD root1'
     - - system prof-list --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--profile": value may not be empty'
     - - system prof-list --name='DASD root1'
       - 'At least one of --system or --os must be specified'
     - - system prof-list --system=cpc3lp52 --name='DASD4'
@@ -1024,7 +1028,7 @@ tasks:
     - - system prof-edit
       - Missing option "--system".
     - - system prof-edit --system=cpc3lp52
-      - Missing option "--name".
+      - Missing option "--name" / "--profile".
     - - system prof-edit --name=DASD7
       - Missing option "--system".
     - - system prof-edit --system=cpc3lp52 --name=DASD7
@@ -1032,7 +1036,7 @@ tasks:
     - - system prof-edit --system=cpc3lp52 --name=DASD
       - no update criteria provided.
     - - system prof-edit --system=cpc3lp52 --name= --memory=2gib
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--profile": value may not be empty'
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory
       - '--memory option requires an argument'
     - - system prof-edit --system= --name=DASD --memory=2gib
@@ -1076,7 +1080,7 @@ tasks:
     - - system prof-del --system=cpc3lp52 --name=DASD10
       - Item successfully deleted.
     - - system prof-del --system=cpc3lp52 --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--profile": value may not be empty'
       # a default profile cannot be deleted when others exist
     - - system prof-del --system=cpc3lp52 --name=DASD11
       - A default profile cannot be removed while other profiles for the same system exist
@@ -1243,11 +1247,11 @@ tasks:
       - Volume detached successfully.
     # 'system poweron' subcommand
     - - system poweron
-      - Missing option "--name".
+      - Missing option "--name" / "--system".
     - - system poweron --name
       - '--name option requires an argument'
     - - system poweron --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--system": value may not be empty'
     - - system poweron --name=cpc3lp55
       - system cpc3lp55 not found.
     - - system poweron --name=cpc3lp52
@@ -1314,11 +1318,11 @@ tasks:
       - 'Request accepted; job id is #'
     # 'system poweroff' subcommand
     - - system poweroff
-      - Missing option "--name".
+      - Missing option "--name" / "--system".
     - - system poweroff --name
       - '--name option requires an argument'
     - - system poweroff --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - 'Invalid value for "--name" / "--system": value may not be empty'
     - - system poweroff --name=cpc3lp55
       - system cpc3lp55 not found.
     - - system poweroff --name=cpc3lp52
@@ -1472,3 +1476,51 @@ tasks:
       - "Item successfully updated."
     - - system prof-list --system=cpc3lp52 --name='Manual install' --long
       - "Operating system *: cms"
+  system-alias:
+    # system command with alias
+    - - system add --system=cpc7 --hostname=hosthmc7.example.com --type=cpc --project='GEO_1 labadmins'
+      - Item added successfully.
+    - - system edit --system=cpc7 --newname=cpc8 --desc='Developer 1'
+      - Item successfully updated.
+    - - system list --system=cpc8
+      - - ' *Name *\| *Hostname *\| *Type *\| *Model *\| *Current state *\| *Owner *\| *Project'
+        - ' *cpc8 *\|' 
+    - - system poweron --system=cpc3lp52 --bg
+      - 'Request accepted; job id is #'
+    - - system poweroff --system=cpc3lp52 --bg
+      - 'Request accepted; job id is #'
+    - - system export --system=guest55
+      - cpc3lp52,guest55,KVM,guest55.example.com,
+    - - system del --name=cpc8
+      - Item successfully deleted.
+  model-alias:
+    # model subcommand with model alias
+    - - system model-add --model=Z196_M55 --title=Z196 --arch=s390x
+      - Item added successfully.
+    - - system model-edit --model=Z196_M55 --newname=Z196_M54
+      - Item successfully updated.
+    - - system model-del --model=Z196_M54
+      - Item successfully deleted.
+  prof-alias:
+    # prof subcommand with prof alias
+    - - system prof-add --system=cpc3lp52 --profile='DASD32'  --login='root:mypasswd'
+      - Item added successfully.
+    - - system prof-edit --system=cpc3lp52 --profile=DASD32 --newname=DASD48
+      - Item successfully updated.
+    - - system prof-list --system=cpc3lp52 --profile=DASD48 --long
+      - 'Profile name                : DASD48'
+    - - system prof-del --system=cpc3lp52 --profile=DASD48
+      - Item successfully deleted.
+  iface-alias:
+    # iface subcommand with iface alias
+    - - system iface-add --system=cpc3lp52 --iface=roce-12 --type=ROCE --devname=en518 --fid=00111 --mac=00:11:22:33:44:55
+      - Item added successfully.
+    - - system iface-edit --iface=roce-12 --system=cpc3lp52 --newname=roce-16
+      - Item successfully updated.
+    - - system iface-attach --system=cpc3lp52 --iface=roce-16 --profile='Manual install'
+      - Network interface attached successfully.
+    - - system iface-detach --system=cpc3lp52 --iface=roce-16 --profile='Manual install'
+      - Network interface detached successfully.
+    - - system iface-del --system=cpc3lp52 --iface=roce-16
+      - Item successfully deleted.
+  

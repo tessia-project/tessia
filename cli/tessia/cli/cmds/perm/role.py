@@ -38,7 +38,7 @@ FIELDS = (
 #
 
 @click.command(name='role-deny')
-@click.option('role', '--name', required=True, type=NAME,
+@click.option('role', '--name','--role', required=True, type=NAME,
               help="role name to be removed")
 @click.option('user', '--login', required=True, help="user's login")
 @click.option('--project', required=True, type=NAME, help="target project")
@@ -54,7 +54,7 @@ def role_deny(**kwargs):
 # role_deny()
 
 @click.command(name='role-grant')
-@click.option('role', '--name', required=True, type=NAME,
+@click.option('role', '--name', '--role', required=True, type=NAME,
               help="role name to grant access")
 @click.option('user', '--login', required=True, help="user's login")
 @click.option('--project', required=True, type=NAME, help="target project")
@@ -73,7 +73,7 @@ def role_grant(**kwargs):
 # role_grant()
 
 @click.command(name='role-list')
-@click.option('--name', type=NAME, help="filter by role name")
+@click.option('--name', '--role', type=NAME, help="filter by role name")
 def role_list(**kwargs):
     """
     list the available roles

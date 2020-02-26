@@ -46,7 +46,7 @@ FIELDS_TABLE = (
 
 @click.command(name='zone-add')
 # set the parameter name after the model's attribute name to save on typing
-@click.option('--name', required=True, type=NAME,
+@click.option('--name', '--zone', required=True, type=NAME,
               help="name of network zone")
 @click.option('--owner', help="owner login")
 @click.option('--project', help="project owning zone")
@@ -65,7 +65,7 @@ def zone_add(**kwargs):
 # zone_add()
 
 @click.command(name='zone-del')
-@click.option('--name', required=True, type=NAME,
+@click.option('--name', '--zone', required=True, type=NAME,
               help="name of network zone")
 def zone_del(name):
     """
@@ -82,7 +82,7 @@ def zone_del(name):
 @click.command(
     name='zone-edit',
     short_help="change properties of an existing network zone")
-@click.option('cur_name', '--name', required=True,
+@click.option('cur_name', '--name', '--zone', required=True,
               help="name of network zone")
 # set the parameter name after the model's attribute name to save on typing
 @click.option('name', '--newname', type=NAME,
@@ -108,7 +108,7 @@ def zone_edit(cur_name, **kwargs):
               is_flag=True, default=False)
 @click.option('--my', help="show only my own zones", is_flag=True,
               default=False)
-@click.option('--name', type=NAME, help="filter by zone name")
+@click.option('--name', '--zone', type=NAME, help="filter by zone name")
 @click.option('--owner', help="filter by specified owner login")
 @click.option('--project', help="filter by specified project")
 def zone_list(**kwargs):

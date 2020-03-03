@@ -123,7 +123,7 @@ secure communication. See the section [Configuration] for an example of how to d
 If the server is running SSL with a self-signed certificate you need to provide the client with a trusted certificate so that it knows the connection is safe.
 If you are in a trusted environment you can use the command below to connect to the server URL and add the offered certificate to the client configuration:
 ```
-$ openssl s_client -showcerts -connect _your_server_hostname_without_https:5000 < /dev/null 2>/dev/null | sed -ne "/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p" > $HOME/.tessia-cli/ca.crt
+$ openssl s_client -showcerts -connect _your_server_hostname_without_https:5000 < /dev/null 2>/dev/null | sed -ne '/-BEGIN/{:1;$!{/-END/!{N;b1};h}};${x;p}' > $HOME/.tessia-cli/ca.crt
 ```
 
 Now set the server URL and test it:

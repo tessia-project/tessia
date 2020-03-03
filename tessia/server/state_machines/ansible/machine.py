@@ -517,7 +517,8 @@ class AnsibleMachine(BaseMachine):
                 # write the hosts belonging to this group
                 for entry in groups[group]:
                     file_fd.write(
-                        '{name} ansible_host={hostname} ansible_user={user} '
+                        '{hostname} ansible_host={hostname} '
+                        'ansible_user={user} '
                         'ansible_ssh_pass={pass}\n'.format(**entry)
                     )
                 file_fd.write('\n')

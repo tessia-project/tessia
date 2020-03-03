@@ -365,9 +365,9 @@ class TestAnsibleMachine(TestCase):
                 inv_calls = [
                     mock.call('[{}]\n'.format(group)),
                     mock.call(
-                        '{name} ansible_host={hostname} ansible_user={user} '
+                        '{hostname} ansible_host={hostname} '
+                        'ansible_user={user} '
                         'ansible_ssh_pass={pwd}\n'.format(
-                            name=system_obj.name,
                             hostname=system_obj.hostname,
                             user=prof_obj.credentials['admin-user'],
                             pwd=prof_obj.credentials['admin-password']),
@@ -439,9 +439,9 @@ class TestAnsibleMachine(TestCase):
                 inv_calls = [
                     mock.call('[{}]\n'.format(group)),
                     mock.call(
-                        '{name} ansible_host={hostname} ansible_user={user} '
+                        '{hostname} ansible_host={hostname} '
+                        'ansible_user={user} '
                         'ansible_ssh_pass={pwd}\n'.format(
-                            name=system_obj.name,
                             hostname=system_obj.hostname,
                             user=prof_obj.credentials['admin-user'],
                             pwd=prof_obj.credentials['admin-password']),

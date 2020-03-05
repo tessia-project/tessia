@@ -340,3 +340,22 @@ d-i preseed/late_command string \
     chroot /target ln -s /usr/bin/qemu-system-s390x /usr/bin/qemu-kvm && \
     chroot /target usermod -a -G kvm root && \
     echo "/usr/bin/qemu-kvm rmix" >> /target/etc/apparmor.d/local/usr.sbin.libvirtd
+
+d-i preseed/late_command string \
+echo -e >> /etc/motd \
+"**************************************************************\n"\
+"*                                                            *\n"\
+"*                The system was installed using              *\n"\
+"*                           TESSIA                           *\n"\
+"* Task Execution Supporter and System Installation Assistant *\n"\
+"*                                                            *\n"\
+"* Open source repo: https://gitlab.com/tessia-project        *\n"\
+"* (GitHub mirror: https://github.com/tessia-project)         *\n"\
+"*                                                            *\n"\
+"* A documentation is located here:                           *\n"\
+"* https://gitlab.com/tessia-project/tessia/-/tree/master/doc *\n"\
+"*                                                            *\n"\
+"* To create custom templates for auto installation see:      *\n"\
+"* > tess autotemplate add --help                             *\n"\
+"*                                                            *\n"\
+"**************************************************************\n"

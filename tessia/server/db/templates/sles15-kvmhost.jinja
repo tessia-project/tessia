@@ -132,6 +132,32 @@ echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['at
       </script>
 {% endif -%}
     </init-scripts>
+    <post-scripts config:type="list">
+      <script>
+      <filename>welcome_msg.sh</filename>
+      <interpreter>shell</interpreter>
+      <source><![CDATA[
+#!/bin/bash
+echo -e >> /etc/motd \
+"**************************************************************\n"\
+"*                                                            *\n"\
+"*                The system was installed using              *\n"\
+"*                           TESSIA                           *\n"\
+"* Task Execution Supporter and System Installation Assistant *\n"\
+"*                                                            *\n"\
+"* Open source repo: https://gitlab.com/tessia-project        *\n"\
+"* (GitHub mirror: https://github.com/tessia-project)         *\n"\
+"*                                                            *\n"\
+"* A documentation is located here:                           *\n"\
+"* https://gitlab.com/tessia-project/tessia/-/tree/master/doc *\n"\
+"*                                                            *\n"\
+"* To create custom templates for auto installation see:      *\n"\
+"* > tess autotemplate add --help                             *\n"\
+"*                                                            *\n"\
+"**************************************************************\n"
+      ]]></source>
+      </script>
+    </post-scripts>
   </scripts>
   <general>
     <ask-list config:type="list"/>

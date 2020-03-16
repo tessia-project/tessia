@@ -85,17 +85,17 @@ tasks:
     - - storage server-add --name=DS8K16 --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
       - Item added successfully.
     - - storage server-add
-      - Missing option "--name" / "--server".
+      - Missing option '--name' / '--server'.
     - - storage server-add --name=DS8K22
-      - Missing option "--model".
+      - Missing option '--model'.
     - - storage server-add --name=DS8K22 --model=DS8000
-      - Missing option "--type".
+      - Missing option '--type'.
     - - storage server-add --name= --model= --type=DASD-FCP --project='GEO_1 labadmins'
-      - 'Invalid value for "--name" / "--server": value may not be empty'
+      - "Invalid value for '--name' / '--server': value may not be empty"
     - - storage server-add --name=DS8K22 --model= --type=DASD-FCP --project='GEO_1 labadmins'
-      - 'Invalid value for "--model": value may not be empty'
+      - "Invalid value for '--model': value may not be empty"
     - - storage server-add --name='' --model=DS8000 --type=DASD-FCP --project='GEO_1 labadmins'
-      - 'Invalid value for "--name" / "--server": value may not be empty'
+      - "Invalid value for '--name' / '--server': value may not be empty"
     - - storage server-add --name=DS8K22 --model=DS8000 --type= --project='GEO_1 labadmins'
       - "request failed. Server answered: No associated item found with value '' for field 'Server type'"
     - - storage server-add --name=DS8K22 --model=DS8000 --type=DASD-FCP
@@ -105,7 +105,7 @@ tasks:
     - - storage server-add --name=DS8K23 --model=DS8000 --type=DASD-FCP --hostname=s88.example.com --fwlevel=A05 --project='GEO_1 labadmins' --desc='New server s88'
       - Item added successfully.
     - - storage server-add --name=DS8K24 --model=DS8000 --type=DASD-FCP --hostname= --fwlevel= --project='GEO_1 labadmins' --desc=
-      - 'Invalid value for "--hostname": value may not be empty'
+      - "Invalid value for '--hostname': value may not be empty"
     - - storage server-add --name=DS8K24 --model=DS8000 --type=DASD-FCP --hostname=s89.example.com --fwlevel= --project= --desc=
       - "request failed. Server answered: No associated item found with value '' for field 'Project'"
     # 'storage server-list' subcommand
@@ -115,7 +115,7 @@ tasks:
     - - storage server-list --long
       - 'Name           : DS8K16'
     - - storage server-list --name=
-      - 'Invalid value for "--name" / "--server": value may not be empty'
+      - "Invalid value for '--name' / '--server': value may not be empty"
     - - storage server-list --name=DS8K22
       - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
         - ' *DS8K22 *\|'
@@ -126,7 +126,7 @@ tasks:
     - - storage server-list --name=DS8888
       - No results were found.
     - - storage server-list --model=
-      - 'Invalid value for "--model": value may not be empty'
+      - "Invalid value for '--model': value may not be empty"
     - - storage server-list --model=DS8000
       - - ' *Name *\| *Hostname *\| *Model *\| *Server type *\| *Firmware level *\| *Owner *\| *Project'
         - ' *DS8K16 *\|'
@@ -173,11 +173,11 @@ tasks:
       - 'Name           : DS8K22'
     # 'storage server-edit' subcommand
     - - storage server-edit --name=
-      - 'Invalid value for "--name" / "--server": value may not be empty'
+      - "Invalid value for '--name' / '--server': value may not be empty"
     - - storage server-edit --name= --model=DS8000
-      - 'Invalid value for "--name" / "--server": value may not be empty'
+      - "Invalid value for '--name' / '--server': value may not be empty"
     - - storage server-edit
-      - Missing option "--name" / "--server".
+      - Missing option '--name' / '--server'.
     - - storage server-edit --name=DS8K22
       - no update criteria provided.
     - - storage server-edit --name=DS8888
@@ -185,7 +185,7 @@ tasks:
     - - storage server-edit --name=DS8K22 --newname=DS8K23
       - 'request failed. Server answered: An item with the provided value'
     - - storage server-edit --name=DS8K22 --newname=
-      - 'Invalid value for "--newname": value may not be empty'
+      - "Invalid value for '--newname': value may not be empty"
     - - storage server-edit --name=DS8K22 --newname=DS8K32
       - Item successfully updated.
     - - storage server-edit --name=DS8K22 --desc=''
@@ -199,11 +199,11 @@ tasks:
     - - storage server-edit --name=DS8K32 --fwlevel=A06
       - Item successfully updated.
     - - storage server-edit --name=DS8K32 --hostname=
-      - 'Invalid value for "--hostname": value may not be empty'
+      - "Invalid value for '--hostname': value may not be empty"
     - - storage server-edit --name=DS8K32 --hostname=s90.example.com
       - Item successfully updated.
     - - storage server-edit --name=DS8K32 --model=
-      - 'Invalid value for "--model": value may not be empty'
+      - "Invalid value for '--model': value may not be empty"
     - - storage server-edit --name=DS8K32 --model=DS8800
       - Item successfully updated.
     - - storage server-edit --name=DS8K32 --owner=
@@ -226,9 +226,9 @@ tasks:
       - "request failed. Server answered: No associated item found with value 'DASD' for field 'Server type'"
     # 'storage server-del' subcommand
     - - storage server-del
-      - Missing option "--name" / "--server".
+      - Missing option '--name' / '--server'.
     - - storage server-del --name=
-      - 'Invalid value for "--name" / "--server": value may not be empty'
+      - "Invalid value for '--name' / '--server': value may not be empty"
     - - storage server-del --name=DS8K22
       - server not found.
     - - storage server-del --name=DS8K32
@@ -241,19 +241,19 @@ tasks:
       - 'Type name   : DASD'
     # 'storage vol-add' subcommand
     - - storage vol-add
-      - Missing option "--server".
+      - Missing option '--server'.
     - - storage vol-add --server=DS8K16
-      - Missing option "--id".
+      - Missing option '--id'.
     - - storage vol-add --server=DS8K16 --id=3951
-      - Missing option "--type".
+      - Missing option '--type'.
     - - storage vol-add --server=DS8K16 --id=3951 --type=DASD
       - Missing option "--size".
     - - storage vol-add --server= --id=3951 --size=7gb --type=DASD
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - storage vol-add --server=DS8K16 --id= --size=7gb --type=DASD
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - "Error: Invalid value for '--id': value may not be empty"
     - - storage vol-add --server=DS8K16 --id=3951 --size= --type=DASD
-      - 'Error: Invalid value for "--size": value may not be empty'
+      - "Error: Invalid value for '--size': value may not be empty"
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=
       - "The server did not accept our request. The response is: The value 'type=' is invalid: it does not match storage server type 'DASD-FCP'"
     - - storage vol-add --server=DS8K16 --id=3951 --size=7gb --type=DASD
@@ -264,9 +264,9 @@ tasks:
       - Item added successfully.
     # vol-add: wrong size
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7g --owner=dev1@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
-      - 'Error: Invalid value for "--size": 7g is not a valid size'
+      - "Error: Invalid value for '--size': 7g is not a valid size"
     - - storage vol-add --server=DS8K16 --type=DASD --id=#3952 --size=7gb --owner= --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
-      - 'Invalid value for "--id":'
+      - "Invalid value for '--id':"
     - - storage vol-add --server=DS8K16 --type=DASD --id=3952 --size=7gb --owner= --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=DASD --id=3955 --size=7gb --owner=dev4@example.com --project='GEO_1 developers' --desc='belongs to zVM guest/LPAR'
@@ -310,15 +310,15 @@ tasks:
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --wwid=11002076305aac1a0000000000002206 --mpath
       - '--mpath option requires an argument'
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath= --path='1800,100207630503c001' --wwid=11002076305aac1a0000000000002206
-      - 'Invalid value for "--mpath":  is not a valid boolean'
+      - "Invalid value for '--mpath':  is not a valid boolean"
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=fals --path='1800,100207630503c001' --wwid=11002076305aac1a0000000000002206
-      - 'Invalid value for "--mpath": fals is not a valid boolean'
+      - "Invalid value for '--mpath': fals is not a valid boolean"
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,0x5555' --wwid=11002076305aac1a0000000000002206
-      - 'Invalid value for "--path": 0x5555 is not a valid wwpn'
+      - "Invalid value for '--path': 0x5555 is not a valid wwpn"
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --wwid=
-      - 'Invalid value for "--wwid":  is not a valid wwid'
+      - "Invalid value for '--wwid':  is not a valid wwid"
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --wwid=5555.50
-      - 'Invalid value for "--wwid": 5555.50 is not a valid wwid'
+      - "Invalid value for '--wwid': 5555.50 is not a valid wwid"
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c1ae' --path='1800,100207630513c1ae' --mpath=false --wwid=11002076305aac1a0000000000002202
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400300000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c000' --path='1800,100207630508c000' --path='1800,100207630510c000' --path='1800,100207630513c000' --path='1880,100207630503c000' --path='1880,100207630508c000' --path='1880,100207630510c000' --path='1880,100207630513c000' --wwid=11002076305aac1a0000000000002207
@@ -329,14 +329,14 @@ tasks:
     - - storage vol-list --server=DS8KKK
       - No results were found.
     - - storage vol-list --server=
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - storage vol-list --server=DS8K16
       - - ' *Volume id *\| *Storage server *\| *Volume size *\| *Volume type *\| *Assigned to system *\| *Owner *\| *Project *\| *Associated system profiles'
         - ' *3955 *\|'
     - - storage vol-list --long
       - 'Volume id                  : 3955'
     - - storage vol-list --system=
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - storage vol-list --system=lpar69
       - ' *3955 *\|'
     - - storage vol-list --id=3955
@@ -350,7 +350,7 @@ tasks:
     - - storage vol-list --id=ED51 --long
       - 'Volume id                  : ed51'
     - - storage vol-list --id=
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - "Error: Invalid value for '--id': value may not be empty"
     - - storage vol-list --id=4000
       - No results were found.
     - - storage vol-list --my
@@ -395,7 +395,7 @@ tasks:
       - No results were found.
     # 'storage vol-edit' subcommand for DASD
     - - storage vol-edit
-      - Missing option "--id".
+      - Missing option '--id'.
     - - storage vol-edit --id=4444
       - volume not found.
     - - storage vol-edit --id=3955
@@ -411,13 +411,13 @@ tasks:
     - - storage vol-list --system=lpar69
       - ' *3955 *\|'
     - - storage vol-edit --id=3955 --newid=
-      - 'Error: Invalid value for "--newid": value may not be empty'
+      - "Error: Invalid value for '--newid': value may not be empty"
     - - storage vol-edit --id=3955 --newid=3955
       - Item successfully updated.
     - - storage vol-edit --id=3955 --size=7gb
       - Item successfully updated.
     - - storage vol-edit --id=3955 --size=7g
-      - 'Error: Invalid value for "--size": 7g is not a valid size'
+      - "Error: Invalid value for '--size': 7g is not a valid size"
     - - storage vol-edit --id=3955 --type=DASD
       - 'no such option: --type'
     - - storage vol-edit --id=3950 --size=7gb
@@ -464,9 +464,9 @@ tasks:
     - - storage vol-edit --id=1022400200000000 --type=DASD
       - 'no such option: --type'
     - - storage vol-edit --id=1022400200000000 --mpath=
-      - 'Invalid value for "--mpath":  is not a valid boolean'
+      - "Invalid value for '--mpath':  is not a valid boolean"
     - - storage vol-edit --id=1022400200000000 --mpath=TRU
-      - 'Invalid value for "--mpath": tru is not a valid boolean'
+      - "Invalid value for '--mpath': tru is not a valid boolean"
     - - storage vol-edit --id=1022400200000000 --path='1800,100207630503c1ae' --mpath=true --wwid=11002076305aac1a0000000000002202
       - 'no such option: --path'
        # add the same path as exists
@@ -480,16 +480,16 @@ tasks:
     - - storage vol-edit --id=1022400200000000 --delpath='1800,100207630503c1ae'
       - fcp volume must have at least one path
     - - storage vol-edit --id=1022400200000000 --wwid=
-      - 'Invalid value for "--wwid":  is not a valid wwid'
+      - "Invalid value for '--wwid':  is not a valid wwid"
         # wwpn not found: no error message
     - - storage vol-edit --id=1022400200000000 --delpath='1800,0x100207630503c1a1'
       - Item successfully updated.
     - - storage vol-edit --id=1022400200000000 --delpath='1800,0x5555'
-      - 'Invalid value for "--delpath": 0x5555 is not a valid wwpn'
+      - "Invalid value for '--delpath': 0x5555 is not a valid wwpn"
     - - storage vol-edit --id=1022400200000000 --delpath='55,100207630503c1a1'
-      - 'Invalid value for "--delpath": 55 is not a valid devno'
+      - "Invalid value for '--delpath': 55 is not a valid devno"
     - - storage vol-edit --id=1022400200000000 --delpath='1800 100207630503c1a1'
-      - 'Invalid value for "--delpath": 1800 100207630503c1a1 is not a valid FCP path'
+      - "Invalid value for '--delpath': 1800 100207630503c1a1 is not a valid FCP path"
     - - storage vol-edit --id=1022400200000000 --delpath='1800,100207630503c1a1'
       - Item successfully updated.
         # adapter not found: no error message
@@ -548,11 +548,11 @@ tasks:
       - DS8K16,3960,DASD,6675,,,,lab_admin@example.com,GEO_1 developers,belongs to LPAR
     # 'storage vol-del' subcommand
     - - storage vol-del
-      - Missing option "--id".
+      - Missing option '--id'.
     - - storage vol-del --server= --id=9953
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - storage vol-del --id=
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - "Error: Invalid value for '--id': value may not be empty"
     - - storage vol-del --id=9953
       - volume not found.
     - - storage vol-del --id=ED51
@@ -585,21 +585,21 @@ tasks:
       - 'partition table undefined; initialize it with the part-init command.'
     # 'storage part-init' subcommand
     - - storage part-init
-      - Missing option "--id".
+      - Missing option '--id'.
     - - storage part-init --id=3955
-      - 'Missing option "--label".  Choose from:[ \n\t]*dasd,[ \n\t]*gpt,[ \n\t]*msdos\.'
+      - "Missing option '--label'.  Choose from:[ \n\t]*dasd,[ \n\t]*gpt,[ \n\t]*msdos."
     - - storage part-init --label=dasd
-      - Missing option "--id".
+      - Missing option '--id'.
     - - storage part-init --server= --id=3955 --label=dasd
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - storage part-init --id=9955 --label=dasd
       - volume not found.
     - - storage part-init --id= --label=dasd
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - "Error: Invalid value for '--id': value may not be empty"
     - - storage part-init --id=3955 --label=
-      - 'Invalid value for "--label": invalid choice: .'
+      - "Invalid value for '--label': invalid choice: ."
     - - storage part-init --id=3955 --label=disk
-      - 'Invalid value for "--label": invalid choice: disk.'
+      - "Invalid value for '--label': invalid choice: disk."
     - - storage part-init --id=3955 --label=dasd
       - Partition table successfully initialized.
     - - storage part-init --id=3955 --label=dasd
@@ -617,21 +617,21 @@ tasks:
       - Partition table successfully initialized.
     # 'storage part-add' subcommand
     - - storage part-add
-      - Missing option "--id".
+      - Missing option '--id'.
     - - storage part-add --id=3955
-      - Missing option "--fs".
+      - Missing option '--fs'.
     - - storage part-add --id=3955 --size=7gb
-      - Missing option "--fs".
+      - Missing option '--fs'.
     - - storage part-add --server= --id=3955 --fs=ext4 --size=7gb
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - storage part-add --id= --fs=ext4 --size=7gb
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - "Error: Invalid value for '--id': value may not be empty"
     - - storage part-add --id=9955 --fs=ext4 --size=7gb
       - volume not found.
     - - storage part-add --id=3955 --fs=axt4 --size=7gb
       - "The server did not accept our request. The response is: Bad Request"
     - - storage part-add --id=3955 --fs=ext4 --size=7g
-      - 'Error: Invalid value for "--size": 7g is not a valid size'
+      - "Error: Invalid value for '--size': 7g is not a valid size"
     - - storage part-add --id=3955 --fs=ext4 --mp=/
       - Partition successfully added.
     # next two commands are to make sure not specifying size used all available space
@@ -651,7 +651,7 @@ tasks:
     - - storage part-add --id=3952 --fs=ext4 --size=7gb --mp=/
       - "Error: size specified is bigger than available free space 0MiB"
     - - storage part-add --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=first
-      - 'Invalid value for "--type": invalid choice: first.'
+      - "Invalid value for '--type': invalid choice: first."
     - - storage part-add --id=1022400200000000 --fs=ext4 --size=9gb --mp=/ --type=primary
       - Partition successfully added.
     - - storage part-add --id=1022400200000000 --fs=swap --size=1gb
@@ -663,9 +663,9 @@ tasks:
       - Partition successfully added.
     # 'storage part-list' subcommand
     - - storage part-list
-      -  Missing option "--id".
+      -  Missing option '--id'.
     - - storage part-edit --server= --id=3955 --num=1
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - storage part-list --id=9955
       - volume not found.
     - - storage part-list --id=3955
@@ -681,21 +681,21 @@ tasks:
       - 'Partition table type: dasd'
     # 'storage part-edit' subcommand
     - - storage part-edit
-      - Missing option "--id".
+      - Missing option '--id'.
     - - storage part-edit --id=3955
-      - Missing option "--num".
+      - Missing option '--num'.
     - - storage part-edit --server= --id=3955 --num=1
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - storage part-list --id=
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - "Error: Invalid value for '--id': value may not be empty"
     - - storage part-edit --id= --num=1
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - "Error: Invalid value for '--id': value may not be empty"
     - - storage part-edit --id=3955 --num=0
-      - 'Invalid value for "--num": 0 is smaller than the minimum valid value 1.'
+      - "Invalid value for '--num': 0 is smaller than the minimum valid value 1."
     - - storage part-edit --id=3955 --num=1
       - nothing to update.
     - - storage part-edit --id=3955 --num=1 --size=7g
-      - 'Error: Invalid value for "--size": 7g is not a valid size'
+      - "Error: Invalid value for '--size': 7g is not a valid size"
     - - storage part-edit --id=3955 --num=2 --size=7gb
       - specified partition not found
     - - storage part-edit --id=3955 --num=1 --size=7gb
@@ -714,7 +714,7 @@ tasks:
     - - storage part-edit --id=3955 --num=1 --mp=/ --mo=auto
       - Partition successfully updated.
     - - storage part-edit --id=1022400200000000 --num=2 --type=logic
-      - 'Invalid value for "--type": invalid choice: logic.'
+      - "Invalid value for '--type': invalid choice: logic."
     - - storage part-edit --id=1022400200000000 --num=2 --type=logical
       - Partition successfully updated.
     # test conflicting ids
@@ -724,15 +724,15 @@ tasks:
       - Partition successfully updated.
     # 'storage part-del' subcommand
     - - storage part-del
-      - Missing option "--id".
+      - Missing option '--id'.
     - - storage part-del --id=3955
-      - Missing option "--num".
+      - Missing option '--num'.
     - - storage part-del --server= --id=3955 --num=3
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - storage part-del --id= --num=3
-      - 'Error: Invalid value for "--id": value may not be empty'
+      - "Error: Invalid value for '--id': value may not be empty"
     - - storage part-del --id=3955 --num=
-      - 'Invalid value for "--num":  is not a valid integer'
+      - "Invalid value for '--num':  is not a valid integer"
     - - storage part-del --id=3955 --num=3
       - specified partition not found
     - - storage part-del --id=3955 --num=1
@@ -753,4 +753,3 @@ tasks:
         - ' *DS8K48 *\|'
     - - storage server-del --server=DS8K48
       - Item successfully deleted.
-

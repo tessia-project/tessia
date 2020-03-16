@@ -15,21 +15,21 @@ tasks:
         - password
       - Key successfully created and added to client configuration.
     - - os add
-      - 'Missing option "--name" / "--os".'
+      - "Missing option '--name' / '--os'."
     - - os add --name=newos1.0
-      - 'Missing option "--type".'
+      - "Missing option '--type'."
     - - os add --name=newos1.0 --type=newos
-      - 'Error: Invalid value for "--type": invalid choice: newos.'
+      - "Error: Invalid value for '--type': invalid choice: newos."
     - - os add --name=newos1.0 --type=cms
-      - 'Missing option "--major".'
+      - "Missing option '--major'."
     - - os add --name=newos1.0 --type=cms --major=wrong
-      - 'Error: Invalid value for "--major": wrong is not a valid integer'
+      - "Error: Invalid value for '--major': wrong is not a valid integer"
     - - os add --name=newos1.0 --type=cms --major=10
-      - 'Missing option "--minor".'
+      - "Missing option '--minor'."
     - - os add --name=newos1.0 --type=cms --major=10 --minor=wrong
-      - 'Error: Invalid value for "--minor": wrong is not a valid integer'
+      - "Error: Invalid value for '--minor': wrong is not a valid integer"
     - - os add --name=newos1.0 --type=cms --major=10 --minor=1
-      - 'Missing option "--pname".'
+      - "Missing option '--pname'."
     - - os add --name=newos1.0 --type=cms --major=10 --minor=1 --pname='New OS 1.0'
       - 'Item added successfully.'
     - - os add --name=newos1.0 --type=cms --major=10 --minor=1 --pname='New OS 1.0'
@@ -61,7 +61,7 @@ tasks:
       - 'OS identifier *: ubuntu16.04.1'
   edit:
     - - os edit
-      - 'Error: Missing option "--name" / "--os".'
+      - "Error: Missing option '--name' / '--os'."
     - - os edit --name=newos1.0
       - 'Error: no update criteria provided.'
     - - os edit --name=newos1.0 --newname=newsuperos5.7
@@ -78,7 +78,7 @@ tasks:
       - 'Item successfully updated.'
   del:
     - - os del
-      - 'Error: Missing option "--name" / "--os".'
+      - "Error: Missing option '--name' / '--os'."
     - - os del --name='wrong-name'
       - 'Error: OS not found.'
     - - os del --name='newsuperos5.7'
@@ -113,4 +113,3 @@ tasks:
       - 'Item successfully updated.'
     - - os del --os=anotherbetteros12.1
       - 'Item successfully deleted'
-

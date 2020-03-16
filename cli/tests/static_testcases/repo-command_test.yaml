@@ -54,11 +54,11 @@ tasks:
       - --initrd is required when --os was specified
         # additional 'repo add' to check then 'repo edit' and 'repo del'
     - - repo add
-      - Missing option "--name" / "--repo".
+      - Missing option '--name' / '--repo'.
     - - repo add --name='SLES12.2'
-      - Missing option "--url".
+      - Missing option '--url'.
     - - repo add --url='http://example.com/suse/s390x/SLES12.2/DVD'
-      - Missing option "--name" / "--repo".
+      - Missing option '--name' / '--repo'.
     - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD' --owner=dev9
       - "request failed. Server answered: No associated item found with value 'dev9' for field 'Owner'"
     - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD' --project=XXX
@@ -67,11 +67,11 @@ tasks:
       - 'no such option: --login'
       # Empty value
     - - repo add --name= --url='http://example.com/suse/s390x/SLES12/DVD'
-      - 'Invalid value for "--name" / "--repo": value may not be empty'
+      - "Invalid value for '--name' / '--repo': value may not be empty"
     - - repo add --name='SLES12.4' --url=
-      - 'Invalid value for "--url": value may not be empty'
+      - "Invalid value for '--url': value may not be empty"
     - - repo add --name='SLES12.2' --url='http://example#.com/suse/s390x/SLES12.2/DVD'
-      - 'Invalid value for "--url":'
+      - "Invalid value for '--url':"
     - - repo add --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD'
       - Item added successfully.
     - - repo add --name='SLES12.2' --url='http://example.com/xxx'
@@ -141,7 +141,7 @@ tasks:
       - 'no such option: --desc'
     # 'repo edit' subcommand
     - - repo edit
-      - Missing option "--name" / "--repo".
+      - Missing option '--name' / '--repo'.
     - - repo edit --name='SLES12.2'
       - no update criteria provided.
     - - repo edit --name='SLES12.3' --desc='New SLES version'
@@ -150,7 +150,7 @@ tasks:
       - Item successfully updated.
       # Empty value
     - - repo edit --name='SLES12.2' --newname=
-      - 'Invalid value for "--newname": value may not be empty'
+      - "Invalid value for '--newname': value may not be empty"
     - - repo edit --name='SLES12.2' --newname='SLES12.2'
       - Item successfully updated.
     - - repo edit --name='SLES12.2' --url='http://example.com/suse/s390x/SLES12.2/DVD'
@@ -158,7 +158,7 @@ tasks:
     - - repo edit --name='SLES12.2' --url='http://example.com/xxx'
       - Item successfully updated.
     - - repo edit --name='SLES12.2' --url=''
-      - 'Invalid value for "--url": value may not be empty'
+      - "Invalid value for '--url': value may not be empty"
     - - repo edit --name='SLES12.1-GA' --os=sles12.1
       - Item successfully updated.
     - - repo edit --name='SLES12.1-GA' --os=sles12.1 --kernel=
@@ -191,9 +191,9 @@ tasks:
       - Item successfully updated.
     # 'repo del' subcommand
     - - repo del
-      - Missing option "--name" / "--repo".
+      - Missing option '--name' / '--repo'.
     - - repo del --name=''
-      - 'Invalid value for "--name" / "--repo": value may not be empty'
+      - "Invalid value for '--name' / '--repo': value may not be empty"
     - - repo del --name='SLES12'
       - repository not found.
     - - repo del --name='SLES12.2'
@@ -209,4 +209,3 @@ tasks:
         - ' *SLES12.3 *\|'
     - - repo del --repo='SLES12.3'
       - Item successfully deleted.
-

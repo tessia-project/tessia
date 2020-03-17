@@ -74,26 +74,26 @@ tasks:
     - - perm project-add --name='GEO_1 testers' --desc='Tester team'
       - 'request failed. Server answered: An item with the provided value'
     - - perm project-add --desc='3rd Tester team'
-      - Missing option "--name" / "--project".
+      - Missing option '--name' / '--project'.
     - - perm project-add --name='GEO_3 testers'
-      - Missing option "--desc".
+      - Missing option '--desc'.
     - - perm project-add --name='GEO_3 testers' --desc='3rd tester team'
       - Item added successfully.
       # Empty name
     - - perm project-add --name= --desc='3rd tester team'
-      - 'Invalid value for "--name" / "--project": value may not be empty'
+      - "Invalid value for '--name' / '--project': value may not be empty"
     - - perm project-add --name='GEO_4 testers' --desc=
-      - 'Invalid value for "--desc": value may not be empty'
+      - "Invalid value for '--desc': value may not be empty"
     - - perm project-edit --name='GEO_4 testers' --desc=
-      - 'Invalid value for "--desc": value may not be empty'
+      - "Invalid value for '--desc': value may not be empty"
     - - perm project-edit --name='GEO_1 testers'
-      - Missing option "--desc".
+      - Missing option '--desc'.
     - - perm project-edit --name='GEO_1 testers' --desc='Tester team'
       - Item successfully updated.
     - - perm project-edit --desc='Tester team'
-      - Missing option "--name" / "--project".
+      - Missing option '--name' / '--project'.
     - - perm project-edit --name= --desc='Tester team'
-      - 'Invalid value for "--name" / "--project": value may not be empty'
+      - "Invalid value for '--name' / '--project': value may not be empty"
     - - perm project-edit --name='GEO testers' --desc='Test team'
       - project not found.
     - - perm project-edit --name='GEO_1 testers' --desc='Tester team'
@@ -102,11 +102,11 @@ tasks:
       - Item successfully updated.
       # Empty name
     - - perm project-edit --name='GEO_1 testers' --newname=
-      - 'Invalid value for "--newname": value may not be empty'
+      - "Invalid value for '--newname': value may not be empty"
     - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers'
-      - Missing option "--desc".
+      - Missing option '--desc'.
     - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers' --desc=
-      - 'Invalid value for "--desc": value may not be empty'
+      - "Invalid value for '--desc': value may not be empty"
     - - perm project-edit --name='GEO_1 testers' --newname='GEO_2 testers' --desc='Test team'
       - Item successfully updated.
     - - perm project-edit --name='GEO_3 testers' --newname='GEO_2 testers' --desc='3rd tester team'
@@ -117,7 +117,7 @@ tasks:
     - - perm project-list --long
       - 'Name        : Admins'
     - - perm project-list --name=
-      - 'Invalid value for "--name" / "--project": value may not be empty'
+      - "Invalid value for '--name' / '--project': value may not be empty"
     - - perm project-list --name='GEO_1 testers'
       - No results were found.
     - - perm project-list --name='GEO_2 testers'
@@ -126,9 +126,9 @@ tasks:
     - - perm project-list --name='GEO_2 testers' --long
       - 'Name        : GEO_2 testers'
     - - perm project-del
-      - Missing option "--name" / "--project".
+      - Missing option '--name' / '--project'.
     - - perm project-del --name=''
-      - 'Invalid value for "--name" / "--project": value may not be empty'
+      - "Invalid value for '--name' / '--project': value may not be empty"
     - - perm project-del --name='GEO_1 testers'
       - project not found.
     - - perm project-del --nam='GEO_3 testers'
@@ -137,20 +137,20 @@ tasks:
       - Item successfully deleted.
     # 'perm user' subcommand
     - - perm user-add
-      - Missing option "--login".
+      - Missing option '--login'.
     - - perm user-add --login=dev4@example.com
-      - Missing option "--name".
+      - Missing option '--name'.
     - - perm user-add --name='Developer 4'
-      - Missing option "--login".
+      - Missing option '--login'.
     - - perm user-add --log=dev4@example.com --name='Developer 4'
       - 'no such option: --log  Did you mean --login?'
     - - perm user-add --login=dev4@example.com --name='Developer 4'
       - User added successfully.
       # Empty name
     - - perm user-add --login=dev6@example.com --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - "Invalid value for '--name': value may not be empty"
     - - perm user-add --login= --name='Developer 6'
-      - 'Invalid value for "--login": value may not be empty'
+      - "Invalid value for '--login': value may not be empty"
     - - perm user-add --login=dev4@example.com --name='Developer 4'
       - 'request failed. Server answered: An item with the provided value'
     - - perm user-add --login=dev6@example.com --name='Developer 6' --title='developer'
@@ -170,16 +170,16 @@ tasks:
     - - perm user-edit --login=dev3@example.com --name='Dev 3' --title='Mr. Dev 3'
       - User successfully updated.
     - - perm user-edit
-      - Missing option "--login".
+      - Missing option '--login'.
     - - perm user-edit --login=dev4@example.com
       - no update criteria provided.
     - - perm user-edit --name='Developer 4'
-      - Missing option "--login".
+      - Missing option '--login'.
       # Empty name
     - - perm user-edit --login=dev4@example.com --name=
-      - 'Invalid value for "--name": value may not be empty'
+      - "Invalid value for '--name': value may not be empty"
     - - perm user-edit --login= --name='Developer 4'
-      - 'Invalid value for "--login": value may not be empty'
+      - "Invalid value for '--login': value may not be empty"
     - - perm user-edit --login=dev4@example.com --name='Developer 4'
       - User successfully updated.
     - - perm user-edit --login=dev4@example.com --title='Mr. Dev 4'
@@ -193,11 +193,11 @@ tasks:
     - - perm user-edit --login=dev7@example.com --restricted=yes
       - User successfully updated.
     - - perm user-edit --login=dev7@example.com --restricted=xxx
-      - 'Invalid value for "--restricted": xxx is not a valid boolean'
+      - "Invalid value for '--restricted': xxx is not a valid boolean"
     - - perm user-edit --login=dev7@example.com --restricted=1
       - User successfully updated.
     - - perm user-edit --login=dev7@example.com --restricted=-5
-      - 'Invalid value for "--restricted": -5 is not a valid boolean'
+      - "Invalid value for '--restricted': -5 is not a valid boolean"
     - - perm user-edit --login=dev7@example.com --restricted=true
       - User successfully updated.
     - - perm user-edit --login=dev7@example.com --restricted=0
@@ -245,7 +245,7 @@ tasks:
     - - perm user-list --admin
       - '--admin option requires an argument'
     - - perm user-list --admin=xxx
-      - 'Invalid value for "--admin": xxx is not a valid boolean'
+      - "Invalid value for '--admin': xxx is not a valid boolean"
     - - perm user-list --admin=FALSE --long
       - 'Login         : lab_admin@example.com'
     - - perm user-list --login=dev4@example.com --admin=FALSE --long
@@ -272,7 +272,7 @@ tasks:
     - - perm user-roles --role='USER'
       - ' *dev1@example.com *\| *GEO_1 developers *\| *USER'
     - - perm user-del
-      - Missing option "--login".
+      - Missing option '--login'.
     - - perm user-del --login=dev9@example.com
       - user not found.
     - - perm user-del --login=dev3@example.com
@@ -283,23 +283,23 @@ tasks:
     - - perm role-list --login=lab_admin@example.com
       - 'no such option: --login'
     - - perm role-list --name=
-      - 'Invalid value for "--name" / "--role": value may not be empty'
+      - "Invalid value for '--name' / '--role': value may not be empty"
     - - perm role-list --name=ADMIN_LAB
       - 'Role            : ADMIN_LAB'
     - - perm role-list --name=ADMIN
       - No results were found.
     - - perm role-grant
-      - Missing option "--name" / "--role".
+      - Missing option '--name' / '--role'.
     - - perm role-grant --login=lab_admin@example.com
-      - Missing option "--name" / "--role".
+      - Missing option '--name' / '--role'.
     - - perm role-grant --name=
-      - 'Invalid value for "--name" / "--role": value may not be empty'
+      - "Invalid value for '--name' / '--role': value may not be empty"
     - - perm role-grant --name='ADMIN_LAB'
-      - Missing option "--login".
+      - Missing option '--login'.
     - - perm role-grant --project='GEO_2 testers'
-      - Missing option "--name" / "--role".
+      - Missing option '--name' / '--role'.
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB'
-      - Missing option "--project".
+      - Missing option '--project'.
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN' --project='GEO_2 testers'
       - "request failed. Server answered: No associated item found with value 'ADMIN' for field 'Role'"
     - - perm role-grant --login=xxx --name='ADMIN_LAB' --project='GEO_2 testers'
@@ -307,21 +307,21 @@ tasks:
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
       - "request failed. Server answered: No associated item found with value 'XXX' for field 'Project name'"
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project=
-      - 'Invalid value for "--project": value may not be empty'
+      - "Invalid value for '--project': value may not be empty"
     - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
       - User role added successfully.
     - - perm role-deny
-      - Missing option "--name" / "--role".
+      - Missing option '--name' / '--role'.
     - - perm role-deny --name=
-      - 'Invalid value for "--name" / "--role": value may not be empty'
+      - "Invalid value for '--name' / '--role': value may not be empty"
     - - perm role-deny --login=lab_admin@example.com
-      - Missing option "--name" / "--role".
+      - Missing option '--name' / '--role'.
     - - perm role-deny --name='ADMIN_LAB'
-      - Missing option "--login".
+      - Missing option '--login'.
     - - perm role-deny --project='GEO_2 testers'
-      - Missing option "--name" / "--role".
+      - Missing option '--name' / '--role'.
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB'
-      - Missing option "--project".
+      - Missing option '--project'.
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN' --project='GEO_2 testers'
       - user role not found.
     - - perm role-deny --login=xxx --name='ADMIN_LAB' --project='GEO_2 testers'
@@ -329,7 +329,7 @@ tasks:
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project=XXX
       - user role not found.
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project=
-      - 'Invalid value for "--project": value may not be empty'
+      - "Invalid value for '--project': value may not be empty"
     - - perm role-deny --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2 testers'
       - User role removed successfully.
   project_user_and_role_alias:
@@ -350,4 +350,3 @@ tasks:
       - User role added successfully.
     - - perm role-deny --login=lab_admin@example.com --role='ADMIN_LAB' --project='GEO_2 testers'
       - User role removed successfully.
-

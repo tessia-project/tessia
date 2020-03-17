@@ -109,15 +109,15 @@ tasks:
       - Key successfully created and added to client configuration.
   system_autoinstall:
     - - system autoinstall
-      - Missing option "--os".
+      - Missing option '--os'.
     - - system autoinstall --os=rhel7.2
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system autoinstall --system=cpc3lp52
-      - Missing option "--os".
+      - Missing option '--os'.
     - - system autoinstall --os= --system=cpc3lp52
       - 'request failed, reason is: Parsing of parameters failed with: OS  not found'
     - - system autoinstall --os=rhel7.2 --system=
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system autoinstall --os=rhel7.2 --template=RHEL7.3 --system=cpc3lp52
       - 'request failed, reason is: Parsing of parameters failed with: Template RHEL7.3 not found'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55
@@ -129,7 +129,7 @@ tasks:
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity
       - '--verbosity option requires an argument'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity=
-      - 'Invalid value for "--verbosity": value may not be empty'
+      - "Invalid value for '--verbosity': value may not be empty"
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity Critical
       - 'Failed to establish a new connection'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity ERROR
@@ -141,7 +141,7 @@ tasks:
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity debug
       - 'Failed to establish a new connection'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity warn
-      - Invalid value for "--verbosity"
+      - Invalid value for '--verbosity'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --profile='DASD root1'
       - 'Failed to establish a new connection'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=invalid=name
@@ -169,35 +169,35 @@ tasks:
    # job submit
       # an empty file ~/tessia/cli/tests/files/system_autoinstall_and_job_test/test_parmfile-empty is used
     - - job submit
-      - Missing option "--type".
+      - Missing option '--type'.
     - - job submit --type=autoinstall
-      - Missing option "--parmfile".
+      - Missing option '--parmfile'.
     - - job submit --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
-      - Missing option "--type".
+      - Missing option '--type'.
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
       - 'request failed, reason is: Parsing of parameters failed with: Invalid request parameters'
     - - job submit --type= --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
-      - 'Invalid value for "--type": value may not be empty'
+      - "Invalid value for '--type': value may not be empty"
     - - job submit --type=autoinstall --parmfile=
-      - 'Invalid value for "--parmfile": Could not open file: : No such file or directory'
+      - "Invalid value for '--parmfile': Could not open file: : No such file or directory"
     - - job submit --type=autoinst --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
-      - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
+      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman"
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
       - Waiting for job output
     - - job submit --type=autoinstall --parmfile='test'
-      - 'Invalid value for "--parmfile": Could not open file: test: No such file or directory'
+      - "Invalid value for '--parmfile': Could not open file: test: No such file or directory"
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --timeout
       - '--timeout option requires an argument'
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --timeout=A
-      - 'Invalid value for "--timeout": A is not a valid integer'
+      - "Invalid value for '--timeout': A is not a valid integer"
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --prio
       - '--prio option requires an argument'
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --prio=50
-      - 'Invalid value for "--prio": 50 is not in the valid range of 0 to 9'
+      - "Invalid value for '--prio': 50 is not in the valid range of 0 to 9"
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --startdate
       - '--startdate option requires an argument'
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty' --startdate=yesterday
-      - "Error: Invalid value for \"--startdate\": yesterday does not match expected format '%Y-%m-%d %H:%M:%S'"
+      - "Error: Invalid value for '--startdate': yesterday does not match expected format '%Y-%m-%d %H:%M:%S'"
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --startdate="1970-10-10 10:10:10"
       - "Error: jobs with start date must have --timeout specified"
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --startdate="1970-10-10 10:10:10" --timeout=60 --prio=2
@@ -222,9 +222,9 @@ tasks:
     - - job list --type
       - '--type option requires an argument'
     - - job req-list --type=
-      - 'Invalid value for "--type": value may not be empty'
+      - "Invalid value for '--type': value may not be empty"
     - - job list --type=lpar
-      - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
+      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman"
     - - job list --type=autoinstall
       - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
         - '\| autoinstall \|'
@@ -247,9 +247,9 @@ tasks:
     - - job list --state
       - '--state option requires an argument'
     - - job list --state=''
-      - 'Invalid value for "--state": value may not be empty'
+      - "Invalid value for '--state': value may not be empty"
     - - job list --state=xxxx
-      - 'Invalid value for "--state": job state must be one of: canceled, cleaningup, completed, failed, running, waiting'
+      - "Invalid value for '--state': job state must be one of: canceled, cleaningup, completed, failed, running, waiting"
     - - job list --state=FAILED
       - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
         - '\| FAILED \|'
@@ -261,9 +261,9 @@ tasks:
         - '\| COMPLETED \|'
     # job output
     - - job output
-      - Missing option "--id".
+      - Missing option '--id'.
     - - job output --id=
-      - 'Invalid value for "--id":  is not a valid integer'
+      - "Invalid value for '--id':  is not a valid integer"
     - - job output --id=22
       - job not found.
     - - job output --id=1
@@ -296,13 +296,13 @@ tasks:
       - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
         - '\| SUBMIT *\|'
     - - job req-list --action=
-      - 'Invalid value for "--action": value may not be empty'
+      - "Invalid value for '--action': value may not be empty"
     - - job req-list --action=xxxx
-      - 'Invalid value for "--action": action type must be one of: cancel, submit'
+      - "Invalid value for '--action': action type must be one of: cancel, submit"
     - - job req-list --type
       - '--type option requires an argument'
     - - job req-list --type=lpar
-      - 'Invalid value for "--type": job type must be one of: ansible, autoinstall, echo, powerman'
+      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman"
     - - job req-list --type=autoinstall
       - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
         - '\| autoinstall \|'
@@ -322,9 +322,9 @@ tasks:
     - - job req-list --state
       - '--state option requires an argument'
     - - job req-list --state=''
-      - 'Invalid value for "--state": value may not be empty'
+      - "Invalid value for '--state': value may not be empty"
     - - job req-list --state=xxxx
-      - 'Invalid value for "--state": request state must be one of: completed, failed, pending'
+      - "Invalid value for '--state': request state must be one of: completed, failed, pending"
     - - job req-list --state=COMPLETED
       - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
         - '\| COMPLETED'
@@ -336,7 +336,7 @@ tasks:
         - '\| FAILED'
     # job cancel
     - - job cancel
-      - Missing option "--id".
+      - Missing option '--id'.
     - - job cancel --id
       - '--id option requires an argument'
     - - job cancel --id=2
@@ -355,5 +355,3 @@ tasks:
       - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
     - - job list --id=13
       - 'Job ID         : 13'
-
-

@@ -71,20 +71,20 @@ tasks:
     - - autotemplate list --owner=admin --long
       - 'Template name : sles12-default'
     - - autotemplate print
-      - 'Missing option "--name" / "--template".'
+      - "Missing option '--name' / '--template'."
     - - autotemplate print --name=
-      - 'Invalid value for "--name" / "--template": value may not be empty'
+      - "Invalid value for '--name' / '--template': value may not be empty"
     - - autotemplate print --name=rhel7-default
       - '# System authorization information'
     # autotemplate add, edit and del
     - - autotemplate add
-      - Missing option "--name" / "--template".
+      - Missing option '--name' / '--template'.
     - - autotemplate add --name=RHEL7.3
-      - Missing option "--content".
+      - Missing option '--content'.
     - - autotemplate add --name=RHEL7.3 --content
       - '--content option requires an argument'
     - - autotemplate add --name=RHEL7.3
-      - Missing option "--content".
+      - Missing option '--content'.
       # cover stmts 139-143 in main.py, check output manually:
       # The client encountered an unexpected problem, the error is: [Errno 2] No such file or directory: 'rhel7.3_template'
     - - autotemplate add --name=RHEL7.3 --content='rhel7.3_template'
@@ -94,13 +94,13 @@ tasks:
     - - autotemplate add --name=UBUNTU16.04 --content='files/autotemplate-command_test/ubuntu16-default.jinja' --desc='Template for Ubuntu 16.04' --project='GEO_1 developers'
       - Item added successfully.
     - - autotemplate edit
-      - Missing option "--name" / "--template".
+      - Missing option '--name' / '--template'.
     - - autotemplate edit --name=rhel7-default
       - no update criteria provided.
     - - autotemplate edit --name=rhel7-default --newname=RHEL7.2_GEO_1
       - Item successfully updated.
     - - autotemplate edit --name=RHEL7.2_GEO_1 --newname=
-      - 'Invalid value for "--newname": value may not be empty'
+      - "Invalid value for '--newname': value may not be empty"
     - - autotemplate edit --name=RHEL7.2_GEO_1 --desc='Template for RHEL7.2'
       - Item successfully updated.
     - - autotemplate edit --name=RHEL7.2_GEO_1 --owner=admin
@@ -142,4 +142,3 @@ tasks:
       - 'Template name : rhel7-default'
     - - autotemplate print --template=rhel7-default
       - '# System authorization information'
-

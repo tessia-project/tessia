@@ -75,9 +75,9 @@ tasks:
     - - - conf key-del
         - dev1@example.com
         - password
-      - Missing option "--key".
+      - Missing option '--key'.
     - - conf key-del --login=dev1@example.com --password=password
-      - Missing option "--key".
+      - Missing option '--key'.
     - - - conf key-del --key=2070ecb95f1e47dcb9b242468a38309e
         - dev1@example.com
         - password
@@ -91,7 +91,7 @@ tasks:
         - ppppp
       - key id not found.
     - - conf set-server
-      - Missing argument "[Uu][rR][Ll]".
+      - Missing argument '[Uu][rR][Ll]'.
     - - conf set-server ''
       - operation failed. The address provided did not respond.
     - - conf set-server 'https://myhost.domain.com:5000'
@@ -102,4 +102,3 @@ tasks:
       - The defined server's address returned a malformed response, please verify if the address is correct before trying again.
     - - conf set-server 'www.ibm.com/uk-en/'
       - operation failed. The address provided did not respond.
-

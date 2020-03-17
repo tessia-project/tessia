@@ -1,2 +1,2 @@
-click>=6.6
+click>=7.1.1
 PyYAML>=3.11

@@ -156,33 +156,33 @@ tasks:
       - No results were found.
     # 'system add' subcommand
     - - system add
-      - Missing option "--name" / "--system".
+      - Missing option '--name' / '--system'.
     - - system add --name=cpc1
-      - Missing option "--hostname".
+      - Missing option '--hostname'.
     - - system add --name=cpc1 --type=cpc
-      - Missing option "--hostname".
+      - Missing option '--hostname'.
     - - system add --name=cpc1 --hostname=hosthmc1.example.com
-      - Missing option "--type".
+      - Missing option '--type'.
     - - system add --type=cpc --hostname=hosthmc1.example.com
-      - Missing option "--name" / "--system".
+      - Missing option '--name' / '--system'.
     - - system add --name= --type=cpc --hostname=hosthmc1.example.com
-      - 'Invalid value for "--name" / "--system": value may not be empty'
+      - "Invalid value for '--name' / '--system': value may not be empty"
     - - system add --name=cpc1 --type= --hostname=hosthmc1.example.com
-      - 'Invalid value for "--type": value may not be empty'
+      - "Invalid value for '--type': value may not be empty"
     - - system add --name=cpc1 --type=cpc --hostname=
-      - 'Invalid value for "--hostname": value may not be empty'
+      - "Invalid value for '--hostname': value may not be empty"
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc#1.example.com
-      - 'Invalid value for "--hostname":'
+      - "Invalid value for '--hostname':"
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zzzz
       - "request failed. Server answered: No associated item found with value 'ZZZZ' for field 'Model'"
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=
-      - 'Invalid value for "--model": value may not be empty'
+      - "Invalid value for '--model': value may not be empty"
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=
-      - 'Invalid value for "--state": value may not be empty'
+      - "Invalid value for '--state': value may not be empty"
     - - system add --name=cpc2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=available
       - Item added successfully.
     - - system add --name=cpc+2 --type=cpc --hostname=hosthmc1.example.com --model=zec12_h43 --state=AVAILABLE
-      - 'Invalid value for "--name" / "--system":'
+      - "Invalid value for '--name' / '--system':"
     - - system add --name=cpc4 --type=cpc --hostname=hosthmc4.example.com --state=locked
       - Item added successfully.
     - - system add --name=cpc3 --type=cpc --hostname=hmcserver.example.com --model=zec12_h43 --project='GEO_1 labadmins' --desc='2 Books and 43 processors'
@@ -190,7 +190,7 @@ tasks:
     - - system add --name=cpc3lp52 --hyp=cpc3 --type=LPAR --hostname=cpc3lp52.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
     - - system add --name=cpc3lp51 --hyp= --type=LPAR --hostname=cpc3lp51.example.com
-      - 'Invalid value for "--hyp": value may not be empty'
+      - "Invalid value for '--hyp': value may not be empty"
     - - system add --name=cpc3lp56 --hyp=cpc3 --type=LPAR --hostname=cpc3lp56.example.com --desc= --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
     - - system add --name=cpc3lp53 --hyp=cpc3 --type=LPAR --hostname=cpc3lp53.example.com --owner= --project='GEO_1 developers'
@@ -225,7 +225,7 @@ tasks:
     - - system list --name=cpc3lp54 --long
       - 'Name            : cpc3lp54'
     - - system list --hyp=
-      - 'Invalid value for "--hyp": value may not be empty'
+      - "Invalid value for '--hyp': value may not be empty"
     - - system list --hyp=cpc3lp
       - No results were found.
     - - system list --hyp=cpc3lp54
@@ -236,7 +236,7 @@ tasks:
     - - system list --hyp=cpc3lp52 --long
       - 'Name            : guest55'
     - - system list --model=
-      - 'Invalid value for "--model": value may not be empty'
+      - "Invalid value for '--model': value may not be empty"
     - - system list --model=zec12
       - No results were found.
     - - system list --model=zec12_h43
@@ -245,7 +245,7 @@ tasks:
     - - system list --model=zec12_h43 --long
       - 'Name            : guest55'
     - - system list --type=
-      - 'Invalid value for "--type": value may not be empty'
+      - "Invalid value for '--type': value may not be empty"
     - - system list --type=vm
       - No results were found.
     - - system list --type=kvm
@@ -290,7 +290,7 @@ tasks:
       - No results were found.
     # 'system edit' subcommand
     - - system edit
-      - Missing option "--name" / "--system".
+      - Missing option '--name' / '--system'.
     - - system edit --name=cpc3lp52
       - no update criteria provided.
     - - system edit --name=cpc3lp52 --desc='Developer 1'
@@ -298,25 +298,25 @@ tasks:
     - - system edit --name=cpc3lp50 --desc='Developer 1'
       - system not found.
     - - system edit --name= --desc='Developer 1'
-      - 'Invalid value for "--name" / "--system": value may not be empty'
+      - "Invalid value for '--name' / '--system': value may not be empty"
     - - system edit --name=cpc3lp54 --newname=cpc3lp54
       - Item successfully updated.
     - - system edit --name=cpc3lp54 --newname=
-      - 'Invalid value for "--newname": value may not be empty'
+      - "Invalid value for '--newname': value may not be empty"
     - - system edit --name=cpc3lp54 --newname=cpc3lp44
       - Item successfully updated.
     - - system edit --name=cpc3lp56 --hyp=cpc10
       - "request failed. Server answered: No associated item found with value 'cpc10' for field 'Hypervisor name'"
     - - system edit --name=cpc3lp56 --hyp=
-      - 'Invalid value for "--hyp": value may not be empty'
+      - "Invalid value for '--hyp': value may not be empty"
     - - system edit --name=cpc3lp56 --hyp=cpc3
       - Item successfully updated.
     - - system edit --name=cpc3lp56 --hostname=
-      - 'Invalid value for "--hostname": value may not be empty'
+      - "Invalid value for '--hostname': value may not be empty"
     - - system edit --name=cpc3lp56 --hostname=cpc3lp56.example.com
       - Item successfully updated.
     - - system edit --name=cpc3lp56 --model=
-      - 'Invalid value for "--model": value may not be empty'
+      - "Invalid value for '--model': value may not be empty"
     - - system edit --name=cpc3lp56 --model=ZEC12
       - "request failed. Server answered: No associated item found with value 'ZEC12' for field 'Model'"
     - - system edit --name=cpc3lp56 --model=zgeneric
@@ -324,7 +324,7 @@ tasks:
     - - system edit --name=cpc3lp56 --model=zec12_h43
       - Item successfully updated.
     - - system edit --name=cpc3lp56 --type=
-      - 'Invalid value for "--type": value may not be empty'
+      - "Invalid value for '--type': value may not be empty"
     - - system edit --name=cpc3lp56 --type=vm
       - "request failed. Server answered: No associated item found with value 'VM' for field 'Type'"
     - - system edit --name=cpc3lp56 --type=kvm
@@ -336,7 +336,7 @@ tasks:
     - - system edit --name=cpc3lp56 --type=lpar
       - Item successfully updated.
     - - system edit --name=cpc3lp56 --state=
-      - 'Invalid value for "--state": value may not be empty'
+      - "Invalid value for '--state': value may not be empty"
     - - system edit --name=cpc3lp56 --state=available
       - Item successfully updated.
     - - system edit --name=cpc3lp56 --state=AVAILABLE
@@ -363,9 +363,9 @@ tasks:
       - Item successfully updated.
     # 'system del' subcommand
     - - system del
-      - Missing option "--name" / "--system".
+      - Missing option '--name' / '--system'.
     - - system del --name=
-      - 'Invalid value for "--name" / "--system": value may not be empty'
+      - "Invalid value for '--name' / '--system': value may not be empty"
     - - system del --name=xxx
       - system not found.
     - - system del --name=cpc3lp56
@@ -473,57 +473,57 @@ tasks:
       - 'Type name   : OSA'
     # 'system iface-add' subcommand
     - - system iface-add
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system iface-add --system=cpc3lp52
-      - Missing option "--name" / "--iface".
+      - Missing option '--name' / '--iface'.
     - - system iface-add --name='osa iface'
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system iface-add --system=cpc3lp52 --name='osa iface'
-      - Missing option "--type".
+      - Missing option '--type'.
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA
-      - Missing option "--devname".
+      - Missing option '--devname'.
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=OSA --devname=en0 --mac=02:57:52:00:70:00
       - '--ccwgroup must be specified'
     - - system iface-add --system= --name='osa iface' --type=OSA --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system iface-add --system=xxxx --name='osa iface' --type=OSA --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - "request failed. Server answered: No associated item found with value 'xxxx' for field 'System'"
     - - system iface-add --system=cpc3lp52 --name= --type=osa --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
-      - 'Invalid value for "--name" / "--iface": value may not be empty'
+      - "Invalid value for '--name' / '--iface': value may not be empty"
     - - system iface-add --system=cpc3lp52 --name=dummy --type=osa --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
       - 'Error: request failed. Server answered: When layer2 is off no MAC address should be defined'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type= --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
-      - 'Invalid value for "--type": value may not be empty'
+      - "Invalid value for '--type': value may not be empty"
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type= --devname=en0 --mac=02:57:52:00:70:00
-      - 'Invalid value for "--type": value may not be empty'
+      - "Invalid value for '--type': value may not be empty"
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=os --devname=en0 --mac=02:57:52:00:70:00
       - 'invalid interface type \(see iface-types\)'
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=osa --devname= --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
-      - 'Invalid value for "--devname": value may not be empty'
+      - "Invalid value for '--devname': value may not be empty"
     - - system iface-add --system=cpc3lp52 --name='osa iface' --type=osa --devname='wrong name' --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502
-      - "Invalid value for \"--devname\": 'wrong name' is not a valid interface name"
+      - "Invalid value for '--devname': 'wrong name' is not a valid interface name"
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --devname=en0 --mac=  --ccwgroup=f500,f501,f502
-      - 'Invalid value for "--mac": value may not be empty'
+      - "Invalid value for '--mac': value may not be empty"
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --devname=en0 --mac=0257:52:00:70:00 --ccwgroup=f500,f501,f502
-      - 'Invalid value for "--mac": 0257:52:00:70:00 is not a valid mac address'
+      - "Invalid value for '--mac': 0257:52:00:70:00 is not a valid mac address"
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=
-      - 'Invalid value for "--ccwgroup":  is not a valid qeth ccwgroup'
+      - "Invalid value for '--ccwgroup':  is not a valid qeth ccwgroup"
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501
-      - 'Invalid value for "--ccwgroup": f500,f501 is not a valid qeth ccwgroup'
+      - "Invalid value for '--ccwgroup': f500,f501 is not a valid qeth ccwgroup"
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=500,501,502
-      - 'Invalid value for "--ccwgroup": 500 is not a valid devno'
+      - "Invalid value for '--ccwgroup': 500 is not a valid devno"
     - - system iface-add --system=cpc3lp52 --name='osa iface2' --type=osa --devname=en0 --mac=02:57:52:00:70:00 --ccwgroup=f500,f501,f502 --layer2=true
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --devname=enccw0.0.f500 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet= --ip=192.168.161.222
-      - 'Invalid value for "--subnet": value may not be empty'
+      - "Invalid value for '--subnet': value may not be empty"
     - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --devname=enccw0.0.f500 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.22222
-      - 'Invalid value for "--ip": 192.168.161.22222 is not a valid ip address'
+      - "Invalid value for '--ip': 192.168.161.22222 is not a valid ip address"
     - - system iface-add --system=cpc3lp52 --name='default osa1' --type=OSA --devname=enccw0.0.f500 --layer2=0 --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=
-      - 'Invalid value for "--ip": value may not be empty'
+      - "Invalid value for '--ip': value may not be empty"
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --hostiface=enccw0.0.f500
       - invalid attribute for this iface type
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --libvirt='files/system-command_test/kvm-guest.xml'
@@ -531,13 +531,13 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name='default osa2' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portname=OSAE1
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa3' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=65
-      - 'Invalid value for "--portno": portno must be one of: 0, 1'
+      - "Invalid value for '--portno': portno must be one of: 0, 1"
     - - system iface-add --system=cpc3lp52 --name='default osa3' --type=OSA --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=1
       - Item added successfully.
     - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --devname=enccw0.0.f500 --layer2=false --ccwgroup=f500 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=1
-      - 'Invalid value for "--ccwgroup": f500 is not a valid qeth ccwgroup'
+      - "Invalid value for '--ccwgroup': f500 is not a valid qeth ccwgroup"
     - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --devname=enccw0.0.f500 --layer2=false --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=
-      - 'Invalid value for "--portno": value may not be empty'
+      - "Invalid value for '--portno': value may not be empty"
     - - system iface-add --system=cpc3lp52 --name='default osa4' --type=OSA --devname=enccw0.0.f500 --layer2=false --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.161.222 --portno=1
       - Item added successfully.
       # iface-add with ip and without subnet
@@ -555,17 +555,17 @@ tasks:
     - - system iface-add --system=guest55 --name='default macvtap' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=enccw0.0.f500
       - Item added successfully.
     - - system iface-add --system=guest55 --name='default macvtap1' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface=
-      - 'Invalid value for "--hostiface": value may not be empty'
+      - "Invalid value for '--hostiface': value may not be empty"
     - - system iface-add --system=guest55 --name='default macvtap1' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --hostiface='wrong name'
-      - "Invalid value for \"--hostiface\": 'wrong name' is not a valid interface name"
+      - "Invalid value for '--hostiface': 'wrong name' is not a valid interface name"
     - - system iface-add --system=guest55 --name='default macvtap2' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt=
-      - 'Invalid value for "--libvirt": value may not be empty'
+      - "Invalid value for '--libvirt': value may not be empty"
     - - system iface-add --system=guest55 --name='default macvtap3' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='kvm.xml'
       - "No such file or directory: 'kvm.xml'"
     - - system iface-add --system=guest55 --name='default macvtap3' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest-empty.xml'
-      - 'Invalid value for "--libvirt": libvirt definition cannot be empty'
+      - "Invalid value for '--libvirt': libvirt definition cannot be empty"
     - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='/GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
-      - 'Invalid value for "--subnet": /GEO_1-NE-1822 is not a valid subnet'
+      - "Invalid value for '--subnet': /GEO_1-NE-1822 is not a valid subnet"
     - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
       - Item added successfully.
     # ROCE card type
@@ -574,7 +574,7 @@ tasks:
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518 --fid=00111
       - 'Error: for ROCE cards --mac must be specified'
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518 --fid=@00111 --mac=00:11:22:33:44:55
-      - 'Invalid value for "--fid": @00111 is not a valid function ID'
+      - "Invalid value for '--fid': @00111 is not a valid function ID"
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518 --fid=00111 --mac=00:11:22:33:44:55
       - Item added successfully.
    # 'system iface-list' subcommand
@@ -585,13 +585,13 @@ tasks:
     - - system iface-list --system=xxxx
       - No results were found.
     - - system iface-list --system=
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system iface-list --name='osa iface1'
       - No results were found.
     - - system iface-list --name=xxx
       - No results were found.
     - - system iface-list --name=
-      - 'Invalid value for "--name" / "--iface": value may not be empty'
+      - "Invalid value for '--name' / '--iface': value may not be empty"
     - - system iface-list --system=guest55
       - - ' *Interface name *\| *Network device name *\| *System *\| *Interface type *\| *IP address *\| *MAC address *\| *Attributes *\| *Associated system profiles'
         - ' *default macvtap *\|'
@@ -610,7 +610,7 @@ tasks:
     - - system iface-list --system=cpc3lp52 --type=lpar
       - No results were found.
     - - system iface-list --system=cpc3lp52 --type=
-      - 'Invalid value for "--type": value may not be empty'
+      - "Invalid value for '--type': value may not be empty"
     - - system iface-list --system=cpc3lp52 --devname=en0
       - - ' *Interface name *\| *Network device name *\| *System *\| *Interface type *\| *IP address *\| *MAC address *\| *Attributes *\| *Associated system profiles'
         - ' *osa iface2 *\|'
@@ -619,7 +619,7 @@ tasks:
     - - system iface-list --system=cpc3lp52 --devname=en10
       - No results were found.
     - - system iface-list --system=cpc3lp52 --devname=
-      - 'Invalid value for "--devname": value may not be empty'
+      - "Invalid value for '--devname': value may not be empty"
     - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:00
       - - ' *Interface name *\| *Network device name *\| *System *\| *Interface type *\| *IP address *\| *MAC address *\| *Attributes *\| *Associated system profiles'
         - ' *osa iface2 *\|'
@@ -628,81 +628,81 @@ tasks:
     - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:70:05
       - No results were found.
     - - system iface-list --system=cpc3lp52 --mac=
-      - 'Invalid value for "--mac": value may not be empty'
+      - "Invalid value for '--mac': value may not be empty"
     - - system iface-list --system=cpc3lp52 --mac=02:57:52:00:7000
-      - 'Invalid value for "--mac": 02:57:52:00:7000 is not a valid mac address'
+      - "Invalid value for '--mac': 02:57:52:00:7000 is not a valid mac address"
     - - system iface-list --system=cpc3lp52 --ip=192.168.161.222
       - - ' *Interface name *\| *Network device name *\| *System *\| *Interface type *\| *IP address *\| *MAC address *\| *Attributes *\| *Associated system profiles'
         - ' *default osa *\|'
     - - system iface-list --system=cpc3lp52 --ip=192.168.161.222 --long
       - 'Interface name             : default osa'
     - - system iface-list --system=cpc3lp52 --ip=192.168.161.300
-      - 'Invalid value for "--ip": 192.168.161.300 is not a valid ip address'
+      - "Invalid value for '--ip': 192.168.161.300 is not a valid ip address"
     - - system iface-list --system=cpc3lp52 --ip=9152.161.222
-      - 'Invalid value for "--ip": 9152.161.222 is not a valid ip address'
+      - "Invalid value for '--ip': 9152.161.222 is not a valid ip address"
     - - system iface-list --system=cpc3lp52 --ip=
-      - 'Invalid value for "--ip": value may not be empty'
+      - "Invalid value for '--ip': value may not be empty"
     - - system iface-list --system=cpc3lp52 --name=roce-1
       - " *{'fid': '111'} *\\|"
     # 'system iface-edit' subcommand
     - - system iface-edit
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system iface-edit --system=cpc3lp52
-      - Missing option "--name" / "--iface".
+      - Missing option '--name' / '--iface'.
     - - system iface-edit --name='default osa2'
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --newname=
-      - 'Invalid value for "--newname": value may not be empty'
+      - "Invalid value for '--newname': value may not be empty"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --newname='default osa22'
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa22' --newname='default osa'
       - 'request failed. Server answered: An item with the provided value'
     - - system iface-edit --system= --name='default osa22' --newname='default osa2'
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system iface-edit --system=cpc3lp52 --name= --newname='default osa2'
-      - 'Invalid value for "--name" / "--iface": value may not be empty'
+      - "Invalid value for '--name' / '--iface': value may not be empty"
     - - system iface-edit --system=cpc3lp52 --name='osa iface2' --newname='default osa2'
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa23' --newname='default osa2'
       - network interface not found.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --devname=
-      - 'Invalid value for "--devname": value may not be empty'
+      - "Invalid value for '--devname': value may not be empty"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --devname='wrong*name'
-      - "Invalid value for \"--devname\": 'wrong\\*name' is not a valid interface name"
+      - "Invalid value for '--devname': 'wrong\\*name' is not a valid interface name"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --devname=en0
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --mac=0257:52:00:76:00
-      - 'Invalid value for "--mac": 0257:52:00:76:00 is not a valid mac address'
+      - "Invalid value for '--mac': 0257:52:00:76:00 is not a valid mac address"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=0 --mac=02:57:52:00:76:00
       - 'request failed. Server answered: When layer2 is off no MAC address should be defined'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet=
-      - 'Invalid value for "--subnet": value may not be empty'
+      - "Invalid value for '--subnet': value may not be empty"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ip=192.168.161.222
       - '--subnet and --ip must be specified together'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='GEO_1' --ip=192.168.161.222
       - "request failed. Server answered: No associated item found with value 'GEO_1/192.168.161.222' for field 'IP address'"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='/GEO_1-NE-1822' --ip=192.168.161.222
-      - 'Invalid value for "--subnet": /GEO_1-NE-1822 is not a valid subnet'
+      - "Invalid value for '--subnet': /GEO_1-NE-1822 is not a valid subnet"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ip=
       - 'Item successfully updated.'
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='GEO_1-NE-1822' --ip=9152.161.222
-      - 'Invalid value for "--ip": 9152.161.222 is not a valid ip address'
+      - "Invalid value for \"--ip\": 9152.161.222 is not a valid ip address"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --subnet='GEO_1-NE-1822' --ip=
-      - 'Invalid value for "--ip":  is not a valid ip address'
+      - "Invalid value for \"--ip\":  is not a valid ip address"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=
-      - 'Invalid value for "--layer2":  is not a valid boolean'
+      - "Invalid value for '--layer2':  is not a valid boolean"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --layer2=false
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=
-      - 'Invalid value for "--ccwgroup":  is not a valid qeth ccwgroup'
+      - "Invalid value for '--ccwgroup':  is not a valid qeth ccwgroup"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=500,f501,f502
-      - 'Invalid value for "--ccwgroup": 500 is not a valid devno'
+      - "Invalid value for '--ccwgroup': 500 is not a valid devno"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=f500
-      - 'Invalid value for "--ccwgroup": f500 is not a valid qeth ccwgroup'
+      - "Invalid value for '--ccwgroup': f500 is not a valid qeth ccwgroup"
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --ccwgroup=f500,f501,f502
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --desc=
@@ -714,15 +714,15 @@ tasks:
     - - system iface-edit --system=cpc3lp52 --name='default osa2' --libvirt='files/system-command_test/kvm-guest.xml'
       - invalid attribute for this iface type
     - - system iface-edit --system=cpc3lp52 --name='default osa' --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --subnet='' --ip=''
-      - 'Invalid value for "--subnet": value may not be empty'
+      - "Invalid value for '--subnet': value may not be empty"
     - - system iface-edit --system=cpc3lp52 --name='default osa' --devname=enccw0.0.f500 --mac=02:57:52:00:76:00 --layer2=true --ccwgroup=f500,0.0.f501,0.0.f502 --desc='gateway interface' --ip=''
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa' --ccwgroup=0xf500,0.0.f501,f502
       - Item successfully updated.
     - - system iface-edit --system=cpc3lp52 --name='default osa' --ccwgroup='f501 f502 f503'
-      - 'Invalid value for "--ccwgroup": f501 f502 f503 is not a valid qeth ccwgroup'
+      - "Invalid value for '--ccwgroup': f501 f502 f503 is not a valid qeth ccwgroup"
     - - system iface-edit --system=cpc3lp52 --name='default osa' --ccwgroup=''
-      - 'Invalid value for "--ccwgroup":  is not a valid qeth ccwgroup'
+      - "Invalid value for '--ccwgroup':  is not a valid qeth ccwgroup"
     - - system iface-edit --system=guest55 --name='macvtap'
       - network interface not found.
       # with ip and without subnet
@@ -750,12 +750,12 @@ tasks:
     - - system iface-edit --system=guest55 --name='default macvtap'
       - no update criteria provided.
     - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=''
-      - 'Invalid value for "--hostiface": value may not be empty'
+      - "Invalid value for '--hostiface': value may not be empty"
       # macvtap with libvirt and hostiface
     - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=enccw0.0.f500 --libvirt='files/system-command_test/kvm-guest.xml'
       - '--hostiface and --libvirt are mutually exclusive \(specify one but not both\)'
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt=
-      - 'Invalid value for "--libvirt": value may not be empty'
+      - "Invalid value for '--libvirt': value may not be empty"
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='kvm.xml'
       - "No such file or directory: 'kvm.xml'"
     - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='files/system-command_test/kvm-guest.xml'
@@ -777,11 +777,11 @@ tasks:
       - " *{'fid': '222'} *\\|"
     # 'system iface-del' subcommand
     - - system iface-del
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system iface-del --system=guest55
-      - Missing option "--name" / "--iface".
+      - Missing option '--name' / '--iface'.
     - - system iface-del --name='default macvtap'
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system iface-del --system=guest55 --name='macvtap'
       - network interface not found.
     - - system iface-del --system=guest60 --name='default macvtap'
@@ -791,36 +791,36 @@ tasks:
   system_prof:
     # 'system prof-add' subcommand
     - - system prof-add
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system prof-add --system=cpc3lp52
-      - Missing option "--name" / "--profile".
+      - Missing option '--name' / '--profile'.
     - - system prof-add --name='DASD'
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system prof-add --system=cpc3lp52 --name='DASD' --login=
-      - 'Invalid value for "--login": value may not be empty'
+      - "Invalid value for '--login': value may not be empty"
     - - system prof-add --system= --name='DASD'  --login='root:mypasswd'
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system prof-add --system=cpc3lp52 --name='DASD'  --login='root:mypasswd'
       - Item added successfully.
     - - system prof-add --system= --name='DASD1' --login='root:mypasswd'
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system prof-add --system=cpc3lp52 --name= --login='root:mypasswd'
-      - 'Invalid value for "--name" / "--profile": value may not be empty'
+      - "Invalid value for '--name' / '--profile': value may not be empty"
     - - system prof-add --system=cpc3lp60 --name='DASD2' --login='root:mypasswd'
       - "Error: system specified not found"
     - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu= --login='root:mypasswd'
-      - 'Invalid value for "--cpu":  is not a valid integer'
+      - "Invalid value for '--cpu':  is not a valid integer"
     - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu=-1 --login='root:mypasswd'
-      - 'Invalid value for "--cpu": -1 is smaller than the minimum valid value 0.'
+      - "Invalid value for '--cpu': -1 is smaller than the minimum valid value 0."
     - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu=0 --memory=-1gib --login='root:mypasswd'
-      - 'Invalid value for "--memory": -1gib is not a valid size'
+      - "Invalid value for '--memory': -1gib is not a valid size"
     - - system prof-add --system=cpc3lp52 --name='DASD3' --cpu=0 --memory=0gib --login='root:mypasswd'
       - Item added successfully.
     - - system prof-add --system=cpc3lp52 --name='DASD18' --memory=0 --login='root:mypasswd'
       - Item added successfully.
         # exercise login with invalid username
     - - system prof-add --system=cpc3lp52 --name='DASD4' --cpu=4 --login='root#:mypasswd'
-      - "Invalid value for \"--login\": 'root#' is not a valid username, it may only contain letters, numbers, and the characters"
+      - "Invalid value for '--login': 'root#' is not a valid username, it may only contain letters, numbers, and the characters"
     - - system prof-add --system=cpc3lp52 --name='DASD4' --cpu=4 --login='root:mypasswd'
       - Item added successfully.
         # exercise entering login interactively
@@ -841,7 +841,7 @@ tasks:
       - - "Credentials *: .*'admin-user': 'root'"
         - "Credentials *: .*'admin-password': '\\*\\*\\*\\*'"
     - - system prof-add --system=cpc3lp52 --name='DASD5' --cpu=4 --memory= --login='root:mypasswd'
-      - 'Error: Invalid value for "--memory": value may not be empty'
+      - "Error: Invalid value for '--memory': value may not be empty"
     - - system prof-add --system=cpc3lp52 --name='DASD7' --default --login='root:mypasswd'
       - Item added successfully.
       # edit default profile
@@ -850,7 +850,7 @@ tasks:
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --memory=2gb
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --newname=
-      - 'Invalid value for "--newname": value may not be empty'
+      - "Invalid value for '--newname': value may not be empty"
     - - system prof-edit --system=cpc3lp52 --name=DASD7 --newname=DASD17
       - Item successfully updated.
         # update login interactively
@@ -885,13 +885,13 @@ tasks:
     - - system prof-list --system=cpc3lp52 --memory=12
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=AAAmb
-      - 'Error: Invalid value for "--memory": AAAmb is not a valid size'
+      - "Error: Invalid value for '--memory': AAAmb is not a valid size"
     - - system prof-add --system=cpc3lp52 --name='DASD8' --hyp= --login='root:mypasswd'
-      - 'Invalid value for "--hyp": value may not be empty'
+      - "Invalid value for '--hyp': value may not be empty"
     - - system prof-add --system=cpc3lp52 --name='DASD9' --hyp='default cpc3' --login='root:mypasswd'
       - "request failed. Server answered: No associated item found with value 'default cpc3' for field 'Required hypervisor profile'"
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136g --login='DEVEL1:somepwd'
-      - 'Error: Invalid value for "--memory": 1136g is not a valid size'
+      - "Error: Invalid value for '--memory': 1136g is not a valid size"
     - - system prof-add --system=cpc3 --name='default cpc3' --cpu=43 --memory=1136gib --login='DEVEL1:somepwd'
       - Item added successfully.
     - - system prof-add --system=cpc3 --name='alternate' --cpu=43 --memory=1136gib --login='DEVEL1:somepwd' --liveimg=ftp://user:pass@ftpserver.example._com/dir/image.ins
@@ -907,11 +907,11 @@ tasks:
     - - system prof-list --system=cpc3 --name='alternate' --long
       - "Parameters *: {'liveimg-insfile-url': 'ftp://user:pass@ftpserver.example._com/dir/image.ins'} *\n"
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='cpc3/default cpc3'
-      - 'Invalid value for "--hyp"'
+      - "Invalid value for '--hyp'"
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root-mypasswd' --hyp='default cpc3'
-      - 'Error: Invalid value for "--login": input should be in the format username:password'
+      - "Error: Invalid value for '--login': input should be in the format username:password"
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=0.5mib --login='root:mypasswd' --hyp='default cpc3'
-      - 'Invalid value for "--memory": 0.5mib is not a valid size'
+      - "Invalid value for '--memory': 0.5mib is not a valid size"
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --hyp='default cpc3' --zvm-pass=vmpassword
       - zVM credentials should be provided for zVM guests only
     - - system prof-add --system=cpc3lp52 --name='DASD root1' --cpu=4 --memory=2048mib --login='root:mypasswd' --liveimg=ftp://user:pass@ftpserver.example._com/dir/image.ins
@@ -924,14 +924,14 @@ tasks:
     - - system prof-list --system=cpc3lp66
       - No results were found.
     - - system prof-list --system=
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system prof-list --system=cpc3lp52
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD root1'
     - - system prof-list --name=
-      - 'Invalid value for "--name" / "--profile": value may not be empty'
+      - "Invalid value for '--name' / '--profile': value may not be empty"
     - - system prof-list --name='DASD root1'
       - 'At least one of --system or --os must be specified'
     - - system prof-list --system=cpc3lp52 --name='DASD4'
@@ -1026,23 +1026,23 @@ tasks:
       - 'Profile name                : default cpc3'
     # 'system prof-edit' subcommand
     - - system prof-edit
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system prof-edit --system=cpc3lp52
-      - Missing option "--name" / "--profile".
+      - Missing option '--name' / '--profile'.
     - - system prof-edit --name=DASD7
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system prof-edit --system=cpc3lp52 --name=DASD7
       - system profile not found.
     - - system prof-edit --system=cpc3lp52 --name=DASD
       - no update criteria provided.
     - - system prof-edit --system=cpc3lp52 --name= --memory=2gib
-      - 'Invalid value for "--name" / "--profile": value may not be empty'
+      - "Invalid value for '--name' / '--profile': value may not be empty"
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory
       - '--memory option requires an argument'
     - - system prof-edit --system= --name=DASD --memory=2gib
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory=-1gib
-      - 'Invalid value for "--memory": -1gib is not a valid size'
+      - "Invalid value for '--memory': -1gib is not a valid size"
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory=0gib
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD --memory=0
@@ -1068,11 +1068,11 @@ tasks:
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu
       - '--cpu option requires an argument'
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=-1
-      - 'Invalid value for "--cpu": -1 is smaller than the minimum valid value 0.'
+      - "Invalid value for '--cpu': -1 is smaller than the minimum valid value 0."
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=0
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=A
-      - 'Invalid value for "--cpu": A is not a valid integer'
+      - "Invalid value for '--cpu': A is not a valid integer"
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --cpu=4
       - Item successfully updated.
     - - system prof-edit --system=cpc3lp52 --name=DASD14 --default=no
@@ -1080,7 +1080,7 @@ tasks:
     - - system prof-del --system=cpc3lp52 --name=DASD10
       - Item successfully deleted.
     - - system prof-del --system=cpc3lp52 --name=
-      - 'Invalid value for "--name" / "--profile": value may not be empty'
+      - "Invalid value for '--name' / '--profile': value may not be empty"
       # a default profile cannot be deleted when others exist
     - - system prof-del --system=cpc3lp52 --name=DASD11
       - A default profile cannot be removed while other profiles for the same system exist
@@ -1102,17 +1102,17 @@ tasks:
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --gateway='default osa3'
       - "request failed. Server answered: No associated item found with value 'default osa3' for field 'Gateway interface'"
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp=
-      - 'Invalid value for "--hyp": value may not be empty'
+      - "Invalid value for '--hyp': value may not be empty"
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp='default cpc5'
       - "request failed. Server answered: No associated item found with value 'default cpc5' for field 'Required hypervisor profile'"
     - - system prof-edit --system=cpc3lp52 --name=DASD4 --hyp='default cpc3'
       - Item successfully updated.
     - - system prof-edit --system=cpc3 --name='default cpc3' --memory=1136g
-      - 'Error: Invalid value for "--memory": 1136g is not a valid size'
+      - "Error: Invalid value for '--memory': 1136g is not a valid size"
     - - system prof-edit --system=cpc3 --name='default cpc3' --hyp='cpc3/default cpc3'
-      - 'Invalid value for "--hyp"'
+      - "Invalid value for '--hyp'"
     - - system prof-edit --system=cpc3 --name='default cpc3' --login='root-mypasswd'
-      - 'Error: Invalid value for "--login": input should be in the format username:password'
+      - "Error: Invalid value for '--login': input should be in the format username:password"
     - - system prof-edit --system=cpc3 --name='default cpc3' --login='root:mypasswd'
       - Item successfully updated.
     - - system prof-edit --system=cpc3 --name='cpc3' --memory=1136gib
@@ -1123,15 +1123,15 @@ tasks:
       - no update criteria provided.
     # 'system iface-attach' subcommand
     - - system iface-attach
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system iface-attach --system=cpc3lp52
-      - Missing option "--profile".
+      - Missing option '--profile'.
     - - system iface-attach --name=DASD4
       - 'no such option: --name'
     - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface=
-      - 'Invalid value for "--iface": value may not be empty'
+      - "Invalid value for '--iface': value may not be empty"
     - - system iface-attach --system= --profile=DASD4 --iface='default osa2'
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface=default
       - no network interface found.
     - - system iface-attach --system=cpc3lp52 --profile=DASD4 --iface='default osa2'
@@ -1163,15 +1163,15 @@ tasks:
       - "Parameters *: *\n"
     # 'system iface-detach' subcommand
     - - system iface-detach
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system iface-detach --system=cpc3lp52
-      - Missing option "--profile".
+      - Missing option '--profile'.
     - - system iface-detach --name=DASD4
       - 'no such option: --name'
     - - system iface-detach --system= --profile=DASD4 --iface='default osa2'
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface=
-      - 'Invalid value for "--iface": value may not be empty'
+      - "Invalid value for '--iface': value may not be empty"
     - - system iface-detach --system=cpc3lp52 --profile=DASD4 --iface=default
       - no network interface found.
     - - system iface-detach --system=cpc3lp55 --profile=DASD4 --iface='default osa2'
@@ -1188,23 +1188,23 @@ tasks:
       - no network interface found.
     # 'system vol-attach' subcommand
     - - system vol-attach
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system vol-attach --system=cpc3lp52
-      - Missing option "--profile".
+      - Missing option '--profile'.
     - - system vol-attach --profile=DASD4
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system vol-attach --vol=3956
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system vol-attach --profile=DASD4 --vol=3956
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system vol-attach --system= --profile=DASD4 --vol=3956
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system vol-attach --system=cpc3lp52 --profile= --vol=3956
-      - 'Invalid value for "--profile": value may not be empty'
+      - "Invalid value for '--profile': value may not be empty"
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - system vol-attach --system=cpc3lp52 --profile=DASD4 --vol=
-      - 'Invalid value for "--vol": value may not be empty'
+      - "Invalid value for '--vol': value may not be empty"
     - - system vol-attach --system=cpc3lp55 --profile=DASD4 --vol=3956
       - no profile found.
     - - system vol-attach --system=cpc3lp52 --profile=DASD44 --vol=3956
@@ -1247,11 +1247,11 @@ tasks:
       - Volume detached successfully.
     # 'system poweron' subcommand
     - - system poweron
-      - Missing option "--name" / "--system".
+      - Missing option '--name' / '--system'.
     - - system poweron --name
       - '--name option requires an argument'
     - - system poweron --name=
-      - 'Invalid value for "--name" / "--system": value may not be empty'
+      - "Invalid value for '--name' / '--system': value may not be empty"
     - - system poweron --name=cpc3lp55
       - system cpc3lp55 not found.
     - - system poweron --name=cpc3lp52
@@ -1259,7 +1259,7 @@ tasks:
     - - system poweron --name=cpc3lp52 --profile
       - '--profile option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=
-      - 'Invalid value for "--profile": value may not be empty'
+      - "Invalid value for '--profile': value may not be empty"
     - - system poweron --name=cpc3lp52 --profile=DASD77
       - profile DASD77 not found.
     - - system poweron --name=cpc3lp52 --profile=DASD17
@@ -1267,19 +1267,19 @@ tasks:
     - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu
       - '--cpu option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu=
-      - 'Invalid value for "--cpu":  is not a valid integer'
+      - "Invalid value for '--cpu':  is not a valid integer"
     - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu=0
-      - 'Invalid value for "--cpu": 0 is smaller than the minimum valid value 1.'
+      - "Invalid value for '--cpu': 0 is smaller than the minimum valid value 1."
     - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu=A
-      - 'Invalid value for "--cpu": A is not a valid integer'
+      - "Invalid value for '--cpu': A is not a valid integer"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --cpu=8
-      - 'Failed to establish a new connection'
+      - "Failed to establish a new connection"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory
       - '--memory option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=
-      - 'Error: Invalid value for "--memory": value may not be empty'
+      - "Error: Invalid value for '--memory': value may not be empty"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2g
-      - 'Error: Invalid value for "--memory": 2g is not a valid size'
+      - "Error: Invalid value for '--memory': 2g is not a valid size"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2gb
       - 'Failed to establish a new connection'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity
@@ -1295,7 +1295,7 @@ tasks:
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity debug
       - 'Failed to establish a new connection'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity warn
-      - Invalid value for "--verbosity"
+      - Invalid value for '--verbosity'
     - - system poweron --name=cpc3lp52 --force=true
       - '--force option does not take a value'
     - - system poweron --name=cpc3lp52 --forc
@@ -1318,11 +1318,11 @@ tasks:
       - 'Request accepted; job id is #'
     # 'system poweroff' subcommand
     - - system poweroff
-      - Missing option "--name" / "--system".
+      - Missing option '--name' / '--system'.
     - - system poweroff --name
       - '--name option requires an argument'
     - - system poweroff --name=
-      - 'Invalid value for "--name" / "--system": value may not be empty'
+      - "Invalid value for '--name' / '--system': value may not be empty"
     - - system poweroff --name=cpc3lp55
       - system cpc3lp55 not found.
     - - system poweroff --name=cpc3lp52
@@ -1340,28 +1340,28 @@ tasks:
     - - system poweroff --name=cpc3lp52 --verbosity Debug
       - 'Failed to establish a new connection'
     - - system poweroff --name=cpc3lp52 --verbosity warn
-      - Invalid value for "--verbosity"
+      - Invalid value for '--verbosity'
     - - system poweroff --name=cpc3lp52 --bg
       - 'Request accepted; job id is #'
     # 'system vol-detach' subcommand
     - - system vol-detach
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system vol-detach --system=cpc3lp52
-      - Missing option "--profile".
+      - Missing option '--profile'.
     - - system vol-detach --profile=DASD4
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system vol-detach --vol=3956
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system vol-detach --profile=DASD4 --vol=3956
-      - Missing option "--system".
+      - Missing option '--system'.
     - - system vol-detach --system= --profile=DASD4 --vol=3956
-      - 'Invalid value for "--system": value may not be empty'
+      - "Invalid value for '--system': value may not be empty"
     - - system vol-detach --system=cpc3lp52 --profile= --vol=3956
-      - 'Invalid value for "--profile": value may not be empty'
+      - "Invalid value for '--profile': value may not be empty"
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server= --vol=3956
-      - 'Error: Invalid value for "--server": value may not be empty'
+      - "Error: Invalid value for '--server': value may not be empty"
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --vol=
-      - 'Invalid value for "--vol": value may not be empty'
+      - "Invalid value for '--vol': value may not be empty"
     - - system vol-detach --system=cpc3lp55 --profile=DASD4 --vol=3956
       - no profile found.
     - - system vol-detach --system=cpc3lp52 --profile=DASD4 --server=DS8K66 --vol=3956
@@ -1424,7 +1424,7 @@ tasks:
       - cpc3lp52,guest55,KVM,guest55.example.com,
     # 'system import' subcommand
     - - system import
-      - 'Missing option "--file".'
+      - "Missing option '--file'."
       # wrong file name
     - - system import --file import-system-2.csv
       - No such file or directory
@@ -1456,7 +1456,7 @@ tasks:
   # use case setting os manually
   set_os_manually:
     - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=
-      - 'Error: Invalid value for "--os": value may not be empty'
+      - "Error: Invalid value for '--os': value may not be empty"
     - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=wrong-os
       - "Error: request failed. Server answered: No associated item found with value 'wrong-os' for field 'Operating system'"
     - - system prof-add --system=cpc3lp52 --name='Manual install' --cpu=4 --memory=2048mib --login='root:mypasswd' --os=rhel7.4
@@ -1523,4 +1523,3 @@ tasks:
       - Network interface detached successfully.
     - - system iface-del --system=cpc3lp52 --iface=roce-16
       - Item successfully deleted.
-  

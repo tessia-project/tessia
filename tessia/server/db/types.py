@@ -103,11 +103,13 @@ TEMPLATES = [
 ]
 
 ROLES = [
+    'USER_SANDBOX,Has no access to resources',
     'USER_RESTRICTED,Control owned resources only',
     'USER,Control owned resources and create new systems',
     'USER_PRIVILEGED,Same as User + use systems from others',
     'ADMIN_PROJECT,Control all resources in the project, except for lab '
     'resources (i.e. subnets)',
+    'OWNER_PROJECT,Assigns user roles in project',
     'ADMIN_LAB,Control infrastructure resources (storage volumes, subnets, ip '
     'addresses)',
 ]
@@ -130,6 +132,9 @@ ROLE_ACTIONS = [
     'USER_PRIVILEGED,SYSTEMS,UPDATE',
     'USER_PRIVILEGED,STORAGE_POOLS,UPDATE',
     'USER_PRIVILEGED,LOGICAL_VOLUMES,UPDATE',
+    # Project owner, only assigns roles
+    'OWNER_PROJECT,USER_ROLES,CREATE',
+    'OWNER_PROJECT,USER_ROLES,DELETE',
     # Project admin
     # first, the same privileges as 'USER_PRIVILEGED'
     'ADMIN_PROJECT,SYSTEMS,CREATE',

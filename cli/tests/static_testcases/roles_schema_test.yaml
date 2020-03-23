@@ -1,0 +1,312 @@
+description: Test for the roles schema
+base_user: admin
+tasks_order:
+  - base_add
+  - switch_to_dev1
+  - user_without_role
+  - switch_to_admin
+  - grant_roles_to_users
+  - switch_and_check_ADMIN_LAB
+  - switch_to_dev1
+  - check_USER
+  - switch_and_check_USER_PRIVILEGED
+  - switch_and_check_USER_RESTRICTED
+  - switch_and_check_USER_with_restricted_true
+  - switch_and_check_ADMIN_PROJECT
+tasks:
+  base_add:
+    # lab admin to create the lab resources
+    - - perm project-add --name=GEO_lab --desc='lab resources'
+      - Item added successfully.
+    - - perm user-add --login=lab_admin@example.com --name='LAB_ADMIN' --title='Title of lab admin'
+      - User added successfully.
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project=GEO_lab
+      - User role added successfully.
+    # create the target projects
+    - - perm project-add --name='GEO_1' --desc='GEO_1 project'
+      - Item added successfully.
+    - - perm project-add --name='GEO_2' --desc='GEO_2 project'
+      - Item added successfully.
+    # make sure lab admin also has permissions on these projects
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_1'
+      - User role added successfully.
+    - - perm role-grant --login=lab_admin@example.com --name='ADMIN_LAB' --project='GEO_2'
+      - User role added successfully.
+    # create project admin for GEO_1 project
+    - - perm user-add --login=proj_admin@example.com --name='PROJECT_ADMIN' --title='Title of project admin'
+      - User added successfully.
+    - - perm role-grant --login=proj_admin@example.com --name=ADMIN_PROJECT --project='GEO_1'
+      - User role added successfully.
+    # create target users
+    - - perm user-add --login=dev1@example.com --name='Developer 1' --title='Mr. Developer 1'
+      - User added successfully.
+    - - perm user-add --login=dev2@example.com --name='Developer 2' --title='Mr. Developer 2'
+      - User added successfully.
+    - - perm user-add --login=dev3@example.com --name='Developer 3' --title='Mr. Developer 3'
+      - User added successfully.
+    - - perm user-add --login=dev4@example.com --name='Developer 4' --title='Mr. Developer 4' --restricted
+      - User added successfully.
+  switch_to_dev1:
+    - - - conf key-gen
+        - dev1@example.com
+        - password
+      - Key successfully created and added to client configuration.
+  user_without_role:
+    # try 'autoinstall' and 'system add' as a user dev1@example.com without any role
+    - - system autoinstall --system cpc3lp50 --os rhel7.6
+      - Default profile for system cpc3lp50 not available
+    - - system add --name=cpc3lp51 --hostname cpc3lp51 --type=LPAR
+      - No CREATE permission found for the user in any project
+  switch_to_admin:
+    - - - conf key-gen
+        - admin
+        - password
+      - Key successfully created and added to client configuration.
+  grant_roles_to_users:
+    - - perm role-grant --login=dev1@example.com --name=USER --project='GEO_1'
+      - User role added successfully.
+    - - perm role-grant --login=dev2@example.com --name=USER_PRIVILEGED --project='GEO_1'
+      - User role added successfully.
+    - - perm role-grant --login=dev3@example.com --name=USER_RESTRICTED --project='GEO_1'
+      - User role added successfully.
+    - - perm role-grant --login=dev4@example.com --name=USER --project='GEO_1'
+      - User role added successfully.
+  switch_and_check_ADMIN_LAB:
+    - - - conf key-gen
+        - lab_admin@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    # create system for lab_admin
+    - - system add --name=cpc3lp50 --hostname cpc3lp50 --type=LPAR --project GEO_2
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp50 --name=root1 --login=root:mypasswd
+      - Item added successfully.
+    # create system for another user
+    - - system add --name=cpc3lp63 --hostname cpc3lp63 --type=LPAR --owner dev3@example.com
+      - Item added successfully.
+    # delete system
+    - - system add --name=cpc3lp60 --hostname cpc3lp60 --type=LPAR --project GEO_2
+      - Item added successfully.
+    - - system del --name=cpc3lp60
+      - Item successfully deleted.
+    # create infrastructure resources
+    - - storage server-add --name=DS8K16 --model=DS8000 --type=DASD-FCP --project=GEO_lab
+      - Item added successfully.
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3951 --size=7gb --project=GEO_lab
+      - Item added successfully.
+    - - net zone-add --name=GEO_1-NE --project='GEO_lab'
+      - Item added successfully.
+    - - net subnet-add --zone=GEO_1-NE --name='GEO_1-NE-1822' --address=192.168.160.0/22  --project='GEO_lab'
+      - Item added successfully.
+    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.50  --project=GEO_2
+      - Item added successfully.
+    - - net ip-add --subnet='GEO_1-NE-1822' --ip=192.168.161.51  --project=GEO_1
+      - Item added successfully.
+    # update resources
+    - - storage server-edit --name=DS8K16 --desc='new server'
+      - Item successfully updated.
+    - - net zone-edit --name=GEO_1-NE --desc='lab zone'
+      - Item successfully updated.
+    # try 'autoinstall'
+    - - system autoinstall --system cpc3lp50 --os rhel7.6
+      - No network interface attached to perform installation
+    # try 'perm user-add'
+    - - perm user-add --login=dev4@example.com --name='Developer 4' --title='Mr. Developer 4'
+      - You need administrator privileges to perform this operation
+    # try 'perm role-grant'
+    - - perm role-grant --login=dev3@example.com --name=USER --project='GEO_2'
+      - You need administrator privileges to perform this operation
+  check_USER:
+    # try 'system list', check systems from another project
+    - - system list --project GEO_2
+      - GEO_2
+    # try 'system add'
+    - - system add --name=cpc3lp51 --hostname cpc3lp51 --type=LPAR
+      - Item added successfully.
+    # try 'system add' for another user
+    - - system add --name=cpc3lp54 --hostname cpc3lp54 --type=LPAR --owner dev4@example.com
+      - Item added successfully.
+    # try 'system edit' for own system
+    - - system edit --name cpc3lp51 --desc 'lpar51'
+      - Item successfully updated.
+    # try 'system edit' for not own system
+    - - system edit --name cpc3lp54 --desc 'lpar54'
+      - User has no UPDATE permission for the specified resource
+    # try 'system del' for own system
+    - - system add --name=cpc3lp61 --hostname cpc3lp61 --type=LPAR
+      - Item added successfully.
+    - - system del --name=cpc3lp61
+      - Item successfully deleted.
+    # try 'system del' for not own system
+    - - system del --name=cpc3lp63
+      - User has no DELETE permission for the specified resource
+    # try autoinstall for own system
+    - - system autoinstall --system cpc31p51 --os rhel7.6
+      - Default profile for system cpc31p51 not available
+    - - system prof-add --system=cpc3lp51 --name=root1 --login=root:mypasswd
+      - Item added successfully.
+    - - system autoinstall --system cpc3lp51 --os rhel7.6
+      - No network interface attached to perform installation
+    # try 'autoinstall' for the system from another project
+    - - system autoinstall --system cpc3lp50 --os rhel7.6
+      - No network interface attached to perform installation
+  switch_and_check_USER_PRIVILEGED:
+    - - - conf key-gen
+        - dev2@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    # try 'system list', check systems from another project
+    - - system list --project GEO_2
+      - GEO_2
+    # try 'system add'
+    - - system add --name=cpc3lp52 --hostname cpc3lp52 --type=LPAR
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp52 --name=root1 --login=root:mypasswd
+      - Item added successfully.
+    - - system add --name=cpc3lp53 --hostname cpc3lp53 --type=LPAR --owner dev3@example.com
+      - Item added successfully.
+    - - system prof-add --system=cpc3lp53 --name=root1 --login=root:mypasswd
+      - Item added successfully.
+    # try 'system edit' for not own system
+    - - system edit --name cpc3lp53 --desc 'lpar53'
+      - Item successfully updated.
+    # try 'system edit' for system from another project
+    - - system edit --name cpc3lp50 --desc 'lpar50'
+      - User has no UPDATE permission for the specified resource
+    # try 'system del' for own system
+    - - system add --name=cpc3lp62 --hostname cpc3lp62 --type=LPAR
+      - Item added successfully.
+    - - system del --name=cpc3lp62
+      - Item successfully deleted.
+    # try 'system del' for not own system
+    - - system del --name=cpc3lp63
+      - User has no DELETE permission for the specified resource
+    # try 'autoinstall'
+    - - system autoinstall --system cpc3lp52 --os rhel7.6
+      - No network interface attached to perform installation
+    # try 'autoinstall' on not own system from the same project
+    - - system autoinstall --system cpc3lp51 --os rhel7.6
+      - No network interface attached to perform installation
+    # try 'autoinstall' on the system from another project
+    - - system autoinstall --system cpc3lp50 --os rhel7.6
+      - No network interface attached to perform installation
+  switch_and_check_USER_RESTRICTED:
+    - - - conf key-gen
+        - dev3@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    # try 'system list', check systems from another project
+    - - system list --project GEO_2
+      - GEO_2
+    # try 'system add'
+    - - system add --name=cpc3lp73 --hostname cpc3lp73 --type=LPAR
+      - No CREATE permission found for the user in any project
+    # try 'system edit' for own system
+    - - system edit --name cpc3lp53 --desc 'lpar 53'
+      - Item successfully updated.
+    # try 'system edit' for not own system
+    - - system edit --name cpc3lp52 --desc 'lpar52'
+      - User has no UPDATE permission for the specified resource
+    # try 'system del' for own system
+    - - system del --name=cpc3lp63
+      - Item successfully deleted.
+    # try 'system del' for not own system
+    - - system del --name=cpc3lp51
+      - User has no DELETE permission for the specified resource
+    # try 'autoinstall' on his own system
+    - - system autoinstall --system cpc3lp53 --os rhel7.6
+      - No network interface attached to perform installation
+    # try 'autoinstall' on not own system from the same project
+    - - system autoinstall --system cpc3lp51 --os rhel7.6
+      - No network interface attached to perform installation
+    # try 'autoinstall' on the system from another project
+    - - system autoinstall --system cpc3lp50 --os rhel7.6
+      - No network interface attached to perform installation
+  switch_and_check_USER_with_restricted_true:
+    - - - conf key-gen
+        - dev4@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    # try 'system list', check systems from another project
+    - - system list --project GEO_2
+      - No results were found.
+    # try 'system add'
+    - - system add --name=cpc3lp64 --hostname cpc3lp64 --type=LPAR
+      - Item added successfully.
+    # try 'system add' for another user
+    - - system add --name=cpc3lp62 --hostname cpc3lp62 --type=LPAR --owner dev2@example.com
+      - Item added successfully.
+    # try 'system edit' for own system
+    - - system edit --name cpc3lp54 --desc 'lpar54'
+      - Item successfully updated.
+    # try 'system edit' for not own system
+    - - system edit --name cpc3lp51 --desc 'lpar51'
+      - User has no UPDATE permission for the specified resource
+    # try 'system del' for own system
+    - - system del --name=cpc3lp64
+      - Item successfully deleted.
+    # try 'system del' for not own system
+    - - system del --name=cpc3lp53
+      - User has no DELETE permission for the specified resource
+    # try autoinstall for own system
+    - - system autoinstall --system cpc31p54 --os rhel7.6
+      - Default profile for system cpc31p54 not available
+    - - system prof-add --system=cpc3lp54 --name=root1 --login=root:mypasswd
+      - Item added successfully.
+    - - system autoinstall --system cpc3lp51 --os rhel7.6
+      - No network interface attached to perform installation
+    # try 'autoinstall' for the system from another project
+    - - system autoinstall --system cpc3lp50 --os rhel7.6
+      - No network interface attached to perform installation
+  switch_and_check_ADMIN_PROJECT:
+    - - - conf key-gen
+        - proj_admin@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    # try 'system list', check systems from another project
+    - - system list --project GEO_2
+      - GEO_2
+    # try 'system add'
+    - - system add --name=cpc3lp55 --hostname cpc3lp55 --type=LPAR
+      - Item added successfully.
+    # try 'system edit'
+    - - system edit --name cpc3lp52 --desc 'lpar52'
+      - Item successfully updated.
+    # try 'system edit' in another project
+    - - system edit --name cpc3lp50 --desc 'lpar50'
+      - User has no UPDATE permission for the specified resource
+    # try 'system del' in own project
+    - - system prof-del --system=cpc3lp54 --name=root1
+      - Item successfully deleted.
+    - - system del --name cpc3lp54
+      - Item successfully deleted.
+    # try 'system del' in not own project
+    - - system del --name cpc3lp50
+      - User has no DELETE permission for the specified resource
+    # try 'autoinstall'
+    - - system autoinstall --system cpc3lp51 --os rhel7.6
+      - No network interface attached to perform installation
+    # create storage resources
+    - - storage server-add --name=DS8K18 --model=DS8000 --type=DASD-FCP
+      - No CREATE permission found for the user in any project
+    - - storage vol-add --server=DS8K16 --type=DASD --id=3952 --size=7gb
+      - No CREATE permission found for the user in any project
+    # create and update net resources in own project
+    - - net zone-add --name=GEO_2-NE --project='GEO_1'
+      - Item added successfully.
+    - - net zone-edit --name=GEO_2-NE --desc='new zone'
+      - Item successfully updated.
+    - - net zone-del --name=GEO_2-NE
+      - Item successfully deleted.
+    # try 'net ip-edit' in own project but another owner
+    - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.51 --desc='for lpar51'
+      - User has no UPDATE permission for the specified resource
+    # try 'net subnet-edit' - lab resource
+    - - net subnet-edit --zone=GEO_1-NE --name='GEO_1-NE-1822' --desc='new subnet'
+      - User has no UPDATE permission for the specified resource
+    # create or update net resources in another project
+    - - net zone-add --name=GEO_2-NE --project='GEO_2'
+      - User has no CREATE permission for the specified project
+    - - net ip-edit --subnet='GEO_1-NE-1822' --ip=192.168.161.50 --project=GEO_1
+      - User has no UPDATE permission for the specified resource
+

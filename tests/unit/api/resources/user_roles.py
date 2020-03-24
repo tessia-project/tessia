@@ -72,8 +72,11 @@ class TestUserRole(TestSecureResource):
         Exercise the scenario where a user with permissions creates an item
         by specifying all possible fields.
         """
-        # since it is not a ResourceMixin only admins have access to it
-        logins = ['user_admin@domain.com']
+        # Only admins and project owners can assign roles
+        logins = [
+            'user_admin@domain.com',
+            'user_project_owner@domain.com'
+        ]
 
         self._test_add_all_fields_many_roles(logins)
     # test_add_all_fields_many_roles()
@@ -83,8 +86,9 @@ class TestUserRole(TestSecureResource):
         Exercise the scenario where a user without an appropriate role tries to
         create an item and fails.
         """
-        # all non admin users are not permitted to create items here
+        # no one except admin and project owner is permitted to create items
         logins = [
+            'user_sandbox@domain.com',
             'user_restricted@domain.com',
             'user_user@domain.com',
             'user_privileged@domain.com',
@@ -92,6 +96,14 @@ class TestUserRole(TestSecureResource):
             'user_hw_admin@domain.com'
         ]
         self._test_add_all_fields_no_role(logins)
+
+        # In addition, project owner cannot grant roles in a different project
+        login = 'user_project_owner@domain.com'
+        data = next(self._get_next_entry)
+        data['project'] = self._db_entries['Project'][1]['name']
+        resp = self._do_request(
+            'create', '{}:a'.format(login), data)
+        self.assertEqual(resp.status_code, 403)
     # test_add_all_fields_no_role()
 
     def test_add_conflict(self):
@@ -177,15 +189,21 @@ class TestUserRole(TestSecureResource):
 
     def test_del_no_role(self):
         """
-        Try to remove an entry without permissions (only admins can do it).
+        Try to remove an entry without permissions
         """
         combos = [
+            ('user_admin@domain.com', 'user_sandbox@domain.com'),
             ('user_admin@domain.com', 'user_restricted@domain.com'),
             ('user_admin@domain.com', 'user_user@domain.com'),
             ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_project_admin@domain.com'),
-            ('user_admin@domain.com', 'user_restricted@domain.com'),
             ('user_admin@domain.com', 'user_hw_admin@domain.com'),
+            ('user_project_owner@domain.com', 'user_sandbox@domain.com'),
+            ('user_project_owner@domain.com', 'user_restricted@domain.com'),
+            ('user_project_owner@domain.com', 'user_user@domain.com'),
+            ('user_project_owner@domain.com', 'user_privileged@domain.com'),
+            ('user_project_owner@domain.com', 'user_project_admin@domain.com'),
+            ('user_project_owner@domain.com', 'user_hw_admin@domain.com'),
         ]
         self._test_del_no_role(combos)
     # test_del_no_role()
@@ -195,9 +213,11 @@ class TestUserRole(TestSecureResource):
         Verify if listing and reading permissions are correctly handled
         """
         logins = [
+            'user_sandbox@domain.com',  # temporary until read restrictions
             'user_user@domain.com',
             'user_privileged@domain.com',
             'user_project_admin@domain.com',
+            'user_project_owner@domain.com',
             'user_hw_admin@domain.com',
             'user_admin@domain.com',
         ]
@@ -286,7 +306,8 @@ class TestUserRole(TestSecureResource):
 
     def test_update_forbidden(self):
         """
-        All update attempts should be forbidden
+        All update attempts should be forbidden: roles cannot be updated,
+        only created or deleted
         """
         update_fields = {
             'user': 'some_user',
@@ -294,9 +315,11 @@ class TestUserRole(TestSecureResource):
             'role': 'some_role',
         }
         logins = [
+            'user_sandbox@domain.com',
             'user_restricted@domain.com',
             'user_user@domain.com',
             'user_privileged@domain.com',
+            'user_project_owner@domain.com',
             'user_project_admin@domain.com',
             'user_hw_admin@domain.com',
             'user_admin@domain.com',

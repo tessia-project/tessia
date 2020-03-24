@@ -343,6 +343,13 @@ class TestSecureResource(TestCase):
         cls._db_entries = {
             "User": [
                 {
+                    "name": "user_sandboxed",
+                    "admin": False,
+                    "title": "Sandboxed user",
+                    "restricted": False,
+                    "login": "user_sandbox@domain.com"
+                },
+                {
                     "name": "user_restricted",
                     "admin": False,
                     "title": "Title of user",
@@ -362,6 +369,13 @@ class TestSecureResource(TestCase):
                     "title": "Title of privileged user",
                     "restricted": False,
                     "login": "user_privileged@domain.com"
+                },
+                {
+                    "name": "user_project_owner",
+                    "admin": False,
+                    "title": "Title of project owner",
+                    "restricted": False,
+                    "login": "user_project_owner@domain.com"
                 },
                 {
                     "name": "user_project_admin",
@@ -398,6 +412,11 @@ class TestSecureResource(TestCase):
             "UserRole": [
                 {
                     "project": project_name,
+                    "user": "user_sandbox@domain.com",
+                    "role": "USER_SANDBOX"
+                },
+                {
+                    "project": project_name,
                     "user": "user_user@domain.com",
                     "role": "USER"
                 },
@@ -405,6 +424,11 @@ class TestSecureResource(TestCase):
                     "project": project_name,
                     "user": "user_privileged@domain.com",
                     "role": "USER_PRIVILEGED"
+                },
+                {
+                    "project": project_name,
+                    "user": "user_project_owner@domain.com",
+                    "role": "OWNER_PROJECT"
                 },
                 {
                     "project": project_name,

@@ -115,7 +115,7 @@ tasks:
       - You need administrator privileges to perform this operation
     # try 'perm role-grant'
     - - perm role-grant --login=dev3@example.com --name=USER --project='GEO_2'
-      - You need administrator privileges to perform this operation
+      - User has no CREATE permission to grant user roles in this project
   check_USER:
     # try 'system list', check systems from another project
     - - system list --project GEO_2

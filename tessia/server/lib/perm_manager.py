@@ -35,10 +35,12 @@ import logging
 #
 # CODE
 #
+
 class PermManager(object):
     """
     Manage user permission verifications
     """
+
     def __init__(self):
         """
         Constructor, creates logger instance.
@@ -65,11 +67,26 @@ class PermManager(object):
         # 'project_id' and not to the relation 'project' because the db object
         # is not committed yet which means the relation does not work
 
-        # model is a special resource: only admins can handle it
+        # model is a resource without project or ownership
+        # Such resources are generally handled by administrators and users with
+        # special permissions
         if not issubclass(item.__class__, ResourceMixin):
             # user is admin: the operation is allowed
             if user.admin:
                 return None
+
+            # User roles may be changed within a project, when requester
+            # has special permissions, e.g. has OWNER_PROJECT role
+            if issubclass(item.__class__, UserRole):
+                # Check requester permissions
+                project = self._get_project_for_action(
+                    user, 'CREATE', 'USER_ROLES', item.project_id)
+                if project is not None:
+                    return project
+
+                raise PermissionError(
+                    'User has no CREATE permission to grant user roles '
+                    'in this project')
 
             # for non admins, action is prohibited
             raise PermissionError(
@@ -127,11 +144,25 @@ class PermManager(object):
         Raises:
             PermissionError: in case user has no permission
         """
-        # model is a special resource: only admins can handle it
+        # model is a resource without project or ownership
+        # Such resources are generally handled by administrators and users with
+        # special permissions
         if not issubclass(target_obj.__class__, ResourceMixin):
             # user is admin: the operation is allowed
             if user.admin:
                 return
+
+            # User roles may be changed within a project, when requester
+            # has special permissions, e.g. has OWNER_PROJECT role
+            if issubclass(target_obj.__class__, UserRole):
+                # Check if the user has permission
+                project = self._get_project_for_action(
+                    user, action, 'USER_ROLES', target_obj.project_id)
+                if project is not None:
+                    return
+                raise PermissionError(
+                    'User has no {} permission to update user roles '
+                    'in this project'.format(action))
 
             # for non admins, action is prohibited
             raise PermissionError(

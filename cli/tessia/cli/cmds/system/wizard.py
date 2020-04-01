@@ -305,7 +305,7 @@ WIZ_NET_IFACE_MAC = (
     "Enter MAC address"
 )
 WIZ_NET_IFACE_DESC = (
-    "You can enter a description to provide additonal information about this "
+    "You can enter a description to provide additional information about this "
     "interface.\nEnter description"
 )
 WIZ_NET_IFACE_CREATING = (
@@ -338,7 +338,7 @@ WIZ_NET_IFACE_SUBNET_ASK = (
     "ask your network administrator)"
 )
 WIZ_NET_IFACE_IP_DESC = (
-    "You can enter a description to provide additonal information about the "
+    "You can enter a description to provide additional information about the "
     "usage of this IP address.\nEnter description"
 )
 WIZ_NET_IFACE_IP_CREATING = (

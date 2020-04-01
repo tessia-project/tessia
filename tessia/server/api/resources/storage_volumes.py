@@ -22,7 +22,7 @@ Resource definition
 from flask import g as flask_global
 from flask_potion import fields
 from flask_potion.contrib.alchemy.fields import InlineModel
-from flask_potion.instances import Instances, Pagination
+from flask_potion.instances import Instances
 from flask_potion.routes import Route
 from tessia.server.api.exceptions import BaseHttpError, ItemNotFoundError
 from tessia.server.api.resources.secure_resource import SecureResource
@@ -461,44 +461,6 @@ class StorageVolumeResource(SecureResource):
 
         return super().do_create(properties)
     # do_create()
-
-    def do_list(self, **kwargs):
-        """
-        Verify if the user attempting to list has permissions to do so.
-
-        Args:
-            kwargs (dict): contains keys like 'where' (filtering) and
-                           'per_page' (pagination), see potion doc for details
-
-        Returns:
-            list: list of items retrieved, can be an empty in case no items are
-                  found or a restricted user has no permission to see them
-        """
-        if not flask_global.auth_user.restricted:
-            return self.manager.paginated_instances(**kwargs)
-
-        ret_instances = []
-        for instance in self.manager.instances(kwargs.get('where'),
-                                               kwargs.get('sort')):
-            # restricted user may list if they have a role in the project
-            try:
-                self._perman.can(
-                    'READ', flask_global.auth_user, instance)
-            except PermissionError:
-                if not instance.system_id:
-                    continue
-                # they can list if the disk is assigned to a system they have
-                # access
-                try:
-                    self._perman.can('READ', flask_global.auth_user,
-                                     instance.system_rel, 'system')
-                except PermissionError:
-                    continue
-            ret_instances.append(instance)
-
-        return Pagination.from_list(
-            ret_instances, kwargs['page'], kwargs['per_page'])
-    # do_list()
 
     def do_read(self, id):
         """

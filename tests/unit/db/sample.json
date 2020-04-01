@@ -4,6 +4,11 @@
             "name": "Department x",
             "avatar": null,
             "desc": "Description of Department x"
+        },
+        {
+            "name": "Quarantine",
+            "avatar": null,
+            "desc": "Isolated project for restricted users"
         }
     ],
     "User": [

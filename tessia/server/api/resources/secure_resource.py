@@ -24,12 +24,10 @@ from flask_potion import ModelResource
 from flask_potion import exceptions as potion_exceptions
 from flask_potion.fields import Inline
 from flask_potion.instances import Instances
-from flask_potion.instances import Pagination
 from flask_potion.routes import Route
 from tessia.server.api import exceptions as api_exceptions
 from tessia.server.lib.perm_manager import PermManager
 from tessia.server.db import exceptions as db_exceptions
-from tessia.server.db.models import ResourceMixin
 from werkzeug.exceptions import Forbidden
 
 #
@@ -286,28 +284,8 @@ class SecureResource(ModelResource):
             list: list of items retrieved, can be an empty in case no items are
                   found or a restricted user has no permission to see them
         """
-        # model is a special resource: listing is allowed for all
-        if not issubclass(self.meta.model, ResourceMixin):
-            return self.manager.paginated_instances(**kwargs)
-        # non restricted user: regular resource listing is allowed
-        elif not flask_global.auth_user.restricted:
-            return self.manager.paginated_instances(**kwargs)
+        return self.manager.paginated_instances(**kwargs)
 
-        # for restricted users, filter the list by the projects they have
-        # access or the resources they own
-        allowed_instances = []
-        for instance in self.manager.instances(kwargs.get('where'),
-                                               kwargs.get('sort')):
-            try:
-                self._perman.can(
-                    'READ', flask_global.auth_user, instance)
-            except PermissionError:
-                continue
-
-            allowed_instances.append(instance)
-
-        return Pagination.from_list(
-            allowed_instances, kwargs['page'], kwargs['per_page'])
     # do_list()
 
     def do_read(self, id): # pylint: disable=invalid-name

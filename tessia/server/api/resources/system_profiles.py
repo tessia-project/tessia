@@ -449,13 +449,6 @@ class SystemProfileResource(SecureResource):
         for instance in self.manager.instances(kwargs.get('where'),
                                                kwargs.get('sort')):
             self._strip_secrets(instance.credentials)
-
-            # restricted user can list if they have a role in the project
-            try:
-                self._perman.can('READ', flask_global.auth_user,
-                                 instance.system_rel, 'system')
-            except PermissionError:
-                continue
             ret_instances.append(instance)
 
         return Pagination.from_list(

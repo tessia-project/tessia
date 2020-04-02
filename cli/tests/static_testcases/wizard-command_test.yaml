@@ -207,7 +207,7 @@ tasks:
         - ip belonging to external iface of system cp1lp10
         # add more ifaces?
         - y
-        # os name
+        # enter name
         - gw1-iface
         # create new iface?
         - y
@@ -241,6 +241,28 @@ tasks:
         - 192.168.0.10
         # choose existing one?
         - "1"
+        # add more ifaces?
+        - y
+        # enter name
+        - roce-card
+        # create new iface?
+        - y
+        # iface type, 3 = ROCE
+        - "3"
+        # os name
+        - en1200
+        # enter function id (enter invalid to test validation)
+        - invalid
+        # enter function id
+        - "1200"
+        # enter the mac address (leave blank to test being mandatory)
+        - ""
+        # enter the mac address
+        - "11:22:33:44:55:66"
+        # iface description
+        - roce pci card
+        # assign ip?
+        - n
         # add more ifaces?
         - n
         # install now?
@@ -289,6 +311,12 @@ tasks:
         - "Attributes *: .*'ccwgroup': '0.0.f500,0.0.f501,0.0.f502'"
         - 'MAC address *: aa:bb:cc:dd:ee:ff'
         - 'Description *: external osa interface'
+    - - system iface-list --system=cp1lp10 --name=roce-card --long
+      - - 'Network device name *: en1200'
+        - 'Interface type *: ROCE'
+        - "Attributes *: .*'fid': '1200'"
+        - 'MAC address *: 11:22:33:44:55:66'
+        - 'Description *: roce pci card'
     - - net ip-list --ip=192.168.0.10 --subnet=zone-b-s1920 --long
       - 'Description *: ip belonging to external iface of system cp1lp10'
     # create another profile reusing stuff

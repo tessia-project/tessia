@@ -300,9 +300,16 @@ WIZ_NET_IFACE_HOST_IFACE_ASK = (
     "the host first before you can continue.\nEnter number"
 )
 WIZ_NET_IFACE_MAC = (
+    "For this interface type a MAC address definition is mandatory.\n"
+    "Enter MAC address"
+)
+WIZ_NET_IFACE_MAC_LAYER2 = (
     "Enter the MAC address for your interface, leave it blank if you "
     "prefer to have it dynamically generated during installation time.\n"
     "Enter MAC address"
+)
+WIZ_NET_IFACE_FID = (
+    "Enter the function ID to be used in the card (i.e. 1200)"
 )
 WIZ_NET_IFACE_DESC = (
     "You can enter a description to provide additonal information about this "
@@ -513,10 +520,10 @@ def _choice_menu(entries, fields, choice_msg, title=None, headers=None):
 
     # add a label with a number so that the user can pick one
     # from the list
-    choice_map = {'': None}
+    choices = []
     for index, item in enumerate(entries):
-        choice_map[str(index+1)] = item
         item.label = str(index+1)
+        choices.append(str(index+1))
     headers.insert(0, 'Number')
     fields.insert(0, 'label')
 
@@ -526,8 +533,11 @@ def _choice_menu(entries, fields, choice_msg, title=None, headers=None):
     print_ver_table(headers, entries, fields)
 
     choice_index = _prompt(choice_msg, default='', show_default=False,
-                           type=click.Choice(choice_map.keys()))
-    choice_item = choice_map[choice_index]
+                           type=click.Choice(choices))
+    try:
+        choice_item = entries[int(choice_index)-1]
+    except (IndexError, ValueError):
+        choice_item = None
 
     return choice_item
 # _choice_menu()
@@ -835,13 +845,13 @@ def _create_iface(client, ctx, sys_item, prof_item):
                 WIZ_NET_IFACE_PORTNO,
                 default={'1': True, None: False}[params.get('portno')]
             )]
-        else:
-            params['layer2'] = None
-            params['ccwgroup'] = None
-            params['portno'] = None
-
+        # roce card: fid is required
+        elif params['type'].lower() == 'roce':
+            params['fid'] = _prompt(
+                WIZ_NET_IFACE_FID, default=params.get('fid'),
+                type=types.ROCE_FID)
         # kvm macvtap: need to choose a host interface
-        if params['type'].lower() == 'macvtap':
+        elif params['type'].lower() == 'macvtap':
             hyp_ifaces = client.SystemIfaces.instances(
                 where={'system': sys_item.hypervisor},
                 sort={'name': False})
@@ -851,9 +861,8 @@ def _create_iface(client, ctx, sys_item, prof_item):
                     hyp_ifaces, iface_fields, WIZ_NET_IFACE_HOST_IFACE_ASK,
                     WIZ_NET_IFACE_HOST_IFACE_TITLE)
             params['hostiface'] = host_iface_item.osname
-        else:
-            params['hostiface'] = None
 
+        # network card is not osa: mac address definition is mandatory
         if params['type'].lower() != 'osa':
             params['mac'] = _prompt(WIZ_NET_IFACE_MAC, default=params['mac'],
                                     type=types.MACADDRESS)
@@ -863,8 +872,9 @@ def _create_iface(client, ctx, sys_item, prof_item):
         # osa card with layer 2 enabled: mac is optional
         else:
             ctx.meta['MACaddress.allow_empty'] = True
-            params['mac'] = _prompt(WIZ_NET_IFACE_MAC, default=params['mac'],
-                                    type=types.MACADDRESS, allow_empty=True)
+            params['mac'] = _prompt(
+                WIZ_NET_IFACE_MAC_LAYER2, default=params['mac'],
+                type=types.MACADDRESS, allow_empty=True)
             ctx.meta['MACaddress.allow_empty'] = False
         params['desc'] = _prompt(
             WIZ_NET_IFACE_DESC, default=params['desc'], allow_empty=True)

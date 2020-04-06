@@ -112,6 +112,7 @@ class RepoDownloader(object):
 
         Raises:
             ValueError: if validation of parameters fails
+            RuntimeError: if subprocess execution fails
 
         Returns:
             dict: a dictionary containing the parsed information
@@ -151,7 +152,7 @@ class RepoDownloader(object):
             process_env['GIT_SSL_NO_VERIFY'] = 'true'
             try:
                 git_output = subprocess.run(
-                    ['git', 'ls-remote', '--heads', 
+                    ['git', 'ls-remote', '--heads',
                      repo['url'], repo['git_branch']],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
@@ -160,12 +161,16 @@ class RepoDownloader(object):
                     universal_newlines=True
                 )
             except subprocess.CalledProcessError as exc:
-                raise ValueError('Source url is not accessible: {}'.format(
-                    exc.stderr.decode('utf8').replace(
-                        source_url, repo['url_obs'])))
+                # re-raise and suppress context, which has unscreened repo url
+                raise ValueError('Source url is not accessible: {} {}'.format(
+                    str(exc).replace(repo['url'], repo['url_obs']),
+                    exc.stderr.replace(repo['url'],
+                                       repo['url_obs']))) from None
             except OSError as exc:
-                raise ValueError('Failed to execute git: {}'.format(str(exc)))
-            
+                # re-raise and suppress context, which has unscreened repo url
+                raise RuntimeError('Failed to execute git: {}'.format(
+                    str(exc).replace(repo['url'], repo['url_obs']))) from None
+
             reflist = git_output.stdout.splitlines()
             if not reflist:
                 raise ValueError('Branch not found in reflist: {}'.format(
@@ -210,7 +215,7 @@ class RepoDownloader(object):
         """
         repo = self._repo_info
         self._logger.info('cloning git repo from %s branch %s/%s commit %s',
-                          repo['url_obs'], repo['git_branch'], 
+                          repo['url_obs'], repo['git_branch'],
                           repo['git_refhead'], repo['git_commit'])
 
         # Since git doesn't allow to clone specific commit and for
@@ -224,7 +229,8 @@ class RepoDownloader(object):
 
         cmd = ['git', 'clone', '-n', '--depth', depth, '--single-branch',
                '-b', repo['git_branch'], repo['url'], '.']
-        self._logger.debug('cloning git repo with: %s', ' '.join(cmd))
+        self._logger.debug('cloning git repo with: %s',
+                           ' '.join(cmd).replace(repo['url'], repo['url_obs']))
         try:
             subprocess.run(
                 cmd,
@@ -232,14 +238,18 @@ class RepoDownloader(object):
                 stderr=subprocess.PIPE,
                 env={'GIT_SSL_NO_VERIFY': 'true'},
                 check=True,
+                universal_newlines=True
             )
         except subprocess.CalledProcessError as exc:
-            raise ValueError('Failed to git clone: {}'.format(
-                exc.stderr.decode('utf8').replace(
-                    repo['url'], repo['url_obs'])))
+            # re-raise and suppress context, which has unscreened repo url
+            raise ValueError('Failed to git clone: {} {}'.format(
+                str(exc).replace(repo['url'], repo['url_obs']),
+                exc.stderr.replace(repo['url'], repo['url_obs']))) from None
         except OSError as exc:
+            # re-raise and suppress context, which has unscreened repo url
             raise RuntimeError('Failed to execute git: {}'.format(
-                str(exc)))
+                str(exc).replace(repo['url'], repo['url_obs']))) from None
+
         cmd = ['git', 'reset', '--hard', repo['git_commit']]
         self._logger.debug('setting git HEAD with: %s', ' '.join(cmd))
         try:
@@ -248,17 +258,21 @@ class RepoDownloader(object):
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.PIPE,
                 check=True,
+                universal_newlines=True
             )
         except subprocess.CalledProcessError as exc:
+            # re-raise and suppress context, which may have unscreened repo url
             raise ValueError(
                 'Failed to checkout to {}, make sure it is not older than {} '
                 'commits. Received error: {}'.format(
                     repo['git_commit'],
                     MAX_GIT_CLONE_DEPTH,
-                    exc.stderr.decode('utf8').replace(
-                        repo['url'], repo['url_obs'])))
+                    exc.stderr.replace(
+                        repo['url'], repo['url_obs']))) from None
         except OSError as exc:
-            raise RuntimeError('Failed to execute git: {}'.format(str(exc)))
+            # re-raise and suppress context, which may have unscreened repo url
+            raise RuntimeError('Failed to execute git: {}'.format(
+                str(exc).replace(repo['url'], repo['url_obs']))) from None
     # _download_git()
 
     def _download_web(self):
@@ -283,7 +297,8 @@ class RepoDownloader(object):
 
         try:
             resp = requests.get(
-                self._repo_info['url'], stream=True, verify=False)
+                self._repo_info['url'], stream=True, verify=False,
+                timeout=5)
             resp.raise_for_status()
         except requests.exceptions.RequestException as exc:
             raise ValueError(

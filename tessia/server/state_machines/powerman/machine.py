@@ -461,13 +461,23 @@ class PowerManagerMachine(BaseMachine):
         ifaces = []
         for iface_obj in guest_prof.system_ifaces_rel:
             # use only the base address
-            ccw_base = []
-            for channel in iface_obj.attributes['ccwgroup'].split(','):
-                ccw_base.append(channel.split('.')[-1])
-            result = {
-                'id': ','.join(ccw_base),
-                'type': iface_obj.type.lower(),
-            }
+            if iface_obj.type.lower() == 'osa':
+                ccw_base = []
+                for channel in iface_obj.attributes['ccwgroup'].split(','):
+                    ccw_base.append(channel.split('.')[-1])
+                result = {
+                    'id': ','.join(ccw_base),
+                    'type': iface_obj.type.lower(),
+                }
+            elif iface_obj.type.lower() == 'roce':
+                result = {
+                    'id': iface_obj.attributes['fid'],
+                    'type': 'pci',
+                }
+            else:
+                raise ValueError('Unsupported network card type {}'
+                                 .format(iface_obj.type))
+
             ifaces.append(result)
 
         # define args for the class constructor

@@ -208,6 +208,7 @@ class AnsibleMachine(BaseMachine):
 
         Raises:
             ValueError: if validation of parameters fails
+            RuntimeError: if subprocess execution fails
 
         Returns:
             dict: a dictionary containing the parsed information
@@ -253,13 +254,18 @@ class AnsibleMachine(BaseMachine):
                     stderr=subprocess.PIPE,
                     env=process_env,
                     check=True,
+                    universal_newlines=True
                 )
             except subprocess.CalledProcessError as exc:
-                raise ValueError('Source url is not accessible: {}'.format(
-                    exc.stderr.decode('utf8').replace(
-                        source_url, repo['url_obs'])))
+                # re-raise and suppress context, which has unscreened repo url
+                raise ValueError('Source url is not accessible: {} {}'.format(
+                    str(exc).replace(repo['url'], repo['url_obs']),
+                    exc.stderr.replace(
+                        repo['url'], repo['url_obs']))) from None
             except OSError as exc:
-                raise ValueError('Failed to execute git: {}'.format(str(exc)))
+                # re-raise and suppress context, which has unscreened repo url
+                raise RuntimeError('Failed to execute git: {}'.format(
+                    str(exc).replace(repo['url'], repo['url_obs']))) from None
 
         # http source: use the requests lib to verify it
         elif repo['type'] == 'web':

@@ -1,0 +1,16 @@
+language: python
+
+python:
+  - 3.6
+
+services:
+  - docker
+
+# Seems that travis doesn't stop running scripts after the first one
+# fails (see https://github.com/travis-ci/travis-ci/issues/1066) so
+# a chain with '&&' was used.
+script: |
+  tools/ci/orc build --image=tessia-cli &&
+  tools/ci/orc build  --image=tessia-server &&
+  tools/ci/orc unittest &&
+  tools/ci/orc clitest

@@ -226,15 +226,25 @@ class TestPowerManagerMachine(TestCase):
         elif hyp_type == 'zvm':
             params = {'boot_method': 'disk'}
             ifaces = []
+            result = None
             for iface_obj in guest_prof_obj.system_ifaces_rel:
-                ccw_base = [
-                    channel.split('.')[-1]
-                    for channel in iface_obj.attributes['ccwgroup'].split(',')
-                ]
-                ifaces.append({
-                    'type': iface_obj.type.lower(),
-                    'id': ','.join(ccw_base)
-                })
+                if iface_obj.type.lower() == 'osa':
+                    ccw_base = [
+                        channel.split('.')[-1]
+                        for channel in
+                        iface_obj.attributes['ccwgroup'].split(',')
+                    ]
+                    result = {
+                        'type': iface_obj.type.lower(),
+                        'id': ','.join(ccw_base)
+                    }
+                elif iface_obj.type.lower() == 'roce':
+                    result = {
+                        'id': iface_obj.attributes['fid'],
+                        'type': 'pci',
+                    }
+                ifaces.append(result)
+
             params['ifaces'] = ifaces
             svols = []
             for vol_obj in guest_prof_obj.storage_volumes_rel:

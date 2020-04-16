@@ -404,6 +404,17 @@
             "osname": "enccw0.0.f550",
             "system": "zvm033",
             "type": "OSA"
+        },
+        {
+            "attributes": {
+                "fid": "655"
+            },
+            "ip_address": null,
+            "mac_address": "05:01:00:00:00:01",
+            "name": "roce-1",
+            "osname": "pci01",
+            "system": "zvm033",
+            "type": "ROCE"
         }
     ],
     "SystemIfaceProfileAssociation": [
@@ -425,6 +436,10 @@
         },
         {
             "iface": "zvm033/gb-extern",
+            "profile": "zvm033/dasd1"
+        },
+        {
+            "iface": "zvm033/roce-1",
             "profile": "zvm033/dasd1"
         }
     ],

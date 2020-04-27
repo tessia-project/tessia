@@ -15,6 +15,7 @@ services:
     ports:
       - 80:80
       - 5000:5000
+      - 7223:7223
     networks:
       - cli_net
       - db_net

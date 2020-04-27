@@ -31,13 +31,21 @@ Even though we use sqlalchemy to abstract database access and in theory could us
 
 Once you have a dev environment ready to go (see [How to get a dev environment](dev_env.md)), follow these steps:
 
-- Due to the fact that the git repository files inside the docker container are read-only you won't be able to create a new alembic version file from inside the docker container.
-For that reason it's best to have a virtualenv deployed by tox for that operation.
-- On a shell with your tox's virtualenv activated, set the correct db credentials in `.tox/devenv/etc/tessia/server.yaml`
+- Due to the fact that the git repository files inside the docker container are read-only you won't be able to create a new alembic version file directly inside the docker container. Instead, copy alembic directory to a temporary directory, e.g.
+  ```
+  cp -R /usr/local/lib/python3.6/dist-packages/tessia/server/db/alembic /tmp
+  ```
+  
+  Alternatively, a deploy a virtualenv by tox for that operation and set the correct db credentials in `.tox/devenv/etc/tessia/server.yaml` in a shell with your tox's virtualenv activated.
 - All database handling should be done through the command `tess-dbmanage`, so type `tess-dbmanage init` to create the database tables (if it already exists, you can clear it first with
 `tess-dbmanage reset`)
 - Apply the desired changes to the `tessia/server/db/models.py` file
-- Create a new revision in alembic to have the database migration versioned: `tess-dbmanage rev-create '0.0.2 (add new table foo)'`.
+- Create a new revision in alembic to have the database migration versioned:
+  ```
+  tess-dbmanage rev-create --script_path /tmp/alembic '0.0.2 (add new table foo)'
+  ```
+  (in tox environment omit `--script_path` argument).
+  
   Alembic creates a new revision and a migration script (python file) under `tessia/server/db/alembic/versions` for you.
 - Alembic is configured to autogenerate the changes in the migration script, but it's not 100% safe. Check the file to make sure the correct changes are being applied.
   You might also want to see the resulting sql for verification, this can be accomplished by using the -s option of the upgrade option as in `tess-dbmanage upgrade -s +1`.

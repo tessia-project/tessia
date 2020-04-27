@@ -1,0 +1,42 @@
+{%macro cio_ignore(svols, ifaces) -%}
+{% set cio_ignore_devnos = [] -%}
+{% for svol in svols -%}
+  {%if svol['type'] == 'DASD' and svol['is_root'] -%}
+    {% set _ = cio_ignore_devnos.append('!0.0.' + svol['volume_id']) -%}
+  {% elif svol['type'] == 'FCP' and svol['is_root'] -%}
+     {% for adapter in svol['specs']['adapters'] -%}
+       {% set _ = cio_ignore_devnos.append('!' + adapter['devno']) -%}
+     {% endfor -%}
+  {%- endif %}
+{%- endfor -%}
+{% for iface in ifaces -%}
+  {% if iface['type'] == 'OSA' -%}
+     {% set iface_devnos = iface['attributes']['ccwgroup'].split(',') -%}
+     {% set _ = cio_ignore_devnos.append('!' + iface_devnos[0] + '-' + iface_devnos[2]) -%}
+  {% endif -%}
+{%- endfor -%}
+cio_ignore=all,!condev,{{ cio_ignore_devnos | join(',') }}
+{%- endmacro %}
+{% macro iface_name(iface, with_vlan=True) -%}
+{% if iface['vlan'] and with_vlan %}{{iface['osname']}}.{{iface['vlan']}}{% elif iface["type"] != "OSA" %}{{iface['osname']}}{% else %}{{iface['systemd_osname']}}{% endif %}
+{%- endmacro %}
+{% macro ifaces_list(ifaces) -%}
+{% set iface_line = [] -%}
+{% for iface in ifaces -%}
+  {% if iface['type'] == 'OSA' -%}
+    {% if iface['attributes']['layer2'] -%}
+      {% set layer2 = "1" -%}
+    {% else -%}
+      {% set layer2 = "0" -%}
+    {% endif -%}
+    {% set _ = iface_line.append("rd.znet=qeth," + iface['attributes']['ccwgroup'] + ",layer2=" + layer2 + ",portno=" + iface['attributes']['portno']) -%}
+  {% else -%}
+    {% set _ = iface_line.append("ifname=" + iface['osname'] + ":" + iface['mac_addr']) -%}
+  {% endif -%}
+{%- endfor -%}
+{{ ' '.join(iface_line) }}
+{%- endmacro %}
+{% macro ip_format(ip_address) -%}
+{% if ':' in ip_address %}[{{ip_address}}]{% else %}{{ip_address}}{% endif %}
+{%- endmacro %}
+{% if config["system_type"] != "KVM" %}{{cio_ignore(config['svols'], config['ifaces'])}} {% endif %} url={{config['repos'][0]['iso_path']}} ip={{ip_format(config["gw_iface"]['ip'])}}::{{ip_format(config["gw_iface"]['gateway'])}}:{{config["gw_iface"]['mask']}}:{{ip_format(config['hostname'])}}:{{iface_name(config["gw_iface"])}}:none:{{config["gw_iface"]['dns_1']}} {% if config["gw_iface"]['vlan'] %}vlan={{iface_name(config["gw_iface"])}}:{{iface_name(config["gw_iface"], False)}}{% endif %} autoinstall ds=nocloud-net;s={{config['autofile']}}/

@@ -172,6 +172,7 @@ class TestSmBase(TestCase):
                 desc=repo_dict['name'],
                 initrd=repo_dict.get('initrd'),
                 kernel=repo_dict.get('kernel'),
+                install_image=repo_dict.get('install_image'),
                 operating_system=repo_dict.get('os'),
                 url=repo_dict['url'],
                 owner='admin', project='Admins', modifier='admin'
@@ -185,7 +186,8 @@ class TestSmBase(TestCase):
                 'url': repo_obj.url,
                 'name': repo_obj.name,
                 'desc': repo_obj.desc,
-                'os': repo_obj.operating_system
+                'os': repo_obj.operating_system,
+                'install_image': None,
             })
             repos_ret['names'].append(repo_obj.name)
 
@@ -392,9 +394,11 @@ class TestSmBase(TestCase):
             'kernel': '/images/kernel.img',
             'os': "rhel7.2",
             'url': "http://_installserver.z",
+            'install_image': None,
         }, {
             'name': "other-repo",
             'url': "http://_somepackages.z",
+            'install_image': None,
         }]
         repos = self._create_repos(repos)
 
@@ -457,7 +461,8 @@ class TestSmBase(TestCase):
                 'name': '{}____urlrepo1_x'.format(scheme),
                 'desc': 'User defined repo {}____urlrepo1_x'.format(scheme),
                 'url': url,
-                'os': None
+                'os': None,
+                'install_image': None,
             })
         # include the default os repository in the expected result
         def_repo_dict = {
@@ -465,6 +470,7 @@ class TestSmBase(TestCase):
             'name': def_repo_entry.name,
             'desc': def_repo_entry.desc,
             'os': def_repo_entry.operating_system,
+            'install_image': None,
         }
         if not def_repo_dict['desc']:
             def_repo_dict['desc'] = def_repo_dict['name']
@@ -591,6 +597,7 @@ class TestSmBase(TestCase):
                 'kernel': '/images/kernel.img',
                 'os': "rhel7.2",
                 'url': "http://_repo{}.z".format(index),
+                'install_image': None,
             })
         repos = self._create_repos(repos)
 
@@ -653,10 +660,12 @@ class TestSmBase(TestCase):
                 'kernel': '/images/kernel.img',
                 'os': "rhel7.2",
                 'url': "http://_repo{}.z".format(index),
+                'install_image': None,
             })
         repos.append({
             'name': "other-repo2",
             'url': "http://_somepackages2.z",
+            'install_image': None,
         })
         repos = self._create_repos(repos)
 

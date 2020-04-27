@@ -79,3 +79,7 @@ log:
 
 scheduler:
   jobs_dir: var/tessia/jobs
+
+installer-webhook:
+  webhook_port: 7223
+  control_port: 7224

@@ -70,6 +70,7 @@
         {
             "initrd": "/images/initrd.img",
             "kernel": "/images/kernel.img",
+            "install_image": null,
             "modifier": "admin",
             "name": "RHEL7.2-GA",
             "operating_system": "rhel7.2",
@@ -80,6 +81,7 @@
         {
             "initrd": "/boot/s390x/initrd",
             "kernel": "/boot/s390x/linux",
+            "install_image": null,
             "modifier": "admin",
             "name": "SLES12.1-GA",
             "operating_system": "sles12.1",
@@ -90,6 +92,7 @@
         {
             "initrd": "/boot/initrd.ubuntu",
             "kernel": "/boot/kernel.ubuntu",
+            "install_image": null,
             "modifier": "admin",
             "name": "UBUNTU16.04.1",
             "operating_system": "ubuntu16.04.1",

@@ -1,0 +1,15 @@
+[package]
+name = "installer-webhook"
+version = "0.1.0"
+authors = ["Alexander Efremkin <aefr@de.ibm.com>"]
+edition = "2018"
+license = "Apache-2.0"
+
+[dependencies]
+futures = "0.3.4"
+warp = "0.2.2"
+tokio = { version = "0.2", features = ["full"] }
+serde = { version = "1.0.106", features = ["derive"] }
+serde_yaml = "0.8.11"
+log = "0.4.8"
+log4rs = "0.11.0"

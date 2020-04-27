@@ -951,9 +951,10 @@ class Repository(CommonMixin, ResourceMixin, BASE):
 
     name = Column(String, unique=True, nullable=False)
     url = Column(String, unique=True, nullable=False)
-    # the path in the repo to the kernel and initrd
+    # the path in the repo to the kernel, initrd and image
     kernel = Column(String)
     initrd = Column(String)
+    install_image = Column(String)
     operating_system_id = Column(
         Integer, ForeignKey('operating_systems.id'), index=True)
 

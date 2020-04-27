@@ -35,13 +35,13 @@ import click
 # CONSTANTS AND DEFINITIONS
 #
 MODEL_FIELDS = (
-    'name', 'operating_system', 'url', 'kernel', 'initrd', 'owner',
-    'project', 'modified', 'modifier', 'desc'
+    'name', 'operating_system', 'url', 'kernel', 'initrd', 'install_image',
+    'owner', 'project', 'modified', 'modifier', 'desc'
 )
 
 MODEL_FIELDS_TABLE = (
-    'name', 'operating_system', 'url', 'kernel', 'initrd', 'owner',
-    'project'
+    'name', 'operating_system', 'url', 'kernel', 'initrd', 'install_image',
+    'owner', 'project'
 )
 
 #
@@ -60,6 +60,8 @@ def repo():
 @click.option('operating_system', '--os', help="installable operating system")
 @click.option('--kernel', help="kernel path (when --os is specified)")
 @click.option('--initrd', help="initrd path (when --os is specified)")
+@click.option('--install_image',
+              help="path to installation image (when --os is specified)")
 @click.option('--owner', help="owner of repository")
 @click.option('--project', help="project owning repository")
 @click.option('--desc', help="free form field describing repository")
@@ -107,6 +109,8 @@ def del_(name):
 @click.option('operating_system', '--os', help="installable operating system")
 @click.option('--kernel', help="kernel path (when --os is specified)")
 @click.option('--initrd', help="initrd path (when --os is specified)")
+@click.option('--install_image',
+              help="path to installation image (when --os is specified)")
 @click.option('--owner', help="owner of repository")
 @click.option('--project', help="project owning repository")
 @click.option('--desc', help="free form field describing repository")
@@ -126,6 +130,8 @@ def edit(cur_name, **kwargs):
 @repo.command(name='list')
 @click.option('--initrd', help="filter by initrd path")
 @click.option('--kernel', help="filter by kernel path")
+@click.option('--install_image',
+              help="filter by path to installation image")
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
 @click.option('--my', help="show only my own repos", is_flag=True,

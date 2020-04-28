@@ -66,7 +66,7 @@ INFO: [build] build start at /tmp/tmp.UiFhfNktQn/tessia-cli
 $ docker build --force-rm --label com.tessia.version=17.713.740-devd40c703 -t tessia-cli:17.713.740-devd40c703  /tmp/tmp.UiFhfNktQn/tessia-cli
 Sending build context to Docker daemon  6.873MB
 
-Step 1/9 : FROM ubuntu:latest
+Step 1/9 : FROM ubuntu:18.04
  ---> d355ed3537e9
 Step 2/9 : ARG git_repo=/assets/tessia.git
  ---> Using cache

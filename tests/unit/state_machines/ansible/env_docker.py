@@ -92,7 +92,7 @@ class TestEnvDocker(TestCase):
         Simulate a successful docker build process
         """
         output = ["Sending build context to Docker daemon  16.38kB",
-                  "Step 1/7 : FROM ubuntu:latest",
+                  "Step 1/7 : FROM ubuntu:18.04",
                   " ---> cd6d8154f1e1",
                   "Step 2/7 : ARG DEBIAN_FRONTEND=noninteractive",
                   "...",
@@ -430,7 +430,7 @@ class TestEnvDockerKilledBySignal(TestEnvDocker):
         a SIGKILL or something similar.
         """
         output = ["Sending build context to Docker daemon  16.38kB",
-                  "Step 1/7 : FROM ubuntu:latest",
+                  "Step 1/7 : FROM ubuntu:18.04",
                   " ---> cd6d8154f1e1",
                   "Step 2/7 : ARG DEBIAN_FRONTEND=noninteractive"]
         for item in output:

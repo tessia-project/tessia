@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:18.04
 
 # by default we expect the git repo to be placed by the ci process under /assets
 # but it is also possible to use this dockerfile directly and override the variable

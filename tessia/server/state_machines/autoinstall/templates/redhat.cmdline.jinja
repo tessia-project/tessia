@@ -10,7 +10,7 @@
     {% else -%}
       {% set layer2 = "0" -%}
     {% endif -%}
-    {% set _ = iface_line.append("rd.znet=qeth," + iface['attributes']['ccwgroup'] + ",layer2=" + layer2 + ",portno=" + iface['attributes']['portno'] + ",portname=" + iface['attributes']['portname']) -%}
+    {% set _ = iface_line.append("rd.znet=qeth," + iface['attributes']['ccwgroup'] + ",layer2=" + layer2 + ",portno=" + iface['attributes']['portno']) -%}
   {% else -%}
     {% set _ = iface_line.append("ifname=" + iface['osname'] + ":" + iface['mac_addr']) -%}
   {% endif -%}

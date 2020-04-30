@@ -618,6 +618,7 @@ class SystemProfileResource(SecureResource):
             API_DB.db.session.commit()
         # duplicate entry
         except IntegrityError:
+            API_DB.db.session.rollback()
             msg = 'The volume specified is already attached to the profile'
             raise BaseHttpError(409, msg=msg)
 
@@ -681,6 +682,7 @@ class SystemProfileResource(SecureResource):
             API_DB.db.session.commit()
         # duplicate entry
         except IntegrityError:
+            API_DB.db.session.rollback()
             msg = ('The network interface specified is already attached to '
                    'the profile')
             raise BaseHttpError(409, msg=msg)

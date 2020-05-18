@@ -21,7 +21,6 @@ Resource definition
 #
 from flask import g as flask_global
 from flask_potion import fields
-from flask_potion.instances import Pagination
 from tessia.server.api.exceptions import BaseHttpError
 from tessia.server.api.resources.secure_resource import SecureResource
 from tessia.server.db.models import UserRole
@@ -70,37 +69,6 @@ class UserRoleResource(SecureResource):
         role = fields.String(
             title=DESC['role'], description=DESC['role'])
     # Schema
-
-    def do_list(self, **kwargs):
-        """
-        Verify if the user attempting to list has permissions to do so.
-
-        Args:
-            kwargs (dict): contains keys like 'where' (filtering) and
-                           'per_page' (pagination), see potion doc for details
-
-        Returns:
-            list: list of items retrieved, can be an empty in case no items are
-                  found or a restricted user has no permission to see them
-        """
-        # non restricted user: regular listing is allowed
-        if not flask_global.auth_user.restricted:
-            return self.manager.paginated_instances(**kwargs)
-
-        # for restricted users, filter the list by the projects they have
-        # a role
-        allowed_instances = []
-        for instance in self.manager.instances(kwargs.get('where'),
-                                               kwargs.get('sort')):
-            user_role = self._perman.get_role_for_project(
-                flask_global.auth_user, instance.project_id)
-            if not user_role:
-                continue
-            allowed_instances.append(instance)
-
-        return Pagination.from_list(
-            allowed_instances, kwargs['page'], kwargs['per_page'])
-    # do_list()
 
     def do_read(self, id): # pylint: disable=redefined-builtin
         """

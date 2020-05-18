@@ -122,14 +122,17 @@ class TestIpAddress(TestSecureResource):
         create an item and fails.
         """
         logins = [
-            'user_restricted@domain.com',
-            'user_user@domain.com',
-            'user_privileged@domain.com',
-            'user_project_admin@domain.com',
+            ('user_user@domain.com', 403),
+            ('user_privileged@domain.com', 403),
+            ('user_project_admin@domain.com', 403),
+            ('user_restricted@domain.com', 422),
         ]
 
         # create ip without system, user has no permission to ip
-        self._test_add_all_fields_no_role(logins)
+        # note that restricted has no access to subnet
+        self._test_add_all_fields_no_role([login[0] for login in logins[:-1]])
+        self._test_add_all_fields_no_role([logins[-1][0]],
+                                          http_code=logins[-1][1])
 
         sys_name = 'New system for test_add_all_fields_no_role'
         system = models.System(
@@ -145,7 +148,7 @@ class TestIpAddress(TestSecureResource):
         self.db.session.add(system)
         self.db.session.commit()
         # create ip with system, user has permission to system but not to ip
-        for login in logins:
+        for login, http_code in logins:
             system.owner = login
             self.db.session.add(system)
             self.db.session.commit()
@@ -154,16 +157,27 @@ class TestIpAddress(TestSecureResource):
             data['system'] = sys_name
             resp = self._do_request('create', '{}:a'.format(login), data)
             # validate the response received, should be forbidden
+            expected_response = {
+                403: 'User has no CREATE permission for the '
+                     'specified project',
+                422: "No associated item found with value 'cpc0 shared' for "
+                     "field 'Part of subnet'"
+            }
             self._assert_failed_req(
-                resp, 403,
-                'User has no CREATE permission for the specified project'
+                resp, http_code,
+                expected_response[http_code]
             )
             # try without specifying project
             data['project'] = None
+            expected_response = {
+                403: 'No CREATE permission found for the user in any project',
+                422: "No associated item found with value 'cpc0 shared' for "
+                     "field 'Part of subnet'"
+            }
             resp = self._do_request('create', '{}:a'.format(login), data)
             self._assert_failed_req(
-                resp, 403,
-                'No CREATE permission found for the user in any project'
+                resp, http_code,
+                expected_response[http_code]
             )
 
         # create ip with system, user has permission to ip but not to system
@@ -171,17 +185,23 @@ class TestIpAddress(TestSecureResource):
         system.project = self._db_entries['Project'][1]['name']
         self.db.session.add(system)
         self.db.session.commit()
-        for login in logins + ['user_hw_admin@domain.com']:
+        for login, http_code in logins + [('user_hw_admin@domain.com', 403)]:
             data = next(self._get_next_entry)
             data['owner'] = login
             data['system'] = sys_name
             resp = self._do_request('create', '{}:a'.format(login), data)
             # validate the response received, should be forbidden
-            msg = 'User has no UPDATE permission for the specified system'
-            self._assert_failed_req(resp, 403, msg)
+            expected_response = {
+                403: 'User has no UPDATE permission for the specified system',
+                422: "No associated item found with value 'cpc0 shared' for "
+                     "field 'Part of subnet'"
+            }
+            self._assert_failed_req(resp, http_code,
+                                    expected_response[http_code])
             # try without specifying project
             data['project'] = None
-            self._assert_failed_req(resp, 403, msg)
+            self._assert_failed_req(resp, http_code,
+                                    expected_response[http_code])
 
         self.db.session.delete(system)
         self.db.session.commit()
@@ -344,9 +364,14 @@ class TestIpAddress(TestSecureResource):
             ('user_admin@domain.com', 'user_user@domain.com'),
             ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_project_admin@domain.com'),
-            ('user_admin@domain.com', 'user_restricted@domain.com'),
         ]
         self._test_del_no_role(combos)
+
+        # restricted user has no access to the item
+        combos = [
+            ('user_admin@domain.com', 'user_restricted@domain.com'),
+        ]
+        self._test_del_no_role(combos, http_code=404)
     # test_del_no_role()
 
     def test_list_and_read(self):
@@ -372,7 +397,7 @@ class TestIpAddress(TestSecureResource):
 
         # ips without system, restricted user without role in project
         self._test_list_and_read_restricted_no_role(
-            'user_hw_admin@domain.com', user_res)
+            'user_hw_admin@domain.com', user_res, http_code=404)
 
         # list/read ips with system, restricted user has no role in system's
         # project
@@ -405,10 +430,10 @@ class TestIpAddress(TestSecureResource):
         resp = self._do_request('list', '{}:a'.format(user_res), None)
         self._assert_listed_or_read(resp, [], time_range)
 
-        # perform a read - expected a 403 forbidden
+        # perform a read - expected a 404 'not found'
         for entry_id in entries:
             resp = self._do_request('get', '{}:a'.format(user_res), entry_id)
-            self.assertEqual(resp.status_code, 403)
+            self.assertEqual(resp.status_code, 404)
             # clean up
             self.db.session.query(self.RESOURCE_MODEL).filter_by(
                 id=entry_id).delete()
@@ -498,6 +523,9 @@ class TestIpAddress(TestSecureResource):
         """
         Test basic filtering capabilities
         """
+        # set requester for next queries
+        self._do_request('list', '{}:a'.format('user_hw_admin@domain.com'))
+
         # a subnet has to be created first so that association works
         subnet = models.Subnet(
             address='10.1.0.0/24',
@@ -742,7 +770,7 @@ class TestIpAddress(TestSecureResource):
         self.db.session.commit()
 
         def assert_update(error_msg, update_user, ip_owner, sys_cur,
-                          sys_target):
+                          sys_target, http_code=403):
             """
             Helper function to validate update action is forbidden
 
@@ -752,13 +780,16 @@ class TestIpAddress(TestSecureResource):
                 sys_cur (str): name and owner of the current system
                 sys_target (str): name and owner of target system
                 error_msg (str): expected error message
+                http_code (int): expected HTTP status code
             """
             data = next(self._get_next_entry)
             data['owner'] = ip_owner
             if sys_cur:
                 data['system'] = sys_cur['name']
                 sys_obj = models.System.query.filter_by(
-                    name=sys_cur['name']).one()
+                    name=sys_cur['name']).one_or_none()
+                if sys_obj is None:
+                    return
                 sys_obj.owner = sys_cur['owner']
                 self.db.session.add(sys_obj)
                 self.db.session.commit()
@@ -777,7 +808,7 @@ class TestIpAddress(TestSecureResource):
             data = {'id': ip_id, 'system': sys_tgt_name}
             resp = self._do_request('update', '{}:a'.format(update_user), data)
             # validate the response received, should be forbidden
-            self._assert_failed_req(resp, 403, error_msg)
+            self._assert_failed_req(resp, http_code, error_msg)
             # clean up
             self.db.session.query(self.RESOURCE_MODEL).filter_by(
                 id=ip_id).delete()
@@ -805,10 +836,17 @@ class TestIpAddress(TestSecureResource):
 
             # update ip change system, user has permission to ip and
             # current system but not to target system
-            msg = 'User has no UPDATE permission for the specified system'
+            http_code = 403
+            if login == 'user_restricted@domain.com':
+                msg = ("No associated item found with value 'New system for "
+                       "test_update_no_role 2' for field 'Assigned to system'")
+                http_code = 422
+            else:
+                msg = 'User has no UPDATE permission for the specified system'
             assert_update(msg, login, login,
                           {'name': sys_name, 'owner': login},
-                          {'name': sys_name_2, 'owner': 'admin'})
+                          {'name': sys_name_2, 'owner': 'admin'},
+                          http_code=http_code)
 
         for login in ('user_restricted@domain.com', 'user_user@domain.com'):
             # update ip assign system, user has permission to ip but not

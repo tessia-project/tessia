@@ -195,9 +195,14 @@ class TestNetZone(TestSecureResource):
             ('user_admin@domain.com', 'user_user@domain.com'),
             ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_project_admin@domain.com'),
-            ('user_admin@domain.com', 'user_restricted@domain.com'),
         ]
         self._test_del_no_role(combos)
+
+        # restricted user has no access to the item
+        combos = [
+            ('user_admin@domain.com', 'user_restricted@domain.com'),
+        ]
+        self._test_del_no_role(combos, http_code=404)
     # test_del_no_role()
 
     def test_list_and_read(self):
@@ -220,7 +225,8 @@ class TestNetZone(TestSecureResource):
         List entries with a restricted user without role in any project
         """
         self._test_list_and_read_restricted_no_role(
-            'user_hw_admin@domain.com', 'user_restricted@domain.com')
+            'user_hw_admin@domain.com', 'user_restricted@domain.com',
+            http_code=404)
     # test_list_and_read_restricted_no_role()
 
     def test_list_and_read_restricted_with_role(self):
@@ -270,12 +276,21 @@ class TestNetZone(TestSecureResource):
             ('user_hw_admin@domain.com', 'user_admin@domain.com'),
             ('user_admin@domain.com', 'user_hw_admin@domain.com'),
             # combinations to exercise updating an item owned by the user
-            ('user_restricted@domain.com', 'user_restricted@domain.com'),
             ('user_user@domain.com', 'user_user@domain.com'),
             ('user_privileged@domain.com', 'user_privileged@domain.com'),
             ('user_project_admin@domain.com', 'user_project_admin@domain.com'),
         ]
 
+        self._test_update_valid_fields(
+            'user_hw_admin@domain.com', combos, update_fields)
+
+        # Restricted user should not change the owner
+        # otherwise the item becomes inaccessible
+        combos = [
+            # combinations to exercise updating an item owned by the user
+            ('user_restricted@domain.com', 'user_restricted@domain.com'),
+        ]
+        update_fields.pop('owner')
         self._test_update_valid_fields(
             'user_hw_admin@domain.com', combos, update_fields)
     # test_update_valid_fields()
@@ -288,12 +303,18 @@ class TestNetZone(TestSecureResource):
             'name': 'this_should_not_work',
         }
         logins = [
-            'user_restricted@domain.com',
             'user_privileged@domain.com',
             'user_user@domain.com',
             'user_project_admin@domain.com'
         ]
         self._test_update_no_role(
             'user_hw_admin@domain.com', logins, update_fields)
+
+        # restricted user has no read access to the item
+        logins = [
+            'user_restricted@domain.com',
+        ]
+        self._test_update_no_role(
+            'user_hw_admin@domain.com', logins, update_fields, http_code=404)
     # test_update_no_role()
 # TestNetZone

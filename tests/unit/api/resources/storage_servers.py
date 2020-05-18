@@ -207,9 +207,14 @@ class TestStorageServer(TestSecureResource):
             ('user_admin@domain.com', 'user_user@domain.com'),
             ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_project_admin@domain.com'),
-            ('user_admin@domain.com', 'user_restricted@domain.com'),
         ]
         self._test_del_no_role(combos)
+
+        # restricted user has no access to the item
+        combos = [
+            ('user_admin@domain.com', 'user_restricted@domain.com'),
+        ]
+        self._test_del_no_role(combos, http_code=404)
     # test_del_no_role()
 
     def test_list_and_read(self):
@@ -232,7 +237,8 @@ class TestStorageServer(TestSecureResource):
         List entries with a restricted user without role in any project
         """
         self._test_list_and_read_restricted_no_role(
-            'user_hw_admin@domain.com', 'user_restricted@domain.com')
+            'user_hw_admin@domain.com', 'user_restricted@domain.com',
+            http_code=404)
     # test_list_and_read_restricted_no_role()
 
     def test_list_and_read_restricted_with_role(self):
@@ -338,12 +344,18 @@ class TestStorageServer(TestSecureResource):
             'name': 'this_should_not_work',
         }
         logins = [
-            'user_restricted@domain.com',
             'user_privileged@domain.com',
             'user_user@domain.com',
             'user_project_admin@domain.com'
         ]
         self._test_update_no_role(
             'user_hw_admin@domain.com', logins, update_fields)
+
+        # restricted has no read access to the item
+        logins = [
+            'user_restricted@domain.com',
+        ]
+        self._test_update_no_role(
+            'user_hw_admin@domain.com', logins, update_fields, http_code=404)
     # test_update_no_role()
 # TestStorageServer

@@ -160,14 +160,16 @@ class TestStorageVolume(TestSecureResource):
         create an item and fails.
         """
         logins = [
-            'user_user@domain.com',
-            'user_privileged@domain.com',
-            'user_project_admin@domain.com',
-            'user_restricted@domain.com',
+            ('user_user@domain.com', 403),
+            ('user_privileged@domain.com', 403),
+            ('user_project_admin@domain.com', 403),
+            ('user_restricted@domain.com', 422),
         ]
-
         # create disk without system, user has no permission to disk
-        self._test_add_all_fields_no_role(logins)
+        # note that restricted has no access to server
+        self._test_add_all_fields_no_role([login[0] for login in logins[:-1]])
+        self._test_add_all_fields_no_role([logins[-1][0]],
+                                          http_code=logins[-1][1])
 
         sys_name = 'New system for test_add_all_fields_no_role'
         system = models.System(
@@ -184,7 +186,7 @@ class TestStorageVolume(TestSecureResource):
         self.db.session.commit()
         # create disk with system, user has permission to system but not to
         # disk
-        for login in logins:
+        for login, http_code in logins:
             system.owner = login
             self.db.session.add(system)
             self.db.session.commit()
@@ -193,16 +195,27 @@ class TestStorageVolume(TestSecureResource):
             data['system'] = sys_name
             resp = self._do_request('create', '{}:a'.format(login), data)
             # validate the response received, should be forbidden
+            expected_response = {
+                403: 'User has no CREATE permission for the '
+                     'specified project',
+                422: "No associated item found with value 'DSK8_x_0' for "
+                     "field 'Storage server'"
+            }
             self._assert_failed_req(
-                resp, 403,
-                'User has no CREATE permission for the specified project'
+                resp, http_code,
+                expected_response[http_code]
             )
             # try without specifying project
             data['project'] = None
+            expected_response = {
+                403: 'No CREATE permission found for the user in any project',
+                422: "No associated item found with value 'DSK8_x_0' for "
+                     "field 'Storage server'"
+            }
             resp = self._do_request('create', '{}:a'.format(login), data)
             self._assert_failed_req(
-                resp, 403,
-                'No CREATE permission found for the user in any project'
+                resp, http_code,
+                expected_response[http_code]
             )
 
         # create disk with system, user has permission to disk but not to
@@ -211,17 +224,23 @@ class TestStorageVolume(TestSecureResource):
         system.project = self._db_entries['Project'][1]['name']
         self.db.session.add(system)
         self.db.session.commit()
-        for login in logins + ['user_hw_admin@domain.com']:
+        for login, http_code in logins + [('user_hw_admin@domain.com', 403)]:
             data = next(self._get_next_entry)
             data['owner'] = login
             data['system'] = sys_name
             resp = self._do_request('create', '{}:a'.format(login), data)
             # validate the response received, should be forbidden
-            msg = 'User has no UPDATE permission for the specified system'
-            self._assert_failed_req(resp, 403, msg)
+            expected_response = {
+                403: 'User has no UPDATE permission for the specified system',
+                422: "No associated item found with value 'DSK8_x_0' for "
+                     "field 'Storage server'"
+            }
+            self._assert_failed_req(resp, http_code,
+                                    expected_response[http_code])
             # try without specifying project
             data['project'] = None
-            self._assert_failed_req(resp, 403, msg)
+            self._assert_failed_req(resp, http_code,
+                                    expected_response[http_code])
 
         self.db.session.delete(system)
     # test_add_all_fields_no_role()
@@ -870,9 +889,14 @@ class TestStorageVolume(TestSecureResource):
             ('user_admin@domain.com', 'user_user@domain.com'),
             ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_project_admin@domain.com'),
-            ('user_admin@domain.com', 'user_restricted@domain.com'),
         ]
         self._test_del_no_role(combos)
+
+        # restricted user has no access to the item
+        combos = [
+            ('user_admin@domain.com', 'user_restricted@domain.com'),
+        ]
+        self._test_del_no_role(combos, http_code=404)
     # test_del_no_role()
 
     def test_list_and_read(self):
@@ -899,7 +923,7 @@ class TestStorageVolume(TestSecureResource):
 
         # disks without system, restricted user without role on project
         self._test_list_and_read_restricted_no_role(
-            'user_hw_admin@domain.com', user_res)
+            'user_hw_admin@domain.com', user_res, http_code=404)
 
         # list/read disks with system, restricted user has no role in system's
         # project
@@ -932,10 +956,10 @@ class TestStorageVolume(TestSecureResource):
         resp = self._do_request('list', '{}:a'.format(user_res), None)
         self._assert_listed_or_read(resp, [], time_range)
 
-        # perform a read - expected a 403 forbidden
+        # perform a read - expected a 404 'not found'
         for entry_id in entries:
             resp = self._do_request('get', '{}:a'.format(user_res), entry_id)
-            self.assertEqual(resp.status_code, 403)
+            self.assertEqual(resp.status_code, 404)
             # clean up
             self.db.session.query(self.RESOURCE_MODEL).filter_by(
                 id=entry_id).delete()
@@ -1310,7 +1334,7 @@ class TestStorageVolume(TestSecureResource):
         self.db.session.commit()
 
         def assert_update(error_msg, update_user, disk_owner, sys_cur,
-                          sys_target):
+                          sys_target, http_code=403):
             """
             Helper function to validate update action is forbidden
 
@@ -1320,13 +1344,16 @@ class TestStorageVolume(TestSecureResource):
                 sys_cur (str): name and owner of the current system
                 sys_target (str): name and owner of target system
                 error_msg (str): expected error message
+                http_code (int): expected HTTP status code
             """
             data = next(self._get_next_entry)
             data['owner'] = disk_owner
             if sys_cur:
                 data['system'] = sys_cur['name']
                 sys_obj = models.System.query.filter_by(
-                    name=sys_cur['name']).one()
+                    name=sys_cur['name']).one_or_none()
+                if sys_obj is None:
+                    return
                 sys_obj.owner = sys_cur['owner']
                 self.db.session.add(sys_obj)
                 self.db.session.commit()
@@ -1345,7 +1372,7 @@ class TestStorageVolume(TestSecureResource):
             data = {'id': vol_id, 'system': sys_tgt_name}
             resp = self._do_request('update', '{}:a'.format(update_user), data)
             # validate the response received, should be forbidden
-            self._assert_failed_req(resp, 403, error_msg)
+            self._assert_failed_req(resp, http_code, error_msg)
             # clean up
             self.db.session.query(self.RESOURCE_MODEL).filter_by(
                 id=vol_id).delete()
@@ -1373,10 +1400,17 @@ class TestStorageVolume(TestSecureResource):
 
             # update disk re-assign system, user has permission to disk and
             # current system but not to target system
-            msg = 'User has no UPDATE permission for the specified system'
+            http_code = 403
+            if login == 'user_restricted@domain.com':
+                msg = ("No associated item found with value 'New system for "
+                       "test_update_no_role 2' for field 'Assigned to system'")
+                http_code = 422
+            else:
+                msg = 'User has no UPDATE permission for the specified system'
             assert_update(msg, login, login,
                           {'name': sys_name, 'owner': login},
-                          {'name': sys_name_2, 'owner': 'admin'})
+                          {'name': sys_name_2, 'owner': 'admin'},
+                          http_code=http_code)
 
         for login in ('user_restricted@domain.com', 'user_user@domain.com'):
             # update disk assign system, user has permission to disk but not

@@ -334,6 +334,7 @@ class TestSecureResource(TestCase):
         API.reset()
         API.app.config['TESTING'] = True
         cls.app = API.app.test_client()
+        API.app.app_context().push()
 
         # define the generator for creating new items
         cls._get_next_entry = cls._entry_gen()
@@ -416,6 +417,11 @@ class TestSecureResource(TestCase):
                     "role": "USER_SANDBOX"
                 },
                 {
+                    "project": "Quarantine",
+                    "user": "user_restricted@domain.com",
+                    "role": "USER_RESTRICTED"
+                },
+                {
                     "project": project_name,
                     "user": "user_user@domain.com",
                     "role": "USER"
@@ -440,7 +446,7 @@ class TestSecureResource(TestCase):
                     "user": "user_hw_admin@domain.com",
                     "role": "ADMIN_LAB"
                 }
-            ],
+            ]
         }
         cls.db.create_entry(cls._db_entries)
 
@@ -470,13 +476,14 @@ class TestSecureResource(TestCase):
 
     # _test_add_all_fields_many_roles()
 
-    def _test_add_all_fields_no_role(self, logins):
+    def _test_add_all_fields_no_role(self, logins, http_code=403):
         """
         Exercise the scenario where a user without an appropriate role tries to
         create an item and fails.
 
         Args:
             logins (list): user logins to be tested
+            http_code (int): expected HTTP status code
         """
         for login in logins:
             data = next(self._get_next_entry)
@@ -484,7 +491,7 @@ class TestSecureResource(TestCase):
             # validate the response received, should be forbidden
             self.assertEqual(
                 resp.status_code,
-                403,
+                http_code,
                 'Login was: {}'.format(login))
     # _test_add_all_fields_no_role()
 
@@ -666,12 +673,13 @@ class TestSecureResource(TestCase):
         self.assertEqual(resp.status_code, 404)
     # _test_del_invalid_id()
 
-    def _test_del_no_role(self, combos):
+    def _test_del_no_role(self, combos, http_code=403):
         """
         Try to remove an entry without permissions
 
         Args:
             combos (list): [(login_for_add, login_for_del)]
+            http_code (int): expected HTTP status code
         """
         for login_add, login_del in combos:
             # create the target entry
@@ -683,7 +691,7 @@ class TestSecureResource(TestCase):
             resp = self._do_request(
                 'delete', '{}:a'.format(login_del), created_id)
             # validate deletion failed
-            self.assertEqual(resp.status_code, 403)
+            self.assertEqual(resp.status_code, http_code)
     # _test_del_no_role()
 
     def _test_list_and_read(self, login_add, logins_list):
@@ -800,6 +808,8 @@ class TestSecureResource(TestCase):
             login_add (str): user login used to create items
             login_rest (str): restricted user login used to list items
         """
+        # set requester for future delete queries
+        self._do_request('list', '{}:a'.format(login_add))
         # make sure table is empty
         prev_entries = self.RESOURCE_MODEL.query.join(
             'project_rel'
@@ -1149,7 +1159,8 @@ class TestSecureResource(TestCase):
         self.assertEqual(resp.status_code, 409)
     # _test_update_conflict()
 
-    def _test_update_no_role(self, login_add, logins_update, update_fields):
+    def _test_update_no_role(self, login_add, logins_update, update_fields,
+                             http_code=403):
         """
         Try to update with users without an appropriate role to do so.
 
@@ -1157,6 +1168,7 @@ class TestSecureResource(TestCase):
             login_add (str): user login used to create items
             logins_update (list): logins allowed to performed update
             update_fields (dict): mapping of fields with values to update
+            http_code (int): expected HTTP status code
         """
         # create the entry to work with
         entries, _ = self._create_many_entries(login_add, 1)
@@ -1168,7 +1180,7 @@ class TestSecureResource(TestCase):
                 'update', '{}:a'.format(login_update), update_fields)
 
             # validate the response received, should be forbidden
-            self.assertEqual(resp.status_code, 403,
+            self.assertEqual(resp.status_code, http_code,
                              resp.get_data(as_text=True))
 
     # _test_update_no_role()

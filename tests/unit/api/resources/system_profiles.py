@@ -20,6 +20,7 @@ Unit test for system_profiles resource module
 # IMPORTS
 #
 from base64 import b64encode
+from flask import g as flask_global
 from tessia.server.api.resources.system_profiles import MARKER_STRIPPED_SECRET
 from tessia.server.api.resources.system_profiles import SystemProfileResource
 from tessia.server.db import models
@@ -197,6 +198,11 @@ class TestSystemProfile(TestSecureResource):
         Update systems to the same project of the test users.
         """
         super(TestSystemProfile, cls).setUpClass()
+
+        # set requester for next queries
+        flask_global.auth_user = models.User.query.filter(
+            models.User.login == 'user_hw_admin@domain.com'
+        ).one()
 
         # fetch which project to use from the test user and store this info for
         # use also by the testcases
@@ -900,6 +906,9 @@ class TestSystemProfile(TestSecureResource):
         orig_sys_owner = sys_obj.owner
         def restore_owner():
             """Helper cleanup"""
+            # reset flask user to admin
+            self._do_request('list', 'admin:a')
+
             sys_obj = models.System.query.filter_by(
                 name=self._target_lpar).one()
             sys_obj.owner = orig_sys_owner
@@ -927,11 +936,14 @@ class TestSystemProfile(TestSecureResource):
         disk_id = disk_obj.id
 
         def assert_actions(login, disk_owner, sys_owner, assign,
-                           error_msg=None):
+                           error_msg=None, http_code=403):
             """
             Helper to prepare environment and validate attach/detach actions
             """
             # set system ownership
+            # reset flask user to admin
+            self._do_request('list', 'user_hw_admin@domain.com:a')
+
             sys_obj = models.System.query.filter_by(
                 name=self._target_lpar).one()
             sys_obj.owner = sys_owner
@@ -971,7 +983,7 @@ class TestSystemProfile(TestSecureResource):
                 return
 
             resp = self._req_att_disk(*args, validate=False)
-            self._validate_resp(resp, error_msg, 403)
+            self._validate_resp(resp, error_msg, http_code)
 
             # prepare association for detach
             assoc_obj = models.StorageVolumeProfileAssociation(
@@ -980,7 +992,7 @@ class TestSystemProfile(TestSecureResource):
             self.db.session.commit()
             # try detach
             resp = self._req_det_disk(*args, validate=False)
-            self._validate_resp(resp, error_msg, 403)
+            self._validate_resp(resp, error_msg, http_code)
         # assert_actions()
 
         # logins with no update role
@@ -988,8 +1000,15 @@ class TestSystemProfile(TestSecureResource):
         for login in logins_no_role:
             # attach disk assigned to system, user has no permission to system
             # nor disk (fails)
-            msg = 'User has no UPDATE permission for the specified system'
-            assert_actions(login, 'admin', 'admin', assign=True, error_msg=msg)
+            if login == 'user_restricted@domain.com':
+                msg = ("No associated item found with value "
+                       "'25' for field 'profile_id'")
+                http_code = 422
+            else:
+                msg = 'User has no UPDATE permission for the specified system'
+                http_code = 403
+            assert_actions(login, 'admin', 'admin', assign=True, error_msg=msg,
+                           http_code=http_code)
 
             # attach disk assigned to system, user is owner of system but
             # no permission to disk (works)
@@ -1001,8 +1020,15 @@ class TestSystemProfile(TestSecureResource):
 
             # attach disk unassigned to system, user is owner of system but
             # no permission to disk (fails)
-            msg = 'User has no UPDATE permission for the specified volume'
-            assert_actions(login, 'admin', login, assign=False, error_msg=msg)
+            if login == 'user_restricted@domain.com':
+                msg = ("No associated item found with value "
+                       "'6' for field 'volume_id'")
+                http_code = 422
+            else:
+                msg = 'User has no UPDATE permission for the specified volume'
+                http_code = 403
+            assert_actions(login, 'admin', login, assign=False, error_msg=msg,
+                           http_code=http_code)
 
         # logins with an update-system role but no update-disk
         logins_sys_no_disk = (
@@ -1053,6 +1079,8 @@ class TestSystemProfile(TestSecureResource):
         for login in (logins_no_role + logins_sys_no_disk +
                       logins_with_both_roles):
             # set ownerships
+            # reset flask user to admin
+            self._do_request('list', 'admin:a')
             sys_obj = models.System.query.filter_by(
                 name=self._target_lpar).one()
             sys_obj.owner = login
@@ -1073,6 +1101,8 @@ class TestSystemProfile(TestSecureResource):
             self._validate_resp(resp, msg, 409)
 
         # test the case where the disk is already attached to the profile
+        # reset flask user to admin
+        self._do_request('list', 'admin:a')
         disk_obj = models.StorageVolume.query.filter_by(
             volume_id=disk_name).one()
         disk_obj.system = sys_obj.name
@@ -1112,6 +1142,9 @@ class TestSystemProfile(TestSecureResource):
         orig_sys_owner = sys_obj.owner
         def restore_owner():
             """Helper cleanup"""
+            # reset flask user to admin
+            self._do_request('list', 'admin:a')
+
             sys_obj = models.System.query.filter_by(
                 name=self._target_lpar).one()
             sys_obj.owner = orig_sys_owner
@@ -1135,11 +1168,13 @@ class TestSystemProfile(TestSecureResource):
         self.db.session.commit()
         iface_id = iface_obj.id
 
-        def assert_actions(login, sys_owner, error_msg=None):
+        def assert_actions(login, sys_owner, error_msg=None, http_code=403):
             """
             Helper to prepare environment and validate attach/detach actions
             """
             # set system ownership
+            # reset flask user to admin
+            self._do_request('list', 'admin:a')
             sys_obj = models.System.query.filter_by(
                 name=self._target_lpar).one()
             sys_obj.owner = sys_owner
@@ -1157,7 +1192,7 @@ class TestSystemProfile(TestSecureResource):
                 return
 
             resp = self._req_att_iface(*args, validate=False)
-            self._validate_resp(resp, error_msg, 403)
+            self._validate_resp(resp, error_msg, http_code)
 
             # prepare association for detach
             assoc_obj = models.SystemIfaceProfileAssociation(
@@ -1166,15 +1201,21 @@ class TestSystemProfile(TestSecureResource):
             self.db.session.commit()
             # try detach
             resp = self._req_det_iface(*args, validate=False)
-            self._validate_resp(resp, error_msg, 403)
+            self._validate_resp(resp, error_msg, http_code)
         # assert_actions()
 
         # logins with no update role
         logins_no_role = ('user_user@domain.com', 'user_restricted@domain.com')
         for login in logins_no_role:
             # attach iface, user has no permission to system (fails)
-            msg = 'User has no UPDATE permission for the specified system'
-            assert_actions(login, 'admin', error_msg=msg)
+            if login == 'user_restricted@domain.com':
+                msg = ("No associated item found with value "
+                       "'26' for field 'profile_id'")
+                http_code = 422
+            else:
+                msg = 'User has no UPDATE permission for the specified system'
+                http_code = 403
+            assert_actions(login, 'admin', error_msg=msg, http_code=http_code)
 
             # attach iface assigned to system, user is owner of system (works)
             assert_actions(login, login)
@@ -1251,6 +1292,9 @@ class TestSystemProfile(TestSecureResource):
         Try to delete a default profile while others exist
         """
         user_login = '{}:a'.format('user_user@domain.com')
+
+        # reset flask user to user
+        self._do_request('list', user_login)
 
         # retrieve the id of the pre-existing default profile
         data = next(self._get_next_entry)
@@ -1355,6 +1399,10 @@ class TestSystemProfile(TestSecureResource):
         # system's owner and project that count for permission validation,
         # therefore we change the owner here so that user_user won't have
         # permission to update the system
+
+        # reset flask user to admin
+        self._do_request('list', 'user_admin@domain.com:a')
+
         system_obj = models.System.query.filter_by(
             name=self._target_lpar).one()
         orig_owner = system_obj.owner
@@ -1364,19 +1412,26 @@ class TestSystemProfile(TestSecureResource):
 
         try:
             combos = [
-                ('user_privileged@domain.com', 'user_restricted@domain.com'),
                 ('user_privileged@domain.com', 'user_user@domain.com'),
-                ('user_project_admin@domain.com',
-                 'user_restricted@domain.com'),
                 ('user_project_admin@domain.com', 'user_user@domain.com'),
-                ('user_hw_admin@domain.com', 'user_restricted@domain.com'),
                 ('user_hw_admin@domain.com', 'user_user@domain.com'),
-                ('user_admin@domain.com', 'user_restricted@domain.com'),
                 ('user_admin@domain.com', 'user_user@domain.com'),
             ]
             self._test_del_no_role(combos)
+            # restricted users have no read access
+            combos = [
+                ('user_privileged@domain.com', 'user_restricted@domain.com'),
+                ('user_project_admin@domain.com',
+                 'user_restricted@domain.com'),
+                ('user_hw_admin@domain.com', 'user_restricted@domain.com'),
+                ('user_admin@domain.com', 'user_restricted@domain.com'),
+            ]
+            self._test_del_no_role(combos, http_code=404)
         # restore system's owner
         finally:
+            # reset flask user to admin
+            self._do_request('list', 'user_admin@domain.com:a')
+
             system_obj = models.System.query.filter_by(
                 name=self._target_lpar).one()
             system_obj.owner = orig_owner
@@ -1454,40 +1509,34 @@ class TestSystemProfile(TestSecureResource):
         resp = self._do_request(
             'list', '{}:a'.format(login_add), None)
         entries = json.loads(resp.get_data(as_text=True))
-        # adjust id field to make the http response look like the same as the
-        # dict from the _create_many_entries return
-        for entry in entries:
-            entry['id'] = entry.pop('$uri').split('/')[-1]
-
-        # create some more entries to work with
-        new_entries, time_range = self._create_many_entries(login_add, 5)
-        entries += new_entries
-
-        # add the expected marker for secrets
-        for entry in entries:
-            if not entry.get('credentials'):
-                continue
-            if entry['credentials'].get('admin-password'):
-                entry['credentials']['admin-password'] = MARKER_STRIPPED_SECRET
+        self.assertGreater(len(entries), 0)
 
         # retrieve list
         resp = self._do_request('list', '{}:a'.format(login_list), None)
-        self._assert_listed_or_read(resp, entries, time_range)
 
-        # perform a read
-        resp = self._do_request(
-            'get', '{}:a'.format(login_list), entries[0]['id'])
-        self._assert_listed_or_read(
-            resp, [entries[0]], time_range, read=True)
+        # no roles - no list
+        self._assert_listed_or_read(resp, [], None)
     # test_list_and_read_hidden_credentials()
 
     def test_list_and_read_restricted_no_role(self):
         """
         List entries with a restricted user without role in any project
         """
+        login_list = 'user_no_role_restricted@domain.com'
+
+        user_obj = models.User(
+            name='User with no role',
+            login=login_list,
+            admin=False,
+            restricted=True,
+            title='User title'
+        )
+        self.db.session.add(user_obj)
+        self.db.session.commit()
+
         self._test_list_and_read_restricted_no_role(
-            'user_user@domain.com', 'user_restricted@domain.com',
-            allowed=False)
+            'user_user@domain.com', login_list,
+            allowed=False, http_code=404)
     # test_list_and_read_restricted_no_role()
 
     def test_update_assoc_system(self):

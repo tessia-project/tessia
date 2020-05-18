@@ -90,7 +90,7 @@ class TestSystems(TestSecureResource):
             'user_restricted@domain.com',
         ]
 
-        self._test_add_all_fields_no_role(logins)
+        self._test_add_all_fields_no_role(logins, http_code=422)
     # test_add_all_fields_no_role()
 
     def test_add_mandatory_fields(self):
@@ -273,9 +273,13 @@ class TestSystems(TestSecureResource):
         combos = [
             ('user_admin@domain.com', 'user_user@domain.com'),
             ('user_admin@domain.com', 'user_privileged@domain.com'),
-            ('user_admin@domain.com', 'user_restricted@domain.com'),
         ]
         self._test_del_no_role(combos)
+        # restricted user has no read access
+        combos = [
+            ('user_admin@domain.com', 'user_restricted@domain.com'),
+        ]
+        self._test_del_no_role(combos, http_code=404)
     # test_del_no_role()
 
     def test_list_and_read(self):
@@ -298,7 +302,8 @@ class TestSystems(TestSecureResource):
         List entries with a restricted user without role in any project
         """
         self._test_list_and_read_restricted_no_role(
-            'user_user@domain.com', 'user_restricted@domain.com')
+            'user_user@domain.com', 'user_restricted@domain.com',
+            http_code=404)
     # test_list_and_read_restricted_no_role()
 
     def test_list_and_read_restricted_with_role(self):
@@ -371,8 +376,22 @@ class TestSystems(TestSecureResource):
             ('user_project_admin@domain.com', 'user_hw_admin@domain.com'),
             ('user_project_admin@domain.com', 'user_admin@domain.com'),
             # combinations to exercise updating an item owned by the user
-            ('user_restricted@domain.com', 'user_restricted@domain.com'),
             ('user_user@domain.com', 'user_user@domain.com'),
+        ]
+        self._test_update_valid_fields(
+            'user_hw_admin@domain.com', combos, update_fields)
+
+        # restricted user has no access to the project with this hypervisor,
+        # so it cannot update hypervisor field
+        update_fields.pop('hypervisor')
+        update_fields.pop('type')
+        # we also need to remove ownership change for user_restricted,
+        # otherwise it will not be able to find the changed item
+        update_fields.pop('owner')
+
+        combos = [
+            # combinations to exercise updating an item owned by the user
+            ('user_restricted@domain.com', 'user_restricted@domain.com'),
         ]
         self._test_update_valid_fields(
             'user_hw_admin@domain.com', combos, update_fields)
@@ -414,11 +433,16 @@ class TestSystems(TestSecureResource):
             'name': 'this_should_not_work',
         }
         logins = [
-            'user_restricted@domain.com',
             'user_user@domain.com',
         ]
         self._test_update_no_role(
             'user_hw_admin@domain.com', logins, update_fields)
+        # restricted users have no read access
+        logins = [
+            'user_restricted@domain.com',
+        ]
+        self._test_update_no_role(
+            'user_hw_admin@domain.com', logins, update_fields, http_code=404)
     # test_update_no_role()
 
 # TestSystem

@@ -19,6 +19,7 @@ Unit test for system_ifaces resource module
 #
 # IMPORTS
 #
+from flask import g as flask_global
 from tessia.server.api.resources.system_ifaces import SystemIfaceResource
 from tessia.server.db import models
 from tests.unit.api.resources.secure_resource import TestSecureResource
@@ -80,6 +81,11 @@ class TestSystemIface(TestSecureResource):
         Update systems to the same project of the test users.
         """
         super(TestSystemIface, cls).setUpClass()
+
+        # set requester for next queries
+        flask_global.auth_user = models.User.query.filter(
+            models.User.login == 'user_hw_admin@domain.com'
+        ).one()
 
         # fetch which project to use from the test user and store this info for
         # use also by the testcases
@@ -174,7 +180,11 @@ class TestSystemIface(TestSecureResource):
         create an item and fails.
         """
         # create iface without ip, user has no permission to system
-        self._test_add_all_fields_no_role(['user_restricted@domain.com'])
+        self._test_add_all_fields_no_role(['user_restricted@domain.com'],
+                                          http_code=422)
+
+        # set requester for next queries
+        self._do_request('list', '{}:a'.format('user_hw_admin@domain.com'))
 
         ip_addr = str(next(self._get_next_ip))
         ip_obj = models.IpAddress(
@@ -197,6 +207,8 @@ class TestSystemIface(TestSecureResource):
         orig_sys_owner = sys_obj.owner
         def restore_owner():
             """Helper to restore system owner on test end/failure"""
+            # set requester for next query
+            self._do_request('list', '{}:a'.format('user_hw_admin@domain.com'))
             sys_obj = models.System.query.filter_by(name=sys_name).one()
             sys_obj.owner = orig_sys_owner
             self.db.session.add(sys_obj)
@@ -216,6 +228,7 @@ class TestSystemIface(TestSecureResource):
             self.db.session.add(ip_obj)
             # set system owner which gets used by iface for permission
             # verification
+            self._do_request('list', '{}:a'.format('user_hw_admin@domain.com'))
             sys_obj = models.System.query.filter_by(name=sys_name).one()
             orig_sys_owner = sys_obj.owner
             sys_obj.owner = sys_owner
@@ -228,6 +241,8 @@ class TestSystemIface(TestSecureResource):
             self._validate_resp(resp, error_msg, http_code)
 
             # cleanup
+            # set requester for following queries
+            self._do_request('list', '{}:a'.format('user_hw_admin@domain.com'))
             ip_obj.owner = 'admin'
             self.db.session.add(ip_obj)
             # restore system owner
@@ -261,20 +276,29 @@ class TestSystemIface(TestSecureResource):
 
         # logins without update-system and update-ip permission
         logins = [
-            'user_restricted@domain.com',
-            'user_user@domain.com',
+            ('user_restricted@domain.com', 422),
+            ('user_user@domain.com', 403)
         ]
-        for login in logins:
+        for login, http_code in logins:
             # create iface with ip, user has permission to ip but not to system
-            msg = 'User has no UPDATE permission for the specified system'
-            assert_fail(msg, login, 'admin', login)
+            if http_code == 422:
+                msg = ("No associated item found with value "
+                       "'lpar0' for field 'System'")
+            else:
+                msg = 'User has no UPDATE permission for the specified system'
+            assert_fail(msg, login, 'admin', login, http_code=http_code)
 
             # create iface with ip, user has no permission to system nor ip
-            assert_fail(msg, login, 'admin', 'admin')
+            assert_fail(msg, login, 'admin', 'admin', http_code=http_code)
 
             # create iface with ip, user has permission to system but not ip
-            msg = 'User has no UPDATE permission for the specified IP address'
-            assert_fail(msg, login, login, 'admin')
+            if http_code == 422:
+                msg = ("No associated item found with value "
+                       "'cpc0 shared/10.1.0.6' for field 'IP address'")
+            else:
+                msg = ("User has no UPDATE permission for "
+                       "the specified IP address")
+            assert_fail(msg, login, login, 'admin', http_code=http_code)
 
             # create iface with ip, user has permission to system but ip is
             # already assigned to another system
@@ -470,7 +494,7 @@ class TestSystemIface(TestSecureResource):
             ('user_hw_admin@domain.com', 'user_restricted@domain.com'),
             ('user_admin@domain.com', 'user_restricted@domain.com'),
         ]
-        self._test_del_no_role(combos)
+        self._test_del_no_role(combos, http_code=404)
     # test_del_no_role()
 
     def test_list_and_read(self):
@@ -494,7 +518,7 @@ class TestSystemIface(TestSecureResource):
         """
         self._test_list_and_read_restricted_no_role(
             'user_user@domain.com', 'user_restricted@domain.com',
-            allowed=False)
+            allowed=False, http_code=404)
     # test_list_and_read_restricted_no_role()
 
     def test_list_and_read_restricted_with_role(self):
@@ -505,6 +529,9 @@ class TestSystemIface(TestSecureResource):
         # collect the existing entries and add them to the new ones for
         # later validation
         entries = []
+
+        # reset flask user to admin
+        self._do_request('list', 'admin:a')
         systems = models.System.query.join(
             'project_rel'
         ).filter(
@@ -763,6 +790,10 @@ class TestSystemIface(TestSecureResource):
             sys_obj.owner = sys_owner
             self.db.session.add(sys_obj)
             self.db.session.commit()
+
+            # reset flask user to admin
+            self._do_request('list', 'admin:a')
+
             if ip_cur:
                 data['ip_address'] = '{}/{}'.format(
                     self._subnet_name, ip_cur['address'])
@@ -914,6 +945,9 @@ class TestSystemIface(TestSecureResource):
         orig_sys_owner = sys_obj.owner
         def restore_owner():
             """Helper cleanup"""
+            # reset flask user to admin
+            self._do_request('list', 'admin:a')
+
             sys_obj = models.System.query.filter_by(name=sys_name).one()
             sys_obj.owner = orig_sys_owner
             self.db.session.add(sys_obj)
@@ -932,11 +966,10 @@ class TestSystemIface(TestSecureResource):
             'attributes': {'ccwgroup': '0.0.e101,0.0.e102,0.0.e103',
                            'layer2': True},
         }
-        logins = [
-            'user_restricted@domain.com',
-            'user_user@domain.com',
-        ]
-        self._test_update_no_role(hw_admin, logins, update_fields)
+        self._test_update_no_role(hw_admin, ['user_restricted@domain.com'],
+                                  update_fields, http_code=404)
+        self._test_update_no_role(hw_admin, ['user_user@domain.com'],
+                                  update_fields)
 
         ip_addr = str(next(self._get_next_ip))
         ip_obj = models.IpAddress(
@@ -1018,8 +1051,12 @@ class TestSystemIface(TestSecureResource):
             data = {'id': iface_id, 'ip_address': ip_tgt_name}
             resp = self._do_request('update', '{}:a'.format(update_user), data)
             # validate the response received
+            if ip_tgt_name:
+                error_msg = error_msg.replace('#IP#', ip_tgt_name)
             self._validate_resp(resp, error_msg, http_code)
             # clean up
+            # reset flask user to admin
+            self._do_request('list', 'admin:a')
             self.db.session.query(self.RESOURCE_MODEL).filter_by(
                 id=iface_id).delete()
             if ip_cur:
@@ -1065,42 +1102,56 @@ class TestSystemIface(TestSecureResource):
             'user_user@domain.com'
         )
         for login in logins_no_system:
+            msg = 'User has no UPDATE permission for the specified system'
+            http_code = 403
+
+            if login == 'user_restricted@domain.com':
+                http_code = 404
+                msg = 'Not Found'
+
             # update iface assign ip, user has permission to ip but
             # not to system
-            msg = 'User has no UPDATE permission for the specified system'
             assert_update(msg, login, hw_admin,
-                          None, {'address': ip_addr, 'owner': login})
-
-            # update iface assign ip, user has permission to system but not
-            # to ip
-            msg = 'User has no UPDATE permission for the specified IP address'
-            assert_update(msg, login, login,
-                          None, {'address': ip_addr, 'owner': hw_admin})
+                          None, {'address': ip_addr, 'owner': login},
+                          http_code=http_code)
 
             # update iface assign ip, user has no permission to system nor ip
-            msg = 'User has no UPDATE permission for the specified system'
             assert_update(msg, login, hw_admin,
-                          None, {'address': ip_addr, 'owner': hw_admin})
+                          None, {'address': ip_addr, 'owner': hw_admin},
+                          http_code=http_code)
 
             # note: no test for update iface withdraw ip as this is allowed
 
             # update iface withdraw ip, user has no permission to system nor ip
-            msg = 'User has no UPDATE permission for the specified system'
             assert_update(msg, login, hw_admin,
-                          {'address': ip_addr, 'owner': hw_admin}, None)
+                          {'address': ip_addr, 'owner': hw_admin}, None,
+                          http_code=http_code)
 
             # update iface withdraw ip, user has permission to ip but
             # not to system
-            msg = 'User has no UPDATE permission for the specified system'
             assert_update(msg, login, hw_admin,
-                          {'address': ip_addr, 'owner': login}, None)
+                          {'address': ip_addr, 'owner': login}, None,
+                          http_code=http_code)
+
+            # update iface assign ip, user has permission to system but not
+            # to ip
+            if login == 'user_restricted@domain.com':
+                http_code = 422
+                msg = ("No associated item found with value "
+                       "'#IP#' for field 'IP address'")
+            else:
+                msg = ("User has no UPDATE permission for "
+                       "the specified IP address")
+            assert_update(msg, login, login,
+                          None, {'address': ip_addr, 'owner': hw_admin},
+                          http_code=http_code)
 
             # update iface change ip, user has permission to system and
             # current ip but not to target ip
-            msg = 'User has no UPDATE permission for the specified IP address'
             assert_update(msg, login, login,
                           {'address': ip_addr, 'owner': login},
-                          {'address': ip_addr_2, 'owner': hw_admin})
+                          {'address': ip_addr_2, 'owner': hw_admin},
+                          http_code=http_code)
 
         another_system = 'cpc0'
         for login in (('user_hw_admin@domain.com', 'user_admin@domain.com') +

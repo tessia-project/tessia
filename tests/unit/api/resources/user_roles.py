@@ -193,19 +193,23 @@ class TestUserRole(TestSecureResource):
         """
         combos = [
             ('user_admin@domain.com', 'user_sandbox@domain.com'),
-            ('user_admin@domain.com', 'user_restricted@domain.com'),
             ('user_admin@domain.com', 'user_user@domain.com'),
             ('user_admin@domain.com', 'user_privileged@domain.com'),
             ('user_admin@domain.com', 'user_project_admin@domain.com'),
             ('user_admin@domain.com', 'user_hw_admin@domain.com'),
             ('user_project_owner@domain.com', 'user_sandbox@domain.com'),
-            ('user_project_owner@domain.com', 'user_restricted@domain.com'),
             ('user_project_owner@domain.com', 'user_user@domain.com'),
             ('user_project_owner@domain.com', 'user_privileged@domain.com'),
             ('user_project_owner@domain.com', 'user_project_admin@domain.com'),
             ('user_project_owner@domain.com', 'user_hw_admin@domain.com'),
         ]
         self._test_del_no_role(combos)
+        # restricted users have no read access to roles outside their project
+        combos = [
+            ('user_admin@domain.com', 'user_restricted@domain.com'),
+            ('user_project_owner@domain.com', 'user_restricted@domain.com'),
+        ]
+        self._test_del_no_role(combos, http_code=404)
     # test_del_no_role()
 
     def test_list_and_read(self):
@@ -213,7 +217,6 @@ class TestUserRole(TestSecureResource):
         Verify if listing and reading permissions are correctly handled
         """
         logins = [
-            'user_sandbox@domain.com',  # temporary until read restrictions
             'user_user@domain.com',
             'user_privileged@domain.com',
             'user_project_admin@domain.com',
@@ -223,14 +226,45 @@ class TestUserRole(TestSecureResource):
         ]
 
         self._test_list_and_read('user_admin@domain.com', logins)
+
+        # Sandbox user should only see its own project
+        login_add = 'user_admin@domain.com'
+        login = 'user_sandbox@domain.com'
+        project_name = '{} project'.format(self.RESOURCE_URL.strip('/'))
+        resp = self._do_request(
+            'list', '{}:a'.format(login_add),
+            'where={{"project":"{}"}}'.format(project_name))
+        entries = json.loads(resp.get_data(as_text=True))
+
+        resp = self._do_request('list', '{}:a'.format(login), None)
+        self._assert_listed_or_read(resp, entries, None)
+
     # test_list_and_read()
 
     def test_list_and_read_restricted_no_role(self):
         """
         List entries with a restricted user without role in any project
         """
+        # We'll need users without any roles
+        self.db.session.add(models.User(
+            login='re@domain.com',
+            name='USER restricted',
+            title='User without roles',
+            restricted=True,
+            admin=False))
+        self.db.session.add(models.User(
+            login='us@domain.com',
+            name='USER normal',
+            title='User without roles',
+            restricted=False,
+            admin=False))
+        self.db.session.commit()
+
         self._test_list_and_read_restricted_no_role(
-            'user_admin@domain.com', 'user_restricted@domain.com',
+            'user_admin@domain.com', 're@domain.com',
+            allowed=False, http_code=404)
+        self._test_list_and_read_restricted_no_role(
+            'user_admin@domain.com', 'us@domain.com',
             allowed=False, http_code=404)
     # test_list_and_read_restricted_no_role()
 
@@ -241,42 +275,27 @@ class TestUserRole(TestSecureResource):
         login_add = 'user_admin@domain.com'
         login_rest = 'user_restricted@domain.com'
 
-        # make sure table is empty
-        prev_entries = self.RESOURCE_MODEL.query.join(
-            'project_rel'
-        ).filter(
-            self.RESOURCE_MODEL.project ==
-            self._db_entries['Project'][0]['name']
-        ).all()
-        for prev_entry in prev_entries:
-            self.db.session.delete(prev_entry)
-        self.db.session.commit()
-
-        # create the entries to work with
-        entries, time_range = self._create_many_entries(login_add, 5)
+        # reset flask user to admin
+        self._do_request('list', '{}:a'.format(login_add))
 
         # add the role for the restricted user
-        role = models.UserRole(
-            project=self._db_entries['Project'][0]['name'],
-            user=login_rest,
-            role="USER_RESTRICTED"
-        )
-        self.db.session.add(role)
-        self.db.session.commit()
-        # add the created role to the expected list
-        entries.append({
+        role = models.UserRole.query.join('user_rel').filter_by(
+            login=login_rest
+        ).one()
+        # add the queried role to the expected list
+        entries = [{
             'id': role.id, 'user': role.user,
-            'project': role.project, 'role': role.role})
+            'project': role.project, 'role': role.role}]
 
         # retrieve list
         resp = self._do_request('list', '{}:a'.format(login_rest))
-        self._assert_listed_or_read(resp, entries, time_range)
+        self._assert_listed_or_read(resp, entries, None)
 
         # perform a read
         resp = self._do_request(
             'get', '{}:a'.format(login_rest), entries[0]['id'])
         self._assert_listed_or_read(
-            resp, [entries[0]], time_range, read=True)
+            resp, [entries[0]], None, read=True)
 
         # remove the added role to avoid conflict with other testcases
         self.db.session.delete(role)

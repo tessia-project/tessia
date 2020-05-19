@@ -30,6 +30,8 @@ from tessia.server.state_machines.autoinstall.sm_anaconda import SmAnaconda
 from tessia.server.state_machines.autoinstall.sm_autoyast import SmAutoyast
 from tessia.server.state_machines.autoinstall.sm_debian import \
     SmDebianInstaller
+from tessia.server.state_machines.autoinstall.sm_subiquity import \
+    SmSubiquityInstaller
 
 import json
 import logging
@@ -66,6 +68,7 @@ SUPPORTED_TYPES = {
     SmAnaconda.DISTRO_TYPE: SmAnaconda,
     SmAutoyast.DISTRO_TYPE: SmAutoyast,
     SmDebianInstaller.DISTRO_TYPE: SmDebianInstaller,
+    SmSubiquityInstaller.DISTRO_TYPE: SmSubiquityInstaller,
 }
 
 #
@@ -119,8 +122,25 @@ class AutoInstallMachine(BaseMachine):
         # get user defined repositories, if any
         custom_repos = self._params.get('repos', None)
 
+        option_legacy = (prof_entry.parameters and
+                         "tessia_option_installer=legacy" in
+                         prof_entry.parameters.get('linux-kargs-installer', '')
+                        )
+
         try:
-            sm_class = SUPPORTED_TYPES[os_entry.type]
+            if os_entry.type == 'debian' and os_entry.major >= 2004:
+                if option_legacy:
+                    self._logger.info("NOTE: tessia_option_installer=legacy"
+                                      " is specified in the profile")
+                    self._logger.info("NOTE: please make sure that repo and"
+                                      " template are set accordingly")
+                    self._logger.info("NOTE: failure to do so will result in"
+                                      " cryptic error messages")
+                    sm_class = SUPPORTED_TYPES[os_entry.type]
+                else:
+                    sm_class = SmSubiquityInstaller
+            else:
+                sm_class = SUPPORTED_TYPES[os_entry.type]
         except KeyError:
             raise ValueError("OS type '{}' is not supported for installation"
                              .format(os_entry.type))

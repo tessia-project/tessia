@@ -392,6 +392,31 @@ class SmBase(metaclass=abc.ABCMeta):
         return result
     # _parse_svol()
 
+
+    def _render_installer_cmdline(self):
+        """
+        Returns installer kernel command line from the template
+        """
+        # try to find a template specific to this OS version
+        template_filename = '{}.cmdline.jinja'.format(self._os.name)
+        try:
+            with open(TEMPLATES_DIR + template_filename, "r") as template_file:
+                template_content = template_file.read()
+        except FileNotFoundError:
+            # specific template does not exist: use the distro type template
+            self._logger.debug(
+                "No template found for OS '%s', using generic template for "
+                "type '%s'", self._os.name, self._os.type)
+            template_filename = '{}.cmdline.jinja'.format(self._os.type)
+            # generic template always exists, if for some reason it is not
+            # there it's a server installation error which must be fixed so let
+            # the exception go up
+            with open(TEMPLATES_DIR + template_filename, "r") as template_file:
+                template_content = template_file.read()
+
+        template_obj = jinja2.Template(template_content)
+        return template_obj.render(config=self._info).strip()
+
     @property
     @classmethod
     @abc.abstractmethod
@@ -488,7 +513,8 @@ class SmBase(metaclass=abc.ABCMeta):
             repo = {
                 'url': repo_obj.url, 'desc': repo_obj.desc,
                 'name': repo_obj.name.replace(' ', '_'),
-                'os': repo_obj.operating_system
+                'os': repo_obj.operating_system,
+                'install_image': repo_obj.install_image,
             }
             if not repo['desc']:
                 repo['desc'] = repo['name']
@@ -566,25 +592,7 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Performs the boot of the target system to initiate the installation
         """
-        # try to find a template specific to this OS version
-        template_filename = '{}.cmdline.jinja'.format(self._os.name)
-        try:
-            with open(TEMPLATES_DIR + template_filename, "r") as template_file:
-                template_content = template_file.read()
-        except FileNotFoundError:
-            # specific template does not exist: use the distro type template
-            self._logger.debug(
-                "No template found for OS '%s', using generic template for "
-                "type '%s'", self._os.name, self._os.type)
-            template_filename = '{}.cmdline.jinja'.format(self._os.type)
-            # generic template always exists, if for some reason it is not
-            # there it's a server installation error which must be fixed so let
-            # the exception go up
-            with open(TEMPLATES_DIR + template_filename, "r") as template_file:
-                template_content = template_file.read()
-
-        template_obj = jinja2.Template(template_content)
-        kargs = template_obj.render(config=self._info).strip()
+        kargs = self._render_installer_cmdline()
         if self._profile.parameters and (
                 self._profile.parameters.get('linux-kargs-installer')):
             custom_kargs = self._profile.parameters['linux-kargs-installer']
@@ -603,6 +611,8 @@ class SmBase(metaclass=abc.ABCMeta):
             for name, value in kargs_dict.items():
                 if value is None:
                     custom_kargs.append(name)
+                elif name.startswith("tessia_option"):
+                    pass
                 else:
                     custom_kargs.append('{}={}'.format(name, value))
             kargs = ' '.join(custom_kargs)

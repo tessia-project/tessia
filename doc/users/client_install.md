@@ -22,7 +22,7 @@ There are two possible methods to install and use the command line client:
 
 # Local installation with pip
 
-The client requires python >= 3.5, once you have it installed follow these steps:
+The client requires python >= 3.6, once you have it installed follow these steps:
 
 ```
 # as the root user install the python packaging tools

@@ -57,7 +57,11 @@ def create_rev(args):
     Raises:
         alembic exceptions
     """
-    command.revision(get_alembic_cfg(), message=args.message,
+    cfg = get_alembic_cfg()
+    if args.script_path:
+        cfg.set_main_option("script_location", args.script_path)
+
+    command.revision(cfg, message=args.message,
                      autogenerate=True)
 # create_rev()
 
@@ -257,6 +261,8 @@ def parse_cmdline():
     create_parser = subparsers.add_parser(
         'rev-create', help='create a new revision (migration) script')
     create_parser.add_argument('message', help='commit message')
+    create_parser.add_argument('--script_path', help='custom script path',
+                               required=False)
     create_parser.set_defaults(func=create_rev)
 
     # rev-list: list existing schema revisions

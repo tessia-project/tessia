@@ -37,6 +37,8 @@ RUN apt-get -q update > /dev/null && \
     vim \
     # required by ansible when using ssh connection plugin
     sshpass openssh-client \
+    # components
+    cargo rustc \
     # init-like daemon to manage our services' processes
     supervisor > /dev/null && \
     # clean the cache to free up space
@@ -78,6 +80,9 @@ RUN cd /assets && \
     # same for www/jobs dirs
     yamlman update /etc/tessia/server.yaml auto_install.dir /var/tessia/www && \
     yamlman update /etc/tessia/server.yaml scheduler.jobs_dir /var/tessia/jobs && \
+    # build components
+    cd /assets/repo-tessia/components/installer-webhook && cargo test && cargo build --release && \
+    mv /assets/repo-tessia/build/release/installer-webhook /usr/local/bin/ && \
     # cleanup section - remove unneeded resources
     cd / && \
     mv /assets/entrypoint /entrypoint && \
@@ -88,7 +93,7 @@ RUN cd /assets && \
     libffi-dev \
     libpq-dev > /dev/null
 
-EXPOSE 80 5000
+EXPOSE 80 5000 7223
 
 VOLUME ["/etc/tessia", "/var/tessia/jobs", "/var/run/docker.sock"]
 

@@ -73,6 +73,7 @@ OPERATING_SYSTEMS = [
     'ubuntu18.04.2,debian,1804,2,Ubuntu 18.04.2 LTS,ubuntu18-default',
     'ubuntu18.10,debian,1810,0,Ubuntu 18.10,ubuntu18-default',
     'ubuntu19.04,debian,1904,0,Ubuntu 19.04,ubuntu18-default',
+    'ubuntu20.04,debian,2004,0,Ubuntu 20.04,ubuntu20-subiquity',
 ]
 
 USERS = [
@@ -100,6 +101,8 @@ TEMPLATES = [
     "ubuntu18-default,Default template for Ubuntu18 installations"
     ",admin,Admins",
     "ubuntu18-kvmhost,Ubuntu18 KVM hypervisor profile,admin,Admins",
+    "ubuntu20-subiquity,Default template for Ubuntu20 installations"
+    ",admin,Admins",
 ]
 
 ROLES = [

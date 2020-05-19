@@ -33,6 +33,7 @@ DESC = {
     'url': 'Network URL',
     'kernel': 'Kernel path',
     'initrd': 'Initrd path',
+    'install_image': 'Install image URL',
     'operating_system': 'Installable OS',
     'modified': 'Last modified',
     'desc': 'Description',
@@ -80,6 +81,9 @@ class RepositoryResource(SecureResource):
             title=DESC['kernel'], description=DESC['kernel'], nullable=True)
         initrd = fields.String(
             title=DESC['initrd'], description=DESC['initrd'], nullable=True)
+        install_image = fields.String(
+            title=DESC['install_image'], description=DESC['install_image'],
+            nullable=True)
         modified = fields.DateTime(
             title=DESC['modified'], description=DESC['modified'], io='r')
         desc = fields.String(

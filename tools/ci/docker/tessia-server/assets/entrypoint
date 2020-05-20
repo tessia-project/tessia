@@ -166,10 +166,9 @@ string_mask        = utf8only
 DNS.1 = ${fqdn}
 "
     touch /tmp/index.txt
-    echo '01' > /tmp/serial.txt
     openssl req -x509 -new -config <(printf "$ca_config") -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout /etc/tessia/ca.key -out /etc/tessia/ca.crt -days 3650
     openssl req -new -config <(printf "$server_config") -nodes -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -keyout /etc/tessia/ssl.key -out server.csr
-    yes | openssl ca -config <(printf "$ca_config") -extensions signing_req -out /etc/tessia/ssl.crt -infiles server.csr
+    yes | openssl ca -config <(printf "$ca_config") -create_serial -extensions signing_req -out /etc/tessia/ssl.crt -infiles server.csr
     rm server.csr
     cat /etc/tessia/ca.crt >> /etc/tessia/ssl.crt
 

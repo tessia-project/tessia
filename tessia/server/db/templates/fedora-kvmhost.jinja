@@ -64,7 +64,11 @@ clearpart --initlabel --all --drives={{list_devs_with_ptable(config["svols"])}}
 {% for volume in config["svols"] %}
 {% if volume["is_root"] %}
 # System bootloader configuration
-bootloader --append="{{config["profile_parameters"]["linux-kargs-target"].replace('"', '\\"')}}" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
+{% if config["profile_parameters"] -%}
+bootloader --append="{{(config["profile_parameters"]["linux-kargs-target"] | default("")).replace('"', '\\"')}}" --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
+{%- else -%}
+bootloader --location=mbr --boot-drive={{volume["system_attributes"]["device"].replace('/dev/', '')}}
+{%- endif -%}
 {% endif %}
 # Disk partitioning information
 {% for entry in volume["part_table"]["table"] %}

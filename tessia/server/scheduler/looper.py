@@ -643,6 +643,11 @@ class Looper(object):
         except PermissionError:
             self._logger.debug(no_permission_msg)
             return PROCESS_DEAD
+        # in rare cases instead of "file not found" we may get a
+        # "no such process" error
+        except ProcessLookupError:
+            self._logger.debug(inexistent_pid_msg)
+            return PROCESS_DEAD
 
         self._logger.debug('Process comm is %s', proc_comm)
         comm_ok = bool(proc_comm == wrapper.WORKER_COMM)

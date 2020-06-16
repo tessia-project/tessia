@@ -21,21 +21,21 @@ The main module containing the daemon processing the job requests
 #
 from datetime import datetime
 from jsonschema import validate
-from tessia.server.state_machines import MACHINES
 from tessia.server.config import CONF
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import SchedulerJob, SchedulerRequest, System
+from tessia.server.lib.mediator import MEDIATOR
 from tessia.server.lib.perm_manager import PermManager
 from tessia.server.scheduler import resources_manager
 from tessia.server.scheduler import spawner
 from tessia.server.scheduler import wrapper
+from tessia.server.state_machines import MACHINES
 
 import logging
 import multiprocessing
 import os
 import signal
 import time
-import yaml
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -289,39 +289,35 @@ class Looper(object):
             self._session.commit()
             return
 
-        # very special case: this machine type needs to know the job requester
-        # so we inject it here. It's not nice to have an exception like this
-        # but the alternative is to provide the job id which is not better
-        # because we have to pass it all along the chain (spawner, wrapper,
-        # then machine class) and we create a dependency between the machines
-        # and the scheduler table.
-        if self._machines[request.job_type].__name__ == 'BulkOperatorMachine':
-            try:
-                obj_params = yaml.safe_load(request.parameters)
-            except Exception as exc:
-                msg = "Invalid request parameters: {}".format(str(exc))
-                request.state = SchedulerRequest.STATE_FAILED
-                request.result = msg
-                self._session.commit()
-            try:
-                obj_params['requester'] = request.requester
-                request.parameters = yaml.dump(
-                    obj_params, default_flow_style=False)
-                self._session.commit()
-            except Exception as exc:
-                self._session.rollback()
-                msg = 'Failed to include request in job parameters'
-                self._logger.warning(msg, exc_info=True)
-                request.state = SchedulerRequest.STATE_FAILED
-                request.result = msg
-                self._session.commit()
-                return
+        state_machine = self._machines[request.job_type]
+
+        # recover complete parameters
+        # A complete parmfile is checked by the state machine parser
+        # before a job is created. so errors can be caught at an earlier stage
+        token = 'job_requests:{}:vars'.format(request.id)
+        extra_vars = None
+        try:
+            extra_vars = MEDIATOR.get(token)
+        except ValueError as exc:
+            self._logger.warning(
+                'Wrong value in mediator: key %s, exception %s',
+                token, str(exc))
+
+        try:
+            complete_parameters = state_machine.recombine(
+                request.parameters, extra_vars)
+        except Exception as exc:
+            request.state = SchedulerRequest.STATE_FAILED
+            request.result = (
+                'Failed to apply parmfile variables: {}'.format(str(exc)))
+            self._session.commit()
+            return
 
         # call the parser to define:
         # 1- resources to be used by this state machine
         # 2- job description
         try:
-            parsed_content = parser(request.parameters)
+            parsed_content = parser(complete_parameters)
             resources = parsed_content['resources']
             # validate against schema
             validate(resources, resources_manager.RESOURCES_SCHEMA)
@@ -576,13 +572,41 @@ class Looper(object):
 
             self._logger.info('Starting job %s', job.id)
 
+            # recover complete parmfile
+            request = SchedulerRequest.query.filter(
+                SchedulerRequest.job_id == job.id
+            ).first()
+            token = 'job_requests:{}:vars'.format(request.id)
+            extra_vars = None
+            try:
+                extra_vars = MEDIATOR.get(token)
+            except ValueError as exc:
+                self._logger.warning(
+                    'Unexpected value in mediator: key %s, exception %s',
+                    token, str(exc))
+
+            try:
+                complete_parameters = self._machines[job.job_type].recombine(
+                    job.parameters, extra_vars)
+            except Exception as exc:
+                job.state = SchedulerJob.STATE_FAILED
+                job.result = (
+                    'Failed to apply parmfile variables: {}'.format(str(exc)))
+                current_date = datetime.utcnow()
+                job.start_date = current_date
+                job.end_date = current_date
+                self._session.commit()
+                # remove from queue since it won't be scheduled anymore
+                self._resources_man.wait_pop(job)
+                continue
+
             # start job's state machine
             job_dir = '{}/{}'.format(self._jobs_dir, job.id)
             try:
                 process = multiprocessing.Process(
                     target=spawner.spawn,
                     args=(
-                        job_dir, job.job_type, job.parameters,
+                        job_dir, job.job_type, complete_parameters,
                         job.timeout))
 
                 process.start()

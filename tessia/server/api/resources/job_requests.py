@@ -29,7 +29,9 @@ from flask_potion.routes import Route
 from tessia.server.api import exceptions as api_exceptions
 from tessia.server.db import exceptions as db_exceptions
 from tessia.server.db.models import SchedulerRequest
+from tessia.server.lib.mediator import MEDIATOR
 from tessia.server.state_machines import MACHINES
+from tessia.server.state_machines.base import BaseMachine
 
 import re
 
@@ -146,6 +148,24 @@ class JobRequestResource(ModelResource):
         properties['submit_date'] = datetime.utcnow()
         properties['requester'] = flask_global.auth_user.login
 
+        # Remove secrets from the request before putting it into the database.
+        # Every state machine has its own way of parsing parameters,
+        # so we rely on machine class to do the work
+        extra_vars = None
+        if properties['action_type'] == SchedulerRequest.ACTION_SUBMIT:
+            machine: BaseMachine = MACHINES.classes[properties['job_type']]
+            properties['parameters'], extra_vars = machine.prefilter(
+                properties['parameters'])
+            # very special case: this machine type needs to know the
+            # job requester, so we inject it over extra vars.
+            # It's not nice to have an exception, but the alternative is
+            # to provide all request parameters to prefilter, which
+            # creates a dependency between the machines and the requests table.
+            if machine.__name__ == 'BulkOperatorMachine':
+                if not extra_vars:
+                    extra_vars = dict()
+                extra_vars.update({'requester': properties['requester']})
+
         try:
             item = self.manager.create(properties)
         # TODO: here we assume it's the job id fk (user provided a job id that
@@ -169,6 +189,18 @@ class JobRequestResource(ModelResource):
             else:
                 msg = "The value '{}={}' is invalid".format(field, value)
             raise api_exceptions.BaseHttpError(code=400, msg=msg)
+
+        # Pass extra vars over to mediator
+        if extra_vars:
+            # default expiration is 1 day, but we offset it against
+            # requested start date; past start date has no effect on expiration
+            expire = 86400
+            if properties['start_date']:
+                delta = (properties['start_date'].replace(tzinfo=None) -
+                         properties['submit_date'])
+                expire += max(0, int(delta.total_seconds()))
+            token = 'job_requests:{}:vars'.format(item.id)
+            MEDIATOR.set(token, extra_vars, expire=expire)
 
         return item.id
     # create()

@@ -9,6 +9,7 @@ services:
       TESSIA_DB_AUTOMANAGE: "true"
       TESSIA_DB_URI: "postgresql://tessia:pass4tessia@db/tessia"
       TESSIA_DB_TEST_URI: "postgresql://tessia:pass4tessia@db/tessia_test"
+      TESSIA_MEDIATOR_URI: "redis://tessia:pass4tessia@mediator:6379/0"
       TESSIA_LIVE_IMG_PASSWD: ${TESSIA_LIVE_IMG_PASSWD:-livepasswd}
       TESSIA_SERVER_FQDN: ${TESSIA_SERVER_FQDN:-server}
     hostname: ${TESSIA_SERVER_FQDN:-server}
@@ -26,6 +27,7 @@ services:
     restart: "always"
     depends_on:
       - db
+      - mediator
   db:
     image: postgres:alpine
     environment:
@@ -38,6 +40,22 @@ services:
       - db_net
     volumes:
       - db-data:/var/lib/postgresql/data
+    restart: "always"
+  mediator:
+    image: redis:alpine
+    environment:
+      # for production use one should create an override compose file
+      # and set these variables
+      REDIS_CONFIG: |
+        save 900 1
+        rdbchecksum yes
+        user tessia on +@all -@dangerous -@admin +flushdb allkeys >pass4tessia
+    entrypoint:
+      /bin/sh -c "echo \"$$REDIS_CONFIG\" > /etc/redis.conf; redis-server /etc/redis.conf"
+    networks:
+      - db_net
+    volumes:
+      - md-data:/data
     restart: "always"
   cli:
     image: tessia-cli:${TESSIA_DOCKER_TAG:-latest}
@@ -62,5 +80,6 @@ networks:
 
 volumes:
   db-data:
+  md-data:
   server-etc:
   server-jobs:

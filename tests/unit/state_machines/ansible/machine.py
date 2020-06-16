@@ -19,6 +19,7 @@ Unit test for the ansible machine.
 from tessia.server.state_machines import base
 from tessia.server.state_machines.ansible import machine
 from tessia.server.db.models import System, SystemProfile
+from tessia.server.lib.mediator import MEDIATOR
 from tests.unit.db.models import DbUnit
 from unittest import TestCase
 from unittest import mock
@@ -26,7 +27,8 @@ from unittest.mock import MagicMock
 
 import json
 import os
-
+import secrets
+import yaml
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -55,6 +57,14 @@ class TestAnsibleMachine(TestCase):
         DbUnit.create_entry(json.loads(data))
         # Access database through db property
         cls.db = DbUnit
+
+        url = os.environ.get('TESSIA_MEDIATOR_URI')
+        if not url:
+            raise RuntimeError('env variable TESSIA_MEDIATOR_URI not set')
+
+        # switch to test database
+        MEDIATOR._mediator_uri = url.replace('/0', '/1')
+        cls._mediator = MEDIATOR
     # setUpClass()
 
     def setUp(self):
@@ -491,6 +501,38 @@ class TestAnsibleMachine(TestCase):
             machine_obj = machine.AnsibleMachine(str(request))
             machine_obj.start()
     # test_start_wrong_profile()
+
+    def test_secrets(self):
+        """
+        Test secret data recombine
+        """
+        test_system = 'kvm054'
+        token = secrets.token_urlsafe()
+        request = {
+            'source': 'https://oauth:${TOKEN}@example.com/ansible/'
+                      'ansible-example.tgz',
+            'playbook': 'workload1/site.yaml',
+            'systems': [
+                {
+                    'name': test_system,
+                    'groups': ['webservers', 'dbservers'],
+                }
+            ],
+            'secrets': {
+                'TOKEN': token
+            },
+            'verbosity': 'DEBUG'
+        }
+        # make sure secret extraction and recombination works
+        parmfile, extra_vars = machine.AnsibleMachine.prefilter(
+            yaml.dump(request, default_flow_style=False))
+        self.assertIsNotNone(extra_vars)
+        self.assertNotIn('secrets', yaml.safe_load(parmfile))
+        self._mediator.set("request:id", extra_vars, expire=10)
+        extra_vars = self._mediator.get("request:id")
+        combined = machine.AnsibleMachine.recombine(parmfile, extra_vars)
+        self.assertIn("oauth:{}".format(token), combined)
+    # test_secrets()
 
     # TODO: simulate a signal kill and verify cleanup
 

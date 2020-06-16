@@ -119,6 +119,13 @@ REQUEST_SCHEMA = {
             # at lest one system must be specified
             'minItems': 1,
         },
+        'secrets': {
+            # dictionary with key:value pairs, values can only be strings
+            'type': 'object',
+            'additionalProperties': {
+                'type': 'string'
+            }
+        },
         "verbosity": {
             "type": "string",
             "enum": list(BaseMachine._LOG_LEVELS),
@@ -618,6 +625,57 @@ class AnsibleMachine(BaseMachine):
         }
         return result
     # parse()
+
+    @classmethod
+    def prefilter(cls, params):
+        """
+        Parse state machine parmfile and remove secrets to avoid storing them
+        in the database.
+
+        Args:
+            params (str): state machine parameters
+
+        Returns:
+            Tuple[str, any]: state machine parameters and supplementary data
+
+        Raises:
+            SyntaxError: if content is in wrong format.
+        """
+        try:
+            obj_params = yaml.safe_load(params)
+            validate(obj_params, REQUEST_SCHEMA)
+        except Exception as exc:
+            raise SyntaxError(
+                "Invalid request parameters: {}".format(str(exc)))
+
+        # only process secrets that are a dictionary entry in params
+        if not isinstance(obj_params, dict) or 'secrets' not in obj_params:
+            return (params, None)
+
+        secrets = obj_params.pop('secrets')
+
+        return (yaml.dump(obj_params, default_flow_style=False), secrets)
+    # prefilter()
+
+    @classmethod
+    def recombine(cls, params, extra_vars=None):
+        """
+        Method used to inject data separated in preprocessing stage
+        back into parameters.
+
+        Args:
+            params (str): state machine parameters
+            extra_vars (dict): secret variables
+
+        Returns:
+            str: final machine parameters
+        """
+        if extra_vars and isinstance(extra_vars, dict):
+            for key, value in extra_vars.items():
+                params = params.replace("${{{}}}".format(key), value)
+
+        return params
+    # recombine()
 
     def cleanup(self):
         """

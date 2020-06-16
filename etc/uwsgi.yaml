@@ -21,6 +21,7 @@ uwsgi:
   route: ^/static redirect-permanent:https://${HTTP_HOST}${REQUEST_URI}
   static-map: /web/=/var/tessia/web/
   static-index: index.html
+  static-gzip-dir: /var/tessia/web/
   # this flag enables http 1.1 support which is used by the tessia
   # client (through requests library)
-  http-keepalive: 60
+  http-keepalive: 1

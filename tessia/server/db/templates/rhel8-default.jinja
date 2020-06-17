@@ -189,9 +189,6 @@ chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}} -y
 {% endfor -%}
 {% endif -%}
 
-# for ansible to work
-ln -s /usr/bin/python2 /usr/bin/python
-
 echo -e >> /etc/motd \
 "**************************************************************\n"\
 "*                                                            *\n"\

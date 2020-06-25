@@ -2,7 +2,7 @@
 # for api communication
 Potion-client>=2.4.1
 # cmdline client library
-click>=6.6
+click>=7.0
 # support to yaml file format
 PyYAML>=3.11
 jsonschema>=2.5.1

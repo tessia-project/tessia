@@ -224,6 +224,35 @@ class BulkOperatorMachine(BaseMachine):
         return result
     # parse()
 
+    @classmethod
+    def recombine(cls, params, extra_vars=None):
+        """
+        Update params with the requester information passed in extra_vars
+
+        Args:
+            params (str): state machine parameters
+            extra_vars (dict): requester information in 'requester' field
+
+        Returns:
+            str: final machine parameters
+        """
+
+        if not extra_vars:
+            return params
+
+        try:
+            obj_params = yaml.safe_load(params)
+        except Exception:
+            # do not handle load exception here, it will fail
+            # at a more appropriate parse time
+            return params
+
+        obj_params.update(extra_vars)
+        params = yaml.dump(obj_params, default_flow_style=False)
+
+        return params
+    # recombine()
+
     def start(self):
         """
         Start the machine execution.

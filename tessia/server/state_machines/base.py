@@ -94,9 +94,9 @@ class BaseMachine(metaclass=abc.ABCMeta):
             sys.tracebacklimit = 0
     # _log_config()
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def parse(params):
+    def parse(cls, params):
         """
         Method used to parse the state machines parameters provided by the
         user and return a dict with at least two keys 'resources' and
@@ -104,6 +104,44 @@ class BaseMachine(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
     # parse()
+
+    @classmethod
+    def prefilter(cls, params):
+        """
+        Method used to parse the state machines parameters provided by the
+        user and return a similar object that would be relevant at the
+        execution stage.
+        This method can be used to remove or process secrets that should not
+        be stored in the database.
+
+        Args:
+            params (str): state machine parameters
+
+        Returns:
+            Tuple[str, any]: state machine parameters and supplementary data
+        """
+        return (params, None)
+    # prefilter()
+
+    @classmethod
+    def recombine(cls, params,
+                  extra_vars=None         # pylint: disable=unused-argument
+                 ):
+        """
+        Method used to restore the state machines parameters provided by the
+        user and return a complete parmfile for execution stage.
+        This method can be used to restore secrets that should not be stored
+        in the database.
+
+        Args:
+            params (str): state machine parameters
+            extra_vars (dict): additional variables extracted in prefilter
+
+        Returns:
+            str: final machine parameters
+        """
+        return params
+    # recombine()
 
     @abc.abstractmethod
     def cleanup(self):

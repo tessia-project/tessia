@@ -208,6 +208,11 @@ function _tweak_cfg() {
     if [ -n "$TESSIA_LIVE_IMG_PASSWD" ]; then
         yamlman update /etc/tessia/server.yaml auto_install.live_img_passwd "$TESSIA_LIVE_IMG_PASSWD"
     fi
+
+    # set mediator url if env variable was set
+    if [ -n "$TESSIA_MEDIATOR_URI" ]; then
+        yamlman update /etc/tessia/server.yaml mediator.url "$TESSIA_MEDIATOR_URI"
+    fi
 }
 
 # instance specific settings to config file

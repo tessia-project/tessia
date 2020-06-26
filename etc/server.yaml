@@ -5,6 +5,10 @@ db:
   # location of the database (in sqlalchemy format)
   url: postgresql://tessia:password@localhost/tessia
 
+mediator:
+  # location of the mediator (redis url link)
+  url: redis://tessia:password@localhost:6379/0
+
 auto_install:
   # the url must be accessible from the systems being installed
   url: http://localhost/static

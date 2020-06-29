@@ -1,5 +1,5 @@
 <!--
-Copyright 2017 IBM Corp.
+Copyright 2017, 2020 IBM Corp.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,6 +45,9 @@ playbook: memory_stress.yaml
 # global variables which overwrite the role defaults ("optional")
 vars:
   run_cleanup: true
+  # use this syntax for values, which should not be shown in job requests
+  # or job parameters; actual value is placed in 'secrets' section below
+  secret_token: "${hidden parameter}"
 
 # define variables for groups, overwritten by playbook group_vars ("optional")
 groups:
@@ -81,6 +84,11 @@ systems:
   - name: zvm10
     groups:
       - all
+
+# secrets section to conceal sensitive values ("optional")
+secrets:
+  # a corresponding ${hiden parameter} entry will be replaced with its value
+  hidden parameter: some token or other string
 ```
 - Job is started by the scheduler: a new process is spawned and the machine execution starts
 - Machine downloads the ansible repository from the specified source url
@@ -243,3 +251,28 @@ source: https://github.com/ansible/ansible-examples.git@:commit_name
 ```
 
 Note: because of the specifics git cloning and potentially limited server resources, it is possible to define a commit not older than 10 per a branch.
+
+## How to pass secrets to the playbook
+
+**NOTE** This is an new and actively developed feature, its structure may incompatibly change in future.
+
+Tessia stores all parameters in job requests and jobs, so they can be easily evaluated and reproduced. This, however, is not ideal in a situation when parameters contain sensitive information, such as access tokens or keys. Tessia provides a way to pass sensitive information without registering it in the database through `secrets` session in the parmfile.
+
+The following example uses `secrets` section to supply a GitHub Personal Access Token to access a private registry:
+
+```yaml
+source: https://oauth:${token}@github.com/private-registry/example.git
+playbook: run.yml
+systems:
+  - name: cpc3lp52
+    groups:
+      - all
+secrets:
+  token: sample-oauth-token
+```
+
+Tessia removes secrets section from the parmfile before adding it into database, but the state machine receives complete information. Only one-line string values are supported in secrets.
+
+**ATTENTION** When using secret variables for Ansible, make sure that they are not printed in Ansible output, whether standalone or as a part of command results.
+
+Without `secrets` section tessia will automatically detect authorization information in the source URL, and use the same mechanism to pass authentication data.

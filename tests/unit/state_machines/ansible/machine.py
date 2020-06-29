@@ -534,6 +534,32 @@ class TestAnsibleMachine(TestCase):
         self.assertIn("oauth:{}".format(token), combined)
     # test_secrets()
 
+    def test_url_autoprotect(self):
+        """
+        Test secret data recombine
+        """
+        test_system = 'kvm054'
+        request = {
+            'source': 'https://oauth:password@example.com/ansible/'
+                      'ansible-example.tgz',
+            'playbook': 'workload1/site.yaml',
+            'systems': [
+                {
+                    'name': test_system,
+                    'groups': ['webservers', 'dbservers'],
+                }
+            ],
+            'verbosity': 'DEBUG'
+        }
+        # make sure password is extracted and replaced with a variable
+        parmfile, extra_vars = machine.AnsibleMachine.prefilter(
+            yaml.dump(request, default_flow_style=False))
+        self.assertIsNotNone(extra_vars)
+        self.assertEqual(extra_vars['token'], 'password')
+        self.assertNotIn('password', parmfile)
+        self.assertIn('${token}', parmfile)
+    # test_url_autoprotect()
+
     # TODO: simulate a signal kill and verify cleanup
 
 # TestAnsibleMachine

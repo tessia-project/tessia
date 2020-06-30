@@ -125,7 +125,7 @@ class SmSubiquityInstaller(SmBase):
         frequency_check = 2.5
         last_event = 0
 
-        while time() <= timeout_installation:
+        while not success and time() <= timeout_installation:
             session_logs = self._session.get(
                 "{}/session/{}/logs".format(self._webhook_control,
                                             self._session_id),
@@ -149,7 +149,7 @@ class SmSubiquityInstaller(SmBase):
                                   event_result,
                                   event_name,
                                   event_description)
-                success = (event_name == "cmd-install" and
+                success = (event_name == "subiquity/Reboot" and
                            event_result == "SUCCESS" and
                            event.get("event_type", "") == "finish")
 
@@ -367,6 +367,13 @@ class SmSubiquityInstaller(SmBase):
                   "w") as autofile:
             autofile.write(autofile_content)
     # create_autofile()
+
+    def target_reboot(self):
+        """
+        Skip reboot step, it is done automatically
+        """
+        self._logger.info("waiting for system to reboot")
+    # target_reboot()
 
     def wait_install(self):
         """

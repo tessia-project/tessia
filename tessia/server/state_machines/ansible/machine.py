@@ -574,6 +574,44 @@ class AnsibleMachine(BaseMachine):
             raise RuntimeError('playbook execution failed')
     # _stage_exec_playbook()
 
+    @staticmethod
+    def _url_decorate_auth(url, variables):
+        """
+        Replace authentication data from url with a variable.
+        Variable value is stored in a provided dictionary.
+
+        Args:
+            url (str): url, which may contain authentication data
+            variables (dict): dictionary to store variable (by ref)
+
+        Returns:
+            str: updated url
+        """
+        try:
+            parsed_url = urlsplit(url)
+        except ValueError:
+            # any exception means nothing is there
+            return url
+
+        try:
+            auth_data, hostname = parsed_url.netloc.rsplit('@', 1)
+        except ValueError:
+            # not enough values to unpack - no auth data present
+            return url
+
+        try:
+            user, password = auth_data.split(':', 1)
+        except ValueError:
+            # not enough values to unpack - no password present
+            return url
+
+        variables['token'] = password
+
+        # create a new url with replaced password
+        repo_parts = [*parsed_url]
+        repo_parts[1] = '{}:{}@{}'.format(user, '${token}', hostname)
+        return urlunsplit(repo_parts)
+
     @classmethod
     def parse(cls, params):
         """
@@ -649,10 +687,18 @@ class AnsibleMachine(BaseMachine):
                 "Invalid request parameters: {}".format(str(exc)))
 
         # only process secrets that are a dictionary entry in params
-        if not isinstance(obj_params, dict) or 'secrets' not in obj_params:
+        if not isinstance(obj_params, dict):
             return (params, None)
 
-        secrets = obj_params.pop('secrets')
+        secrets = obj_params.pop('secrets', {})
+
+        # automatically replace authentication data in source url,
+        # as long as there are no other secrets.
+        # If a user provides their own secret data, they should have replaced
+        # passwords in the urls as well
+        if 'source' in obj_params and not secrets:
+            obj_params['source'] = cls._url_decorate_auth(
+                obj_params['source'], secrets)
 
         return (yaml.dump(obj_params, default_flow_style=False), secrets)
     # prefilter()

@@ -12,84 +12,55 @@ autoinstall:
       token_key: {{ config['webhook']['token'] }}
       token_secret: "world"
       level: DEBUG
+  apt:
+    # do not overwrite original list, only add to it
+    preserve_sources_list: yes
+{%- if config['repos'][1:] %}
+    sources:
+{%- for repo in config['repos'][1:] %}
+      {{repo['name']}}.list:
+        source: "deb {{repo['apt_url']}}"
+{%- endfor %}
+{%- endif %}
+
+  packages:
+    - python
 
 {%- macro mib_to_mb(size) -%}
 {%- set size_mb = ((size * 1024 * 1024) / 1000 / 1000) | int -%}
 {{- size_mb -}}
 {%- endmacro -%}
 
-{% macro add_netplan_iface(iface) -%}
+{%- macro add_netplan_eth_iface(iface) %}
       {{ iface['systemd_osname'] }}:
+{%-   if iface['type'] != 'OSA' %}
         set-name: {{iface['osname']}}
+        match:
+          macaddress: {{iface['mac_addr']}}
+{%-   endif %}
         dhcp4: no
         dhcp6: no
+        gateway4: {{ gw_iface['gateway'] }}
         addresses: [ {% if iface['ip'] and not iface['vlan'] %}"{{iface['ip']}}/{{iface['mask_bits']}}"{% endif %} ]
-{% if iface['dns_1'] %}
+{%-   if iface['dns_1'] %}
         nameservers:
           addresses: [ "{{iface['dns_1']}}"{% if iface['dns_2'] %}, "{{iface['dns_2']}}"{% endif %} ]
-{% endif %}
+{%-   endif %}
 {%- endmacro -%}
-
-{% macro iface_add_config(iface) -%}
-   echo -e 'network:' > /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '  version: 2' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '  renderer: networkd' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '  ethernets:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '    {{iface['osname']}}:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '      addresses: [ {% if iface['ip'] and not iface['vlan'] %}"{{iface['ip']}}/{{iface['mask_bits']}}"{% endif %} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-  {% if iface['type'] != 'OSA' -%}
-   echo -e '      set-name: {{iface['osname']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '      match:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '        macaddress: {{iface['mac_addr']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-    {{netplan_workaround()}}
-  {% elif iface['mac_addr'] -%}
-   mkdir -p /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d; \
-   echo -e '[Match]\nName={{iface['osname']}}\n\n[Link]\nMACAddress={{iface['mac_addr']}}\n' > /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d/10-netplan-{{iface['osname']}}.conf; \
-  {% endif -%}
-  {% if iface['vlan'] -%}
-   echo -e '  vlans:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '    {{iface['osname']}}.{{iface['vlan']}}:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '      id: {{iface['vlan']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '      link: {{iface['osname']}}' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '      addresses: [ {% if iface['ip'] %}"{{iface['ip']}}/{{iface['mask_bits']}}"{% endif %} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-  {% endif -%}
-  {% if iface['dns_1'] -%}
-   echo -e '      nameservers:' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-   echo -e '        addresses: [ "{{iface['dns_1']}}"{% if iface['dns_2'] %}, "{{iface['dns_2']}}"{% endif %} ]' >> /target/etc/netplan/10-{{iface['osname']}}-netcfg.yaml; \
-  {% endif -%}
+{%- macro add_netplan_vlan_iface(iface) %}
+      {{iface['osname']}}.{{iface['vlan']}}:
+        id: {{iface['vlan']}}
+        link: {{iface['osname']}}
+        addresses: [ {% if iface['ip'] %}"{{iface['ip']}}/{{iface['mask_bits']}}"{% endif %} ]
 {%- endmacro -%}
-
-{% macro change_ipl_device(system_type, svol) -%}
-{% if system_type != 'KVM' and svol['type'] == 'FCP' -%}
-    /target/usr/sbin/chreipl fcp -l {{svol['volume_id']}} -d {{svol['specs']['adapters'][0]['devno']}} -w {{svol['specs']['adapters'][0]['wwpns'][0]}} ; \
-{%- elif system_type != 'KVM' and svol['type'] == 'DASD' -%}
-    /target/usr/sbin/chreipl ccw {{svol['volume_id']}} ; \
-{%- endif -%}
-{%- endmacro -%}
-
-{% macro configure_gw_iface(iface) -%}
-{% if iface['type'] == "OSA" -%}
-    echo -e 'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="qeth", KERNELS=="{{iface['attributes']['ccwgroup'].split(',')[0]}}", ATTR{type}=="1", NAME="{{iface['osname']}}"' > /target/etc/udev/rules.d/70-persistent-{{iface['osname']}}.rules ; \
-    sed -i 's/{{iface['systemd_osname']}}/{{iface['osname']}}/g' /target/etc/netplan/01-netcfg.yaml; \
-  {% if iface['mac_addr'] -%}
-    mkdir -p /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d; \
-    echo -e '[Match]\nName={{iface['osname']}}\n\n[Link]\nMACAddress={{iface['mac_addr']}}\n' > /target/etc/systemd/network/10-netplan-{{iface['osname']}}.network.d/10-netplan-{{iface['osname']}}.conf; \
-  {% endif -%}
-{%- else -%}
-    echo -e '      set-name: {{iface['osname']}}' >> /target/etc/netplan/01-netcfg.yaml; \
-    echo -e '      match:' >> /target/etc/netplan/01-netcfg.yaml; \
-    echo -e '          macaddress: {{iface['mac_addr']}}' >> /target/etc/netplan/01-netcfg.yaml; \
-    {{netplan_workaround()}}
-{%- endif -%}
-{% endmacro %}
 
 {# replace internal mirror entries by the external ports repository #}
-{% macro configure_repos() %}
-{% set repo_mirror = config['repos'][0]['url'] %}
+{%- macro configure_repos() -%}
+{%- set repo_mirror = config['repos'][0]['url'] -%}
 {# make sure we don't cause a syntax error due to a double quote in the url #}
-{% set repo_mirror = repo_mirror | replace('"', '\"') %}
+{%- set repo_mirror = repo_mirror | replace('"', '\"') %}
     - |
-      curtin in-target python -c "fd = open('/etc/apt/sources.list');
+      curtin in-target -- python -c "fd = open('/etc/apt/sources.list');
       lines = fd.read();
       fd.close();
       repo_mirror = r'''{{repo_mirror}}''';
@@ -98,47 +69,45 @@ autoinstall:
       fd = open('/etc/apt/sources.list', 'w');
       fd.write(lines);
       fd.close()"
-{# include additional repositories -#}
-{% for repo in config["repos"][1:] %}
-    - echo -e 'deb {{repo['apt_url']}}' >> /target/etc/apt/sources.list
-{% endfor -%}
-{% endmacro %}
-{% macro netplan_workaround() -%}
-    {#- workaround for https://bugs.launchpad.net/netplan/+bug/1768827 -#}
-    if [ ! -f "/target/etc/systemd/system/netplan-apply.service" ]; then \
-    echo -e '[Unit]\nAfter=network.target\n' > /target/etc/systemd/system/netplan-apply.service; \
-    echo -e '[Service]\nExecStart=/usr/sbin/netplan apply\n' >> /target/etc/systemd/system/netplan-apply.service; \
-    echo -e '[Install]\nWantedBy=multi-user.target\n' >> /target/etc/systemd/system/netplan-apply.service; \
-    chroot /target systemctl enable netplan-apply.service; \
-    fi; \
-{% endmacro %}
+{%- endmacro %}
 
 {# Since only one disk and one network interface is supported during
 installation we create these auxiliary variables #}
-{% set root_svol = config['root_disk'] -%}
-{% set gw_iface = config['gw_iface'] -%}
-{% set system_type = config['system_type'] %}
+{%- set root_svol = config['root_disk'] %}
+{%- set gw_iface = config['gw_iface'] %}
+{%- set system_type = config['system_type'] %}
+{%- set vlans = config['ifaces'] | selectattr('vlan') | list %}
 
   early-commands:
     - set -x
-{% if gw_iface['type'] == "OSA" and gw_iface['mac_addr'] %}
+    {# enable used devices #}
+{%- for svol in config['svols'] %}
+  {%- if svol['type'] == 'DASD' %}
+    - chzdev -e dasd {{svol['volume_id']}}
+  {%- elif svol['type'] == 'FCP' %}
+     {% for adapter in svol['specs']['adapters'] %}
+    - chzdev -e zfcp {{adapter['devno']}}
+     {%- endfor %}
+  {%- endif %}
+{%- endfor -%}
+{%- for iface in config['ifaces'] %}
+  {%- if iface['type'] == 'OSA' %}
+    - chzdev -e qeth {{iface['attributes']['ccwgroup'].split(',')[0]}}
+  {%- endif -%}
+{%- endfor -%}
+{%- if gw_iface['type'] == "OSA" and gw_iface['mac_addr'] %}
       {# s390-netdevice does not provide a way to set mac address in layer2 mode so
       we do it manually here #}
     - ip link set addr {{gw_iface['mac_addr']}} dev {{gw_iface['systemd_osname']}}
       {# in case server is in same subnet update its arp cache to avoid losing connectivity #}
     - ping -c1 -w 90 {{config['server_hostname']}} ; \
-{% endif %}
+{%- endif %}
 
   locale: en_US.UTF-8
-  proxy: http://lnxproxy.lnxne.boe:3128
-  apt:
-    primary:
-      - arches: [s390x]
-        uri: "{{config['repos'][0]['url']}}"
     
   identity:
-    username: root
-    hostname: {{config['server_hostname']}}
+    username: {{config['credentials']['admin-user']}}
+    hostname: {{config['hostname']}}
     password: {{config['sha512rootpwd']}}
   
   ssh:
@@ -148,75 +117,35 @@ installation we create these auxiliary variables #}
   user-data:
     disable_root: false
 
-{% if system_type != "KVM" %}
+{%- if system_type != "KVM" %}
   storage:
-    grub:
-      install_devices:
-        - root
-    swap:
-      size: 0
-    config:
-{%   if root_svol['type'] == "FCP" %}
-      - id: root
-        ptable: gpt
-        type: disk
-        serial: "{{root_svol['specs']['wwid']}}"
-        wwn: "0x{{root_svol['specs']['wwid'][1:]}}"
-        multipath: "{{root_svol['specs']['wwid']}}"
-        wipe: superblock-recursive
-        preserve: false
-{%   elif root_svol['type'] == "DASD" %}
-      - id: root-dasd
-        type: dasd
-        device_id: 0.0.{{root_svol['volume_id']}}
-        label: 0X{{root_svol['volume_id']}}
-        mode: quick
-      - id: root
-        type: disk
-        serial: 0X{{root_svol['volume_id']}}
-        wipe: superblock-recursive
-{%   endif %}
-{%   for part in root_svol['part_table']['table'] %}
-      - type: partition
-        device: root
-        id: root-part{{ part['num'] }}
-        size: {{ mib_to_mb(part['size']) }}M
-{%     if part['fs'] == 'swap' %}
-        flag: swap
-{%     endif %}
-      - type: format
-        volume: root-part{{ part['num'] }}
-        id: root-part{{ part['num'] }}-fs
-        fstype: {{ part['fs'] }}
-      - type: mount
-        device: root-part{{ part['num'] }}-fs
-        id: root-part{{ part['num'] }}-fs-mount
-        path: {{ part['mp'] }}
-        options: {{ part['mo'] }}
-{%   endfor %}
-{% endif %}
+    layout:
+      name: direct
+{%- endif %}
 
 {# Use networkd as default renderer, because MAC addresses and such #}
-{# only default network currently works
   network:
     version: 2
-    renderer: networkd
     ethernets:
-{% for iface in config['ifaces'] %}
-{{   add_netplan_iface(iface)}}
-{% endfor %}
-#}
+{%- for iface in config['ifaces'] %}
+{{   add_netplan_eth_iface(iface)}}
+{%- endfor %}
+{%- if vlans %}
+    vlans:
+{%-   for iface in vlans %}
+{{   add_netplan_vlan_iface(iface)}}
+{%-   endfor %}
+{%- endif %}
 
   late-commands:
     - echo 'sclp_line0' >> /target/etc/securetty
-{% if config["profile_parameters"]["linux-kargs-target"] -%}
+    - "sed -i 's/^[# ]*PermitRootLogin .*/PermitRootLogin yes/g' /target/etc/ssh/sshd_config"
+{%- if config["profile_parameters"]["linux-kargs-target"] %}
     - sed -i 's,parameters =\(.*\)$,parameters =\1 {{config["profile_parameters"]["linux-kargs-target"]}},g' /target/etc/zipl.conf
     - curtin in-target -- /sbin/zipl -V
-{%- endif -%}
-{{configure_repos()}}
-
+{%- endif %}
     - |
-      echo -e >> /target/etc/motd \
+      echo >> /target/etc/motd \
       "**************************************************************\n"\
       "*                                                            *\n"\
       "*                The system was installed using              *\n"\
@@ -226,7 +155,7 @@ installation we create these auxiliary variables #}
       "* Open source repo: https://gitlab.com/tessia-project        *\n"\
       "* (GitHub mirror: https://github.com/tessia-project)         *\n"\
       "*                                                            *\n"\
-      "* A documentation is located here:                           *\n"\
+      "* Documentation is located here:                             *\n"\
       "* https://gitlab.com/tessia-project/tessia/-/tree/master/doc *\n"\
       "*                                                            *\n"\
       "* To create custom templates for auto installation see:      *\n"\

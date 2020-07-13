@@ -37,10 +37,13 @@ HYP_TYPES_BASELIB = {
 #
 # CODE
 #
+
+
 class PlatBase(metaclass=abc.ABCMeta):
     """
     Base class for all platforms
     """
+
     def __init__(self, hyp_profile, guest_profile, os_entry, repo_entry,
                  gw_iface):
         """

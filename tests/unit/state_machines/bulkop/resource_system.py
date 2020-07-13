@@ -42,6 +42,7 @@ SYS_HEADERS = (
 # CODE
 #
 
+
 class TestResourceSystem(TestCase):
     """
     Unit test for the resource_system module of the bulkop state machine.
@@ -180,7 +181,7 @@ class TestResourceSystem(TestCase):
         self.assertIsNone(models.SystemIface.query.filter(
             models.SystemIface.ip_address_id == ip_obj.id,
             models.SystemIface.system_id != sys_obj.id
-            ).first(), None)
+        ).first(), None)
 
         # system switched ips: check that old ip remains assigned to system
         if orig_dict['ip'].get('old') and (
@@ -231,8 +232,7 @@ class TestResourceSystem(TestCase):
         """
         # fetch system's original values for later comparison
         sys_obj = models.System.query.filter_by(name=ref_entry['name']).one()
-        sys_orig = dict(
-            [(field, getattr(sys_obj, field)) for field in SYS_HEADERS])
+        sys_orig = {field: getattr(sys_obj, field) for field in SYS_HEADERS}
 
         # fetch iface's original values for later comparison
         iface_obj = models.SystemIface.query.filter_by(
@@ -309,6 +309,7 @@ class TestResourceSystem(TestCase):
         )
         self.db.session.add(ip_obj)
         self.db.session.commit()
+
         def cleanup_helper():
             """Helper to clean up db to original state"""
             # remove ip
@@ -522,7 +523,7 @@ class TestResourceSystem(TestCase):
             # other users should fail
             else:
                 with self.assertRaisesRegex(
-                    PermissionError, 'User has no UPDATE permission'):
+                        PermissionError, 'User has no UPDATE permission'):
                     res_obj.render_item(ref_entry)
                 self.db.session.rollback()
 
@@ -638,6 +639,7 @@ class TestResourceSystem(TestCase):
             )
             self.db.session.add(ip_obj)
         self.db.session.commit()
+
         def cleanup_helper():
             """Helper to clean up db to original state"""
             # remove ips

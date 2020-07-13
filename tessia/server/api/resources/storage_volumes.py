@@ -108,6 +108,8 @@ VOL_SERVER_MAP = {
 #
 # CODE
 #
+
+
 class StorageVolumeResource(SecureResource):
     """
     Resource for storage volumes
@@ -272,7 +274,7 @@ class StorageVolumeResource(SecureResource):
             raise BaseHttpError(code=400, msg=MSG_PTABLE_DASD_PARTS)
         # msdos type: perform checks on the primary/logical
         # combinations
-        elif part_table['type'] == 'msdos':
+        if part_table['type'] == 'msdos':
             len_ptable = len(part_table['table'])
             # empty partition: nothing to check
             if len_ptable == 0:
@@ -462,14 +464,13 @@ class StorageVolumeResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
-    def do_read(self, id):
+    def do_read(self, svol_id):
         """
         Custom implementation of item reading. Use permissions from the
         associated system to validate access if necessary.
 
         Args:
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            svol_id (any): storage volume id
 
         Raises:
             PermissionError: if user has no permission to the item
@@ -477,8 +478,7 @@ class StorageVolumeResource(SecureResource):
         Returns:
             json: json representation of item
         """
-        # pylint: disable=redefined-builtin
-        item = self.manager.read(id)
+        item = self.manager.read(svol_id)
         if not flask_global.auth_user.restricted:
             return item
 
@@ -496,13 +496,12 @@ class StorageVolumeResource(SecureResource):
         return item
     # do_read()
 
-    def do_update(self, properties, id):
-        # pylint: disable=invalid-name,redefined-builtin
+    def do_update(self, properties, svol_id):
         """
         Overriden method to perform sanity checks. See parent class for
         complete docstring.
         """
-        vol_obj = self.manager.read(id)
+        vol_obj = self.manager.read(svol_id)
         # determine which kind of permission the user has
         try:
             self._perman.can(
@@ -573,7 +572,7 @@ class StorageVolumeResource(SecureResource):
 
             # remove any existing profile associations
             StorageVolumeProfileAssociation.query.filter_by(
-                volume_id=id).delete()
+                volume_id=svol_id).delete()
 
         # project changed: make sure user has permission to new project
         if 'project' in properties:

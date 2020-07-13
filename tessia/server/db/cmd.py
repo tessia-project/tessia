@@ -46,6 +46,8 @@ ALEMBIC_CFG = '{}/alembic/alembic.ini'.format(MY_DIR)
 #
 # CODE
 #
+
+
 def create_rev(args):
     """
     Create a new revision (migration) script by comparing existing schema in
@@ -65,6 +67,7 @@ def create_rev(args):
                      autogenerate=True)
 # create_rev()
 
+
 def downgrade_db(args):
     """
     Downgrade (migrate) an existing db schema to a previous revision
@@ -79,6 +82,7 @@ def downgrade_db(args):
     command.downgrade(get_alembic_cfg(), args.revision, sql=args.sql)
 # downgrade_db()
 
+
 def feed_db(args):
     """
     Insert data provided by a json file to the database
@@ -86,6 +90,7 @@ def feed_db(args):
     with open(args.filename, 'r') as json_data:
         db_insert(json.loads(json_data.read()))
 # feed_db()
+
 
 def get_alembic_cfg(stdout=sys.stdout):
     """
@@ -102,14 +107,15 @@ def get_alembic_cfg(stdout=sys.stdout):
         RuntimeError: if db configuration is missing from engine's config file
     """
     try:
-        db_url = CONF.get_config()['db']['url']
-    except KeyError:
+        db_url = CONF.get_config().get('db')['url']
+    except (TypeError, KeyError):
         raise RuntimeError('No database configuration found')
 
     alembic_cfg = Config(ALEMBIC_CFG, stdout=stdout)
     alembic_cfg.set_main_option("sqlalchemy.url", db_url)
     return alembic_cfg
 # get_alembic_cfg()
+
 
 def get_token(_):
     """
@@ -128,6 +134,7 @@ def get_token(_):
     print('{0.user_id}:{0.key_id}:{0.key_secret}'.format(obj))
 # get_token()
 
+
 def init_db(_):
     """
     Init the database by creating all models, stamping it with 'head' and
@@ -141,6 +148,7 @@ def init_db(_):
     types.create_all()
 # init_db()
 
+
 def list_revs(args):
     """
     List the available revisions for migration
@@ -153,6 +161,7 @@ def list_revs(args):
     """
     command.history(get_alembic_cfg(), verbose=args.verbose)
 # list_revs()
+
 
 def main():
     """
@@ -180,6 +189,7 @@ def main():
 
     return 0
 # main()
+
 
 def parse_cmdline():
     """
@@ -291,6 +301,7 @@ def parse_cmdline():
     return parsed_args
 # parse_cmdline()
 
+
 def reset_db(args):
     """
     Drop all tables, and reset migration table. Optionally remove existing
@@ -355,6 +366,7 @@ def reset_db(args):
 
 # reset_db()
 
+
 def show_rev(args):
     """
     Show details on the revision specified
@@ -371,6 +383,7 @@ def show_rev(args):
 
     command.show(get_alembic_cfg(), args.revision)
 # show_rev()
+
 
 def current(_):
     """
@@ -392,6 +405,7 @@ def current(_):
     print(output)
 # current()
 
+
 def upgrade_db(args):
     """
     Upgrade (migrate) an existing db schema to a newer revision
@@ -405,6 +419,7 @@ def upgrade_db(args):
     """
     command.upgrade(get_alembic_cfg(), args.revision, sql=args.sql)
 # upgrade_db()
+
 
 if __name__ == '__main__':
     sys.exit(main())

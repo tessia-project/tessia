@@ -205,7 +205,7 @@ class TestWrapper(TestCase):
 
             wrapper.pickle.load.side_effect = pickle_load_side_effect
 
-            def execv_side_effect(*args, **kwargs):
+            def execv_side_effect(*_args, **_kwargs):
                 """
                 Mock for os.execv that directly calls the function that
                 the wrappr module calls when executed.

@@ -37,6 +37,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class RoleResource(SecureResource):
     """
     Resource for roles

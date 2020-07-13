@@ -34,6 +34,8 @@ from unittest import TestCase
 #
 # CODE
 #
+
+
 class TestSmAnaconda(TestCase):
     """
     Class for unit testing the SmAnaconda class.
@@ -190,6 +192,7 @@ class TestSmAnaconda(TestCase):
         )
         MANAGER.session.add(repo_entry)
         MANAGER.session.commit()
+
         def fedora_cleanup():
             """Cleanup helper"""
             profile_entry.operating_system_id = None
@@ -268,9 +271,9 @@ class TestSmAnaconda(TestCase):
 
         mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
         ssh_cmds = [
-            (1, ""), # first time to check if anaconda.log exists
-            (0, ""), # anaconda.log now exists
-            (0, ""), # read log file, empty content
+            (1, ""),  # first time to check if anaconda.log exists
+            (0, ""),  # anaconda.log now exists
+            (0, ""),  # read log file, empty content
         ]
         # generate a lot of responses to reading the log file
         ssh_cmds.extend([(0, 'some_line')] * 50)
@@ -309,7 +312,8 @@ class TestSmAnaconda(TestCase):
 
         mach = sm_anaconda.SmAnaconda(os_entry, profile_entry, template_entry)
         with self.assertRaisesRegex(
-            TimeoutError, "Timed out while waiting for installation logfile"):
+                TimeoutError,
+                "Timed out while waiting for installation logfile"):
             mach.start()
     # test_wait_install_timeout_log_file()
 

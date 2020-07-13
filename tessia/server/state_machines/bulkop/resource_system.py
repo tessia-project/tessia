@@ -48,10 +48,13 @@ GUEST_HYP_MATCHES = {
 #
 # CODE
 #
+
+
 class ResourceHandlerSystem(ResourceHandlerBase):
     """
     Handler for operations on systems
     """
+
     def __init__(self, *args, **kwargs):
         """
         Constructor
@@ -140,7 +143,7 @@ class ResourceHandlerSystem(ResourceHandlerBase):
                 address=properties['ip_address']).all()
             if not ip_obj:
                 raise ValueError('IP address specified not found')
-            elif len(ip_obj) > 1:
+            if len(ip_obj) > 1:
                 msg = ('Multiple IP addresses found; use the format '
                        'subnet_name/ip_address to uniquely identify it')
                 raise ValueError(msg)
@@ -368,9 +371,10 @@ class ResourceHandlerSystem(ResourceHandlerBase):
         if not entry['ip']:
             raise ValueError('A system must have an IP address assigned')
         # sanitize by removing any invalid keys
-        entry = dict([
-            (key, value) for key, value in entry.items()
-            if key.upper() in FIELDS_CSV])
+        entry = {
+            key: value for key, value in entry.items()
+            if key.upper() in FIELDS_CSV
+        }
 
         compare_fields = [field.lower() for field in FIELDS_CSV]
         iface_attrs = {}
@@ -389,9 +393,9 @@ class ResourceHandlerSystem(ResourceHandlerBase):
                     entry['desc'] = None
 
             # compare fields
-            sys_obj_dict = dict([
-                (key, getattr(sys_obj, key.lower())) for key in compare_fields
-            ])
+            sys_obj_dict = {
+                key: getattr(sys_obj, key.lower()) for key in compare_fields
+            }
             changes_diff = dict(entry.items() - sys_obj_dict.items())
 
             self._render_iface(sys_obj, iface_attrs)
@@ -435,7 +439,7 @@ class ResourceHandlerSystem(ResourceHandlerBase):
                 setattr(sys_obj, key, value)
             # add the object to the session early so that _render_iface can
             # see it
-            MANAGER.session( # pylint: disable=not-callable
+            MANAGER.session(  # pylint: disable=not-callable
             ).enable_relationship_loading(sys_obj)
             MANAGER.session.add(sys_obj)
 

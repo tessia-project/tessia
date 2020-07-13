@@ -39,6 +39,7 @@ import os
 # CODE
 #
 
+
 class TestBulkOperator(TestCase):
     """
     Unit test for the machine module of the bulkop state machine.
@@ -96,9 +97,9 @@ class TestBulkOperator(TestCase):
                 'class': self._mock_handler_sys,
             }
         }
-        patcher = patch.dict(machine.HANDLERS, values=mocked_handlers)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        dict_patcher = patch.dict(machine.HANDLERS, values=mocked_handlers)
+        dict_patcher.start()
+        self.addCleanup(dict_patcher.stop)
     # setUp()
 
     def test_parse(self):
@@ -125,7 +126,7 @@ class TestBulkOperator(TestCase):
         # invalid request parameters
         request = {'something': 'invalid'}
         with self.assertRaisesRegex(
-            SyntaxError, 'Invalid request parameters'):
+                SyntaxError, 'Invalid request parameters'):
             machine.BulkOperatorMachine.parse(json.dumps(request))
 
         # invalid requester
@@ -134,7 +135,7 @@ class TestBulkOperator(TestCase):
             'requester': 'wrong_user'
         }
         with self.assertRaisesRegex(
-            ValueError, 'Requester wrong_user does not exist'):
+                ValueError, 'Requester wrong_user does not exist'):
             machine.BulkOperatorMachine.parse(json.dumps(request))
 
         # invalid headers
@@ -144,7 +145,7 @@ class TestBulkOperator(TestCase):
             'requester': 'admin'
         }
         with self.assertRaisesRegex(
-            ValueError, 'Error trying to parse input header'):
+                ValueError, 'Error trying to parse input header'):
             machine.BulkOperatorMachine.parse(json.dumps(request))
 
         # content does not match requested type
@@ -155,8 +156,8 @@ class TestBulkOperator(TestCase):
             'resource_type': 'svol'
         }
         with self.assertRaisesRegex(
-            ValueError,
-            'Input provided does not match requested resource type'):
+                ValueError,
+                'Input provided does not match requested resource type'):
             machine.BulkOperatorMachine.parse(json.dumps(request))
     # test_parse()
 
@@ -169,10 +170,11 @@ class TestBulkOperator(TestCase):
         request = {
             'content': '{}\n{}'.format(','.join(content.keys()),
                                        ','.join(content.values())),
-            'requester': 'admin',
             'resource_type': 'system'
         }
-        mac_obj = machine.BulkOperatorMachine(json.dumps(request))
+        complete_request = machine.BulkOperatorMachine.recombine(
+            json.dumps(request), {'requester': 'admin'})
+        mac_obj = machine.BulkOperatorMachine(complete_request)
         mac_obj.start()
 
         self._mock_handler_sys.return_value.render_item.assert_called_with(
@@ -181,7 +183,9 @@ class TestBulkOperator(TestCase):
 
         # try with commit enabled
         request['commit'] = True
-        mac_obj = machine.BulkOperatorMachine(json.dumps(request))
+        complete_request = machine.BulkOperatorMachine.recombine(
+            json.dumps(request), {'requester': 'admin'})
+        mac_obj = machine.BulkOperatorMachine(complete_request)
         mac_obj.start()
 
         self._mock_handler_sys.return_value.render_item.assert_called_with(

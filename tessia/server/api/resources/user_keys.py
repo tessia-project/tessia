@@ -45,6 +45,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class UserKeyResource(SecureResource):
     """
     Resource for user authentication keys
@@ -123,13 +125,13 @@ class UserKeyResource(SecureResource):
         return [item.key_id, item.key_secret]
     # do_create()
 
-    def do_delete(self, id): # pylint: disable=redefined-builtin
+    def do_delete(self, key_id):
         """
         Custom implementation of key deletion. Enforce password based
         authentication and permission control.
 
         Args:
-            id (int): key_id
+            key_id (int): user key id
 
         Raises:
             BaseHttpError: in case password based auth was not used
@@ -139,14 +141,14 @@ class UserKeyResource(SecureResource):
         Returns:
             bool: True
         """
-        user_key = self.manager.read(id)
+        user_key = self.manager.read(key_id)
 
         # user is not the key owner and is not admin: report item as not found
         # instead of forbidden for security reasons (forbidden would tip the
         # user that such key_id exists)
         if (user_key.user_rel.id != flask_global.auth_user.id and
                 not flask_global.auth_user.admin):
-            raise ItemNotFoundError('id', id, self)
+            raise ItemNotFoundError('id', key_id, self)
 
         # must be authenticated with password
         if flask_global.auth_method != 'basic':
@@ -155,7 +157,7 @@ class UserKeyResource(SecureResource):
                 body='For this operation login and password must be provided')
 
         # perform operation
-        self.manager.delete_by_id(id)
+        self.manager.delete_by_id(key_id)
         return True
     # do_delete()
 
@@ -197,14 +199,13 @@ class UserKeyResource(SecureResource):
         return self.manager.paginated_instances(**kwargs)
     # do_list()
 
-    def do_read(self, id):
+    def do_read(self, key_id):
         """
         Custom implementation of key reading. Make sure only admin users can
         list other users' keys.
 
         Args:
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            key_id (any): user key id
 
         Raises:
             ItemNotFoundError: in case user is not admin or key's owner
@@ -212,20 +213,19 @@ class UserKeyResource(SecureResource):
         Returns:
             json: json representation of item
         """
-        # pylint: disable=redefined-builtin
 
-        user_key = self.manager.read(id)
+        user_key = self.manager.read(key_id)
         # user is not the key owner and is not admin: report item as not found
         # instead of forbidden for security reasons (forbidden would tip the
         # user that such key_id exists)
         if (user_key.user_rel.id != flask_global.auth_user.id and
                 not flask_global.auth_user.admin):
-            raise ItemNotFoundError('id', id, self)
+            raise ItemNotFoundError('id', key_id, self)
 
-        return self.manager.read(id)
+        return self.manager.read(key_id)
     # do_read()
 
-    def do_update(self, properties, id):
+    def do_update(self, properties, key_id):
         """
         Custom update action, blocks this operation as it is not allowed. Users
         needing an update should delete and generate a new key instead.
@@ -233,13 +233,11 @@ class UserKeyResource(SecureResource):
         Args:
             properties (dict): field=value combination for the fields to be
                                updated
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            key_id (any): user key id
 
         Raises:
             Forbidden: always, since operation is not allowed
         """
-        # pylint: disable=redefined-builtin
 
         # not allowed
         raise Forbidden()

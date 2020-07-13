@@ -62,11 +62,14 @@ MAX_GIT_CLONE_DEPTH = '10'
 #
 # CODE
 #
-class RepoDownloader(object):
+
+
+class RepoDownloader:
     """
     Download ansible playbooks from git or from web as a tarball.
     The URL is read from an environment variable.
     """
+
     def __init__(self, repo_url):
         """
         Args:
@@ -96,7 +99,7 @@ class RepoDownloader(object):
                  '.git@' in parsed_url.path)):
             return 'git'
 
-        elif parsed_url.scheme in http_protocols:
+        if parsed_url.scheme in http_protocols:
             return 'web'
 
         return 'unknown'
@@ -373,12 +376,14 @@ class RepoDownloader(object):
     # _url_obfuscate()
 # RepoDownloader
 
+
 def main():
     """
     Entry point
     """
     try:
-        log_level = int(os.environ.get('TESSIA_ANSIBLE_DOCKER_LOG_LEVEL'))
+        log_level = int(os.environ.get(
+            'TESSIA_ANSIBLE_DOCKER_LOG_LEVEL', logging_INFO))
     except (TypeError, ValueError):
         log_level = logging_INFO
     dictConfig(LOG_CONFIG)
@@ -392,6 +397,7 @@ def main():
     downloader = RepoDownloader(repo_url)
     downloader.download()
 # main()
+
 
 if __name__ == '__main__':
     main()

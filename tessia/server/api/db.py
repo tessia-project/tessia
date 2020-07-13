@@ -77,6 +77,7 @@ CLASS_MAPPER = {
 # CODE
 #
 
+
 class RoleBasedQuery(flask_sa.BaseQuery):
     """
     Implement role-based access queries for protected resources
@@ -86,6 +87,7 @@ class RoleBasedQuery(flask_sa.BaseQuery):
     only items that are allowed to be seen by the current Flask user
     are selected.
     """
+
     def __init__(self, entities, session=None):
         """
         Initialize query object
@@ -168,6 +170,7 @@ class RoleBasedQuery(flask_sa.BaseQuery):
     def order_by(self, *criterion):
         return self._apply_role_clause().order_by(*criterion)
 
+
 class RoleBasedQueryDebug(RoleBasedQuery):
     """
     Debug class that prints out executed statements
@@ -184,7 +187,8 @@ class RoleBasedQueryDebug(RoleBasedQuery):
                       compile_kwargs={"literal_binds": True}), file=stderr)
         return super().__iter__()
 
-class _AppDbManager(object):
+
+class _AppDbManager:
     """
     Class to handle db object creation and configuration
     """
@@ -227,7 +231,8 @@ class _AppDbManager(object):
         Returns:
             SQLAlchemy: instance of flask-SQLAlchemy
         """
-        def patched_base(self, *args, **kwargs):
+
+        def patched_base(self, *_args, **_kwargs):
             """
             Change the flask_sqlalchemy base creator function to use our custom
             declarative base in place of the default one.
@@ -264,5 +269,6 @@ class _AppDbManager(object):
         return self._db
     # db
 # _AppDbManager
+
 
 API_DB = _AppDbManager()

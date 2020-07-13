@@ -43,12 +43,14 @@ RESOURCES_SCHEMA = {
     }
 }
 
-GRACE_SECONDS = 300 # five minutes
+GRACE_SECONDS = 300  # five minutes
 
 #
 # CODE
 #
-class ResourcesManager(object):
+
+
+class ResourcesManager:
     """
     A helper class to manage operations related to the queues of resources
     used by jobs
@@ -164,7 +166,7 @@ class ResourcesManager(object):
             return True
         # Interval A is infinite, if it starts before B ends
         # there is an overlap.
-        elif timeout_a == 0:
+        if timeout_a == 0:
             if start_a <= end_b:
                 return True
         # Interval B is infinite, if it starts before A ends
@@ -209,10 +211,10 @@ class ResourcesManager(object):
                 if queue_job.start_date is None:
                     break
                 # job has an earlier start date: it comes first
-                elif job.start_date < queue_job.start_date:
+                if job.start_date < queue_job.start_date:
                     break
                 # job has a later start date: it comes later
-                elif job.start_date > queue_job.start_date:
+                if job.start_date > queue_job.start_date:
                     continue
 
                 # the else case means both jobs have the same start date, more
@@ -231,7 +233,7 @@ class ResourcesManager(object):
             if job.priority < queue_job.priority:
                 break
             # new job has lower priority: it comes later
-            elif job.priority > queue_job.priority:
+            if job.priority > queue_job.priority:
                 continue
 
             # jobs have same priority but new job was submitted first: comes

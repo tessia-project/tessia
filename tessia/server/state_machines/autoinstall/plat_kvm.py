@@ -19,6 +19,7 @@ Module to deal with operations on KVM guests
 #
 # IMPORTS
 #
+from sqlalchemy.orm.attributes import flag_modified
 from tessia.baselib.common.ssh.client import SshClient
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import SystemProfile
@@ -47,10 +48,13 @@ UBUNTU_ID = 'Ubuntu '
 #
 # CODE
 #
+
+
 class PlatKvm(PlatBase):
     """
     Handling for KVM guests
     """
+
     def __init__(self, *args, **kwargs):
         """
         Perform libvirt processing of the guest devices.
@@ -99,15 +103,15 @@ class PlatKvm(PlatBase):
                 vol_id = '0.0.' + vol_id
             return '/dev/disk/by-path/ccw-{}'.format(vol_id)
 
-        elif vol_obj.type == 'FCP':
+        if vol_obj.type == 'FCP':
             if vol_obj.specs['multipath']:
                 prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
             else:
                 prefix = '/dev/disk/by-id/scsi-{}'
             return prefix.format(vol_obj.specs['wwid'])
-        else:
-            raise ValueError(
-                'Unsupported volume type {}'.format(vol_obj.type))
+
+        raise ValueError(
+            'Unsupported volume type {}'.format(vol_obj.type))
     # _kvm_get_vol_devpath_on_host()
 
     @staticmethod
@@ -153,13 +157,17 @@ class PlatKvm(PlatBase):
             disk_type = 'block'
             src_type = 'dev'
             driver = 'raw'
+        else:
+            disk_type = ''
+            src_type = ''
+            driver = 'unsupported-{}'.format(vol_obj.type)
         # The handling of the following disks is not supported yet,
         # so we are disabling it temporally.
-        #elif vol_obj.type == 'RAW':
+        # elif vol_obj.type == 'RAW':
         #    disk_type = 'file'
         #    src_type = 'file'
         #    driver = 'raw'
-        #elif vol_obj.type == 'QCOW2':
+        # elif vol_obj.type == 'QCOW2':
         #    disk_type = 'file'
         #    src_type = 'file'
         #    driver = 'qcow2'
@@ -297,7 +305,6 @@ class PlatKvm(PlatBase):
             # expected disks anymore as they might have different device paths.
             vol.system_attributes['libvirt'] = result['libvirt']
             # to make sure sqlalchemy sees the object has changed
-            from sqlalchemy.orm.attributes import flag_modified
             flag_modified(vol, 'system_attributes')
             MANAGER.session.add(vol)
             # store the devpath corresponding to the libvirt definition
@@ -351,8 +358,8 @@ class PlatKvm(PlatBase):
             # for s390 we use ccw addressing to determine device path
             try:
                 address = libvirt_tree.find('address')
-                ssid = int(address.get('ssid'), 16)
-                devno = int(address.get('devno'), 16)
+                ssid = int(address.get('ssid', '<unspecified>'), 16)
+                devno = int(address.get('devno', '<unspecified>'), 16)
             except (AttributeError, KeyError, ValueError):
                 msg = 'Libvirt xml has missing or invalid <address> tag'
                 self._logger.debug(msg, exc_info=True)

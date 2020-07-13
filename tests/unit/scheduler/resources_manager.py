@@ -35,10 +35,13 @@ import unittest
 #
 # CODE
 #
+
+
 class TestResourceManager(TestCase):
     """
     Unit test for the resource manager module
     """
+
     def setUp(self):
         """
         Prepare the necessary mocks at the beginning of each testcase.
@@ -446,7 +449,7 @@ class TestResourceManager(TestCase):
             last_job_lo_prio,
             job_no_start_date_hi_prio,
             job_no_start_date_lo_prio
-            ]
+        ]
 
         self.assertEqual(wait_queue, expected_wait_queue)
 
@@ -497,7 +500,7 @@ class TestResourceManager(TestCase):
             ['A'].keys()
         )
 
-        expected_active_jobs = set([job.id for job in [job_1, job_2]])
+        expected_active_jobs = {job.id for job in [job_1, job_2]}
 
         self.assertEqual(active_jobs,
                          expected_active_jobs)
@@ -652,6 +655,7 @@ class TestResourceManager(TestCase):
                 self._fixed_now
                 + timedelta(seconds=(2 + resources_manager.GRACE_SECONDS)),
                 self._fixed_now, 0, 1))
+
 
 if __name__ == '__main__':
     unittest.main()

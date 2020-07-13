@@ -38,6 +38,8 @@ MIN_MIB_MEM = 1280
 #
 # CODE
 #
+
+
 class SmAnaconda(SmBase):
     """
     State machine for Anaconda installer

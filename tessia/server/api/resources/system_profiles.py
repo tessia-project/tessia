@@ -66,6 +66,8 @@ MARKER_STRIPPED_SECRET = '****'
 #
 # CODE
 #
+
+
 class SystemProfileResource(SecureResource):
     """
     Resource for system profiles
@@ -394,13 +396,13 @@ class SystemProfileResource(SecureResource):
         return item.id
     # do_create()
 
-    def do_delete(self, id): # pylint: disable=invalid-name,redefined-builtin
+    def do_delete(self, system_profile_id):
         """
         Verify if the user attempting to delete the instance has permission
         on the corresponding system to do so.
 
         Args:
-            id (any): id of the item in the table's database
+            system_profile_id (any): system profile id
 
         Raises:
             Forbidden: in case user has no permission to perform action
@@ -410,7 +412,7 @@ class SystemProfileResource(SecureResource):
         Returns:
             bool: True
         """
-        entry = self.manager.read(id)
+        entry = self.manager.read(system_profile_id)
 
         # validate user permission on object - in this case we look for the
         # permission to update the system
@@ -429,7 +431,7 @@ class SystemProfileResource(SecureResource):
                        'the default first and then retry the operation.')
                 raise BaseHttpError(422, msg=msg)
 
-        self.manager.delete_by_id(id)
+        self.manager.delete_by_id(system_profile_id)
         return True
     # do_delete()
 
@@ -455,14 +457,13 @@ class SystemProfileResource(SecureResource):
             ret_instances, kwargs['page'], kwargs['per_page'])
     # do_list()
 
-    def do_read(self, id):
+    def do_read(self, system_profile_id):
         """
         Custom implementation of profile reading. Use permissions from the
         associated system to validate access.
 
         Args:
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            system_profile_id (any): system profile id
 
         Raises:
             Forbidden: in case user has no rights to read profile
@@ -470,9 +471,8 @@ class SystemProfileResource(SecureResource):
         Returns:
             json: json representation of item
         """
-        # pylint: disable=redefined-builtin
 
-        item = self.manager.read(id)
+        item = self.manager.read(system_profile_id)
         self._strip_secrets(item.credentials)
 
         # restricted user can list if they have a role in the project
@@ -481,7 +481,7 @@ class SystemProfileResource(SecureResource):
         return item
     # do_read()
 
-    def do_update(self, properties, id):
+    def do_update(self, properties, system_profile_id):
         """
         Custom implementation of update. Perform some sanity checks and
         and verify permissions on the corresponding system.
@@ -489,7 +489,7 @@ class SystemProfileResource(SecureResource):
         Args:
             properties (dict): field=value combination for the item to be
                                created
-            id (any): id of the profile item to be updated
+            system_profile_id (any): id of the profile item to be updated
 
         Raises:
             ItemNotFoundError: in case hypervisor profile is specified but not
@@ -499,9 +499,8 @@ class SystemProfileResource(SecureResource):
         Returns:
             int: id of created item
         """
-        # pylint: disable=invalid-name,redefined-builtin
 
-        item = self.manager.read(id)
+        item = self.manager.read(system_profile_id)
 
         # validate permission on the object - use the associated system
         self._perman.can(
@@ -572,17 +571,17 @@ class SystemProfileResource(SecureResource):
         return updated_item.id
     # do_update()
 
-    # pylint: disable=invalid-name,redefined-builtin
     @Route.POST(
-        lambda r: '/<{}:id>/storage_volumes'.format(r.meta.id_converter),
-        rel="vol_attach")
-    def attach_storage_volume(self, properties, id):
+        lambda r: '/<{}:id>/storage_volumes'.format(
+            r.meta.id_converter), rel="vol_attach")
+    def attach_storage_volume(self, properties, id): # pylint: disable=redefined-builtin,invalid-name
         """
         Attach a storage volume to a system activation profile.
         """
         # validate existence and permissions
         svol, system = self._fetch_and_assert_item(
-            StorageVolume, properties['unique_id'], 'volume_id', 'volume', id)
+            StorageVolume, properties['unique_id'], 'volume_id', 'volume',
+            id)
         # for a cpc system only one disk can be associated *per profile*
         # which is regarded as the disk containing the live image used
         # to netboot lpars.
@@ -624,16 +623,16 @@ class SystemProfileResource(SecureResource):
         model=StorageVolumeProfileAssociation)
 
     @Route.DELETE(
-        lambda r: '/<{}:id>/storage_volumes/<vol_unique_id>'.format(
-            r.meta.id_converter),
-        rel="vol_detach")
-    def detach_storage_volume(self, id, vol_unique_id):
+        lambda r: '/<{}:id>/storage_volumes/<vol_unique_id>'
+        .format(r.meta.id_converter), rel="vol_detach")
+    def detach_storage_volume(self, id, vol_unique_id): # pylint: disable=redefined-builtin,invalid-name
         """
         Detach a storage volume from a system activation profile.
         """
         # validate existence and permissions
         self._fetch_and_assert_item(
-            StorageVolume, vol_unique_id, 'volume_id', 'volume', id)
+            StorageVolume, vol_unique_id, 'volume_id', 'volume',
+            id)
 
         # remove association
         match = StorageVolumeProfileAssociation.query.filter_by(
@@ -652,15 +651,17 @@ class SystemProfileResource(SecureResource):
 
     # section for system iface collection operations
     @Route.POST(
-        lambda r: '/<{}:id>/system_ifaces'.format(r.meta.id_converter),
+        lambda r: '/<{}:id>/system_ifaces'.format(
+            r.meta.id_converter),
         rel="iface_attach")
-    def attach_iface(self, properties, id):
+    def attach_iface(self, properties, id): # pylint: disable=redefined-builtin,invalid-name
         """
         Attach a network interface to a system activation profile.
         """
         # validate existence and permissions
         iface, system = self._fetch_and_assert_item(
-            SystemIface, properties['id'], 'iface_id', 'network interface', id)
+            SystemIface, properties['id'], 'iface_id', 'network interface',
+            id)
 
         # iface and profile have different systems: cannot associate them
         if iface.system_id != system.id:
@@ -692,13 +693,14 @@ class SystemProfileResource(SecureResource):
         lambda r: '/<{}:id>/system_ifaces/<iface_id>'.format(
             r.meta.id_converter),
         rel="iface_detach")
-    def detach_iface(self, id, iface_id):
+    def detach_iface(self, id, iface_id): # pylint: disable=redefined-builtin,invalid-name
         """
         Detach a network interface from a system activation profile.
         """
         # validate existence and permissions
         self._fetch_and_assert_item(
-            SystemIface, iface_id, 'iface_id', 'network interface', id)
+            SystemIface, iface_id, 'iface_id', 'network interface',
+            id)
 
         # remove association
         match = SystemIfaceProfileAssociation.query.filter_by(

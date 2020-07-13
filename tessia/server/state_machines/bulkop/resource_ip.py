@@ -39,10 +39,13 @@ FIELDS_CSV = (
 #
 # CODE
 #
+
+
 class ResourceHandlerIpAddress(ResourceHandlerBase):
     """
     Handler for operations on ip addresses
     """
+
     def __init__(self, *args, **kwargs):
         """
         Constructor
@@ -161,10 +164,10 @@ class ResourceHandlerIpAddress(ResourceHandlerBase):
         # update ip: evaluate changes
         if ip_obj:
             # compare fields
-            ip_obj_dict = dict([
-                (key.lower(), getattr(ip_obj, key.lower()))
+            ip_obj_dict = {
+                key.lower(): getattr(ip_obj, key.lower())
                 for key in FIELDS_CSV
-            ])
+            }
             changes_diff = dict(entry.items() - ip_obj_dict.items())
             # no changes to item: nothing to do
             if not changes_diff:
@@ -227,9 +230,10 @@ class ResourceHandlerIpAddress(ResourceHandlerBase):
             entry['system'] = None
 
         # sanitize by removing any invalid keys
-        entry = dict([
-            (key, value) for key, value in entry.items()
-            if key.upper() in FIELDS_CSV])
+        entry = {
+            key: value for key, value in entry.items()
+            if key.upper() in FIELDS_CSV
+        }
 
         # check address early to prevent the query from failing with an invalid
         # address format

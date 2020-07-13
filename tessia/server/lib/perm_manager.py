@@ -36,7 +36,8 @@ import logging
 # CODE
 #
 
-class PermManager(object):
+
+class PermManager:
     """
     Manage user permission verifications
     """
@@ -196,7 +197,7 @@ class PermManager(object):
         if not issubclass(item.__class__, ResourceMixin):
             return
         # non restricted user: regular resource reading is allowed
-        elif not user.restricted:
+        if not user.restricted:
             return
 
         # user is not the resource's owner or an administrator: verify
@@ -304,9 +305,9 @@ class PermManager(object):
         if action in ('UPDATE', 'DELETE'):
             self._assert_permission(user, action, item, item_desc)
             return None
-        elif action == 'CREATE':
+        if action == 'CREATE':
             return self._assert_create(user, item)
-        elif action == 'READ':
+        if action == 'READ':
             self._assert_read(user, item)
             return None
 

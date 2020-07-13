@@ -45,6 +45,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class RepositoryResource(SecureResource):
     """
     Resource for package repositories
@@ -138,16 +140,15 @@ class RepositoryResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
-    def do_update(self, properties, id):
-        # pylint: disable=invalid-name,redefined-builtin
+    def do_update(self, properties, repo_id):
         """
         Overriden method to perform sanity check on the address provided.
         See parent class for complete docstring.
         """
-        item = self.manager.read(id)
+        item = self.manager.read(repo_id)
         self._assert_os(properties, item)
 
-        return super().do_update(properties, id)
+        return super().do_update(properties, repo_id)
     # do_update()
 
 # RepositoryResource

@@ -32,6 +32,8 @@ from unittest.mock import patch, Mock
 #
 # CODE
 #
+
+
 class TestPlatZvm(TestCase):
     """
     Class for unit testing the PlatZvm class.
@@ -143,7 +145,7 @@ class TestPlatZvm(TestCase):
         self.db.session.commit()
 
         with self.assertRaisesRegex(
-            ValueError, 'zVM password not available in profile'):
+                ValueError, 'zVM password not available in profile'):
             plat_zvm.PlatZvm(
                 self._hyper_prof_entry, self._prof_entry, self._os_entry,
                 self._repo_entry, self._gw_iface_entry)

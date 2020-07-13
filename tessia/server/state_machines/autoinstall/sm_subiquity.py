@@ -59,13 +59,17 @@ class SmSubiquityInstaller(SmBase):
         self._logger = logging.getLogger(__name__)
 
         # get communication settings from config
-        config = Config.get_config()
-        webhook_config = config["installer-webhook"]
+        autoinstall_config = Config.get_config().get("auto_install")
+        if not autoinstall_config:
+            raise RuntimeError('No auto_install configuration provided')
+        webhook_config = Config.get_config().get("installer-webhook")
+        if not webhook_config:
+            raise RuntimeError('No installer-webhook configuration provided')
         # expect webhook control in the same container
         self._webhook_control = "http://localhost:{}".format(
             webhook_config['control_port'])
         # webhook log address should be accessible to target system
-        hostname = urlparse(config["auto_install"]["url"]).hostname
+        hostname = urlparse(autoinstall_config["url"]).hostname
         self._webhook_logger = "http://{}:{}/log/".format(
             hostname, webhook_config['webhook_port'])
 

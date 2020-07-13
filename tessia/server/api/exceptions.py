@@ -37,6 +37,7 @@ class BaseHttpError(Exception):
     """
     Base error which provides functionality to return a flask response object
     """
+
     def __init__(self, code=500, body=None, msg=None, headers=None):
         """
         Constructor.
@@ -82,6 +83,7 @@ class BaseHttpError(Exception):
     # get_response()
 
 # BaseHttpError
+
 
 class ConflictError(BaseHttpError):
     """
@@ -200,6 +202,7 @@ class ConflictError(BaseHttpError):
     # _build_msg()
 
 # ConflictError
+
 
 class IntegrityError(BaseHttpError):
     """
@@ -349,6 +352,7 @@ class IntegrityError(BaseHttpError):
 
 # IntegrityError
 
+
 class ItemNotFoundError(BaseHttpError):
     """
     Error used when some expected row was not found in database
@@ -383,6 +387,7 @@ class ItemNotFoundError(BaseHttpError):
 
 # ItemNotFoundError
 
+
 class UnauthorizedError(BaseHttpError):
     """
     Implement the message and headers for the 401 Unauthorized response.
@@ -396,6 +401,7 @@ class UnauthorizedError(BaseHttpError):
     uses it instead of the username/password. This is a common approach to
     Rest APIs implementation.
     """
+
     def __init__(self, auth_provided=True, msg=None):
         """
         Constructor
@@ -425,8 +431,8 @@ class UnauthorizedError(BaseHttpError):
         }
 
         try:
-            auth_realm = CONF.get_config()['auth']['realm']
-        except KeyError:
+            auth_realm = CONF.get_config().get('auth')['realm']
+        except (TypeError, KeyError):
             logger = logging.getLogger(__name__)
             logger.warning(
                 'authorization realm name (auth/realm) missing from config '

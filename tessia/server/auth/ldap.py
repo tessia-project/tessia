@@ -64,6 +64,7 @@ CONFIG_SCHEMA = {
 # CODE
 #
 
+
 class LdapLoginManager(BaseLoginManager):
     """
     Implement support to login authentication against LDAP
@@ -204,7 +205,7 @@ class LdapLoginManager(BaseLoginManager):
         """
         # make sure the config section is available
         try:
-            self._conf = CONF.get_config()['auth']['ldap']
+            self._conf = CONF.get_config().get('auth')['ldap']
         except (TypeError, KeyError):
             raise RuntimeError('No ldap configuration section found')
 
@@ -329,8 +330,8 @@ class LdapLoginManager(BaseLoginManager):
         # TODO: enable caching
 
         # open connection to ldap server and perform the operations
-        with self._connect(self._conf['username'], \
-            self._conf['password']) as conn:
+        with self._connect(self._conf['username'],
+                           self._conf['password']) as conn:
 
             entry = self._search_user(conn, username)
             if entry is None:
@@ -358,5 +359,6 @@ class LdapLoginManager(BaseLoginManager):
     # authenticate()
 
 # LdapLoginManager
+
 
 MANAGER = LdapLoginManager

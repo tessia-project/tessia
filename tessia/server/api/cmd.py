@@ -31,6 +31,8 @@ import argparse
 #
 # CODE
 #
+
+
 def setup():
     """
     Perform initial configuration before creating Flask app
@@ -56,7 +58,9 @@ def setup():
     return API.app
 # setup()
 
+
 APP = setup()
+
 
 def main():
     """
@@ -64,6 +68,7 @@ def main():
     """
     APP.run()
 # main()
+
 
 if __name__ == '__main__':
     main()

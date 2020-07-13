@@ -32,7 +32,9 @@ ALLOWED_MANAGERS = ['free', 'ldap']
 #
 # CODE
 #
-class Loader(object):
+
+
+class Loader:
     """
     Helper class to handle loading of the authentication manager.
     The module is loaded upon first call to get_manager and cached so that it
@@ -60,7 +62,7 @@ class Loader(object):
         if cls.MANAGER is not None:
             return cls.MANAGER
         try:
-            login_method = CONF.get_config()['auth']['login_method']
+            login_method = CONF.get_config().get('auth')['login_method']
         except (TypeError, KeyError):
             raise RuntimeError("Missing config option 'auth.login_method'")
 
@@ -81,6 +83,7 @@ class Loader(object):
         return cls.MANAGER
     # get_manager()
 # Loader
+
 
 def get_manager():
     """

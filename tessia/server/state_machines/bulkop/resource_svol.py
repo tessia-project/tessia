@@ -48,10 +48,13 @@ VOL_SERVER_MAP = {
 #
 # CODE
 #
+
+
 class ResourceHandlerStorageVolume(ResourceHandlerBase):
     """
     Handler for operations on storage volumes
     """
+
     def __init__(self, *args, **kwargs):
         """
         Constructor
@@ -221,10 +224,10 @@ class ResourceHandlerStorageVolume(ResourceHandlerBase):
         # update volume: evaluate changes
         if vol_obj:
             # compare fields
-            vol_obj_dict = dict([
-                (key, getattr(vol_obj, key.lower()))
+            vol_obj_dict = {
+                key: getattr(vol_obj, key.lower())
                 for key in self._compare_fields
-            ])
+            }
             changes_diff = dict(entry.items() - vol_obj_dict.items())
             # no changes to item: nothing to do
             if not changes_diff:
@@ -290,10 +293,10 @@ class ResourceHandlerStorageVolume(ResourceHandlerBase):
         # update volume: evaluate changes
         if vol_obj:
             # compare fields
-            vol_obj_dict = dict([
-                (key, getattr(vol_obj, key.lower()))
+            vol_obj_dict = {
+                key: getattr(vol_obj, key.lower())
                 for key in self._compare_fields
-            ])
+            }
             changes_diff = dict(entry.items() - vol_obj_dict.items())
 
             # specs must be compared separately, sort all lists to make the
@@ -384,9 +387,10 @@ class ResourceHandlerStorageVolume(ResourceHandlerBase):
             entry['system'] = None
 
         # sanitize by removing any invalid keys
-        entry = dict([
-            (key, value) for key, value in entry.items()
-            if key.upper() in FIELDS_CSV])
+        entry = {
+            key: value for key, value in entry.items()
+            if key.upper() in FIELDS_CSV
+        }
         # volume ids are stored in db as lowercase
         entry['volume_id'] = entry['volume_id'].lower()
 

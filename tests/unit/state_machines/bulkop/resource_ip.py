@@ -40,6 +40,7 @@ IP_HEADERS = [field.lower() for field in resource_ip.FIELDS_CSV]
 # CODE
 #
 
+
 class TestResourceIpAddress(TestCase):
     """
     Unit test for the resource_svol module of the bulkop state machine.
@@ -147,8 +148,7 @@ class TestResourceIpAddress(TestCase):
         # fetch ip original values for later comparison
         ip_obj = self._get_ip(
             subnet=ref_entry['subnet'], address=ref_entry['address'])
-        ip_orig = dict(
-            [(field, getattr(ip_obj, field)) for field in IP_HEADERS])
+        ip_orig = {field: getattr(ip_obj, field) for field in IP_HEADERS}
 
         return ip_orig
     # _get_orig_values()
@@ -212,6 +212,7 @@ class TestResourceIpAddress(TestCase):
             'user_hw_admin@domain.com',
             'user_admin@domain.com',
         ]
+
         def assert_action(ref_entry, login, sys_name=None, sys_owner=None,
                           error_msg=None):
             """
@@ -386,7 +387,7 @@ class TestResourceIpAddress(TestCase):
             # other users should fail
             else:
                 with self.assertRaisesRegex(
-                    PermissionError, 'User has no UPDATE permission'):
+                        PermissionError, 'User has no UPDATE permission'):
                     res_obj.render_item(ref_entry)
                 self.db.session.rollback()
 
@@ -411,6 +412,7 @@ class TestResourceIpAddress(TestCase):
             'project': 'bulkop project',
             'desc': 'Some description',
         }
+
         def assert_update(update_user, ip_owner, sys_cur, sys_target,
                           error_msg=None):
             """
@@ -530,7 +532,6 @@ class TestResourceIpAddress(TestCase):
             assert_update(login, ip_owner,
                           {'owner': sys_owner, 'name': 'cpc3lp52'},
                           {'owner': sys_owner, 'name': 'cpc3lp53'})
-
 
         # start section: no role scenarios
 

@@ -274,7 +274,7 @@ class TestEcho(TestCase):
         )
         content = '\n'.join(lines)
         with self.assertRaisesRegex(
-            SyntaxError, 'VERBOSITY statement must come in first line'):
+                SyntaxError, 'VERBOSITY statement must come in first line'):
             machine.EchoMachine.parse(content)
 
         # VERBOSITY with wrong value
@@ -284,7 +284,7 @@ class TestEcho(TestCase):
         )
         content = '\n'.join(lines)
         with self.assertRaisesRegex(
-            ValueError, "Verbosity 'WRONGVALUE' is invalid"):
+                ValueError, "Verbosity 'WRONGVALUE' is invalid"):
             machine.EchoMachine.parse(content)
     # test_parse_errors()
 

@@ -31,6 +31,8 @@ from unittest import TestCase
 #
 # CODE
 #
+
+
 class TestSmAutoyast(TestCase):
     """
     Class for unit testing the SmAnaconda class.
@@ -146,21 +148,21 @@ class TestSmAutoyast(TestCase):
         """
         mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
         ssh_cmds = [
-            (0, ""), # first time to kill the start_shell
-            (1, ""), # check if log file exists
-            (0, ""), # log file now exists
-            (0, "some_content\nsome_content"), # read log file, some content
+            (0, ""),  # first time to kill the start_shell
+            (1, ""),  # check if log file exists
+            (0, ""),  # log file now exists
+            (0, "some_content\nsome_content"),  # read log file, some content
             # read log file has now empty content, triggers verification for
             # yast2 process
             (0, ""),
-            (0, ""), # yast2 still running
-            (1, ""), # failed to read log file, back to yast2 verification
-            (1, ""), # yast2 finished
-            (0, ""), # last reading of log file
-            TimeoutError(), # kill second start_shell to allow kexec
-            (0, ""), # systemctl status in check_installation
-            ConnectionError(), # connection died due to last reboot
-            (0, "1") # echo 1 from sm_base.check_installation
+            (0, ""),  # yast2 still running
+            (1, ""),  # failed to read log file, back to yast2 verification
+            (1, ""),  # yast2 finished
+            (0, ""),  # last reading of log file
+            TimeoutError(),  # kill second start_shell to allow kexec
+            (0, ""),  # systemctl status in check_installation
+            ConnectionError(),  # connection died due to last reboot
+            (0, "1")  # echo 1 from sm_base.check_installation
         ]
         mock_shell.run.side_effect = ssh_cmds
 
@@ -225,15 +227,15 @@ class TestSmAutoyast(TestCase):
 
         mock_shell = self._mock_ssh_client.return_value.open_shell.return_value
         ssh_cmds = [
-            (0, ""), # first time to kill the start_shell
-            (1, ""), # check if log file exists
-            (0, ""), # log file now exists
-            (0, "some_content\nsome_content"), # read log file, some content
+            (0, ""),  # first time to kill the start_shell
+            (1, ""),  # check if log file exists
+            (0, ""),  # log file now exists
+            (0, "some_content\nsome_content"),  # read log file, some content
             # read log file has now empty content, triggers verification for
             # yast2 process
             (0, ""),
         ]
-        ssh_cmds += [(0, "")] * 50 # yast2 still running
+        ssh_cmds += [(0, "")] * 50  # yast2 still running
         mock_shell.run.side_effect = ssh_cmds
 
         machine = self._instantiate_machine()
@@ -262,7 +264,8 @@ class TestSmAutoyast(TestCase):
 
         machine = self._instantiate_machine()
         with self.assertRaisesRegex(
-            TimeoutError, "Timed out while waiting for installation logfile"):
+                TimeoutError,
+                "Timed out while waiting for installation logfile"):
             machine.start()
     # test_installation_timeout_log_file()
 

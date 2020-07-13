@@ -36,8 +36,11 @@ import yaml
 #
 # CODE
 #
-class EnvConfig(object):
+
+
+class EnvConfig:
     """Simple helper class to set config content in a temp file"""
+
     def __init__(self):
         self._orig_var = None
         self._temp_tessia_cfg = None
@@ -101,6 +104,7 @@ class EnvConfig(object):
         config.CONF._config_dict = None
     # update()
 # EnvConfig
+
 
 class TestConfig(TestCase):
     """
@@ -168,6 +172,7 @@ log:
         # make sure variable was not inherited from calling environment or
         # previous test
         orig_cfg_var = config.os.environ.get('TESSIA_CFG')
+
         def restore_var():
             """Helper to restore original variable value"""
             if orig_cfg_var is None:
@@ -213,7 +218,7 @@ log:
 
         # perform the action and validate result
         with self.assertRaisesRegex(
-            ValueError, 'Invalid configuration file content'):
+                ValueError, 'Invalid configuration file content'):
             config.CONF.get_config()
 
         # set the mock to return a list
@@ -221,7 +226,7 @@ log:
 
         # perform the action and validate result
         with self.assertRaisesRegex(
-            ValueError, 'Invalid configuration file content'):
+                ValueError, 'Invalid configuration file content'):
             config.CONF.get_config()
 
     # test_bad_content()
@@ -241,7 +246,7 @@ log:
 
         # perform the action
         with self.assertRaisesRegex(
-            ValueError, 'Missing or corrupt log configuration section'):
+                ValueError, 'Missing or corrupt log configuration section'):
             config.CONF.log_config()
 
         # log key present but in wrong format (a list)
@@ -249,7 +254,7 @@ log:
 
         # perform the action
         with self.assertRaisesRegex(
-            ValueError, 'Invalid format for log configuration section'):
+                ValueError, 'Invalid format for log configuration section'):
             config.CONF.log_config()
 
         # log key present but 'handlers' key missing
@@ -257,7 +262,7 @@ log:
 
         # perform the action
         with self.assertRaisesRegex(
-            ValueError, "Missing log configuration section 'handlers'"):
+                ValueError, "Missing log configuration section 'handlers'"):
             config.CONF.log_config()
     # test_bad_log_content()
 
@@ -301,6 +306,7 @@ log:
             AssertionError: if any of the assertion calls fails
         """
         dummy_path = '/dummy/path.yaml'
+
         def env_get(key, default=None):
             """Stub for dict.get"""
             if key == 'TESSIA_CFG':
@@ -455,6 +461,7 @@ log:
         """
         self._set_open_mock('good')
         dummy_path = '/dummy/path.yaml'
+
         def env_get(key, default=None):
             """Stub for dict.get"""
             if key == 'TESSIA_CFG':

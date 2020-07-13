@@ -42,6 +42,7 @@ SVOL_HEADERS = (
 # CODE
 #
 
+
 class TestResourceStorageVolume(TestCase):
     """
     Unit test for the resource_svol module of the bulkop state machine.
@@ -198,8 +199,7 @@ class TestResourceStorageVolume(TestCase):
         # fetch volume's original values for later comparison
         svol_obj = self._get_svol(
             server=ref_entry['server'], volume_id=ref_entry['volume_id'])
-        svol_orig = dict(
-            [(field, getattr(svol_obj, field)) for field in SVOL_HEADERS])
+        svol_orig = {field: getattr(svol_obj, field) for field in SVOL_HEADERS}
         svol_orig['specs'] = svol_obj.specs
 
         return svol_orig
@@ -477,7 +477,7 @@ class TestResourceStorageVolume(TestCase):
             # other users should fail
             else:
                 with self.assertRaisesRegex(
-                    PermissionError, 'User has no UPDATE permission'):
+                        PermissionError, 'User has no UPDATE permission'):
                     res_obj.render_item(ref_entry)
                 self.db.session.rollback()
 
@@ -628,7 +628,6 @@ class TestResourceStorageVolume(TestCase):
             assert_update(login, disk_owner,
                           {'owner': sys_owner, 'name': 'cpc3lp52'},
                           {'owner': sys_owner, 'name': 'cpc3lp53'})
-
 
         # start section: no role scenarios
 

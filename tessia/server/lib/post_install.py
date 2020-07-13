@@ -48,11 +48,14 @@ UNIT_TABLE = {
 #
 # CODE
 #
+
+
 class Misconfiguration(RuntimeError):
     """
     Error caused when the value of parameter received from the remote instance
     does not match the expected one.
     """
+
     def __init__(self, name_param, exp_value, actual_value):
         """
         name_param (str): name of parameter which caused the error
@@ -82,10 +85,12 @@ class Misconfiguration(RuntimeError):
     # __str__()
 # Misconfiguration
 
+
 class PostInstallChecker:
     """
     Implementation of the post install checker
     """
+
     def __init__(self, profile_obj, os_obj=None, permissive=False):
         """
         Constructor.
@@ -515,6 +520,8 @@ class PostInstallChecker:
         except ValueError:
             self._report('iface {} subnet'.format(iface_name),
                          exp_addr['network'], actual_net_str)
+            return
+
         self._pass_or_report(
             'iface {} subnet'.format(iface_name),
             ipaddress.ip_network(exp_addr['network']).with_netmask,
@@ -550,6 +557,7 @@ class PostInstallChecker:
         except ValueError:
             self._report('iface {} ip'.format(iface_name),
                          exp_addr['address'], actual_entry['address'])
+            return
         self._pass_or_report('iface {} ip'.format(iface_name),
                              str(exp_ip_obj), str(actual_ip_obj))
 
@@ -562,6 +570,7 @@ class PostInstallChecker:
         except ValueError:
             self._report('iface {} ipv6 prefix'.format(iface_name),
                          exp_prefixlen, actual_entry['prefix'])
+            return
 
         self._pass_or_report('iface {} ipv6 prefix'.format(iface_name),
                              exp_prefixlen, actual_prefixlen)

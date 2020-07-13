@@ -43,7 +43,9 @@ DEFAULT_TEST_DB = 'tessia_test'
 #
 # CODE
 #
-class DbUnit(object):
+
+
+class DbUnit:
     """
     This is a helper class that can be used by other tests whenenver they need
     to create a test database instance from scratch.
@@ -156,6 +158,7 @@ class DbUnit(object):
         models.BASE.metadata.drop_all(connection.MANAGER.engine)
     # drop_db()
 # DbUnit
+
 
 class TestModels(TestCase):
     """
@@ -553,7 +556,6 @@ class TestModels(TestCase):
                     # return to original value
                     setattr(item, rel_map['attr_name'], rel_map['value'])
                     DbUnit.session.commit()
-
 
     # test_relations()
 

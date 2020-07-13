@@ -19,7 +19,7 @@ Initialization of API objects
 #
 # IMPORTS
 #
-from flask import Flask
+from flask import Flask, request
 from flask_potion import Api
 from flask_potion import exceptions as potion_exceptions
 from tessia.server.config import CONF
@@ -41,7 +41,8 @@ import logging
 # CODE
 #
 
-class _AppManager(object):
+
+class _AppManager:
     """
     Class to handle app creation and configuration
     """
@@ -121,37 +122,36 @@ class _AppManager(object):
         # to generate the response in json format
         logger = logging.getLogger(__name__)
         _orig_exception_handler = Api._exception_handler
-        def _exception_handler(self, original_handler, e):
+
+        def _exception_handler(self, original_handler, exc):
             """
             Wrapper for the original potion exception handler
             """
-            # pylint: disable=invalid-name
-            if isinstance(e, api_exceptions.BaseHttpError):
+            if isinstance(exc, api_exceptions.BaseHttpError):
                 # conflicts are logged to get useful information
-                if isinstance(e, api_exceptions.ConflictError):
+                if isinstance(exc, api_exceptions.ConflictError):
                     logger.warning(
                         'A conflict exception occurred, info:', exc_info=True)
                 # integrity errors might need to be checked so we log them
-                elif isinstance(e, api_exceptions.IntegrityError):
+                elif isinstance(exc, api_exceptions.IntegrityError):
                     logger.warning(
                         'An integrity exception occurred, info:',
                         exc_info=True)
 
-                return e.get_response()
+                return exc.get_response()
 
             # all potion exceptions are logged
-            if isinstance(e, potion_exceptions.PotionException):
+            if isinstance(exc, potion_exceptions.PotionException):
                 logger.warning('A potion exception occurred, info:',
                                exc_info=True)
 
             # potion's original handler
-            return _orig_exception_handler(self, original_handler, e)
+            return _orig_exception_handler(self, original_handler, exc)
         # _exception_handler()
         Api._exception_handler = _exception_handler
 
         # log requests in debug mode
         if app.config['DEBUG'] is True:
-            from flask import request
             def log_request_info():
                 """Helper to log headers and body from requests"""
                 app.logger.debug('Headers: %s', request.headers)
@@ -235,5 +235,6 @@ class _AppManager(object):
             resource.api = None
     # reset()
 # _AppManager
+
 
 API = _AppManager()

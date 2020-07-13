@@ -57,6 +57,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class JobRequestResource(ModelResource):
     """
     Resource for job requests
@@ -128,6 +130,10 @@ class JobRequestResource(ModelResource):
 
         Returns:
             json: json response as defined by response_schema property
+
+        Raises:
+            BaseHttpError: bad arguments
+            ItemNotFoundError: an associated item (e.g. owner) is not missing
         """
         # cancel operations must have a job id as target
         if properties['action_type'] == SchedulerRequest.ACTION_CANCEL:
@@ -200,7 +206,15 @@ class JobRequestResource(ModelResource):
                          properties['submit_date'])
                 expire += max(0, int(delta.total_seconds()))
             token = 'job_requests:{}:vars'.format(item.id)
-            MEDIATOR.set(token, extra_vars, expire=expire)
+            try:
+                MEDIATOR.set(token, extra_vars, expire=expire)
+            except Exception as exc:
+                if isinstance(extra_vars, dict):
+                    msg = 'Cannot store secret keys {}'.format(
+                        ','.join(extra_vars.keys()))
+                else:
+                    msg = 'Cannot store secrets'
+                raise api_exceptions.BaseHttpError(code=400, msg=msg)
 
         return item.id
     # create()

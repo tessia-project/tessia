@@ -40,7 +40,8 @@ NAME_PATTERN = r'^\w+[\w\s\.\-]+$'
 #
 # CODE
 #
-# pylint: disable=redefined-builtin
+
+
 class SecureResource(ModelResource):
     """
     A specialized resource with error handling and permission verification
@@ -83,7 +84,7 @@ class SecureResource(ModelResource):
 
     @Route.GET(lambda r: '/<{}:id>'.format(r.meta.id_converter),
                rel="self", attribute="instance")
-    def read(self, id):
+    def read(self, id): # pylint: disable=redefined-builtin,invalid-name
         """
         Handler for the get item operation via GET method, forwards it to the
         specialized do_read method.
@@ -122,6 +123,8 @@ class SecureResource(ModelResource):
 
         Raises:
             Forbidden: in case user has no rights
+            ConflictError: duplicate keys
+            ItemNotFoundError: associated item not found
         """
         # set the property so that the field always reflects last user to
         # modify the item
@@ -143,7 +146,7 @@ class SecureResource(ModelResource):
     create.response_schema = None
 
     @read.PATCH(rel="update")
-    def update(self, properties, id):
+    def update(self, properties, id): # pylint: disable=redefined-builtin,invalid-name
         """
         Handler for the update item operation via PATCH method, forwards it to
         the specialized do_update method while doing error handling.
@@ -159,6 +162,8 @@ class SecureResource(ModelResource):
 
         Raises:
             Forbidden: in case user has no rights
+            ConflictError: duplicate keys
+            ItemNotFoundError: associated item not found
         """
         # set the property so that the field always reflects last user to
         # modify the item
@@ -180,7 +185,7 @@ class SecureResource(ModelResource):
     update.response_schema = None
 
     @update.DELETE(rel="destroy")
-    def destroy(self, id):
+    def destroy(self, id): # pylint: disable=redefined-builtin,invalid-name
         """
         Handler for the delete item operation via DELETE method, forwards it
         to the specialized do_delete method while doing error handling.
@@ -194,6 +199,7 @@ class SecureResource(ModelResource):
 
         Raises:
             Forbidden: in case user has no rights
+            IntegrityError: likely some association could not be deleted
         """
         try:
             ret = self.do_delete(id)
@@ -246,15 +252,15 @@ class SecureResource(ModelResource):
         return item.id
     # do_create()
 
-    def do_delete(self, id): # pylint: disable=invalid-name
+    def do_delete(self, resource_id):
         """
         Verify if the user attempting to delete the instance has permission
         to do so. This function can be overriden in specialized classes that
         need additional verifications.
 
         Args:
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            resource_id (any): id of the item, usually an integer corresponding
+                               to the id field in the table's database
 
         Raises:
             Forbidden: in case user has no permission to perform action
@@ -262,11 +268,11 @@ class SecureResource(ModelResource):
         Returns:
             bool: True
         """
-        entry = self.manager.read(id)
+        entry = self.manager.read(resource_id)
 
         self._perman.can('DELETE', flask_global.auth_user, entry)
 
-        self.manager.delete_by_id(id)
+        self.manager.delete_by_id(resource_id)
         return True
     # do_delete()
 
@@ -288,15 +294,15 @@ class SecureResource(ModelResource):
 
     # do_list()
 
-    def do_read(self, id): # pylint: disable=invalid-name
+    def do_read(self, resource_id):
         """
         Verify if the user attempting to read the given resource has
         permissions to do so. This function can be overriden in specialized
         classes that need additional verifications.
 
         Args:
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            resource_id (any): id of the item, usually an integer corresponding
+                               to the id field in the table's database
 
         Raises:
             Forbidden: in case user has no permission to perform action
@@ -305,14 +311,14 @@ class SecureResource(ModelResource):
             json: json representation of item as defined by response_schema
                   property in route's decorator
         """
-        item = self.manager.read(id)
+        item = self.manager.read(resource_id)
 
         self._perman.can('READ', flask_global.auth_user, item)
 
         return item
     # do_read()
 
-    def do_update(self, properties, id): # pylint: disable=invalid-name
+    def do_update(self, properties, resource_id):
         """
         Verify if the user attempting to update the given resource has
         permissions to do so. This function can be overriden in specialized
@@ -321,8 +327,8 @@ class SecureResource(ModelResource):
         Args:
             properties (dict): field=value combination for the fields to be
                                updated
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            resource_id (any): id of the item, usually an integer corresponding
+                               to the id field in the table's database
 
         Raises:
             PermissionError: in case user has no permission to perform action
@@ -331,7 +337,7 @@ class SecureResource(ModelResource):
             int: id of updated item
 
         """
-        item = self.manager.read(id)
+        item = self.manager.read(resource_id)
 
         # validate permission on the object
         self._perman.can('UPDATE', flask_global.auth_user, item)

@@ -222,6 +222,7 @@ class TestResourcePermissions(TestCase):
         """
         user = models.User.query.filter(
             models.User.login == 'user_restricted@domain.com').one()
+        # pylint: disable=comparison-with-callable
         system = SystemPermissions.protect_query(
             models.System.query.filter(
                 models.System.owner_id == user.id

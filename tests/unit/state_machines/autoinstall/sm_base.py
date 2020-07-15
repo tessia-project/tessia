@@ -36,6 +36,8 @@ from unittest.mock import call, Mock, MagicMock, patch
 #
 # CODE
 #
+
+
 class TestSmBase(TestCase):
     """
     Class for unit testing the SmBase class.
@@ -130,6 +132,7 @@ class TestSmBase(TestCase):
         # of the install machine, assuring that each method was called.
         mock_wait_install = Mock()
         self._mock_wait_install = mock_wait_install
+
         class Child(sm_base.SmBase):
             """
             Child class created to implement all the base class methods.
@@ -289,7 +292,7 @@ class TestSmBase(TestCase):
 
         # cmdline file mock
         cmdline_content = self._mock_open(
-            ).__enter__.return_value.read.return_value
+        ).__enter__.return_value.read.return_value
 
         mach = self._child_cls(os_entry, profile_entry, template_entry)
         mach.start()
@@ -308,7 +311,7 @@ class TestSmBase(TestCase):
         autofile_name = '{}-{}'.format(system_entry.name, profile_entry.name)
 
         autofile_url = '{}/{}'.format(
-            mock_config_dict["auto_install"]["url"], autofile_name)
+            mock_config_dict.get("auto_install")["url"], autofile_name)
         self.assertEqual(mach._autofile_url, autofile_url)
 
         # verify that the cmdline and auto templates were rendered
@@ -323,7 +326,7 @@ class TestSmBase(TestCase):
         mock_template = self._mock_jinja2.Template.return_value
         autofile_content = mock_template.render.return_value
         self._mock_os.path.join.assert_called_with(
-            mock_config_dict["auto_install"]["dir"], autofile_name)
+            mock_config_dict.get("auto_install")["dir"], autofile_name)
         calls = [call(autofile_content), call(autofile_content)]
         self._mock_open().__enter__.return_value.write.assert_has_calls(
             calls)
@@ -362,8 +365,8 @@ class TestSmBase(TestCase):
         }
         # expected cmdline content
         cmdline_template = self._mock_open(
-            ).__enter__.return_value.read.return_value = (
-                'ro ramdisk_size=50000 zfcp.allow_lun_scan=1')
+        ).__enter__.return_value.read.return_value = (
+            'ro ramdisk_size=50000 zfcp.allow_lun_scan=1')
         self._mock_jinja2.Template.return_value.render.return_value = (
             cmdline_template)
         cmdline_content = 'ro ramdisk_size=50000 zfcp.allow_lun_scan=0 novnc'
@@ -533,7 +536,7 @@ class TestSmBase(TestCase):
 
         # cmdline file mock
         cmdline_content = self._mock_open(
-            ).__enter__.return_value.read.return_value
+        ).__enter__.return_value.read.return_value
 
         with self._mock_db_obj(profile_obj, 'hypervisor_profile_id', None):
             mach = self._child_cls(os_obj, profile_obj, template_obj)
@@ -565,7 +568,7 @@ class TestSmBase(TestCase):
         mock_config_dict = self._mock_config.get_config.return_value
         autofile_name = '{}-{}'.format(system_obj.name, profile_obj.name)
         self._mock_os.path.join.assert_called_with(
-            mock_config_dict["auto_install"]["dir"], autofile_name)
+            mock_config_dict.get("auto_install")["dir"], autofile_name)
         calls = [call(autofile_content), call(autofile_content)]
         self._mock_open().__enter__.return_value.write.assert_has_calls(
             calls)
@@ -840,7 +843,7 @@ class TestSmBase(TestCase):
                     self._child_cls, "rhel7.2", "CPC3LP55/default_CPC3LP55",
                     "rhel7-default")
                 with self.assertRaisesRegex(
-                    ValueError, "multiple root disks defined"):
+                        ValueError, "multiple root disks defined"):
                     mach.start()
     # test_multi_root()
 

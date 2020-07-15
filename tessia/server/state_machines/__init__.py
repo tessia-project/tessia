@@ -29,7 +29,9 @@ import os
 #
 # CODE
 #
-class _MachineManager(object):
+
+
+class _MachineManager:
     _singleton = False
 
     def __init__(self):
@@ -131,5 +133,6 @@ class _MachineManager(object):
         self._load_names()
         return self._names
 # _MachineManager
+
 
 MACHINES = _MachineManager()

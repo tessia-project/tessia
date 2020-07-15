@@ -33,7 +33,8 @@ import redis
 # CODE
 #
 
-class _Mediator(object):
+
+class _Mediator:
     """
     Mediator class for key-value data exchange backed by a redis server
     """
@@ -66,10 +67,9 @@ class _Mediator(object):
 
         if not self._conn:
             if not self._mediator_uri:
-                config_dict = CONF.get_config()
                 try:
-                    redis_url = config_dict['mediator']['url']
-                except KeyError:
+                    redis_url = CONF.get_config().get('mediator')['url']
+                except (TypeError, KeyError):
                     raise RuntimeError('No mediator configuration found')
             else:
                 redis_url = self._mediator_uri
@@ -94,11 +94,11 @@ class _Mediator(object):
         """
         if isinstance(binary, bytes):
             return binary.decode("utf-8")
-        elif isinstance(binary, list):
+        if isinstance(binary, list):
             return [self._decode(item) for item in binary]
-        elif isinstance(binary, dict):
-            return dict([(self._decode(key), self._decode(value)) for
-                         key, value in binary.items()])
+        if isinstance(binary, dict):
+            return {self._decode(key): self._decode(value) for
+                    key, value in binary.items()}
 
         return binary
     # _decode()
@@ -128,11 +128,11 @@ class _Mediator(object):
         value_type = self._conn.type(key).decode('utf-8')
         if value_type == 'string':
             return self._decode(self._conn.get(key))
-        elif value_type == 'hash':
+        if value_type == 'hash':
             return self._decode(self._conn.hgetall(key))
-        elif value_type == 'list':
+        if value_type == 'list':
             return self._decode(self._conn.lrange(key, 0, -1))
-        elif value_type == 'none':
+        if value_type == 'none':
             return None
 
         raise ValueError("Key " + repr(key) + " has unsupported value type " +
@@ -167,5 +167,6 @@ class _Mediator(object):
     # set()
 
 # _Mediator()
+
 
 MEDIATOR = _Mediator()

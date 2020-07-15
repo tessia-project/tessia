@@ -35,10 +35,12 @@ import jsonschema
 # CODE
 #
 
+
 class TestLdapLoginManager(TestCase):
     """
     Unit test for the package constructor.
     """
+
     def setUp(self):
         """
         Prepare the mocks for dependencies used by the module.
@@ -398,13 +400,13 @@ class TestLdapLoginManager(TestCase):
         # configuration has no auth section
         self.mock_config.get_config.return_value = {}
         with self.assertRaisesRegex(
-            RuntimeError, 'No ldap configuration section found'):
+                RuntimeError, 'No ldap configuration section found'):
             ldap.MANAGER()
 
         # configuration has auth section but no ldap sub-section
         self.mock_config.get_config.return_value = {'auth': None}
         with self.assertRaisesRegex(
-            RuntimeError, 'No ldap configuration section found'):
+                RuntimeError, 'No ldap configuration section found'):
             ldap.MANAGER()
 
         # configuration has ldap section but invalid parameters
@@ -514,7 +516,8 @@ class TestLdapLoginManager(TestCase):
 
         # validate response
         with self.assertRaisesRegex(
-            RuntimeError, 'User attribute title not found in server response'):
+                RuntimeError,
+                'User attribute title not found in server response'):
             ldap_manager.authenticate('baruser', 'barpwd')
     # test_search_missing_attribute()
 

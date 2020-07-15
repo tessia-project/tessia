@@ -814,7 +814,7 @@ class TestPowerManagerMachine(TestCase):
         override_cpu = prof_obj.cpu + 2
         override_memory = prof_obj.memory + 1500
         # have the mock validate if the overrides are in the profile object
-        def mock_validate(check_prof_obj, *args, **kwargs):
+        def mock_validate(check_prof_obj, *_args, **_kwargs):
             """validator for override values"""
             self.assertEqual(check_prof_obj.cpu, override_cpu)
             self.assertEqual(check_prof_obj.memory, override_memory)

@@ -51,6 +51,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class SystemIfaceResource(SecureResource):
     """
     Resource for system network interfaces
@@ -154,6 +156,10 @@ class SystemIfaceResource(SecureResource):
         if iface_obj:
             iface_type = iface_obj.type
             iface_attr = iface_obj.attributes
+        else:
+            iface_type = ''
+            iface_attr = ''
+
         # values from request
         if 'type' in properties:
             iface_type = properties['type']
@@ -331,13 +337,13 @@ class SystemIfaceResource(SecureResource):
         return item.id
     # do_create()
 
-    def do_delete(self, id): # pylint: disable=invalid-name,redefined-builtin
+    def do_delete(self, system_iface_id):
         """
         Verify if the user attempting to delete the instance has permission
         on the corresponding system to do so.
 
         Args:
-            id (any): id of the item in the table's database
+            system_iface_id (any): system network interface id
 
         Raises:
             Forbidden: in case user has no permission to perform action
@@ -345,24 +351,23 @@ class SystemIfaceResource(SecureResource):
         Returns:
             bool: True
         """
-        entry = self.manager.read(id)
+        entry = self.manager.read(system_iface_id)
 
         # validate user permission on object
         self._perman.can(
             'UPDATE', flask_global.auth_user, entry.system_rel, 'system')
 
-        self.manager.delete_by_id(id)
+        self.manager.delete_by_id(system_iface_id)
         return True
     # do_delete()
 
-    def do_read(self, id):
+    def do_read(self, system_iface_id):
         """
         Custom implementation of iface reading. Use permissions from the
         associated system to validate access.
 
         Args:
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            system_iface_id (any): system network interface id
 
         Raises:
             Forbidden: in case user has no rights to read iface
@@ -370,9 +375,8 @@ class SystemIfaceResource(SecureResource):
         Returns:
             json: json representation of item
         """
-        # pylint: disable=redefined-builtin
 
-        item = self.manager.read(id)
+        item = self.manager.read(system_iface_id)
 
         # validate permission on the object - use the associated system
         self._perman.can('READ', flask_global.auth_user, item.system_rel,
@@ -381,7 +385,7 @@ class SystemIfaceResource(SecureResource):
         return item
     # do_read()
 
-    def do_update(self, properties, id):
+    def do_update(self, properties, system_iface_id):
         """
         Custom implementation of update. Perform some sanity checks and
         and verify permissions on the corresponding system.
@@ -389,7 +393,7 @@ class SystemIfaceResource(SecureResource):
         Args:
             properties (dict): field=value combination for the item to be
                                created
-            id (any): id of the profile item to be updated
+            system_iface_id (any): system network interface id
 
         Raises:
             ItemNotFoundError: in case hypervisor profile is specified but not
@@ -399,9 +403,8 @@ class SystemIfaceResource(SecureResource):
         Returns:
             int: id of created item
         """
-        # pylint: disable=invalid-name,redefined-builtin
 
-        item = self.manager.read(id)
+        item = self.manager.read(system_iface_id)
 
         # validate permission on the object - use the associated system
         self._perman.can(
@@ -412,7 +415,7 @@ class SystemIfaceResource(SecureResource):
         if 'system' in properties and properties['system'] != item.system:
             raise BaseHttpError(
                 422, msg='Interfaces cannot change their associated system')
-        elif 'type' in properties and properties['type'] != item.type:
+        if 'type' in properties and properties['type'] != item.type:
             raise BaseHttpError(422, msg='Interfaces cannot change their type')
 
         self._assert_attributes(properties, item)

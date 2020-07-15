@@ -35,6 +35,8 @@ from urllib.parse import urlsplit
 #
 # CODE
 #
+
+
 class TestPlatLpar(TestCase):
     """
     Class for unit testing the PlatLpar class.
@@ -254,8 +256,8 @@ class TestPlatLpar(TestCase):
         self._mock_config.get_config.return_value = {}
 
         with self.assertRaisesRegex(
-            ValueError,
-            'Live-image password missing in config file'):
+                ValueError,
+                'Live-image password missing in config file'):
             self._create_plat_lpar()
     # test_boot_liveimg_no_pwd()
 
@@ -286,6 +288,7 @@ class TestPlatLpar(TestCase):
         """
         # Save the type name for restore after the test.
         bk_type_name = self._profile_entry.storage_volumes_rel[0].type_rel.name
+
         def restore_type_name():
             """
             Inner function to restore the type name of the volume

@@ -33,6 +33,8 @@ import time
 #
 # CODE
 #
+
+
 class TestUserKey(TestSecureResource):
     """
     Validates the UserKey resource
@@ -273,9 +275,7 @@ class TestUserKey(TestSecureResource):
 
         # compare dates
         created_datetime = entry['created']['$date'] / 1000.0
-        self.assertTrue(
-            (created_datetime > time_range[0] and
-             created_datetime < time_range[1]))
+        self.assertTrue(time_range[0] < created_datetime < time_range[1])
 
         last_used_datetime = entry['last_used']['$date'] / 1000.0
         self.assertTrue(last_used_datetime > time_stamp)

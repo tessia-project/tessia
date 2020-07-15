@@ -35,6 +35,8 @@ import subprocess
 #
 # CODE
 #
+
+
 class TestPostInstallChecker(TestCase):
     """
     Unit testing for the PostInstallChecker class.
@@ -356,7 +358,7 @@ crashkernel=196M root=UUID=f0057090-da7c-470f-bc34-93c29aebafe1
  
 ext4 /
 """
-        ) # pylint: enable=trailing-whitespace
+        )  # pylint: enable=trailing-whitespace
 
         parted_2 = (
             """cpc3lp52.domain.com | SUCCESS => {
@@ -392,7 +394,7 @@ ext4 /
  
 swap [SWAP]
 """
-        ) # pylint: enable=trailing-whitespace
+        )  # pylint: enable=trailing-whitespace
 
         lszfcp = subprocess.CalledProcessError(returncode=1, cmd='lszfcp -D')
         lszfcp_output = (
@@ -489,7 +491,7 @@ BOOT_IMAGE=0 LANG=en_US.UTF-8 cio_ignore=all,!condev crashkernel=auto """\
 """
         )
         with self.assertRaisesRegex(
-            ConnectionError, 'Connection failed, output: '):
+                ConnectionError, 'Connection failed, output: '):
             checker.verify()
 
         # simulate an unknown output (should not happen in reality)
@@ -499,7 +501,7 @@ BOOT_IMAGE=0 LANG=en_US.UTF-8 cio_ignore=all,!condev crashkernel=auto """\
 """
         )
         with self.assertRaisesRegex(
-            SystemError, 'Unknown error, output: '):
+                SystemError, 'Unknown error, output: '):
             checker.verify()
 
         # simulate a module error output
@@ -509,7 +511,7 @@ BOOT_IMAGE=0 LANG=en_US.UTF-8 cio_ignore=all,!condev crashkernel=auto """\
 """
         )
         with self.assertRaisesRegex(
-            RuntimeError, 'Command failed, output: '):
+                RuntimeError, 'Command failed, output: '):
             checker.verify()
 
         # simulate a success output in an unknown format (should not happen in
@@ -520,7 +522,7 @@ some_output
 """
         ]
         with self.assertRaisesRegex(
-            SystemError, 'Could not parse command output: '):
+                SystemError, 'Could not parse command output: '):
             checker.verify()
 
         # prepare valid output and turn them invalid
@@ -533,7 +535,7 @@ some_output
             'ansible_facts', 'ansible_wrong_facts')
         self._mock_check_output.side_effect = test_outputs
         with self.assertRaisesRegex(
-            SystemError, 'Could not parse output from ansible facts: '):
+                SystemError, 'Could not parse output from ansible facts: '):
             checker.verify()
 
         # simulate invalid lsmem output
@@ -543,7 +545,7 @@ some_output
             'Total online memory:       unknown')
         self._mock_check_output.side_effect = test_outputs
         with self.assertRaisesRegex(
-            RuntimeError, 'Failed to parse lsmem output'):
+                RuntimeError, 'Failed to parse lsmem output'):
             checker.verify()
 
         # simulate invalid parted content
@@ -551,7 +553,7 @@ some_output
         test_outputs[1] += '}'
         self._mock_check_output.side_effect = test_outputs
         with self.assertRaisesRegex(
-            SystemError, 'Could not parse parted output of disk'):
+                SystemError, 'Could not parse parted output of disk'):
             checker.verify()
 
     # test_facts_fail()
@@ -625,7 +627,7 @@ some_output
             error_msg = self._mismatch_msg.format('cpu quantity', 198, 20)
             checker = post_install.PostInstallChecker(fcp_prof_entry)
             with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
+                    post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['cpu'])
 
         # permissive - only logging occurs
@@ -650,7 +652,7 @@ some_output
                 'minimum MiB memory', 5872, 4096)
             checker = post_install.PostInstallChecker(fcp_prof_entry)
             with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
+                    post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['memory'])
 
             # permissive - only logging occurs
@@ -670,7 +672,7 @@ some_output
                 'maximum MiB memory', 3128, 4096)
             checker = post_install.PostInstallChecker(fcp_prof_entry)
             with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
+                    post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['memory'])
 
             # permissive - only logging occurs
@@ -701,7 +703,7 @@ some_output
             'minimum MiB memory', 3968, -1)
         # test and validate
         with self.assertRaisesRegex(
-            post_install.Misconfiguration, error_msg):
+                post_install.Misconfiguration, error_msg):
             checker.verify()
         # now test permissive - only logging occurs
         self._set_mocks_lpar_fcp(fcp_prof_entry)
@@ -739,7 +741,7 @@ ID=xxxxx
             wrong_os)
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
-            post_install.Misconfiguration, error_msg):
+                post_install.Misconfiguration, error_msg):
             checker.verify(areas=['os'])
 
         # permissive - only logging occurs
@@ -770,7 +772,7 @@ ID=xxxxx
             'gateway', '192.168.160.1', '<not found>')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
-            post_install.Misconfiguration, error_msg):
+                post_install.Misconfiguration, error_msg):
             checker.verify(areas=['network'])
 
         # permissive - only logging occurs
@@ -801,7 +803,7 @@ ID=xxxxx
             'gateway', '192.168.160.1', '192.152.160.1')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
-            post_install.Misconfiguration, error_msg):
+                post_install.Misconfiguration, error_msg):
             checker.verify(areas=['network'])
 
         # permissive - only logging occurs
@@ -830,7 +832,7 @@ ID=xxxxx
                 'iface enccw0.0.f nameservers', '8.8.8.8', '<not found>')
             checker = post_install.PostInstallChecker(fcp_prof_entry)
             with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
+                    post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['network'])
 
             # permissive - only logging occurs
@@ -851,7 +853,7 @@ ID=xxxxx
             '<not found>')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
-            post_install.Misconfiguration, error_msg):
+                post_install.Misconfiguration, error_msg):
             checker.verify(areas=['network'])
 
         # permissive - only logging occurs
@@ -876,7 +878,7 @@ ID=xxxxx
             '<not found>')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
-            post_install.Misconfiguration, error_msg):
+                post_install.Misconfiguration, error_msg):
             checker.verify(areas=['network'])
 
         # permissive - only logging occurs
@@ -906,7 +908,7 @@ ID=xxxxx
             'fcp paths', 'fcp paths for LUN 1022400000000000', '<not found>')
         checker = post_install.PostInstallChecker(fcp_prof_entry)
         with self.assertRaisesRegex(
-            post_install.Misconfiguration, error_msg):
+                post_install.Misconfiguration, error_msg):
             checker.verify(areas=['storage'])
 
         # permissive - only logging occurs
@@ -954,7 +956,7 @@ ID=xxxxx
                 'min MiB size disk {}'.format(dasd_devpath), '14800', '7043')
             checker = post_install.PostInstallChecker(dasd_prof_entry)
             with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
+                    post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['storage'])
 
             # permissive - only logging occurs
@@ -977,7 +979,7 @@ ID=xxxxx
                 '49900', '7000')
             checker = post_install.PostInstallChecker(dasd_prof_entry)
             with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
+                    post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['storage'])
 
             # permissive - only logging occurs
@@ -1032,7 +1034,7 @@ Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
                 '3.10.0-327.el7.s390x')
             checker = post_install.PostInstallChecker(dasd_prof_entry)
             with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
+                    post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['kernel'])
 
             # permissive - only logging occurs
@@ -1057,7 +1059,7 @@ Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
                 actual_content)
             checker = post_install.PostInstallChecker(dasd_prof_entry)
             with self.assertRaisesRegex(
-                post_install.Misconfiguration, error_msg):
+                    post_install.Misconfiguration, error_msg):
                 checker.verify(areas=['kernel'])
 
             # permissive - only logging occurs
@@ -1080,16 +1082,16 @@ Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
         # simulate credentials missing
         with self._mock_db_obj(profile_entry, 'credentials', None):
             with self.assertRaisesRegex(
-                ValueError, 'Credentials in profile are missing'):
+                    ValueError, 'Credentials in profile are missing'):
                 post_install.PostInstallChecker(profile_entry)
 
         # simulate specs missing for FCP volume
         svol = profile_entry.storage_volumes_rel[0]
         with self._mock_db_obj(svol, 'specs', None):
             with self.assertRaisesRegex(
-                ValueError,
-                'FCP parameters of volume {} not set: '.format(
-                    svol.volume_id)):
+                    ValueError,
+                    'FCP parameters of volume {} not set: '.format(
+                        svol.volume_id)):
                 post_install.PostInstallChecker(profile_entry)
     # test_missing_profile_params()
 

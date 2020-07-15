@@ -33,6 +33,8 @@ import logging
 #
 # CODE
 #
+
+
 class SmDebianInstaller(SmBase):
     """
     State machine for DebianInstaller installer
@@ -82,7 +84,7 @@ class SmDebianInstaller(SmBase):
             bool: True if the termination string can be found in the log file
                   , False otherwise.
         """
-        cmd_read_line = "tail -n +{} " + logfile_path  + " | head -n 100"
+        cmd_read_line = "tail -n +{} " + logfile_path + " | head -n 100"
         termination_string = (
             "Running /usr/lib/finish-install.d/20final-message")
 

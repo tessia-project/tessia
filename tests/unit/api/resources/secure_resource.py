@@ -54,6 +54,8 @@ DEFAULT_CONFIG = {
 #
 # CODE
 #
+
+
 class TestSecureResource(TestCase):
     """
     Given the fact that SecureResource has no model associated but serves as a
@@ -153,8 +155,7 @@ class TestSecureResource(TestCase):
                 modified_field = entry['modified']
                 mod_datetime = modified_field['$date'] / 1000.0
                 self.assertTrue(
-                    (mod_datetime > time_range[0] and
-                     mod_datetime < time_range[1]),
+                    time_range[0] < mod_datetime < time_range[1],
                     'start_range: {} mod_datetime: {} end_range: {}'.format(
                         time_range[0], mod_datetime, time_range[1]))
 
@@ -261,6 +262,9 @@ class TestSecureResource(TestCase):
             updated_params = params.copy()
             updated_params.pop('id')
             data = json.dumps(updated_params)
+        else:
+            url = '/invalid'
+            data = None
 
         resp = req_method(
             url,

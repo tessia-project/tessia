@@ -36,6 +36,7 @@ OLDEST_COMPAT_API_VERSION = 20190204
 # CODE
 #
 
+
 def check_version():
     """
     Helper function to verify if the client expected api version is compatible
@@ -51,17 +52,19 @@ def check_version():
         str: json error response in case versions are not compatible
     """
     expect_values = parse_dict_header(flask_request.headers.get('Expect', ''))
+    compat_version = expect_values.get('tessia-api-compat-version', None)
+    # no option in header was specified: nothing to verify
+    if compat_version is None:
+        return None
+
     try:
-        expect_version = int(expect_values['tessia-api-compat-version'])
+        expect_version = int(compat_version)
     # option was specified in an invalid format: report bad request
     except (TypeError, ValueError):
         msg = ("The value for option tessia-api-compat-version in request's"
                "Expect: header is not a valid integer")
         error = BaseHttpError(400, {'message': msg, 'status': 400})
         return error.get_response()
-    # no option in header was specified: nothing to verify
-    except KeyError:
-        pass
     # option was sucessfully retrieved and parsed
     else:
         # expected client's version is not backwards compatible with our
@@ -74,6 +77,7 @@ def check_version():
 
     return None
 # check_version()
+
 
 def report_version(response):
     """

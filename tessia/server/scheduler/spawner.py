@@ -19,6 +19,7 @@ Spawner used to start the workers (jobs' processes)
 #
 # IMPORTS
 #
+from tessia.server.scheduler import wrapper
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -27,6 +28,8 @@ Spawner used to start the workers (jobs' processes)
 #
 # CODE
 #
+
+
 def spawn(job_dir, job_type, job_parameters, timeout):
     """
     Creates the wrapped state machine instance and starts it.
@@ -37,7 +40,6 @@ def spawn(job_dir, job_type, job_parameters, timeout):
         job_parameters (str): parameters to pass to the state machine
         timeout (int): job timeout in seconds
     """
-    from tessia.server.scheduler import wrapper
 
     wrapped_machine = wrapper.MachineWrapper(
         job_dir, job_type, job_parameters, timeout)

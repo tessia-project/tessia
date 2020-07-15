@@ -52,6 +52,8 @@ FIELDS_CSV = (
 #
 # CODE
 #
+
+
 class IpAddressResource(SecureResource):
     """
     Resource for ip addresses
@@ -247,14 +249,13 @@ class IpAddressResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
-    def do_read(self, id):
+    def do_read(self, ipaddr_id):
         """
         Custom implementation of item reading. Use permissions from the
         associated system to validate access if necessary.
 
         Args:
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            ipaddr_id (any): id of the ip address
 
         Raises:
             PermissionError: if user has no permission to the item
@@ -262,8 +263,7 @@ class IpAddressResource(SecureResource):
         Returns:
             json: json representation of item
         """
-        # pylint: disable=redefined-builtin
-        item = self.manager.read(id)
+        item = self.manager.read(ipaddr_id)
         if not flask_global.auth_user.restricted:
             return item
 
@@ -281,8 +281,7 @@ class IpAddressResource(SecureResource):
         return item
     # do_read()
 
-    def do_update(self, properties, id):
-        # pylint: disable=invalid-name,redefined-builtin
+    def do_update(self, properties, ipaddr_id):
         """
         Overriden method to perform sanity check on the address provided.
         See parent class for complete docstring.
@@ -291,7 +290,7 @@ class IpAddressResource(SecureResource):
             raise BaseHttpError(
                 422, msg='IP addresses cannot change their subnet')
 
-        ip_obj = self.manager.read(id)
+        ip_obj = self.manager.read(ipaddr_id)
 
         # address changed: verify if it's valid and fits subnet's range
         if 'address' in properties:
@@ -304,10 +303,10 @@ class IpAddressResource(SecureResource):
             self._assert_system(ip_obj, properties['system'])
 
             # remove existing system iface association
-            ifaces = SystemIface.query.filter_by(ip_address_id=id).all()
+            ifaces = SystemIface.query.filter_by(ip_address_id=ipaddr_id).all()
             for iface_obj in ifaces:
                 iface_obj.ip_address = None
 
-        return super().do_update(properties, id)
+        return super().do_update(properties, ipaddr_id)
     # do_update()
 # IpAddressResource

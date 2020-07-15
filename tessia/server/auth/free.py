@@ -28,11 +28,14 @@ from tessia.server.auth.base import BaseLoginManager
 #
 # CODE
 #
+
+
 class FreeLoginManager(BaseLoginManager):
     """
     A simple login manager which allows any attempt to succeed. To be used for
     development/testing purposes.
     """
+
     def authenticate(self, username, password):
         """
         Always accept authentication and return a valid entry dynamically
@@ -59,5 +62,6 @@ class FreeLoginManager(BaseLoginManager):
     # authenticate()
 
 # FreeLoginManager()
+
 
 MANAGER = FreeLoginManager

@@ -35,6 +35,8 @@ import re
 #
 # CODE
 #
+
+
 class ApiManager(SQLAlchemyManager):
     """
     Extend potion's manager with some features needed by the api
@@ -121,9 +123,8 @@ class ApiManager(SQLAlchemyManager):
                 # column points to another table: add the join condition to the
                 # query.
                 if (hasattr(col, 'property') and
-                        (col.property.expression.table.name !=
-                         self.model.__tablename__)
-                   ):
+                        col.property.expression.table.name !=
+                        self.model.__tablename__):
                     # name of the attribute in the resource, corresponds to the
                     # name of the column
                     attr_name = condition.filter.attribute
@@ -171,9 +172,8 @@ class ApiManager(SQLAlchemyManager):
             for _, attribute, _ in sort:
                 column = getattr(self.model, attribute)
                 if (hasattr(column, 'property') and
-                        (column.property.expression.table.name !=
-                         self.model.__tablename__)
-                   ):
+                        column.property.expression.table.name !=
+                        self.model.__tablename__):
                     query = query.join(attribute + '_rel')
                 # special case parent/child for systems
                 elif (self.model.__tablename__ == 'systems' and
@@ -194,14 +194,14 @@ class ApiManager(SQLAlchemyManager):
         return query
     # instances()
 
-    def create(self, *args, **kwargs):
+    def create(self, properties, commit=True):
         """
         Fix the create method which is not catching sa's exception for error in
         data format.
 
         Args:
-            args (list): packed args for original create
-            kwargs (dict): packed keyword args for original create
+            properties (dict): properties for the created item
+            commit (bool): commit session
 
         Returns:
             any: whatever parent's create returns
@@ -209,9 +209,11 @@ class ApiManager(SQLAlchemyManager):
         Raises:
             ApiManager.DataError: in case a data error occurs (i.e. mac address
                                   in wrong format)
+            BackendConflict: database could not perform an operation due to
+                             data conflicts
         """
         try:
-            return super().create(*args, **kwargs)
+            return super().create(properties, commit=commit)
         except sa_exceptions.DataError as sa_exc:
             session = self._get_session()
             session.rollback()
@@ -222,14 +224,14 @@ class ApiManager(SQLAlchemyManager):
             raise potion_exceptions.BackendConflict()
     # create()
 
-    def delete(self, *args, **kwargs):
+    def delete(self, item, commit=True):
         """
         Fix the delete method which is not cleaning up the session after a
         failed operation
 
         Args:
-            args (list): packed args for original delete
-            kwargs (dict): packed keyword args for original delete
+            item (dict): item to delete
+            commit (bool): commit session
 
         Returns:
             any: whatever parent's delete returns (as of today, None)
@@ -239,21 +241,22 @@ class ApiManager(SQLAlchemyManager):
                              depending on item to delete)
         """
         try:
-            return super().delete(*args, **kwargs)
+            return super().delete(item, commit=commit)
         except sa_exceptions.IntegrityError:
             session = self._get_session()
             session.rollback()
             raise potion_exceptions.BackendConflict()
     # delete()
 
-    def update(self, *args, **kwargs):
+    def update(self, item, changes, commit=True):
         """
         Fix the update method which is not catching sa's exception for error in
         data format.
 
         Args:
-            args (list): packed args for original update
-            kwargs (dict): packed keyword args for original update
+            item (dict): item to update
+            changes (dict): changes to apply
+            commit (bool): commit session
 
         Returns:
             any: whatever parent's update returns
@@ -261,9 +264,11 @@ class ApiManager(SQLAlchemyManager):
         Raises:
             ApiManager.DataError: in case a data error occurs (i.e. mac address
                                   in wrong format)
+            BackendConflict: database could not perform an operation due to
+                             data conflicts
         """
         try:
-            return super().update(*args, **kwargs)
+            return super().update(item, changes, commit=commit)
         except sa_exceptions.DataError as sa_exc:
             session = self._get_session()
             session.rollback()

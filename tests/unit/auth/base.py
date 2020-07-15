@@ -33,10 +33,12 @@ from unittest.mock import patch
 # CODE
 #
 
+
 class TestAuthPackageAndBase(TestCase):
     """
     Unit test for the package constructor.
     """
+
     def setUp(self):
         """
         Executed before the start of each test method. Creates a fake module to
@@ -91,13 +93,13 @@ class TestAuthPackageAndBase(TestCase):
         # configuration has no auth section
         self.mock_config.get_config.return_value = {}
         with self.assertRaisesRegex(
-            RuntimeError, "Missing config option 'auth.login_method'"):
+                RuntimeError, "Missing config option 'auth.login_method'"):
             auth.get_manager()
 
         # configuration has auth section but no login_method option
         self.mock_config.get_config.return_value = {'auth': None}
         with self.assertRaisesRegex(
-            RuntimeError, "Missing config option 'auth.login_method'"):
+                RuntimeError, "Missing config option 'auth.login_method'"):
             auth.get_manager()
 
         # configuration has auth section but invalid login_method option
@@ -105,7 +107,7 @@ class TestAuthPackageAndBase(TestCase):
             'auth': {'login_method': 'foo'}
         }
         with self.assertRaisesRegex(
-            RuntimeError, "Login method 'foo' not supported"):
+                RuntimeError, "Login method 'foo' not supported"):
             auth.get_manager()
     # test_import_invalid_config()
 
@@ -137,6 +139,7 @@ class TestAuthPackageAndBase(TestCase):
         # able to instantiate it
         class Child(BaseLoginManager):
             """Concrete class"""
+
             def authenticate(self, *args, **kwargs):
                 super().authenticate(*args, **kwargs)
 

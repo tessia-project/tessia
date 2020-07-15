@@ -35,6 +35,8 @@ import logging
 #
 # CODE
 #
+
+
 class PlatLpar(PlatBase):
     """
     Handling for HMC's LPARs
@@ -61,10 +63,10 @@ class PlatLpar(PlatBase):
                     ' mode) nor an insfile URL (DPM only) registered to '
                     'serve the live-image required for installation'
                     .format(self._hyp_prof.system_rel.name)) from None
-        config = Config.get_config()
         try:
-            self._live_passwd = config['auto_install']['live_img_passwd']
-        except KeyError:
+            self._live_passwd = Config.get_config().get(
+                'auto_install')['live_img_passwd']
+        except (TypeError, KeyError):
             raise ValueError(
                 'Live-image password missing in config file') from None
     # __init__()
@@ -189,7 +191,7 @@ class PlatLpar(PlatBase):
                 vol_id = '0.0.' + vol_id
             return '/dev/disk/by-path/ccw-{}'.format(vol_id)
 
-        elif vol_obj.type == 'FCP':
+        if vol_obj.type == 'FCP':
             if vol_obj.specs['multipath']:
                 prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
             else:

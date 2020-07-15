@@ -27,11 +27,14 @@ Module containing the exceptions used by the db module
 #
 # CODE
 #
+
+
 class AssociationError(Exception):
     """
     Error caused when a model fails to find an associated object for a given
     attribute
     """
+
     def __init__(
             self, model, column, associated_model, associated_column, value):
         """

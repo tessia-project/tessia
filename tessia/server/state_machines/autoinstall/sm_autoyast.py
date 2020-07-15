@@ -69,7 +69,7 @@ class SmAutoyast(SmBase):
             if ret == 1:
                 break
             # reached end of file: stop
-            elif not out:
+            if not out:
                 break
 
             offset += len(out.split('\n'))

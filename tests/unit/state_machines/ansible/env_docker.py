@@ -67,13 +67,13 @@ class TestEnvDocker(TestCase):
             yield json.dumps({'stream': item}).encode('utf-8') + b'\r\n'
         self.docker_exec_is_running = False
 
-    def _docker_api_exec_start_mock_successful(self, *args, **kwargs):
+    def _docker_api_exec_start_mock_successful(self, *_args, **_kwargs):
         """
         Simulate a successful docker exec call
         """
         return self._gen_docker_api_exec_successful()
 
-    def _docker_api_exec_inspect_mock(self, *args, **kwargs):
+    def _docker_api_exec_inspect_mock(self, *_args, **_kwargs):
         """
         Simulate a docker inspect call
         """
@@ -296,7 +296,7 @@ class TestEnvDockerUnsuccessful(TestEnvDocker):
         self.docker_exec_is_running = False
 
     # Mock api.exec with an unsuccessful output.
-    def _docker_api_exec_start_mock_unsuccessful(self, *args, **kwargs):
+    def _docker_api_exec_start_mock_unsuccessful(self, *_args, **_kwargs):
         """
         Simulate an unsuccessful command, run with docker exec
         """
@@ -359,7 +359,7 @@ class TestEnvDockerUnsuccessful(TestEnvDocker):
         yield json.dumps({'errorDetail': {'code': 127, 'message': msg},
                           'error': error_msg}).encode('utf-8') + b'\r\n'
 
-    def _docker_api_exec_inspect_mock_unsuccessful(self, *args, **kwargs):
+    def _docker_api_exec_inspect_mock_unsuccessful(self, *_args, **_kwargs):
         """
         Mimic an unsuccessful docker inspect command
         """

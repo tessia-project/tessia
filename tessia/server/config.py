@@ -40,7 +40,8 @@ DEBUGGER_FORMATTER = {
 # CODE
 #
 
-class Config(object):
+
+class Config:
     """Handles parsing of the configuration file"""
 
     # default cfg file path
@@ -118,14 +119,17 @@ class Config(object):
 
         # let any exceptions from yaml lib reach the user to give a hint of
         # what to fix
-        config_dict = yaml.safe_load(config_content)
+        yaml_config = yaml.safe_load(config_content)
+        config_dict = {}
 
         # file is empty: set an appropriate dict type so that consumer modules
         # don't fail while accessing the dict
-        if (config_dict is None or
-                (isinstance(config_dict, str) and not config_dict.strip())):
+        if (yaml_config is None or
+                (isinstance(yaml_config, str) and not yaml_config.strip())):
             config_dict = {}
-        elif not isinstance(config_dict, dict):
+        elif isinstance(yaml_config, dict):
+            config_dict.update(yaml_config)
+        else:
             raise ValueError('Invalid configuration file content')
 
         return config_dict
@@ -205,6 +209,7 @@ class Config(object):
         dictConfig(conf)
     # log_config()
 # Config
+
 
 # expose the class as a constant variable for access by consumer modules
 CONF = Config

@@ -132,6 +132,7 @@ class TestLooper(TestCase):
 
         # create the instance for convenient usage by testcases
         self._looper = looper.Looper()
+        self._looper.initialize()
     # setUp()
 
     def tearDown(self):
@@ -496,6 +497,7 @@ class TestLooper(TestCase):
         job = self._make_alive_job(['lpar0'], ['cpc0'])
         self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
+        self._looper.initialize()
 
         self.assertEqual(
             self._mock_resources_man.set_active.call_args[0][0].id,
@@ -505,6 +507,7 @@ class TestLooper(TestCase):
         job = self._make_alive_job(['lpar0'], [])
         self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
+        self._looper.initialize()
 
         self.assertEqual(
             self._mock_resources_man.set_active.call_args[0][0].id,
@@ -514,6 +517,7 @@ class TestLooper(TestCase):
         job = self._make_alive_job([], ['cpc0'])
         self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
+        self._looper.initialize()
 
         self.assertEqual(
             self._mock_resources_man.set_active.call_args[0][0].id,
@@ -523,6 +527,7 @@ class TestLooper(TestCase):
         job = self._make_alive_job([], [])
         self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
+        self._looper.initialize()
         self._mock_resources_man.set_active.assert_not_called()
 
     # test_init_alive_process()
@@ -534,14 +539,14 @@ class TestLooper(TestCase):
         # verify if Looper raises exception when no job dir is configured.
         looper.CONF.get_config.return_value = {'scheduler': {}}
         with self.assertRaises(RuntimeError):
-            looper.Looper()
+            looper.Looper().initialize()
 
         # verify the scenario where multiprocessing was previously set with the
         # wrong mode.
         self._mock_mp.set_start_method.side_effect = RuntimeError
         self._mock_mp.get_start_method.return_value = 'fork'
         with self.assertRaises(RuntimeError):
-            looper.Looper()
+            looper.Looper().initialize()
 
     # test_init_bad_conf()
 
@@ -565,6 +570,7 @@ class TestLooper(TestCase):
 
         # initialize looper
         self._looper = looper.Looper()
+        self._looper.initialize()
 
         # validate behavior
         # queues were initialized
@@ -596,6 +602,7 @@ class TestLooper(TestCase):
 
         # initialize Looper
         self._looper = looper.Looper()
+        self._looper.initialize()
 
         # check that queues were initialized
         self._mock_resources_man.reset.assert_called_with()
@@ -799,6 +806,7 @@ class TestLooper(TestCase):
         # use a mock for the echo machine
         old_echo = self._looper._machines['echo']
         self._looper._machines['echo'] = MagicMock()
+        # pylint: disable=non-str-assignment-to-dunder-name
         self._looper._machines['echo'].__name__ = MagicMock(
             return_value=old_echo.__name__)
 

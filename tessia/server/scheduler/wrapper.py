@@ -64,7 +64,9 @@ WRAPPER_PARAMETERS_FILE = 'wrapper_init_parameters'
 #
 # CODE
 #
-class MachineWrapper(object):
+
+
+class MachineWrapper:
     """
     This class' purpose is to create the appropriate environment for the state
     machine to run. That means:
@@ -135,7 +137,7 @@ class MachineWrapper(object):
         self._mask_timeouts = True
         signal.alarm(0)
 
-    def _handle_cancel(self, *args, **kwargs):
+    def _handle_cancel(self, *_args, **_kwargs):
         """
         Handle a cancel signal.
 
@@ -152,7 +154,7 @@ class MachineWrapper(object):
         raise exceptions.WrapperCanceled
     # _handle_cancel()
 
-    def _handle_timeout(self, *args, **kwargs):
+    def _handle_timeout(self, *_args, **_kwargs):
         """
         Handle a regular timeout when the state machine is executing.
 
@@ -173,7 +175,7 @@ class MachineWrapper(object):
         raise exceptions.WrapperTimeout
     # _handle_timeout()
 
-    def _handle_cleanup_timeout(self, *args, **kwargs):
+    def _handle_cleanup_timeout(self, *_args, **_kwargs):
         """
         Handle a timeout when the state machine is cleaning up after a timeout
         or cancel signal.
@@ -269,6 +271,7 @@ class MachineWrapper(object):
         # replace the original print by one that always performs flush
         # so that output goes directly to the file
         orig_print = builtins.print
+
         def new_print(*args, **kwargs):
             """Print function with auto-flush"""
             if 'flush' in kwargs:
@@ -392,6 +395,7 @@ class MachineWrapper(object):
 
 # MachineWrapper
 
+
 def do_interruption_cleanup():
     """
     Read pre-pickled parameters for a machine wrapper and run the cleanup
@@ -418,6 +422,7 @@ def do_interruption_cleanup():
         wrapper.interruption_cleanup(ret_code)
     finally:
         os.remove(WRAPPER_PARAMETERS_FILE)
+
 
 if __name__ == '__main__':
     # This module is called as the main module when executing a fresh

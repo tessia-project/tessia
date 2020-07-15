@@ -16,7 +16,6 @@
 Module containing the sqlalchemy models for the database
 """
 
-# pylint: disable=too-many-lines
 #
 # IMPORTS
 #
@@ -60,7 +59,7 @@ NAME_CONVENTION = {
 BASE = declarative_base(metadata=MetaData(naming_convention=NAME_CONVENTION))
 
 # some meta definitions are not recognized by pylint so disable some checks
-# pylint: disable=no-self-argument,no-self-use,no-member,method-hidden
+# pylint: disable=too-many-lines,no-self-argument,no-self-use
 
 #
 # CODE
@@ -76,15 +75,17 @@ BASE = declarative_base(metadata=MetaData(naming_convention=NAME_CONVENTION))
 # - jsonb over json: for jsonb the content is parsed before being stored in the
 # database, which allows indexing and thus querying significantly faster.
 
-class CommonMixin(object):
+
+class CommonMixin:
     """
     Helper mixin to set attributes common to most classes
     """
 
-    id = Column(Integer, primary_key=True) # pylint: disable=invalid-name
+    id = Column(Integer, primary_key=True)  # pylint: disable=invalid-name
 # CommonMixin
 
-class SchemaMixin(object):
+
+class SchemaMixin:
     """
     Helper mixin to provide json-schema validation capability
     """
@@ -117,6 +118,7 @@ class SchemaMixin(object):
     # get_schema()
 # SchemaMixin
 
+
 class User(CommonMixin, BASE):
     """Represents a user on the application"""
 
@@ -137,6 +139,7 @@ class User(CommonMixin, BASE):
         return "<User(login='{}')>".format(self.login)
     # __repr__()
 # User
+
 
 class UserKey(CommonMixin, BASE):
     """User key used to access the API"""
@@ -187,6 +190,7 @@ class UserKey(CommonMixin, BASE):
 
 # UserKey
 
+
 class Project(CommonMixin, BASE):
     """Projects which users belong to"""
 
@@ -201,6 +205,7 @@ class Project(CommonMixin, BASE):
         return "<Project(name='{}')>".format(self.name)
     # __repr__()
 # Project
+
 
 class Role(CommonMixin, BASE):
     """A user role"""
@@ -220,6 +225,7 @@ class Role(CommonMixin, BASE):
         return "<Role(name='{}')>".format(self.name)
     # __repr__()
 # Role
+
 
 class UserRole(CommonMixin, BASE):
     """A role for a user on a project"""
@@ -314,6 +320,7 @@ class UserRole(CommonMixin, BASE):
     # __repr__()
 # UserRole
 
+
 class RoleAction(CommonMixin, BASE):
     """An action on a resource type associated to a role"""
 
@@ -358,7 +365,8 @@ class RoleAction(CommonMixin, BASE):
     # __repr__()
 # RoleAction
 
-class ResourceMixin(object):
+
+class ResourceMixin:
     """
     Mixin to provide common attributes to resource entities
     """
@@ -429,6 +437,7 @@ class ResourceMixin(object):
         return relationship(
             'User', uselist=False, lazy='joined', innerjoin=True,
             primaryjoin=lambda: self.owner_id == User.id)
+
     @hybrid_property
     def owner(self):
         """Defines the owner attribute pointing to owner's login"""
@@ -479,6 +488,7 @@ class ResourceMixin(object):
         return Project.name
 # ResourceMixin
 
+
 class NetZone(CommonMixin, ResourceMixin, BASE):
     """A network zone containing subnets"""
 
@@ -491,6 +501,7 @@ class NetZone(CommonMixin, ResourceMixin, BASE):
         return "<NetZone(name='{}')>".format(self.name)
     # __repr__()
 # NetZone
+
 
 class Subnet(CommonMixin, ResourceMixin, BASE):
     """A subnet part of a network zone"""
@@ -572,6 +583,7 @@ class Subnet(CommonMixin, ResourceMixin, BASE):
 
 # Subnet
 
+
 class IpAddress(CommonMixin, ResourceMixin, BASE):
     """An ip address for use by a system"""
 
@@ -642,6 +654,7 @@ class IpAddress(CommonMixin, ResourceMixin, BASE):
     # __repr__()
 # IpAddress
 
+
 class IfaceType(CommonMixin, BASE):
     """A type of system network interface supported by the application"""
 
@@ -656,6 +669,7 @@ class IfaceType(CommonMixin, BASE):
     # __repr__()
 # IfaceType
 
+
 class SystemArch(CommonMixin, BASE):
     """A type of system architecture supported by the application"""
 
@@ -669,6 +683,7 @@ class SystemArch(CommonMixin, BASE):
         return "<SystemArch(name='{}')>".format(self.name)
     # __repr__()
 # SystemArch
+
 
 class SystemType(CommonMixin, BASE):
     """A type of system supported by the application"""
@@ -709,6 +724,7 @@ class SystemType(CommonMixin, BASE):
         return "<SystemType(name='{}')>".format(self.name)
     # __repr__()
 # SystemType
+
 
 class SystemModel(CommonMixin, BASE):
     """A description of a system model"""
@@ -752,6 +768,7 @@ class SystemModel(CommonMixin, BASE):
     # __repr__()
 # SystemModel
 
+
 class SystemState(CommonMixin, BASE):
     """An allowed system state"""
 
@@ -765,6 +782,7 @@ class SystemState(CommonMixin, BASE):
         return "<SystemState(name='{}')>".format(self.name)
     # __repr__()
 # SystemState
+
 
 class System(CommonMixin, ResourceMixin, BASE):
     """Represents a system which can provisioned, rebooted, etc."""
@@ -896,6 +914,7 @@ class System(CommonMixin, ResourceMixin, BASE):
     # __repr__()
 # System
 
+
 class OperatingSystem(CommonMixin, BASE):
     """A supported operating system"""
 
@@ -944,6 +963,7 @@ class OperatingSystem(CommonMixin, BASE):
 
 # OperatingSystem
 
+
 class Repository(CommonMixin, ResourceMixin, BASE):
     """A packages repository"""
 
@@ -990,6 +1010,7 @@ class Repository(CommonMixin, ResourceMixin, BASE):
             self.name, self.url)
     # __repr__()
 # Repository
+
 
 class SystemProfile(CommonMixin, SchemaMixin, BASE):
     """A system activation profile"""
@@ -1170,6 +1191,7 @@ class SystemProfile(CommonMixin, SchemaMixin, BASE):
     # __repr__()
 # SystemProfile
 
+
 class Template(CommonMixin, ResourceMixin, BASE):
     """A template for a InstallMachine"""
     __tablename__ = "templates"
@@ -1182,6 +1204,7 @@ class Template(CommonMixin, ResourceMixin, BASE):
         return "<Template(name='{}')>".format(self.name)
     # __repr__()
 # Template
+
 
 class SystemIfaceProfileAssociation(BASE):
     """Represents a system iface associated with a system activation profile"""
@@ -1275,6 +1298,7 @@ class SystemIfaceProfileAssociation(BASE):
                 "iface_id='{}')>".format(self.profile_id, self.iface_id))
     # __repr__()
 # SystemIfaceProfileAssociation
+
 
 class SystemIface(CommonMixin, SchemaMixin, BASE):
     """Represents a network interface associated to a system"""
@@ -1404,6 +1428,7 @@ class SystemIface(CommonMixin, SchemaMixin, BASE):
 
 # SystemIface
 
+
 class StorageServerType(CommonMixin, BASE):
     """A type of storage server supported by the application"""
 
@@ -1417,6 +1442,7 @@ class StorageServerType(CommonMixin, BASE):
         return "<StorageServerType(name='{}')>".format(self.name)
     # __repr__()
 # StorageServerType
+
 
 class StorageServer(CommonMixin, ResourceMixin, BASE):
     """Represents a storage server to which volumes are associated"""
@@ -1464,6 +1490,7 @@ class StorageServer(CommonMixin, ResourceMixin, BASE):
 
 # StorageServer
 
+
 class StoragePoolType(CommonMixin, BASE):
     """A type of storage pool"""
 
@@ -1478,6 +1505,7 @@ class StoragePoolType(CommonMixin, BASE):
     # __repr__()
 
 # StoragePoolType
+
 
 class StoragePool(CommonMixin, ResourceMixin, BASE):
     """
@@ -1552,6 +1580,7 @@ class StoragePool(CommonMixin, ResourceMixin, BASE):
     # __repr__()
 # StoragePool
 
+
 class VolumeType(CommonMixin, BASE):
     """A type of volume supported by the application"""
 
@@ -1566,6 +1595,7 @@ class VolumeType(CommonMixin, BASE):
     # __repr__()
 
 # VolumeType
+
 
 class StorageVolumeProfileAssociation(BASE):
     """
@@ -1664,6 +1694,7 @@ class StorageVolumeProfileAssociation(BASE):
     # __repr__()
 
 # StorageVolumeProfileAssociation
+
 
 class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
     """A volume from a storage server"""
@@ -1819,6 +1850,7 @@ class StorageVolume(CommonMixin, ResourceMixin, SchemaMixin, BASE):
 
 # StorageVolume
 
+
 class LogicalVolumeProfileAssociation(BASE):
     """
     Represents a logical volume associated with a system activation profile
@@ -1915,6 +1947,7 @@ class LogicalVolumeProfileAssociation(BASE):
         )
     # __repr__()
 # LogicalVolumeProfileAssociation
+
 
 class LogicalVolume(CommonMixin, ResourceMixin, BASE):
     """A volume from a storage pool"""
@@ -2029,6 +2062,7 @@ class LogicalVolume(CommonMixin, ResourceMixin, BASE):
 
 # LogicalVolume
 
+
 class SchedulerRequest(CommonMixin, BASE):
     """A request submitted to the job scheduler"""
 
@@ -2105,10 +2139,10 @@ class SchedulerRequest(CommonMixin, BASE):
         if key == 'action_type' and value not in self.ACTIONS:
             raise ValueError("Invalid <(action_type)=({})>".format(value))
 
-        elif key == 'time_slot' and value not in self.SLOTS:
+        if key == 'time_slot' and value not in self.SLOTS:
             raise ValueError("Invalid <(time_slot)=({})>".format(value))
 
-        elif key == 'state' and value not in self.STATES:
+        if key == 'state' and value not in self.STATES:
             raise ValueError("Invalid <(state)=({})>".format(value))
 
         return value
@@ -2139,6 +2173,7 @@ class SchedulerRequest(CommonMixin, BASE):
         return User.login
 
 # SchedulerRequest
+
 
 class SchedulerJob(CommonMixin, BASE):
     """A scheduler request accepted for execution"""
@@ -2229,7 +2264,7 @@ class SchedulerJob(CommonMixin, BASE):
         if key == 'time_slot' and value not in self.SLOTS:
             raise ValueError("Invalid <(time_slot)=({})>".format(value))
 
-        elif key == 'state' and value not in self.STATES:
+        if key == 'state' and value not in self.STATES:
             raise ValueError("Invalid <(state)=({})>".format(value))
 
         return value

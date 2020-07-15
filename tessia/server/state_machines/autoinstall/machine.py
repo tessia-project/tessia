@@ -74,12 +74,15 @@ SUPPORTED_TYPES = {
 #
 # CODE
 #
+
+
 class AutoInstallMachine(BaseMachine):
     """
     Facade to represent the auto install state machine, in fact acts as a proxy
     to the real machine since at instantiation time we don't know which distro
     is being installed and thus can't determine the right class to use.
     """
+
     def __init__(self, params):
         """
         See base class docstring.
@@ -125,7 +128,7 @@ class AutoInstallMachine(BaseMachine):
         option_legacy = (prof_entry.parameters and
                          "tessia_option_installer=legacy" in
                          prof_entry.parameters.get('linux-kargs-installer', '')
-                        )
+                         )
 
         try:
             if os_entry.type == 'debian' and os_entry.major >= 2004:
@@ -318,7 +321,7 @@ class AutoInstallMachine(BaseMachine):
                     "Gateway network interface <{}> has no IP address assigned"
                     .format(gw_iface.name)
                 )
-            elif not gw_iface.ip_address_rel.subnet_rel.gateway:
+            if not gw_iface.ip_address_rel.subnet_rel.gateway:
                 raise ValueError(
                     "Subnet <{}> of the gateway network interface <{}> has no "
                     "gateway route defined".format(
@@ -341,7 +344,7 @@ class AutoInstallMachine(BaseMachine):
         system = system.hypervisor_rel
 
         # the nested hypervisor hierarchy is considered a shared resource
-        while system != None:
+        while system is not None:
             result.get("resources").get("shared").append(system.name)
             system = system.hypervisor_rel
 

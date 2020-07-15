@@ -52,6 +52,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class JobResource(ModelResource):
     """
     Resource for jobs
@@ -127,7 +129,7 @@ class JobResource(ModelResource):
     instances.request_schema = instances.response_schema = Instances()
 
     @Route.GET('/<int:id>', rel="self", attribute="instance")
-    def read(self, id):
+    def read(self, id): # pylint: disable=redefined-builtin,invalid-name
         """
         Handler for the get item operation via GET method.
 
@@ -137,7 +139,6 @@ class JobResource(ModelResource):
         Returns:
             json: json response as defined by response_schema property
         """
-        # pylint: disable=redefined-builtin,invalid-name
         item = self.manager.read(id)
         return item
     # read()
@@ -145,14 +146,13 @@ class JobResource(ModelResource):
     read.response_schema = Inline('self')
 
     @Route.GET('/<int:id>/output', rel="output")
-    def output(self, id, **kwargs):
-        # pylint: disable=redefined-builtin,invalid-name
+    def output(self, id, **kwargs): # pylint: disable=redefined-builtin,invalid-name
         """
         Handler to fetch the output of a job via GET method.
         """
         try:
-            jobs_dir = CONF.get_config()['scheduler']['jobs_dir']
-        except KeyError:
+            jobs_dir = CONF.get_config().get('scheduler')['jobs_dir']
+        except (TypeError, KeyError):
             msg = 'No scheduler job directory configured'
             raise BaseHttpError(500, msg=msg)
         offset = kwargs.get('offset')

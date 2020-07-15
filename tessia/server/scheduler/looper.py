@@ -47,7 +47,9 @@ PROCESS_UNKNOWN = 2
 #
 # CODE
 #
-class Looper(object):
+
+
+class Looper:
     """
     The scheduling algorithm works in the following way:
     - create a job queue for each resource in a hash table (for constant time
@@ -61,6 +63,7 @@ class Looper(object):
       the scheduler first checks if the current date matches, otherwise it
       looks for the first job in the queue which has no date specified.
     """
+
     def __init__(self):
         """
         Constructor, sets the fork method for the jobs (workers) and internal
@@ -77,39 +80,25 @@ class Looper(object):
                     'Multiprocessing mode must be forkserver but was set to '
                     '{}'.format(start_method))
 
-        try:
-            self._jobs_dir = CONF.get_config()['scheduler']['jobs_dir']
-        except KeyError:
-            raise RuntimeError('No scheduler job directory configured')
-
-        self._logger = logging.getLogger(__name__)
+        self._jobs_dir = ''
+        self._logger = None
         # manager to validate user permissions on resources allocated to jobs
-        self._perman = PermManager()
+        self._perman = None
         # resources manager keeps track of resource allocation to determine
         # which job can execute next
-        self._resources_man = resources_manager.ResourcesManager()
+        self._resources_man = None
         # dict with state machine parsers keyed by name
-        self._machines = MACHINES.classes
+        self._machines = None
         # store our working directory to be used for validation of job's
         # processes
-        self._cwd = os.getcwd()
+        self._cwd = ''
         # db session
-        self._session = MANAGER.session
+        self._session = None
         # mapping of allowed request actions and their methods
-        self._request_methods = {
-            SchedulerRequest.ACTION_CANCEL: self._cancel_job,
-            SchedulerRequest.ACTION_SUBMIT: self._submit_job,
-        }
+        self._request_methods = None
 
-        # handle the signals for graceful termination
-        signal.signal(signal.SIGHUP, self._signal_handler)
-        signal.signal(signal.SIGTERM, self._signal_handler)
-        signal.signal(signal.SIGINT, self._signal_handler)
         # signal handler will set flag to False to make looper gracefully stop
-        self._should_run = True
-
-        # init resources manager with information from jobs
-        self._init_manager()
+        self._should_run = False
     # __init__()
 
     def _refresh_and_expunge(self, job):
@@ -139,7 +128,7 @@ class Looper(object):
         # we don't know if the process is still alive or belong to a non tessia
         # job: don't send signal, and keep trying the request until the real
         # state of the process is known
-        elif process_state == PROCESS_UNKNOWN:
+        if process_state == PROCESS_UNKNOWN:
             self._logger.warning(
                 "Job %s process is in unknown state, delaying request "
                 "execution", job.id)
@@ -257,7 +246,7 @@ class Looper(object):
         return False
     # _has_resources()
 
-    def _signal_handler(self, *args, **kwargs):
+    def _signal_handler(self, *_args, **_kwargs):
         """
         Receives a stop signal (SIGTERM, SIGINT) and set the appropriate flag
         to let the looper knows it has to die.
@@ -324,7 +313,7 @@ class Looper(object):
             description = parsed_content['description']
         # whatever error happened we don't want the scheduler to stop so we
         # catch all exceptions and mark the request as failed
-        except Exception as exc: # pylint: disable=broad-except
+        except Exception as exc:  # pylint: disable=broad-except
             request.state = SchedulerRequest.STATE_FAILED
             request.result = (
                 'Parsing of parameters failed with: {}'.format(str(exc)))
@@ -521,9 +510,7 @@ class Looper(object):
         if ret_code == wrapper.RESULT_SUCCESS:
             job.state = SchedulerJob.STATE_COMPLETED
             result = 'Job finished successfully.'
-        elif (ret_code == wrapper.RESULT_CANCELED
-              or ret_code == wrapper.RESULT_TIMEOUT):
-
+        elif ret_code in (wrapper.RESULT_CANCELED, wrapper.RESULT_TIMEOUT):
             job.state = SchedulerJob.STATE_CANCELED
 
             if ret_code == wrapper.RESULT_CANCELED:
@@ -743,6 +730,45 @@ class Looper(object):
 
         self._session.commit()
     # _process_pending_requests()
+
+    def initialize(self):
+        """
+        Delayed initialization for internal structures
+        """
+        try:
+            self._jobs_dir = CONF.get_config().get('scheduler')['jobs_dir']
+        except (TypeError, KeyError):
+            raise RuntimeError('No scheduler job directory configured')
+
+        self._logger = logging.getLogger(__name__)
+        # manager to validate user permissions on resources allocated to jobs
+        self._perman = PermManager()
+        # resources manager keeps track of resource allocation to determine
+        # which job can execute next
+        self._resources_man = resources_manager.ResourcesManager()
+        # dict with state machine parsers keyed by name
+        self._machines = MACHINES.classes
+        # store our working directory to be used for validation of job's
+        # processes
+        self._cwd = os.getcwd()
+        # db session
+        self._session = MANAGER.session
+        # mapping of allowed request actions and their methods
+        self._request_methods = {
+            SchedulerRequest.ACTION_CANCEL: self._cancel_job,
+            SchedulerRequest.ACTION_SUBMIT: self._submit_job,
+        }
+
+        # handle the signals for graceful termination
+        signal.signal(signal.SIGHUP, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
+        signal.signal(signal.SIGINT, self._signal_handler)
+        # signal handler will set flag to False to make looper gracefully stop
+        self._should_run = True
+
+        # init resources manager with information from jobs
+        self._init_manager()
+    # initialize()
 
     def loop(self, sleep_time=0.5):
         """

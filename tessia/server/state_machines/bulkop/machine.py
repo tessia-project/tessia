@@ -32,8 +32,8 @@ from tessia.server.state_machines.bulkop.resource_system import \
 
 import csv
 import io
+import json
 import logging
-import yaml
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -85,11 +85,14 @@ REQUEST_SCHEMA = {
 #
 # CODE
 #
+
+
 class BulkOperatorMachine(BaseMachine):
     """
     This machine is responsible for performing insert/update bulk operations
     based on a provided csv file
     """
+
     def __init__(self, params):
         """
         See base class docstring.
@@ -157,7 +160,6 @@ class BulkOperatorMachine(BaseMachine):
         """
         Cleanup process
         """
-        pass
     # cleanup()
 
     @classmethod
@@ -178,7 +180,7 @@ class BulkOperatorMachine(BaseMachine):
             ValueError: if headers are in invalid format.
         """
         try:
-            obj_params = yaml.safe_load(params)
+            obj_params = json.loads(params)
             validate(obj_params, REQUEST_SCHEMA)
         except Exception as exc:
             raise SyntaxError(
@@ -241,14 +243,14 @@ class BulkOperatorMachine(BaseMachine):
             return params
 
         try:
-            obj_params = yaml.safe_load(params)
+            obj_params = json.loads(params)
         except Exception:
             # do not handle load exception here, it will fail
             # at a more appropriate parse time
             return params
 
         obj_params.update(extra_vars)
-        params = yaml.dump(obj_params, default_flow_style=False)
+        params = json.dumps(obj_params)
 
         return params
     # recombine()

@@ -20,6 +20,7 @@ Command line entry point for the scheduler daemon
 # IMPORTS
 #
 from tessia.server.config import CONF
+from tessia.server.scheduler.looper import Looper
 
 import argparse
 
@@ -30,6 +31,8 @@ import argparse
 #
 # CODE
 #
+
+
 def main():
     """
     Entry point to start the scheduler daemon
@@ -48,11 +51,11 @@ def main():
     log_level = {True: 'DEBUG', False: None}[parsed_args.debug]
     CONF.log_config(log_level=log_level)
 
-    # import the app late to make sure all logging is configured first
-    from tessia.server.scheduler.looper import Looper
     daemon = Looper()
+    daemon.initialize()
     daemon.loop()
 # main()
+
 
 if __name__ == '__main__':
     main()

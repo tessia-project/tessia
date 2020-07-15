@@ -39,6 +39,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class UserResource(SecureResource):
     """
     Resource for application users
@@ -106,8 +108,7 @@ class UserResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
-    def do_update(self, properties, id):
-        # pylint: disable=invalid-name,redefined-builtin
+    def do_update(self, properties, user_id):
         """
         Overridden method to perform case sensitivity on the login provided.
         """
@@ -115,6 +116,6 @@ class UserResource(SecureResource):
             properties['login'] =\
                 self._case_sensitive_perf(properties['login'])
 
-        return super().do_update(properties, id)
+        return super().do_update(properties, user_id)
     # do_update()
 # UserResource

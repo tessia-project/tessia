@@ -34,7 +34,7 @@ from tessia.server.db.models import BASE
 # CODE
 #
 
-class _DbManager(object):
+class _DbManager:
     """
     Class to handle db connection and session creation for all modules
     """
@@ -105,10 +105,9 @@ class _DbManager(object):
         if self._conn is not None:
             return self._conn
 
-        config_dict = CONF.get_config()
         try:
-            db_url = config_dict['db']['url']
-        except KeyError:
+            db_url = CONF.get_config().get('db')['url']
+        except (TypeError, KeyError):
             raise RuntimeError('No database configuration found')
 
         engine = create_engine(db_url)
@@ -125,5 +124,6 @@ class _DbManager(object):
         return self._conn
     # connect()
 # _DbManager
+
 
 MANAGER = _DbManager()

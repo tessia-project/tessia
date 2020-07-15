@@ -62,6 +62,8 @@ TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates/"
 #
 # CODE
 #
+
+
 class SmBase(metaclass=abc.ABCMeta):
     """
     This is the base machine defining each state that the machine goes through
@@ -124,13 +126,15 @@ class SmBase(metaclass=abc.ABCMeta):
             self._gw_iface)
 
         # The path and url for the auto file.
-        config = Config.get_config()
+        autoinstall_config = Config.get_config().get('auto_install')
+        if not autoinstall_config:
+            raise RuntimeError('No auto_install configuration provided')
         autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
         autofile_name = autofile_name.replace(' ', '-')
         self._autofile_url = '{}/{}'.format(
-            config["auto_install"]["url"], autofile_name)
+            autoinstall_config["url"], autofile_name)
         self._autofile_path = os.path.join(
-            config["auto_install"]["dir"], autofile_name)
+            autoinstall_config["dir"], autofile_name)
         # set during collect_info state
         self._info = None
     # __init__()
@@ -220,7 +224,8 @@ class SmBase(metaclass=abc.ABCMeta):
             # preferably use a repository in the same subnet as the system
             for repo_obj in self._os.repository_rel:
                 try:
-                    repo_addr = gethostbyname(urlsplit(repo_obj.url).hostname)
+                    repo_addr = gethostbyname(
+                        urlsplit(repo_obj.url).netloc.rsplit('@', 1)[-1])
                     address_pyobj = ipaddress.ip_address(repo_addr)
                 # can't resolve repo's hostname: skip it
                 except Exception:
@@ -392,7 +397,6 @@ class SmBase(metaclass=abc.ABCMeta):
         return result
     # _parse_svol()
 
-
     def _render_installer_cmdline(self):
         """
         Returns installer kernel command line from the template
@@ -420,7 +424,7 @@ class SmBase(metaclass=abc.ABCMeta):
     @property
     @classmethod
     @abc.abstractmethod
-    def DISTRO_TYPE(cls): # pylint: disable=invalid-name
+    def DISTRO_TYPE(cls):  # pylint: disable=invalid-name
         """
         Return the type of linux distribution supported. The entry should match
         the column 'type' in the operating_systems table.
@@ -539,6 +543,7 @@ class SmBase(metaclass=abc.ABCMeta):
             raise ValueError('Partitioning scheme has no root disk defined')
         # make sure hpav aliases come after dasds so that the templates always
         # activate the base devices first
+
         def compare(item_1, item_2):
             """Helper to sort hpav as last"""
             if item_1['type'] == 'HPAV' or item_1['type'] > item_2['type']:
@@ -574,7 +579,7 @@ class SmBase(metaclass=abc.ABCMeta):
         # Write the autofile in the directory that the state machine
         # is executed.
         with open("./" + os.path.basename(
-            self._autofile_path), "w") as autofile:
+                self._autofile_path), "w") as autofile:
             autofile.write(autofile_content)
     # create_autofile()
 

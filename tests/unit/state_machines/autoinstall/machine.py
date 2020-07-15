@@ -51,6 +51,8 @@ REQUEST_PARAMETERS = json.dumps({
 #
 # CODE
 #
+
+
 class TestAutoInstallMachine(TestCase):
     """
     Class for unit tests of the AutoInstallMachine class
@@ -95,7 +97,7 @@ class TestAutoInstallMachine(TestCase):
 
         patcher_dict = patch.dict(machine.SUPPORTED_TYPES,
                                   values=mocked_supported_distros)
-        self._mocked_supported_distros = patcher_dict.start()
+        patcher_dict.start()
         self.addCleanup(patcher_dict.stop)
 
         patcher = patch.object(machine, 'logging')
@@ -394,7 +396,7 @@ class TestAutoInstallMachine(TestCase):
             "route defined".format(iface_obj.ip_address_rel.subnet_rel.name,
                                    iface_obj.name))
         with self._mock_db_obj(
-            iface_obj.ip_address_rel.subnet_rel, 'gateway', None):
+                iface_obj.ip_address_rel.subnet_rel, 'gateway', None):
             with self.assertRaisesRegex(ValueError, error_msg):
                 machine.AutoInstallMachine.parse(request)
             with self.assertRaisesRegex(ValueError, error_msg):

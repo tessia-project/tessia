@@ -28,6 +28,7 @@ Module containing the exceptions used by the scheduler and wrapper modules.
 # CODE
 #
 
+
 class WrapperTimeout(BaseException):
     """
     Exception raised by the alarm signal handler in
@@ -36,7 +37,7 @@ class WrapperTimeout(BaseException):
     It inherits from BaseException so that it won't be caught
     by the state machines.
     """
-    pass
+
 
 class WrapperCanceled(BaseException):
     """
@@ -46,4 +47,3 @@ class WrapperCanceled(BaseException):
     It inherits from BaseException so that it won't be caught
     by the state machines.
     """
-    pass

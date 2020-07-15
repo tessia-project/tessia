@@ -28,6 +28,8 @@ import abc
 #
 # CODE
 #
+
+
 class BaseLoginManager(metaclass=abc.ABCMeta):
     """
     Abstract class to define the login manager interface to be implemented by

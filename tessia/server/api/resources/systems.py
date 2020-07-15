@@ -67,6 +67,8 @@ FIELDS_CSV = (
 #
 # CODE
 #
+
+
 class SystemResource(SecureResource):
     """
     Resource for systems
@@ -263,15 +265,14 @@ class SystemResource(SecureResource):
     bulk.response_schema = fields.String(
         title="result output", description="content in CSV format")
 
-    def do_update(self, properties, id):
+    def do_update(self, properties, system_id):
         """
         Custom implementation of system update. Perform some sanity checks.
 
         Args:
             properties (dict): field=value combination for the fields to be
                                updated
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            system_id (any): system id
 
         Raises:
             BaseHttpError: if combination guest/hypervisor is invalid
@@ -281,15 +282,14 @@ class SystemResource(SecureResource):
         Returns:
             int: id of updated item
         """
-        # pylint: disable=redefined-builtin
 
         system_type = properties.get('type')
         hyp_name = properties.get('hypervisor')
         # no type or hypervisor change: nothing to verify
         if system_type is None and hyp_name is None:
-            return super().do_update(properties, id)
+            return super().do_update(properties, system_id)
 
-        item = self.manager.read(id)
+        item = self.manager.read(system_id)
         # type not changed: fetch value from existing item
         if system_type is None:
             system_type = item.type
@@ -313,7 +313,7 @@ class SystemResource(SecureResource):
         if hyp_obj.type not in guest_match_list:
             raise BaseHttpError(code=422, msg=MSG_BAD_COMBO)
 
-        return super().do_update(properties, id)
+        return super().do_update(properties, system_id)
     # do_update()
 
 # SystemResource

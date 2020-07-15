@@ -49,6 +49,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class SubnetResource(SecureResource):
     """
     Resource for subnets
@@ -191,8 +193,7 @@ class SubnetResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
-    def do_update(self, properties, id):
-        # pylint: disable=invalid-name,redefined-builtin
+    def do_update(self, properties, subnet_id):
         """
         Overriden method to perform sanity checks on the address and gateway
         combinations. See parent class for complete docstring.
@@ -215,7 +216,7 @@ class SubnetResource(SecureResource):
             # gateway not changed: check if gateway is still valid for new
             # network address
             else:
-                gateway = self.manager.read(id).gateway
+                gateway = self.manager.read(subnet_id).gateway
                 self._assert_gw_range(address, gateway, False)
 
         # gateway changed: verify new value and if it fits the subnet's
@@ -224,10 +225,10 @@ class SubnetResource(SecureResource):
             gateway = properties['gateway']
             self._assert_address(gateway, 'gateway')
             # retrieve existing address value
-            address = self.manager.read(id).address
+            address = self.manager.read(subnet_id).address
             self._assert_gw_range(address, gateway, True)
 
-        return super().do_update(properties, id)
+        return super().do_update(properties, subnet_id)
     # do_update()
 
 # SubnetResource

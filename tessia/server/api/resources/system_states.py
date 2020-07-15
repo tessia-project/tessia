@@ -34,6 +34,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class SystemStateResource(SecureResource):
     """
     Resource for system states

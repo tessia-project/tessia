@@ -41,7 +41,7 @@ from werkzeug.exceptions import BadRequest
 #
 # CODE
 #
-class _LoginManager(object):
+class _LoginManager:
 
     # holds the login manager object
     _manager = None
@@ -168,6 +168,7 @@ class _LoginManager(object):
         return key_entry.user_rel
     # authenticate_key()
 # _LoginManager
+
 
 def authorize(decorated_view):
     """

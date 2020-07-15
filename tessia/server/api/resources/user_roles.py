@@ -38,6 +38,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class UserRoleResource(SecureResource):
     """
     Resource for user roles
@@ -70,13 +72,12 @@ class UserRoleResource(SecureResource):
             title=DESC['role'], description=DESC['role'])
     # Schema
 
-    def do_read(self, id): # pylint: disable=redefined-builtin
+    def do_read(self, user_role_id):
         """
         Custom implementation of item reading.
 
         Args:
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            user_role_id (any): user-project-role association id
 
         Raises:
             BaseHttpError: 404 in case user has no rights to read item
@@ -84,7 +85,7 @@ class UserRoleResource(SecureResource):
         Returns:
             json: json representation of item
         """
-        item = self.manager.read(id)
+        item = self.manager.read(user_role_id)
         # non restricted user: regular reading is allowed
         if not flask_global.auth_user.restricted:
             return item
@@ -98,7 +99,7 @@ class UserRoleResource(SecureResource):
         return item
     # do_read()
 
-    def do_update(self, properties, id):
+    def do_update(self, properties, user_role_id):
         """
         Custom update action, blocks this operation as it is not allowed.
         All fields of a row make it unique so an update is replaced by a
@@ -107,13 +108,11 @@ class UserRoleResource(SecureResource):
         Args:
             properties (dict): field=value combination for the fields to be
                                updated
-            id (any): id of the item, usually an integer corresponding to the
-                      id field in the table's database
+            user_role_id (any): user-project-role association id
 
         Raises:
             Forbidden: always, since operation is not allowed
         """
-        # pylint: disable=redefined-builtin
 
         # not allowed
         raise Forbidden()

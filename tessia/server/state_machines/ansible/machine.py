@@ -145,12 +145,15 @@ TEMP_DIR_FILE = ".temp_dir"
 #
 # CODE
 #
+
+
 class AnsibleMachine(BaseMachine):
     """
     This machine acts as a wrapper for the execution of ansible playbooks by
     performing preparation steps like fetching the ansible repo from a given
     url and creating an inventory file of the systems reserved for the job.
     """
+
     def __init__(self, params):
         """
         See base class docstring.
@@ -199,7 +202,7 @@ class AnsibleMachine(BaseMachine):
                  '.git@' in parsed_url.path)):
             return 'git'
 
-        elif parsed_url.scheme in http_protocols:
+        if parsed_url.scheme in http_protocols:
             return 'web'
 
         return 'unknown'

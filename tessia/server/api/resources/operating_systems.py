@@ -39,6 +39,8 @@ OS_TYPES = ('cms', 'debian', 'redhat', 'suse')
 #
 # CODE
 #
+
+
 class OperatingSystemResource(SecureResource):
     """
     Resource for system types

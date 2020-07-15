@@ -40,6 +40,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class AutoTemplateResource(SecureResource):
     """
     Resource for auto templates

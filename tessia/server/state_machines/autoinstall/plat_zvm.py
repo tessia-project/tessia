@@ -33,6 +33,8 @@ import logging
 #
 # CODE
 #
+
+
 class PlatZvm(PlatBase):
     """
     Handling of zVM guests
@@ -191,7 +193,7 @@ class PlatZvm(PlatBase):
                 vol_id = '0.0.' + vol_id
             return '/dev/disk/by-path/ccw-{}'.format(vol_id)
 
-        elif vol_obj.type == 'FCP':
+        if vol_obj.type == 'FCP':
             if vol_obj.specs['multipath']:
                 prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
             else:

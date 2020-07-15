@@ -35,6 +35,8 @@ DESC = {
 #
 # CODE
 #
+
+
 class IfaceTypeResource(SecureResource):
     """
     Resource for network interface types

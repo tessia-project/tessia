@@ -122,7 +122,7 @@ class SmSubiquityInstaller(SmBase):
         """
         Query events stream from webhook
         """
-        max_wait_install = 600
+        max_wait_install = 3600
         timeout_installation = time() + max_wait_install
 
         success = False

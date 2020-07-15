@@ -276,7 +276,7 @@ class TestSmAnaconda(TestCase):
             (0, ""),  # read log file, empty content
         ]
         # generate a lot of responses to reading the log file
-        ssh_cmds.extend([(0, 'some_line')] * 50)
+        ssh_cmds.extend([(0, 'some_line')] * 500)
         mock_shell.run.side_effect = ssh_cmds
 
         os_entry = utils.get_os("rhel7.2")

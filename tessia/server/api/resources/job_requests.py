@@ -173,7 +173,9 @@ class JobRequestResource(ModelResource):
                 extra_vars.update({'requester': properties['requester']})
 
         try:
-            item = self.manager.create(properties)
+            # Note, we do not commit to avoid this object be picked up
+            # by scheduler before we've passed extra vars to mediator'
+            item = self.manager.create(properties, commit=False)
         # TODO: here we assume it's the job id fk (user provided a job id that
         # does not exist), improve the api's IntegrityError to deal with this
         # and use it to extract precise data from exception.
@@ -215,6 +217,16 @@ class JobRequestResource(ModelResource):
                 else:
                     msg = 'Cannot store secrets'
                 raise api_exceptions.BaseHttpError(code=400, msg=msg)
+
+        try:
+            # Finalize request creation
+            self.manager.commit()
+        except Exception as exc:
+            # we really should not get these, as data is checked during flush,
+            # but to be on the safe side we do a catch-all here
+            self.manager.rollback()
+            msg = 'Unable to submit request: {}'.format(str(exc))
+            raise api_exceptions.BaseHttpError(code=400, msg=msg)
 
         return item.id
     # create()

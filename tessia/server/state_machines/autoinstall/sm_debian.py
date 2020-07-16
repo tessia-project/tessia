@@ -89,7 +89,7 @@ class SmDebianInstaller(SmBase):
             "Running /usr/lib/finish-install.d/20final-message")
 
         # Maximum time to wait for the installation process.
-        max_wait_install = 600
+        max_wait_install = 3600
         timeout_installation = time() + max_wait_install
         line_offset = 1
         success = False

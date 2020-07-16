@@ -235,7 +235,7 @@ class TestSmAutoyast(TestCase):
             # yast2 process
             (0, ""),
         ]
-        ssh_cmds += [(0, "")] * 50  # yast2 still running
+        ssh_cmds += [(0, "")] * 500  # yast2 still running
         mock_shell.run.side_effect = ssh_cmds
 
         machine = self._instantiate_machine()

@@ -269,13 +269,13 @@ class AnsibleMachine(BaseMachine):
             except subprocess.CalledProcessError as exc:
                 # re-raise and suppress context, which has unscreened repo url
                 raise ValueError('Source url is not accessible: {} {}'.format(
-                    str(exc).replace(repo['url'], repo['url_obs']),
+                    str(exc).replace(git_url, repo['url_obs']),
                     exc.stderr.replace(
-                        repo['url'], repo['url_obs']))) from None
+                        git_url, repo['url_obs']))) from None
             except OSError as exc:
                 # re-raise and suppress context, which has unscreened repo url
                 raise RuntimeError('Failed to execute git: {}'.format(
-                    str(exc).replace(repo['url'], repo['url_obs']))) from None
+                    str(exc).replace(git_url, repo['url_obs']))) from None
 
         # http source: use the requests lib to verify it
         elif repo['type'] == 'web':

@@ -228,7 +228,6 @@ class TestEnvDockerSuccessful(TestEnvDocker):
             len(self.docker_client_mock.containers.run.mock_calls) == 3)
         # Check if security parameters were used
         args, kwargs = self.docker_client_mock.containers.run.call_args
-        self.assertEqual(kwargs["user"], "ansible")
         self.assertListEqual(kwargs["security_opt"],
                              ["no-new-privileges:true"])
 
@@ -242,6 +241,7 @@ class TestEnvDockerSuccessful(TestEnvDocker):
             self.docker_client_mock.api.exec_create.call_args_list[0]
         self.assertEqual(args[0], self.docker_containers_mock.name)
         self.assertEqual(args[1], "/assets/downloader.py")
+        self.assertEqual(kwargs["user"], "ansible")
         exp_log_level = self._mock_logger.getEffectiveLevel.return_value
         self.assertEqual(kwargs["environment"],
                          {'TESSIA_ANSIBLE_DOCKER_REPO_URL': REPO_URL,
@@ -257,6 +257,7 @@ class TestEnvDockerSuccessful(TestEnvDocker):
             self.docker_client_mock.api.exec_create.call_args_list[1]
         self.assertEqual(args[0], "tessia_ansible_docker_123456")
         self.assertListEqual(args[1], ["ansible-playbook", PLAYBOOK_NAME])
+        self.assertEqual(kwargs["user"], "ansible")
 
         # Check kill call
         self.assertTrue(

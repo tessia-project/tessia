@@ -30,6 +30,10 @@ autoinstall:
 {%- set size_mb = ((size * 1024 * 1024) / 1000 / 1000) | int -%}
 {{- size_mb -}}
 {%- endmacro -%}
+{%- macro mib_to_bytes(size) -%}
+{%- set size_bytes = (size * 1024 * 1024) | int -%}
+{{- size_bytes -}}
+{%- endmacro -%}
 
 {%- macro add_netplan_eth_iface(iface) %}
       {{ iface['systemd_osname'] }}:
@@ -47,6 +51,7 @@ autoinstall:
           addresses: [ "{{iface['dns_1']}}"{% if iface['dns_2'] %}, "{{iface['dns_2']}}"{% endif %} ]
 {%-   endif %}
 {%- endmacro -%}
+
 {%- macro add_netplan_vlan_iface(iface) %}
       {{iface['osname']}}.{{iface['vlan']}}:
         id: {{iface['vlan']}}
@@ -82,7 +87,7 @@ installation we create these auxiliary variables #}
     - set -x
     {# enable used devices #}
 {%- for svol in config['svols'] %}
-  {%- if svol['type'] == 'DASD' %}
+  {%- if svol['type'] in ('DASD', 'HPAV') %}
     - chzdev -e dasd {{svol['volume_id']}}
   {%- elif svol['type'] == 'FCP' %}
      {% for adapter in svol['specs']['adapters'] %}
@@ -100,7 +105,7 @@ installation we create these auxiliary variables #}
       we do it manually here #}
     - ip link set addr {{gw_iface['mac_addr']}} dev {{gw_iface['systemd_osname']}}
       {# in case server is in same subnet update its arp cache to avoid losing connectivity #}
-    - ping -c1 -w 90 {{config['server_hostname']}} ; \
+    - ping -c1 -w 90 {{config['server_hostname']}}
 {%- endif %}
 
   locale: en_US.UTF-8
@@ -113,15 +118,77 @@ installation we create these auxiliary variables #}
   ssh:
     install-server: yes
     allow-pw: yes
-  
+
+{%- if config['credentials']['admin-user'] == 'root' %}
+{# root user is normally passwordless and disabled; so if the user
+  wants to be root, we need to set additional options #}
   user-data:
     disable_root: false
-
+    chpasswd:
+      list: |
+        root:{{config['sha512rootpwd']}}
+{%- endif %}
 {%- if system_type != "KVM" %}
   storage:
-    layout:
-      name: direct
-{%- endif %}
+    grub:
+      install_devices:
+        - volume-{{ root_svol['volume_id'] }}
+    {# disable default file swap #}
+    swap:
+      size: 0
+    config:
+{%- for svol in config['svols'] if svol['type'] != 'HPAV' %}
+{%- set volid = 'volume-' + svol['volume_id'] %}
+{%-   if svol['type'] == "FCP" %}
+      - id: {{ volid }}
+        ptable: gpt
+        type: disk
+        serial: "{{svol['specs']['wwid']}}"
+        wwn: "0x{{svol['specs']['wwid'][1:]}}"
+        wipe: superblock-recursive
+        preserve: false
+{%-   elif svol['type'] == "DASD" %}
+      - id: {{ volid }}-dasd
+        type: dasd
+        device_id: 0.0.{{svol['volume_id']}}
+        blocksize: 4096
+        disk_layout: cdl
+        mode: full
+      - id: {{ volid }}
+        type: disk
+        wipe: superblock-recursive
+        device_id: 0.0.{{svol['volume_id']}}
+        ptable: vtoc
+        preserve: false
+{%-   endif %}
+{%-   for part in svol['part_table']['table'] %}
+      - type: partition
+        device: {{ volid }}
+        id: {{ volid }}-part{{ loop.index }}
+{%-     if svol['type'] == "FCP" %}
+        {# safety margin of 1 MB for FCP devices #}
+        size: {{ mib_to_bytes(part['size'] - 1) }}
+{%-     else %}
+        size: {{ mib_to_bytes(part['size']) }}
+{%-     endif %}
+        wipe: superblock
+        preserve: false
+        number: {{ loop.index }}
+{%-     if part['fs'] == 'swap' %}
+        flag: swap
+{%-     endif %}
+      - type: format
+        volume: {{ volid }}-part{{ loop.index }}
+        id: {{ volid }}-part{{ loop.index }}-fs
+        fstype: {{ part['fs'] }}
+      - type: mount
+        device: {{ volid }}-part{{ loop.index }}-fs
+        id: {{ volid }}-part{{ loop.index }}-fs-mount
+        path: {{ part['mp'] }}
+        options: {{ part['mo'] }}
+{%-   endfor %}{# part #}
+{% endfor %}{# svol in svols #}
+{%- endif %}{# not KVM %}
 
 {# Use networkd as default renderer, because MAC addresses and such #}
   network:

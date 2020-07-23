@@ -148,11 +148,13 @@ class EnvDocker(EnvBase):
             # TODO: runtime-constraints-on-resources e.g. --memory=""
             container_obj = self._client.containers.run(
                 image=self._image_name, name=container_name,
-                user="ansible",          # less privileged user
                 hostname=container_name,
                 detach=True,             # immediately return Container object
                 remove=True,             # Removes container when finished
                 stdout=True, stderr=True,
+                # we would want to start container with root user
+                # to allow PID 1 process to prepare the environment,
+                # and run subprocesses as less privileged users
                 security_opt=["no-new-privileges:true"],  # disables sudo
                 tty=True
             )
@@ -168,6 +170,7 @@ class EnvDocker(EnvBase):
         exec_id = self._client.api.exec_create(
             container_obj.name,
             '/assets/downloader.py',
+            user="ansible",          # less privileged user
             environment={
                 'TESSIA_ANSIBLE_DOCKER_REPO_URL': repo_url,
                 'TESSIA_ANSIBLE_DOCKER_LOG_LEVEL': (
@@ -199,6 +202,7 @@ class EnvDocker(EnvBase):
         exec_id = self._client.api.exec_create(
             container_obj.name,
             ['ansible-playbook', playbook_name],
+            user="ansible",          # less privileged user
             workdir=PLAYBOOK_DIR)
         lines = self._client.api.exec_start(exec_id['Id'], stream=True)
         ret = {'Running': True, 'ExitCode': 0}

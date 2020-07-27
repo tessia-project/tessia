@@ -2,7 +2,7 @@
 autoinstall:
   version: 1
   refresh-installer:
-    update: yes
+    update: no
   reporting:
     remote:
       type: webhook
@@ -85,6 +85,47 @@ installation we create these auxiliary variables #}
 
   early-commands:
     - set -x
+    {# set installer password #}
+    - "sed -i -e 's#installer:[^:]*#installer:{{config['sha512rootpwd']}}#' /etc/shadow"
+    - sed -i -e '/^installer/ s#subiquity-shell#bash#' /etc/passwd
+    - |
+      echo > /var/local/watchdog.py \
+      "#!/usr/bin/python3\n"\
+      "import requests\n"\
+      "import glob\n"\
+      "import json\n"\
+      "import os\n"\
+      "import time\n"\
+      "logpoint = '{{ config['webhook']['endpoint'] }}'\n"\
+      "binpoint = logpoint.replace('/log/','/bin/')\n"\
+      "auth = 'oauth_consumer_key={{config['webhook']['key']}},oauth_token={{ config['webhook']['token'] }}'\n"\
+      "with open('/tmp/watchdog.start', 'wt') as f:\n"\
+      "    f.write('{}'.format(time.time()))\n"\
+      "while not [_ for _ in glob.glob('/var/crash/*.crash') if os.stat(_).st_size > 10000]:\n"\
+      "    time.sleep(0.5)\n"\
+      "with open('/tmp/watchdog.trigger', 'wt') as f:\n"\
+      "    f.write('{}'.format(time.time()))\n"\
+      "event = {'name': 'autoinstall.yaml', 'event_type': 'log_dump', 'origin': 'watchdog', \n"\
+      "    'timestamp': time.time(), 'level': 'DEBUG', 'result': 'SUCCESS'}\n"\
+      "files = {'autoinstall.yaml': '/autoinstall.yaml', 'curtin-error-logs.tar': '/var/log/curtin/curtin-error-logs.tar'}\n"\
+      "while True:\n"\
+      "    time.sleep(5.2)\n"\
+      "    for name, path in files.items():\n"\
+      "        event['name'] = name\n"\
+      "        try:\n"\
+      "            with open(path, 'rt') as f:\n"\
+      "                contents = f.read()\n"\
+      "            event['result'] = 'SUCCESS'\n"\
+      "            requests.post(binpoint, files={name: contents}, headers={'Authorization': auth})\n"\
+      "        except:\n"\
+      "            event['result'] = 'FAIL'\n"\
+      "        resp = requests.post(logpoint, json=event, headers={'Authorization': auth})\n"\
+      "        if resp.status_code != 200:\n"\
+      "            with open('/tmp/watchdog.stop', 'wt') as f:\n"\
+      "                f.write('{}'.format(time.time()))\n"\
+      "            exit(0)"\
+      && chmod +x /var/local/watchdog.py && /var/local/watchdog.py &
+
     {# enable used devices #}
 {%- for svol in config['svols'] %}
   {%- if svol['type'] in ('DASD', 'HPAV') %}
@@ -95,6 +136,10 @@ installation we create these auxiliary variables #}
      {%- endfor %}
   {%- endif %}
 {%- endfor -%}
+{%- set have_fcp = (config['svols'] | selectattr('type', 'eq', 'FCP'))[0] -%}
+{%- if have_fcp %}
+    - chzdev zfcp-lun -e --online
+{%- endif %}
 {%- for iface in config['ifaces'] %}
   {%- if iface['type'] == 'OSA' %}
     - chzdev -e qeth {{iface['attributes']['ccwgroup'].split(',')[0]}}
@@ -146,7 +191,7 @@ installation we create these auxiliary variables #}
         serial: "{{svol['specs']['wwid']}}"
         wwn: "0x{{svol['specs']['wwid'][1:]}}"
         wipe: superblock-recursive
-        preserve: false
+        preserve: {{not svol['part_table']['table']}}
 {%-   elif svol['type'] == "DASD" %}
       - id: {{ volid }}-dasd
         type: dasd
@@ -159,7 +204,7 @@ installation we create these auxiliary variables #}
         wipe: superblock-recursive
         device_id: 0.0.{{svol['volume_id']}}
         ptable: vtoc
-        preserve: false
+        preserve: {{not svol['part_table']['table']}}
 {%-   endif %}
 {%-   for part in svol['part_table']['table'] %}
       - type: partition

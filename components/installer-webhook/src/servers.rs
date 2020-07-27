@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use bytes::BufMut;
+use futures::{TryFutureExt, TryStreamExt};
 use serde::Deserialize;
-use warp::{Buf, Filter, Rejection, Reply};
+use warp::{multipart, Buf, Filter, Rejection, Reply};
 
 use log::info;
 use tokio::sync::{mpsc, oneshot};
@@ -157,6 +159,24 @@ async fn control_add_event(
     }
 }
 
+/// Add multiple events to session
+async fn control_add_events(
+    auth: EventAuth,
+    events: Vec<Event>,
+    control_channel: ControlChannel,
+) -> Result<impl Reply, Rejection> {
+    for event in events {
+        // TODO: process results from a batch message
+        control_add_event(auth.clone(), event, control_channel.clone())
+            .await
+            .ok();
+    }
+    Ok(warp::reply::with_status(
+        warp::reply::json(&"Event accepted".to_owned()),
+        warp::http::StatusCode::OK,
+    ))
+}
+
 /// Retrieve event data
 async fn control_get_logs(
     session_id: SessionId,
@@ -178,7 +198,9 @@ async fn control_get_logs(
         .await
     {
         return Ok(warp::reply::with_status(
-            warp::reply::json(&"Session could not be removed (control unavailable)".to_owned()),
+            warp::reply::json(
+                &"Session data could not be retrieved (control unavailable)".to_owned(),
+            ),
             warp::http::StatusCode::INTERNAL_SERVER_ERROR,
         ));
     }
@@ -195,13 +217,13 @@ async fn control_get_logs(
         )),
         Err(_) => Ok(warp::reply::with_status(
             warp::reply::json(
-                &"Session could not be removed (no response from control)".to_owned(),
+                &"Session data could not be retrieved (no response from control)".to_owned(),
             ),
             warp::http::StatusCode::INTERNAL_SERVER_ERROR,
         )),
         _ => Ok(warp::reply::with_status(
             warp::reply::json(
-                &"Session could not be started (wrong response from control)".to_owned(),
+                &"Session data could not be retrieved (wrong response from control)".to_owned(),
             ),
             warp::http::StatusCode::INTERNAL_SERVER_ERROR,
         )),
@@ -252,14 +274,15 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
     ))
 }
 
-fn buf_to_event(mut body: impl Buf) -> Event {
-    let mut result: Event = "".to_owned();
+/// Convert text body to an Event
+fn buf_to_string_event(mut body: impl Buf) -> Event {
+    let mut result: String = "".to_owned();
     while body.has_remaining() {
         let cnt = body.bytes().len();
         result += &String::from_utf8_lossy(body.bytes());
         body.advance(cnt);
     }
-    result
+    Event::Text(result)
 }
 
 /// Create webhook server routes
@@ -280,34 +303,222 @@ pub fn create_webhook_server(
     // create a warp filter, which will inject control_channel into callback argument list
     let channel = warp::any().map(move || control_channel.clone());
 
-    let sink = warp::post()
+    let log_sink = warp::post()
         .and(warp::path("log"))
-        .and(warp::header::<String>("Authorization").map(|auth: String| {
-            let mut origin: &str = "";
-            let mut secret: &str = "";
-            for s in auth
-                .split(",")
-                .map(|s| s.trim_start())
-                .filter(|s| s.starts_with("oauth_"))
-            {
-                for value in s.split("=").skip(1) {
-                    if s.starts_with("oauth_consumer_key") {
-                        origin = value.trim_matches('"');
-                    } else if s.starts_with("oauth_token") {
-                        secret = value.trim_matches('"');
-                    }
-                }
-            }
-            EventAuth {
-                ident: origin.to_owned(),
-                signature: secret.to_owned(),
-            }
-        }))
+        .and(webhook_auth())
         .and(warp::body::content_length_limit(1024 * 1024 * 16))
-        .and(warp::body::aggregate().map(buf_to_event))
-        .and(channel)
+        .and(warp::body::aggregate().map(buf_to_string_event))
+        .and(channel.clone())
         .and_then(control_add_event);
 
+    let bin_sink = warp::post()
+        .and(warp::path("bin"))
+        .and(webhook_auth())
+        .and(multipart_filter_to_events())
+        .and(channel)
+        .and_then(control_add_events);
+
     let log = warp::log("requests");
-    sink.recover(handle_rejection).or(any).with(log).boxed()
+    log_sink
+        .or(bin_sink)
+        .recover(handle_rejection)
+        .or(any)
+        .with(log)
+        .boxed()
+}
+
+/// OAuth-based authorization filter
+///
+/// This filter parses Authorization header that should be present for correct routing
+/// to a webhook session
+fn webhook_auth() -> impl Filter<Extract = (EventAuth,), Error = Rejection> + Copy {
+    warp::header::<String>("Authorization").map(|auth: String| {
+        let mut origin: &str = "";
+        let mut secret: &str = "";
+        for s in auth
+            .split(",")
+            .map(|s| s.trim_start())
+            .filter(|s| s.starts_with("oauth_"))
+        {
+            for value in s.split("=").skip(1) {
+                if s.starts_with("oauth_consumer_key") {
+                    origin = value.trim_matches('"');
+                } else if s.starts_with("oauth_token") {
+                    secret = value.trim_matches('"');
+                }
+            }
+        }
+        EventAuth {
+            ident: origin.to_owned(),
+            signature: secret.to_owned(),
+        }
+    })
+}
+
+/// Request filter for multipart data type
+///
+/// Multipart is used when uploading files to the server.
+/// This filter extracts first uploaded file
+fn multipart_filter_to_events() -> impl Filter<Extract = (Vec<Event>,), Error = Rejection> + Clone {
+    let f = multipart::form().and_then(|form: multipart::FormData| {
+        async {
+            // Collect the fields into (name, value): (String, Vec<u8>)
+            let part: Result<Vec<(String, Vec<u8>)>, warp::Rejection> = form
+                .and_then(|part| {
+                    let name = part.name().to_string();
+                    let value = part.stream().try_fold(Vec::new(), |mut vec, data| {
+                        vec.put(data);
+                        async move { Ok(vec) }
+                    });
+                    value.map_ok(move |vec| (name, vec))
+                })
+                .try_collect()
+                .await
+                .map_err(|e| {
+                    panic!("multipart error: {:?}", e);
+                });
+            part
+        }
+    });
+
+    // convert parts to events
+    f.map(|parts: Vec<(String, Vec<u8>)>| {
+        parts
+            .iter()
+            .map(|(ident, data)| Event::Raw(ident.clone(), data.to_vec()))
+            .collect()
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Implement PartialEq for test convenience,
+    // main code should not use direct copmarisons
+    impl std::cmp::PartialEq for EventAuth {
+        fn eq(&self, other: &Self) -> bool {
+            self.ident == other.ident && self.signature == other.signature
+        }
+    }
+
+    impl std::cmp::PartialEq for Event {
+        fn eq(&self, other: &Self) -> bool {
+            if let Event::Text(other_text) = other {
+                match self {
+                    Event::Text(t) => t == other_text,
+                    _ => false,
+                }
+            } else if let Event::Raw(other_ident, other_data) = other {
+                match self {
+                    Event::Raw(ident, data) => ident == other_ident && data == other_data,
+                    _ => false,
+                }
+            } else {
+                false
+            }
+        }
+    }
+    impl std::fmt::Debug for Event {
+        fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            match self {
+                Event::Text(t) => f.debug_tuple("Event::Text").field(t).finish(),
+                Event::Raw(ident, d) => f
+                    .debug_tuple("Event::Raw")
+                    .field(ident)
+                    .field(&d.len())
+                    .finish(),
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_auth() {
+        let filter = webhook_auth();
+        let expected = EventAuth {
+            ident: "authkey".to_owned(),
+            signature: "authtoken".to_owned(),
+        };
+
+        let value = warp::test::request()
+            .header(
+                "Authorization",
+                "oauth_signature=empty,oauth_consumer_key=authkey,\
+                    oauth_broken=false,oauth_token=authtoken",
+            )
+            .path("/log")
+            .filter(&filter)
+            .await
+            .unwrap();
+        assert_eq!(value, expected);
+
+        let value = warp::test::request()
+            .header(
+                "Authorization",
+                "oauth_consumer_key=somethingelse,oauth_token=authtoken",
+            )
+            .path("/log")
+            .filter(&filter)
+            .await
+            .unwrap();
+        assert_ne!(value, expected);
+    }
+
+    #[tokio::test]
+    async fn test_body_to_event() {
+        let filter = warp::post()
+            .and(warp::body::content_length_limit(1024 * 1024 * 16))
+            .and(warp::body::aggregate().map(buf_to_string_event));
+        let expected = Event::Text("An event message".to_owned());
+
+        let request = warp::test::request()
+            .method("POST")
+            .body("An event message");
+        let value = request.filter(&filter).await.unwrap();
+        assert_eq!(value, expected);
+
+        let request = warp::test::request()
+            .method("POST")
+            .body(b"\xff\x00\xfe\x01\xfd\x02 binary test \x80\x81\x82");
+        let value = request.filter(&filter).await.unwrap();
+        assert_ne!(value, expected);
+    }
+
+    #[tokio::test]
+    async fn test_file_to_event() {
+        let filter = warp::post().and(multipart_filter_to_events());
+        let expected = Event::Raw(
+            "sample".to_owned(),
+            "a sample uploaded file".as_bytes().to_vec(),
+        );
+        assert_eq!(expected.to_string(), "binary:sample:22");
+
+        let unexpected = Event::Raw(
+            "sample".to_owned(),
+            "not a sample uploaded file".as_bytes().to_vec(),
+        );
+
+        let boundary = "--abcdef1234--";
+        let body = format!(
+            "\
+             --{0}\r\n\
+             content-disposition: form-data; name=\"sample\"\r\n\r\n\
+             a sample uploaded file\r\n\
+             --{0}--\r\n\
+             ",
+            boundary
+        );
+
+        let request = warp::test::request()
+            .method("POST")
+            .header("content-length", body.len())
+            .header(
+                "content-type",
+                format!("multipart/form-data; boundary={}", boundary),
+            )
+            .body(body);
+        let value = request.filter(&filter).await.unwrap();
+        assert_eq!(value.get(0), Some(&expected));
+        assert_ne!(value.get(0), Some(&unexpected));
+    }
 }

@@ -4,12 +4,12 @@
   <add-on>
     <add_on_products config:type="list">
       <listentry>
-        <media_url><![CDATA[{{config["repos"][0]['url'].replace('/INST', '/Packages/Module-Basesystem')}}]]></media_url>
+        <media_url><![CDATA[{{config["repos"][0]['url'].replace('/Packages', '/Packages/Module-Basesystem').replace('/INST', '/Packages/Module-Basesystem')}}]]></media_url>
         <product>sle-module-basesystem</product>
         <product_dir>/</product_dir>
       </listentry>
       <listentry>
-        <media_url><![CDATA[{{config["repos"][0]['url'].replace('/INST', '/Packages/Module-Server-Applications')}}]]></media_url>
+        <media_url><![CDATA[{{config["repos"][0]['url'].replace('/Packages', '/Packages/Module-Server-Applications').replace('/INST', '/Packages/Module-Server-Applications')}}]]></media_url>
         <product>sle-module-server-applications</product>
         <product_dir>/</product_dir>
       </listentry>

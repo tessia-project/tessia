@@ -83,6 +83,7 @@ class TestPlatZvm(TestCase):
         """
         kargs = "param1=value1 param2=value2"
         self._plat.boot(kargs)
+        self._mock_hyp_cls.return_value.login.assert_called_with()
 
         guest_name = self._prof_entry.system_rel.name
         cpu = self._prof_entry.cpu

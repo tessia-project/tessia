@@ -168,6 +168,9 @@ class PlatZvm(PlatBase):
                 "cmdline": kargs,
             }
         }
+        # login to 3270 console
+        self._hyp_obj.login()
+        # boot into installer
         self._hyp_obj.start(guest_name, cpu, memory, params)
         # clear the underlying s3270 process
         self._hyp_obj.logoff()

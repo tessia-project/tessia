@@ -78,7 +78,6 @@ class PlatBase(metaclass=abc.ABCMeta):
         # base class no knowledge about parameters so _create_hyp can be
         # implemented by children classes
         self._hyp_obj = self._create_hyp()
-        self._hyp_obj.login()
     # __init__()
 
     def _create_hyp(self):

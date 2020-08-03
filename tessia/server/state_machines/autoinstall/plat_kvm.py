@@ -63,6 +63,9 @@ class PlatKvm(PlatBase):
         # create our own logger so that the right module name is in output
         self._logger = logging.getLogger(__name__)
 
+        # create virsh session
+        self._hyp_obj.login()
+
         # determine the type of devpath prefix used for devices, certain
         # distros use virtio-pci-* naming
         p_name = self._os.pretty_name

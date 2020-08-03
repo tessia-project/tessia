@@ -115,8 +115,7 @@ class TestPlatBase(TestCase):
         Test the correct initialization and the operations of a
         PlatBase object.
         """
-        # The instance of the Hypervisor class.
-        hyper = self._mock_hypervisor.return_value
+        # instance of a PlatBase stub
         plat = self._create_plat_base()
 
         # Asserts that we are correctly creating the Hypervisor
@@ -126,7 +125,6 @@ class TestPlatBase(TestCase):
             self._hyper_profile_entry.credentials["admin-user"],
             self._hyper_profile_entry.credentials["admin-password"],
             None)
-        hyper.login.assert_called_with()
 
         # Performs the reboot operation.
         plat.reboot(self._profile_entry)

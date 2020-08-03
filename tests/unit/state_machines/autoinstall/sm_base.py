@@ -103,6 +103,11 @@ class TestSmBase(TestCase):
 
         patcher = patch.object(sm_base, 'os', autospec=True)
         self._mock_os = patcher.start()
+        self._mock_os.path.isdir.return_value = False
+        self.addCleanup(patcher.stop)
+
+        patcher = patch.object(sm_base, 'rmtree', autospec=True)
+        self._mock_rmtree = patcher.start()
         self.addCleanup(patcher.stop)
 
         patcher = patch.object(sm_base, 'PostInstallChecker', autospec=True)
@@ -233,10 +238,23 @@ class TestSmBase(TestCase):
         self.db.session.commit()
     # _mock_db_obj()
 
+    def test_init_dir_cleanup(self):
+        """
+        Test the autofile directory cleanup.
+        """
+        self._mock_os.path.isdir.return_value = True
+        mach = self._create_sm(self._child_cls, "rhel7.2",
+                               "kvm054/kvm_kvm054_install", "rhel7-default")
+        mach.start()
+        self._mock_rmtree.assert_called_with(mach._autofile_path)
+        mach.cleanup()
+    # test_init()
+
     def test_init_fails_cleanup(self):
         """
         Test the case the cleanup function fails.
         """
+        self._mock_os.path.isdir.return_value = False
         self._mock_os.remove.side_effect = OSError
         mach = self._create_sm(self._child_cls, "rhel7.2",
                                "kvm054/kvm_kvm054_install", "rhel7-default")

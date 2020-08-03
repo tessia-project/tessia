@@ -23,8 +23,9 @@ from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
 from functools import cmp_to_key
-from tessia.baselib.common.ssh.client import SshClient
+from shutil import rmtree
 from socket import gethostbyname
+from tessia.baselib.common.ssh.client import SshClient
 from tessia.server.config import Config
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import Repository, System, SystemProfile
@@ -397,6 +398,21 @@ class SmBase(metaclass=abc.ABCMeta):
         return result
     # _parse_svol()
 
+    def _remove_autofile(self):
+        """
+        Remove an autofile
+        """
+        if os.path.exists(self._autofile_path):
+            try:
+                if os.path.isdir(self._autofile_path):
+                    rmtree(self._autofile_path)
+                else:
+                    os.remove(self._autofile_path)
+            except OSError:
+                raise RuntimeError("Unable to delete the autofile during"
+                                   " cleanup.")
+    # _remove_autofile()
+
     def _render_installer_cmdline(self):
         """
         Returns installer kernel command line from the template
@@ -481,12 +497,7 @@ class SmBase(metaclass=abc.ABCMeta):
         Do not call this method directly but indirectly from machine.py to make
         sure that the cleaning_up variable is set.
         """
-        if os.path.exists(self._autofile_path):
-            try:
-                os.remove(self._autofile_path)
-            except OSError:
-                raise RuntimeError("Unable to delete the autofile during"
-                                   " cleanup.")
+        self._remove_autofile()
     # cleanup()
 
     def collect_info(self):
@@ -568,6 +579,7 @@ class SmBase(metaclass=abc.ABCMeta):
         Fill the template and create the autofile in the target location
         """
         self._logger.info("generating autofile")
+        self._remove_autofile()
         template = jinja2.Template(self._template.content)
 
         autofile_content = template.render(config=self._info)

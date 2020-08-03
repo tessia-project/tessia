@@ -109,6 +109,7 @@ class TestSmAnaconda(TestCase):
 
         patcher = patch.object(sm_base, 'os', autospec=True)
         self._mock_os = patcher.start()
+        self._mock_os.path.isdir.return_value = False
         self.addCleanup(patcher.stop)
 
         patcher = patch.object(sm_base, 'SshClient', autospec=True)

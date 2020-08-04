@@ -50,6 +50,9 @@ class PlatLpar(PlatBase):
         # create our own logger so that the right module name is in output
         self._logger = logging.getLogger(__name__)
 
+        # create HMC session
+        self._hyp_obj.login()
+
         # make sure the CPC of the LPAR has a live-image disk configured
         try:
             self._live_src = self._hyp_prof.storage_volumes_rel[0]

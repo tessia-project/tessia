@@ -102,6 +102,7 @@ class TestPlatKvm(TestCase):
         # The instance of the Hypervisor class.
         mock_hyp = self._mock_hypervisor_cls.return_value
         plat = self._create_plat_kvm()
+        mock_hyp.login.assert_called_with()
 
         # Performs the boot operation.
         plat.boot("SOME PARAM")

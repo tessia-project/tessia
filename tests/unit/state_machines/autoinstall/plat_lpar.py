@@ -102,6 +102,7 @@ class TestPlatLpar(TestCase):
         """
         mock_hyp = self._mock_hypervisor_cls.return_value
         plat = self._create_plat_lpar()
+        mock_hyp.login.assert_called_with()
         plat.boot("some kargs")
 
         guest_name = self._profile_entry.system_rel.name

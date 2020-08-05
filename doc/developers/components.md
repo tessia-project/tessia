@@ -37,8 +37,10 @@ Webhook configuration is provided in `/etc/tessia/server.yaml` in section `insta
 installer-webhook:
   cleanup_interval: 600
   control_port: 7224
-  log_path: /var/log/tessia
   webhook_port: 7223
+  log_path: /var/log/tessia
+  log_rotate_size: 52428800
+  log_rorate_keep: 3
 ```
 
 `cleanup_interval`: how often does the component cleanup stale sessions that were not reclaimed by autoinstaller state machine. This is only a precautionary measure; normally job cancellation removes the session on the webhook.

@@ -41,6 +41,12 @@ pub struct Config {
 
     #[serde(default = "default_cleanup_interval")]
     pub cleanup_interval: u32,
+
+    #[serde(default = "default_log_rotate_size")]
+    pub log_rotate_size: u64,
+
+    #[serde(default = "default_log_rotate_keep")]
+    pub log_rotate_keep: u32,
 }
 
 fn default_log_path() -> String {
@@ -54,6 +60,12 @@ fn default_control_port() -> u16 {
 }
 fn default_cleanup_interval() -> u32 {
     600
+}
+fn default_log_rotate_size() -> u64 {
+    50 * 1024 * 1024
+}
+fn default_log_rotate_keep() -> u32 {
+    3
 }
 
 impl Config {
@@ -120,9 +132,11 @@ impl Config {
 
     /// Get log4rs configuration
     pub fn get_logger_config(&self) -> log4rs::config::Config {
+        // log file path and format
         let request_log_path = self.log_path.clone() + "/installer-webhook-requests.log";
         const PATTERN: &'static str = "{d(%Y-%m-%d %H:%M:%S)} {l} {t}:{L} - {m}{n}";
 
+        // create stdout configuration section
         let stdout = ConsoleAppender::builder()
             .encoder(Box::new(PatternEncoder::new(PATTERN)))
             .build();
@@ -130,8 +144,14 @@ impl Config {
             .appender(Appender::builder().build("stdout", Box::new(stdout)));
         let root_builder = log4rs::config::Root::builder().appender("stdout");
 
+        // create rolling requests log
         let roller: Box<dyn compound::roll::Roll> =
-            match compound::roll::fixed_window::FixedWindowRoller::builder().build(".{}.log", 3) {
+            match compound::roll::fixed_window::FixedWindowRoller::builder().build(
+                // naming of rolled (archived) log files
+                &(request_log_path.clone() + ".{}"),
+                // keep this many rotated files
+                self.log_rotate_keep,
+            ) {
                 Ok(r) => Box::new(r),
                 Err(e) => {
                     warn!("Could not create rolling request logs: {}", e);
@@ -143,18 +163,21 @@ impl Config {
         match RollingFileAppender::builder()
             .encoder(Box::new(PatternEncoder::new(PATTERN)))
             .build(
+                // name of primary requests log file
                 &request_log_path,
                 Box::new(compound::CompoundPolicy::new(
-                    Box::new(compound::trigger::size::SizeTrigger::new(50 * 1024 * 1024)),
+                    // roll every this many bytes
+                    Box::new(compound::trigger::size::SizeTrigger::new(self.log_rotate_size)),
                     roller,
                 )),
             ) {
             Ok(request_log) => {
+                // apply rolling log configuration to a "requests" logger
                 config_builder = config_builder
-                    .appender(Appender::builder().build("request", Box::new(request_log)))
+                    .appender(Appender::builder().build("rolling_request", Box::new(request_log)))
                     .logger(
                         Logger::builder()
-                            .appender("request")
+                            .appender("rolling_request")
                             .additive(false)
                             .build("requests", LevelFilter::Info),
                     )
@@ -180,7 +203,9 @@ mod tests {
                 log_path: default_log_path(),
                 control_port: default_control_port(),
                 webhook_port: default_webhook_port(),
-                cleanup_interval: default_cleanup_interval()
+                cleanup_interval: default_cleanup_interval(),
+                log_rotate_size: default_log_rotate_size(),
+                log_rotate_keep: default_log_rotate_keep()
             }
         );
     }
@@ -192,7 +217,9 @@ mod tests {
                 log_path: "/var/log/webhook-installer".to_owned(),
                 control_port: default_control_port(),
                 webhook_port: 80,
-                cleanup_interval: default_cleanup_interval()
+                cleanup_interval: default_cleanup_interval(),
+                log_rotate_size: 20*1024,
+                log_rotate_keep: default_log_rotate_keep()
             },
             Config::from_yaml_string(
                 r"
@@ -201,6 +228,7 @@ mod tests {
                   - a
                   - b
                 config:
+                  log_rotate_size: 20480
                   webhook_port: 80
                   log_path: /var/log/webhook-installer
             ",

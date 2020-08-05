@@ -40,6 +40,8 @@ REPO_DIR = "/tmp/1d3r5e"
 
 PLAYBOOK_NAME = "test-playbook"
 
+GALAXY_REQ = "test-requirements.yml"
+
 
 #
 # CODE
@@ -218,7 +220,7 @@ class TestEnvDockerSuccessful(TestEnvDocker):
         # Create EnvDocker
         env = env_docker.EnvDocker()
 
-        ret = env.run(REPO_URL, REPO_DIR, PLAYBOOK_NAME)
+        ret = env.run(REPO_URL, REPO_DIR, PLAYBOOK_NAME, GALAXY_REQ)
 
         # expect successful run
         self.assertEqual(ret, 0)
@@ -252,9 +254,17 @@ class TestEnvDockerSuccessful(TestEnvDocker):
         self.assertTrue(
             len(self.docker_containers_mock.put_archive.mock_calls) == 1)
 
-        # Check if the ansible playbook is executed
+        # Check if the ansible galaxy is executed
         args, kwargs = \
             self.docker_client_mock.api.exec_create.call_args_list[1]
+        self.assertEqual(args[0], "tessia_ansible_docker_123456")
+        self.assertListEqual(
+            args[1], ["ansible-galaxy", "install", "-r", GALAXY_REQ])
+        self.assertEqual(kwargs["user"], "ansible")
+
+        # Check if the ansible playbook is executed
+        args, kwargs = \
+            self.docker_client_mock.api.exec_create.call_args_list[2]
         self.assertEqual(args[0], "tessia_ansible_docker_123456")
         self.assertListEqual(args[1], ["ansible-playbook", PLAYBOOK_NAME])
         self.assertEqual(kwargs["user"], "ansible")

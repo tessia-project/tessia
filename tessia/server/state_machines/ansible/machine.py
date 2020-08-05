@@ -130,6 +130,9 @@ REQUEST_SCHEMA = {
             "type": "string",
             "enum": list(BaseMachine._LOG_LEVELS),
         },
+        "galaxy_req": {
+            "type": "string"
+        },
     },
     'required': [
         'playbook',
@@ -566,13 +569,16 @@ class AnsibleMachine(BaseMachine):
 
     def _stage_exec_playbook(self):
         """
-        Run the ansible playbook specified by the user.
+        Run the ansible playbook/galaxy specified by the user.
         """
-        self._logger.info("executing playbook")
+        self._logger.info("executing playbook/galaxy")
+
+        galaxy_req_entry = self._params.get('galaxy_req')
 
         ret_code = self._env.run(
             self._params['repo_info']['url'],
-            self._temp_dir, self._params['playbook'])
+            self._temp_dir, self._params['playbook'],
+            galaxy_req_entry)
         if ret_code != 0:
             raise RuntimeError('playbook execution failed')
     # _stage_exec_playbook()
@@ -664,6 +670,9 @@ class AnsibleMachine(BaseMachine):
             'params': obj_params,
             'repo_info': repo_info,
         }
+
+        result['galaxy_req'] = obj_params.get('galaxy_req')
+
         return result
     # parse()
 

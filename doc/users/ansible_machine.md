@@ -85,6 +85,9 @@ systems:
     groups:
       - all
 
+# switch on galaxy and define a path to galaxy requirements file, it has to be present in the repository ("optional")
+galaxy_req: requirements.yml
+
 # secrets section to conceal sensitive values ("optional")
 secrets:
   # a corresponding ${hiden parameter} entry will be replaced with its value

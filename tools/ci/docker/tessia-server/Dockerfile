@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:18.04 as base
 
 # by default we expect the git repos to be placed by the ci process under /assets
 # but it is also possible to use this dockerfile directly and override the variables
@@ -37,31 +37,49 @@ RUN apt-get -q update > /dev/null && \
     vim \
     # required by ansible when using ssh connection plugin
     sshpass openssh-client \
-    # components
-    cargo rustc \
     # init-like daemon to manage our services' processes
     supervisor > /dev/null && \
-    # clean the cache to free up space
-    apt-get -q clean && \
-    # generate the locale/encoding and set it as default
-    locale-gen en_US.UTF-8 && \
-    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     # set up python packaging tools
     pip3 -q install -U "setuptools==49.6.0" pip && \
     # remove pip from distro to avoid conflicts
     apt-get -y remove python3-pip && hash -r && \
-    # web server for api service
-    pip3 -q install -U uwsgi
+    # clean the cache to free up space
+    apt-get -q clean && \
+    # generate the locale/encoding and set it as default
+    locale-gen en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 # set the locale/encoding for the session
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 COPY assets /assets/
 
-# server installation
+# get the code
 RUN cd /assets && \
-    git clone $git_repo repo-tessia && \
-    cd repo-tessia && \
+    git clone $git_repo repo-tessia
+
+### Components builder
+from base as components-build
+
+RUN apt-get -yq install \
+    # rust compiler
+    cargo rustc && \
+    # output directory
+    mkdir /assets/bin && \
+    cd /assets/repo-tessia && \
+    # build components
+    cd /assets/repo-tessia/components/installer-webhook && \
+    cargo test && cargo build --release && \
+    mv /assets/repo-tessia/build/release/installer-webhook /assets/bin && \
+    rm -rf /assets/repo-tessia/build
+
+### Server image
+FROM base as server
+
+# server installation
+RUN cd /assets/repo-tessia && \
+    # web server for api service
+    pip3 -q install -U uwsgi && \
     # server installation
     pip3 install -U -r requirements.txt -r dev-requirements.txt . && \
     ./setup.py -q install_data && \
@@ -80,9 +98,6 @@ RUN cd /assets && \
     # same for www/jobs dirs
     yamlman update /etc/tessia/server.yaml auto_install.dir /var/tessia/www && \
     yamlman update /etc/tessia/server.yaml scheduler.jobs_dir /var/tessia/jobs && \
-    # build components
-    cd /assets/repo-tessia/components/installer-webhook && cargo test && cargo build --release && \
-    mv /assets/repo-tessia/build/release/installer-webhook /usr/local/bin/ && \
     # cleanup section - remove unneeded resources
     cd / && \
     mv /assets/entrypoint /entrypoint && \
@@ -92,6 +107,9 @@ RUN cd /assets && \
     libssl-dev \
     libffi-dev \
     libpq-dev > /dev/null
+
+# get components
+COPY --from=components-build /assets/bin/installer-webhook /usr/local/bin/
 
 EXPOSE 80 5000 7223
 

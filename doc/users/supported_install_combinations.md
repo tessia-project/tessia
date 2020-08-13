@@ -110,8 +110,6 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 
 | Distro                         | RHEL | SLES | Ubuntu | Fedora |
 | ------                         | ---  | ---  | -----  | -----  |
-| using distro as KVM hypervisor | Y*   | Y    | Y      | N**    |
+| using distro as KVM hypervisor | Y*   | Y    | Y      | Y      |
 
 [*] - Except RHEL7.4 and lower
-
-[**] - Starting with fedora28 and higher

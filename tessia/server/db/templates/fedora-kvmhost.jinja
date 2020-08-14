@@ -79,6 +79,8 @@ part {% if entry["fs"] == "swap" %}swap{% else %}{{entry["mp"]}}{% endif %} --fs
 @^minimal-environment
 @core
 @virtualization
+device-mapper-multipath
+lsscsi
 kexec-tools
 python
 %end

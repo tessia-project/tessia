@@ -143,10 +143,11 @@ def output(job_id):
                 {'job_id': job_id},
                 'job not found.')
             # job has failed: report error and stop
-            if item.state == 'FAILED':
-                raise click.ClickException('Job #{} failed'.format(job_id))
+            if item.state in ('CANCELED', 'FAILED'):
+                raise click.ClickException('Job #{} ended in {} state'.format(
+                    job_id, item.state))
             # job has finished: nothing more to do
-            elif item.state not in ('RUNNING', 'CLEANINGUP', 'WAITING'):
+            if item.state == 'COMPLETED':
                 return
 
             # job still active: sleep a bit and try to fetch more lines

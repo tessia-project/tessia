@@ -126,8 +126,11 @@ class SmSubiquityInstaller(SmBase):
         timeout_installation = time() + max_wait_install
 
         success = False
+        failure = False
         frequency_check = 2.5
         last_event = 0
+
+        watchdog_events = []
 
         while not success and time() <= timeout_installation:
             session_logs = self._session.get(
@@ -136,23 +139,37 @@ class SmSubiquityInstaller(SmBase):
                 params={"start": last_event, "end": 0})
             if session_logs.status_code != 200:
                 raise RuntimeError("Could not read installation logs")
-            # it's a little bit dumb, but we get the events as a json-encoded
-            # array of strings, which represent json objects,
-            # to avoid extra processing on the webhook
+
+            # We receive a number of log events that were captured by webhook.
+            # These include text messages from subiquity, and file metadata
+            # from installer watchdog
             events = session_logs.json()
             last_event += len(events)
             for event_string in events:
-                event = json.loads(event_string)
+                if event_string.startswith('binary:'):
+                    self._logger.debug("Binary event logged: %s",
+                                       event_string[7:])
+                    continue
+
+                try:
+                    event = json.loads(event_string)
+                except json.JSONDecodeError:
+                    self._logger.debug("Undecodeable event: %s", event_string)
+                    continue
+
+                # parse event data
                 event_description = event.get("description", "")
                 if event_description:
                     event_description = ": " + event_description
                 event_name = event.get("name", "?name?")
                 event_result = event.get("result", "START")
-
-                self._logger.info("%s %s %s",
-                                  event_result,
-                                  event_name,
-                                  event_description)
+                if event["origin"] == 'watchdog':
+                    watchdog_events.append(event)
+                else:
+                    self._logger.info("%s %s %s",
+                                      event_result,
+                                      event_name,
+                                      event_description)
                 success = (event_name == "subiquity/Reboot" and
                            event_result == "SUCCESS" and
                            event.get("event_type", "") == "finish")
@@ -161,9 +178,25 @@ class SmSubiquityInstaller(SmBase):
                 if (event_name.startswith("subiquity/Error") and
                         "/var/crash" in event_description):
                     self._logger.fatal("Detected installation failure")
-                    raise RuntimeError('Installation could not be completed')
+                    failure = True
+                    # we want to exit the loop now, but we should
+                    # wait for additional watchdog messages to come
+                    timeout_installation = time() + 10
 
             sleep(frequency_check)
+
+        if failure:
+            # dump what we know
+            for event in watchdog_events:
+                if event.get('result') == 'SUCCESS':
+                    self._logger.debug("%s: retrieved",
+                                       event.get(
+                                           'name', '(unspecified log name)'))
+                else:
+                    self._logger.debug("%s: not present",
+                                       event.get(
+                                           'name', '(unspecified log name)'))
+            raise RuntimeError('Installation could not be completed')
 
         if not success:
             raise TimeoutError('Installation Timeout: The installation'
@@ -217,21 +250,14 @@ class SmSubiquityInstaller(SmBase):
         http_result = self._session.delete("{}/session/{}".format(
             self._webhook_control, self._session_id))
         if http_result.status_code != 200:
-            self._logger.info("Could not delete webhook session %s: %s",
+            self._logger.info("Webhook session %s not removed: %s",
                               self._session_id, http_result.text)
         else:
             self._logger.info("Removed webhook session %s: %s",
                               self._session_id, http_result.text)
         self._session.close()
 
-        if os.path.exists(self._autofile_path):
-            try:
-                os.remove(self._autofile_path + '/user-data')
-                os.remove(self._autofile_path + '/meta-data')
-                os.rmdir(self._autofile_path)
-            except OSError:
-                raise RuntimeError("Unable to delete the autofile during"
-                                   " cleanup.")
+        super(SmSubiquityInstaller, self).cleanup()
     # cleanup()
 
     def collect_info(self):
@@ -346,6 +372,7 @@ class SmSubiquityInstaller(SmBase):
         Fill the template and create the autofile in the target location
         """
         self._logger.info("generating autofile")
+        self._remove_autofile()
         template = jinja2.Template(self._template.content)
 
         autofile_content = template.render(config=self._info)
@@ -356,7 +383,8 @@ class SmSubiquityInstaller(SmBase):
         try:
             os.mkdir(self._autofile_path)
         except FileExistsError:
-            # that's fine, it's a directory
+            # that's fine, it's a directory, even though it should
+            # not exist after _remove_autofile
             pass
 
         # Write the autofile for usage during installation

@@ -36,6 +36,7 @@ async fn main() {
     let cfg = Config::from_yaml_file(&get_config_location(), "installer-webhook");
     // Switch to normal log
     log_handle.set_config(cfg.get_logger_config());
+    info!("Installer-webhook v{}", env!("CARGO_PKG_VERSION"));
 
     let mut control = Control::new();
     let (control_tx, mut control_rx) =

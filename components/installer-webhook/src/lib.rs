@@ -25,7 +25,23 @@ enum TriState<T> {
 }
 
 pub type SessionId = String;
-pub type Event = String;
+pub enum Event {
+    Text(String),
+    Raw(String, Vec<u8>), // ident, data
+}
+
+/// Text representation for Event
+///
+/// Text events are represented as themselves,
+/// raw only indicate name and length
+impl std::fmt::Display for Event {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Event::Text(t) => write!(f, "{}", t),
+            Event::Raw(ident, d) => write!(f, "binary:{}:{}", ident, d.len()),
+        }
+    }
+}
 
 /// Installation session
 ///
@@ -72,7 +88,7 @@ impl Session {
     /// Add an event
     fn add_log_entry(&mut self, event: Event) {
         let key = self.log.len();
-        self.log.insert(key, event.clone());
+        self.log.insert(key, event);
         self.last_updated = std::time::Instant::now();
 
         // resolve a maybe situation
@@ -83,22 +99,35 @@ impl Session {
         }
 
         // write the result
-        match self.file_descriptor {
-            TriState::Yes(ref mut fd) => {
-                // consume any write errors, we're not safe if disk space ended anyway
-                writeln!(fd, "{}", event).ok();
+        if let Some(ev) = self.log.get(&key) {
+            match ev {
+                Event::Text(text) => match self.file_descriptor {
+                    TriState::Yes(ref mut fd) => {
+                        // consume any write errors, we're not safe if disk space ended anyway
+                        writeln!(fd, "{}", text).ok();
+                    }
+                    _ => {}
+                },
+                Event::Raw(ident, data) => {
+                    let filename = safe_filename(ident);
+                    if let Ok(mut fd) =
+                        std::fs::File::create(format!("{}/{}", self.log_path.clone(), filename))
+                    {
+                        // consume any write errors, we're not safe if disk space ended anyway
+                        fd.write(data).ok();
+                    }
+                }
             }
-            _ => {}
         }
     }
 
     /// Retrieve a range of events
-    fn get_log_entries(&self, start: usize, end: Option<usize>) -> Vec<Event> {
+    fn get_log_entries(&self, start: usize, end: Option<usize>) -> Vec<String> {
         let iter = match end {
             Some(_end) => self.log.range(start.._end),
             None => self.log.range(start..),
         };
-        iter.map(|(_, v)| v.clone()).collect()
+        iter.map(|(_, v)| v.to_string()).collect()
     }
 }
 
@@ -106,7 +135,7 @@ impl Session {
 ///
 /// Every event should provide some credentials in order to be
 /// successfully processed.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct EventAuth {
     pub ident: String,
     pub signature: String,
@@ -126,7 +155,7 @@ pub struct Control {
 }
 
 /// Messages passed to control
-#[derive(Debug)]
+// #[derive(Debug)]
 pub enum ControlMsg {
     CreateSession(SessionInit),
     RemoveSession(SessionId),
@@ -161,7 +190,7 @@ impl ControlMsg {
 pub enum ControlMsgResponse {
     Success,
     Failure,
-    EventsData(Vec<Event>),
+    EventsData(Vec<String>),
 }
 
 impl Control {
@@ -216,7 +245,7 @@ impl Control {
         session_id: SessionId,
         first_entry: usize,
         last_entry: usize,
-    ) -> Result<Vec<Event>, String> {
+    ) -> Result<Vec<String>, String> {
         if let Some(session) = self.sessions.get(&session_id) {
             if last_entry == 0 {
                 Ok(session.get_log_entries(first_entry, None))
@@ -278,12 +307,30 @@ impl Control {
     }
 }
 
+/// Generate a filename that is safe to use in log directory
+fn safe_filename(ident: &str) -> String {
+    if let Some(trail) = ident.rsplit('/').next() {
+        if trail != "" {
+            return format!("file_{}", trail);
+        }
+    }
+
+    "file_binary".to_string()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn make_event(timestamp: f64) -> String {
-        format!("event, origin, {}", timestamp)
+    fn make_event(timestamp: f64) -> Event {
+        Event::Text(format!("event, origin, {}", timestamp))
+    }
+
+    fn make_raw_event(ident: String) -> Event {
+        Event::Raw(
+            ident,
+            b"\xff\x00\xfe\x01\xfd\x02 binary event \x80\x81\x82".to_vec(),
+        )
     }
 
     fn make_session(id: SessionId) -> Session {
@@ -303,6 +350,8 @@ mod tests {
         assert_eq!(s.get_log_entries(0, Some(1)).len(), 1);
         assert_eq!(s.get_log_entries(1, None).len(), 1);
         assert_eq!(s.get_log_entries(2, None).len(), 0);
+        s.add_log_entry(make_raw_event("dump".to_owned()));
+        assert_eq!(s.get_log_entries(2, None).len(), 1);
     }
 
     #[test]
@@ -372,5 +421,18 @@ mod tests {
             1
         ); // remove first
         assert_eq!(control.sessions.len(), 0);
+    }
+
+    #[test]
+    fn filenames() {
+        assert_eq!(safe_filename("message-log.txt"), "file_message-log.txt");
+        assert_eq!(safe_filename("/any/dir/"), "file_binary");
+        assert_eq!(safe_filename("./.."), "file_..");
+        assert_eq!(safe_filename(".."), "file_..");
+        assert_eq!(safe_filename("../../../etc/passwd"), "file_passwd");
+        assert_eq!(
+            safe_filename("/var/log/messages.tar.gz"),
+            "file_messages.tar.gz"
+        );
     }
 }

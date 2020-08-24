@@ -45,6 +45,8 @@ OPERATING_SYSTEMS = [
     'cms,cms,0,0,z/VM Conversational Monitor System (CMS),,',
     'fedora29,redhat,29,0,Fedora 29 (Twenty Nine),fedora-default',
     'fedora30,redhat,30,0,Fedora 30 (Thirty),fedora-default',
+    'fedora31,redhat,31,0,Fedora 31 (Thirty One),fedora-default',
+    'fedora32,redhat,32,0,Fedora 32 (Thirty Two),fedora-default',
     'rhel7.2,redhat,7,2,Red Hat Enterprise Linux Server 7.2 (Maipo),'
     'rhel7-default',
     'rhel7.3,redhat,7,3,Red Hat Enterprise Linux Server 7.3 (Maipo),'
@@ -55,7 +57,13 @@ OPERATING_SYSTEMS = [
     'rhel7-default',
     'rhel7.6,redhat,7,6,Red Hat Enterprise Linux Server 7.6 (Maipo),'
     'rhel7-default',
+    'rhel7.7,redhat,7,7,Red Hat Enterprise Linux Server 7.7 (Maipo),'
+    'rhel7-default',
+    'rhel7.8,redhat,7,8,Red Hat Enterprise Linux Server 7.8 (Maipo),'
+    'rhel7-default',
     'rhel8.0,redhat,8,0,Red Hat Enterprise Linux 8.0 (Ootpa),rhel8-default',
+    'rhel8.1,redhat,8,1,Red Hat Enterprise Linux 8.1 (Ootpa),rhel8-default',
+    'rhel8.2,redhat,8,2,Red Hat Enterprise Linux 8.2 (Ootpa),rhel8-default',
     'sles12.1,suse,12,1,SUSE Linux Enterprise Server 12 SP1,'
     'sles12-default',
     'sles12.2,suse,12,2,SUSE Linux Enterprise Server 12 SP2,'
@@ -64,10 +72,15 @@ OPERATING_SYSTEMS = [
     'sles12-default',
     'sles12.4,suse,12,4,SUSE Linux Enterprise Server 12 SP4,'
     'sles12-default',
-    'sles15,suse,15,0,SUSE Linux Enterprise Server 15,sles15-default',
+    'sles15.1,suse,15,1,SUSE Linux Enterprise Server 15 SP1,'
+    'sles15-default',
+    'sles15.2,suse,15,2,SUSE Linux Enterprise Server 15 SP2,'
+    'sles15-default',
     'ubuntu16.04.1,debian,1604,1,Ubuntu 16.04.1 LTS,ubuntu16-default',
     'ubuntu16.04.2,debian,1604,2,Ubuntu 16.04.2 LTS,ubuntu16-default',
     'ubuntu16.04.3,debian,1604,3,Ubuntu 16.04.3 LTS,ubuntu16-default',
+    'ubuntu16.04.4,debian,1604,4,Ubuntu 16.04.4 LTS,ubuntu16-default',
+    'ubuntu16.04.5,debian,1604,5,Ubuntu 16.04.5 LTS,ubuntu16-default',
     'ubuntu18.04,debian,1804,0,Ubuntu 18.04 LTS,ubuntu18-default',
     'ubuntu18.04.1,debian,1804,1,Ubuntu 18.04.1 LTS,ubuntu18-default',
     'ubuntu18.04.2,debian,1804,2,Ubuntu 18.04.2 LTS,ubuntu18-default',

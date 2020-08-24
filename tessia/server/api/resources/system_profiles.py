@@ -61,6 +61,9 @@ DESC = {
     'gateway': 'Gateway interface',
 }
 
+CPU_MEM_ERROR_MSG = (
+    'For KVM guests the number of CPUs and memory size must be greater than 0')
+
 MARKER_STRIPPED_SECRET = '****'
 
 #
@@ -384,10 +387,9 @@ class SystemProfileResource(SecureResource):
                 target_system.hypervisor_rel.name, hyp_prof_name)
 
         # there are no pre-defined configurations for KVM guests.
-        if target_system.type == 'KVM' and \
-                (properties['cpu'] == 0 or properties['memory'] == 0):
-            raise BaseHttpError(422, msg='For zVM guests number cpu and '
-                                         'memory must be greater than 0')
+        if (target_system.type == 'KVM' and
+                (properties['cpu'] == 0 or properties['memory'] == 0)):
+            raise BaseHttpError(422, msg=CPU_MEM_ERROR_MSG)
 
         item = self.manager.create(properties)
         # don't waste resources building the object in the answer,
@@ -558,10 +560,9 @@ class SystemProfileResource(SecureResource):
                 item.system_rel.hypervisor_rel.name, hyp_prof_name)
 
         # there are no pre-defined configurations for KVM guests.
-        if item.system_rel.type == 'KVM' and \
-                (properties.get('cpu') == 0 or properties.get('memory') == 0):
-            raise BaseHttpError(422, msg='For zVM guests number cpu '
-                                         'and memory must be greater than 0')
+        if (item.system_rel.type == 'KVM' and
+                (properties.get('cpu') == 0 or properties.get('memory') == 0)):
+            raise BaseHttpError(422, msg=CPU_MEM_ERROR_MSG)
 
         updated_item = self.manager.update(item, properties)
 

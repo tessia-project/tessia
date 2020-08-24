@@ -148,6 +148,7 @@ chzdev -e dasd {{volume['volume_id']}}
 %end
 {% endif -%}
 
+%post
 #!/bin/bash
 echo 'PERMITROOTLOGIN="-oPermitRootLogin=yes"' > /etc/sysconfig/sshd-permitrootlogin
 %end

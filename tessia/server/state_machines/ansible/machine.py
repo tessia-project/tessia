@@ -165,7 +165,7 @@ class AnsibleMachine(BaseMachine):
             params (str): A string containing a json in the format defined by
                           the REQUEST_SCHEMA constant.
         """
-        super(AnsibleMachine, self).__init__(params)
+        super().__init__(params)
 
         # make sure query attribute is available on the models by explicitly
         # connecting to db

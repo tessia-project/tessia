@@ -95,7 +95,7 @@ class AutoInstallMachine(BaseMachine):
                 "profile": "<system_name>[/<name of the profile>]"
             }
         """
-        super(AutoInstallMachine, self).__init__(params)
+        super().__init__(params)
 
         # open the db connection
         MANAGER.connect()

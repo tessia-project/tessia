@@ -257,7 +257,7 @@ class SmSubiquityInstaller(SmBase):
                               self._session_id, http_result.text)
         self._session.close()
 
-        super(SmSubiquityInstaller, self).cleanup()
+        super().cleanup()
     # cleanup()
 
     def collect_info(self):

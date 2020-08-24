@@ -38,7 +38,7 @@ class EchoMachine(BaseMachine):
         """
         See base class docstring
         """
-        super(EchoMachine, self).__init__(params)
+        super().__init__(params)
 
         self._params = self.parse(params)
 

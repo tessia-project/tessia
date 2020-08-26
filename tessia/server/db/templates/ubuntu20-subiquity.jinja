@@ -124,7 +124,7 @@ installation we create these auxiliary variables #}
       "            with open('/tmp/watchdog.stop', 'wt') as f:\n"\
       "                f.write('{}'.format(time.time()))\n"\
       "            exit(0)"\
-      && chmod +x /var/local/watchdog.py && /var/local/watchdog.py &
+      && chmod +x /var/local/watchdog.py && nohup /var/local/watchdog.py &
 
     {# enable used devices #}
 {%- for svol in config['svols'] %}

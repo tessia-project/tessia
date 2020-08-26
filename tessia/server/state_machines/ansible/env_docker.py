@@ -226,7 +226,10 @@ class EnvDocker(EnvBase):
             for line in lines:
                 print(line.decode('utf-8'), end='')
 
-        self._logger.info('stopping container...')
+        if ret['ExitCode']:
+            self._logger.info('Container exited abnormally, exit code %d',
+                              ret['ExitCode'])
+        self._logger.info('removing container...')
         container_obj.kill()  # SIGKILL
 
         return ret['ExitCode']

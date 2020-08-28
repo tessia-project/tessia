@@ -22,6 +22,7 @@ Module for the system wizard command
 from potion_client.exceptions import ItemNotFound
 from tessia.cli import types
 from tessia.cli.client import Client
+from tessia.cli.config import CONF
 from tessia.cli.output import print_hor_table
 from tessia.cli.output import print_ver_table
 from tessia.cli.cmds.net import ip as ip_cmds
@@ -113,6 +114,14 @@ WIZ_PROF_ZVM_BY = (
 )
 WIZ_PROF_ZVM_PASSWD = (
     "Enter the zVM user password"
+)
+
+# Project-related messages
+WIZ_PROJ_SELECT_ASK = (
+    "Choose a project for the operation"
+)
+WIZ_PROJ_SELECT_TITLE = (
+    "Available projects:"
 )
 
 # storage step related messages
@@ -394,11 +403,13 @@ WIZ_END = (
 # CODE
 #
 
+
 def _confirm(*args, **kwargs):
     """Helper to print a breakline before prompting for confirmation"""
     click.echo()
     return click.confirm(*args, **kwargs)
 # _confirm()
+
 
 def _get_headers(fields, item):
     """
@@ -418,6 +429,7 @@ def _get_headers(fields, item):
         headers.append(field.__doc__)
     return headers
 # _get_headers()
+
 
 def _prompt(*args, allow_empty=False, **kwargs):
     """
@@ -449,6 +461,7 @@ def _prompt(*args, allow_empty=False, **kwargs):
         ret = None
     return ret
 # _prompt()
+
 
 def _invoke(ctx, invoke_cmd, params, error_msg):
     """
@@ -496,6 +509,7 @@ def _invoke(ctx, invoke_cmd, params, error_msg):
     return True
 # _invoke()
 
+
 def _choice_menu(entries, fields, choice_msg, title=None, headers=None):
     """
     Auxiliar function which shows a list of numbered options to the user and
@@ -542,7 +556,52 @@ def _choice_menu(entries, fields, choice_msg, title=None, headers=None):
     return choice_item
 # _choice_menu()
 
-def _create_disk(client, ctx, sys_item, prof_item):
+
+def _choose_project(client):
+    """
+    Ask for a project to be used in further questions.
+    If there is only one available, use it automatically.
+
+    Args:
+        client (Client): potion client to perform server requests
+
+    Returns:
+        Project: selected project
+    """
+    # choose project
+    user_roles_list = client.UserRoles.instances(
+        where={'user': CONF.get_login()}
+    )
+    user_self = client.Users.first(
+        where={'login': CONF.get_login()}
+    )
+
+    # starting project list
+    if user_self.admin:
+        projects = ['Admins']
+    else:
+        projects = []
+
+    projects += [role.project for role in user_roles_list]
+    project_items = [client.Projects.first(where={'name': project_name})
+                     for project_name in projects]
+
+    if not project_items:
+        return None
+    if len(project_items) == 1:
+        # use the only project automatically
+        return project_items[0]
+
+    # choose one
+    project_fields = ['name', 'desc']
+    project_choice = _choice_menu(
+        project_items, project_fields, WIZ_PROJ_SELECT_ASK)
+
+    return project_choice
+# _choose_project()
+
+
+def _create_disk(client, ctx, sys_item, prof_item, project_item=None):
     """
     Perform the steps required to reach the point where a disk is created or
     reused, partitioned and assigned to the target activation profile.
@@ -552,6 +611,11 @@ def _create_disk(client, ctx, sys_item, prof_item):
         ctx (Context): click's context object
         sys_item (System): target system object
         prof_item (SystemProfile): system activation profile object
+        project_item (Project): project for creating the item
+
+    Returns:
+        volume: target disk
+        project: chosen project
     """
     # vol-add request params
     params = {
@@ -657,6 +721,11 @@ def _create_disk(client, ctx, sys_item, prof_item):
                 WIZ_ST_VOL_MPATH, default=params.get('mpath', True))
         params['desc'] = _prompt(
             WIZ_ST_VOL_DESC, default=params['desc'], allow_empty=True)
+        # check project assignment
+        if not project_item:
+            project_item = _choose_project(client)
+        if project_item:
+            params['project'] = project_item.name
         # execute storage vol-add command
         click.echo('\n' + WIZ_ST_VOL_CREATING)
         # command failed: start over
@@ -686,8 +755,10 @@ def _create_disk(client, ctx, sys_item, prof_item):
 
         class MenuItem():
             """Simple menu item entry"""
+
             def __init__(self, name):
                 self._name = name
+
             @property
             def name(self):
                 """Name"""
@@ -772,9 +843,12 @@ def _create_disk(client, ctx, sys_item, prof_item):
                 # restore some defaults, it doesn't make sense to reuse them
                 params['mp'] = None
                 params['size'] = None
+
+    return vol_item, project_item
 # _create_disk()
 
-def _create_iface(client, ctx, sys_item, prof_item):
+
+def _create_iface(client, ctx, sys_item, prof_item, project_item=None):
     """
     Perform the steps required to reach the point where a network interface
     is created or reused, optionally gets an IP assigned and the interface is
@@ -785,6 +859,11 @@ def _create_iface(client, ctx, sys_item, prof_item):
         ctx (Context): click's context object
         sys_item (System): target system object
         prof_item (SystemProfile): system activation profile object
+        project_item (Project): project to assign IP addresses
+
+    Returns:
+        iface: network interface
+        project: chosen project
     """
     iface_fields = ['name', 'osname', 'type', 'ip_address', 'mac_address']
 
@@ -893,7 +972,7 @@ def _create_iface(client, ctx, sys_item, prof_item):
         _invoke(ctx, iface_cmds.iface_attach,
                 {'system': sys_item.name, 'profile': prof_item.name,
                  'iface': iface_item.name}, WIZ_NET_IFACE_ATTACH_FAIL)
-        return
+        return iface_item, project_item
 
     # user wants to create/choose an IP address
     do_assign = True
@@ -938,6 +1017,12 @@ def _create_iface(client, ctx, sys_item, prof_item):
 
             params['desc'] = _prompt(WIZ_NET_IFACE_IP_DESC,
                                      default=params['desc'], allow_empty=True)
+            # check project assignment
+            if not project_item:
+                project_item = _choose_project(client)
+            if project_item:
+                params['project'] = project_item.name
+
             # failed to create ip: start over and try again
             click.echo('\n' + WIZ_NET_IFACE_IP_CREATING)
             if not _invoke(ctx, ip_cmds.ip_add,
@@ -962,7 +1047,10 @@ def _create_iface(client, ctx, sys_item, prof_item):
     _invoke(ctx, iface_cmds.iface_attach,
             {'system': sys_item.name, 'profile': prof_item.name,
              'iface': iface_item.name}, WIZ_NET_IFACE_ATTACH_FAIL)
+
+    return iface_item, project_item
 # _create_iface()
+
 
 def _create_prof(client, ctx, sys_item):
     """
@@ -1043,6 +1131,7 @@ def _create_prof(client, ctx, sys_item):
     return prof_item
 # _create_prof()
 
+
 def _create_sys(client, ctx):
     """
     Perform the steps required to reach the point where the target system
@@ -1054,6 +1143,7 @@ def _create_sys(client, ctx):
 
     Returns:
         System: target system
+        Project: project used for the system
     """
     # params for system add command
     params = {
@@ -1064,6 +1154,7 @@ def _create_sys(client, ctx):
         'desc': None
     }
     system_item = None
+    project_item = None
     while not system_item:
         params['name'] = _prompt(
             WIZ_SYS_NAME, default=params['name'], type=types.NAME)
@@ -1103,14 +1194,21 @@ def _create_sys(client, ctx):
         params['desc'] = _prompt(WIZ_SYS_DESC, default=params['desc'],
                                  allow_empty=True)
 
+        # check project assignment
+        if not project_item:
+            project_item = _choose_project(client)
+        if project_item:
+            params['project'] = project_item.name
+
         # try to create the new system
         click.echo('\n' + WIZ_SYS_CREATING)
         if not _invoke(ctx, sys_cmds.add, params, WIZ_SYS_FAIL):
             continue
         system_item = client.Systems.first(where={'name': params['name']})
 
-    return system_item
+    return system_item, project_item
 # _create_sys()
+
 
 @click.command(
     name='wizard',
@@ -1125,7 +1223,7 @@ def wizard(ctx):
 
     # get the target system
     click.echo('\n' + WIZ_START)
-    sys_item = _create_sys(client, ctx)
+    sys_item, project_item = _create_sys(client, ctx)
 
     # get the target activation profile
     click.echo('\n' + WIZ_PROF_START)
@@ -1135,7 +1233,8 @@ def wizard(ctx):
     click.echo('\n' + WIZ_ST_START)
     do_storage = True
     while do_storage:
-        _create_disk(client, ctx, sys_item, prof_item)
+        _vol_item, project_item = _create_disk(
+            client, ctx, sys_item, prof_item, project_item=project_item)
         # add more disks?
         do_storage = _confirm(WIZ_ST_VOL_MORE)
 
@@ -1143,7 +1242,8 @@ def wizard(ctx):
     click.echo('\n' + WIZ_NET_START)
     do_iface = True
     while do_iface:
-        _create_iface(client, ctx, sys_item, prof_item)
+        _iface_item, project_item = _create_iface(
+            client, ctx, sys_item, prof_item, project_item=project_item)
         # add more ifaces?
         do_iface = _confirm(WIZ_NET_IFACE_MORE)
 
@@ -1187,5 +1287,6 @@ def wizard(ctx):
         sys_cmds.autoinstall, os=os_item.name, system=sys_item.name,
         profile=prof_item.name)
 # wizard
+
 
 CMDS = [wizard]

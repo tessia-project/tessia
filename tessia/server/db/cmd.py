@@ -131,7 +131,7 @@ def get_token(_):
         print('error: db not initialized', file=sys.stderr)
         sys.exit(2)
 
-    print('{0.user_id}:{0.key_id}:{0.key_secret}'.format(obj))
+    print('admin:{0.key_id}:{0.key_secret}'.format(obj))
 # get_token()
 
 

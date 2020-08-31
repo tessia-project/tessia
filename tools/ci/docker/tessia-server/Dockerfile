@@ -47,7 +47,7 @@ RUN apt-get -q update > /dev/null && \
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \
     # set up python packaging tools
-    pip3 -q install -U setuptools pip && \
+    pip3 -q install -U "setuptools==49.6.0" pip && \
     # remove pip from distro to avoid conflicts
     apt-get -y remove python3-pip && hash -r && \
     # web server for api service

@@ -246,7 +246,7 @@ if __name__ == '__main__':
         install_requires=_find_requirements(),
         package_data={'': _find_data_files('tessia')},
         packages=find_packages(exclude=['tests', 'tests.*']),
-        setup_requires=['setuptools>=30.3.0'],
+        setup_requires=['setuptools==49.6.0'],
         url=URL,
         version=gen_version(),
         zip_safe=False,

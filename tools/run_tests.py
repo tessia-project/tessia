@@ -100,7 +100,7 @@ def main():
 
     if not os.environ.get('TESSIA_DB_TEST_URI'):
         try:
-            test_db_url = CONF.get_config()['db']['test_url']
+            test_db_url = CONF.get_config().get('db')['test_url']
             os.environ['TESSIA_DB_TEST_URI'] = test_db_url
         except KeyError:
             pass

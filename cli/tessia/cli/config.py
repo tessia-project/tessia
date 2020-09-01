@@ -349,7 +349,7 @@ class Config():
             ValueError: in case key is not in expected format
         """
         if not cls._login:
-            get_key();
+            cls.get_key()
         return cls._login
     # get_login()
 

@@ -70,6 +70,8 @@ tasks:
         - cp1lp10.example._com
         # system's description
         - a system to perform testing
+        # project selection
+        - "2"
       # correct system type
         # system name
         - cp1lp10
@@ -485,6 +487,8 @@ tasks:
         - "1"
         # ip description - exercise empty description
         - ""
+        # project selection
+        - "2"
         # add more ifaces?
         - n
         # install now?
@@ -527,6 +531,8 @@ tasks:
         - kvm01.example._com
         # system's description - exercise empty
         - ""
+        # project selection
+        - "2"
         # profile section
         - kvm-profile1
         # cpu qty

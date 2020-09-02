@@ -44,7 +44,9 @@ def _compare_version(image_1, image_2):
     image_1 is greater, equal or lesser than image_2.
 
     Args:
-        image_1 (tuple, list): any tuple/list containing a version string on
+        image_1 (tuple, list): left tuple/list containing a version string on
+                               first position
+        image_2 (tuple, list): right tuple/list containing a version string on
                                first position
 
     Returns:
@@ -58,9 +60,9 @@ def _compare_version(image_1, image_2):
     # special case for docker rags
     if version_1 == 'latest' and version_2 == 'latest':
         return 0
-    elif version_1 == 'latest':
+    if version_1 == 'latest':
         return 1
-    elif version_2 == 'latest':
+    if version_2 == 'latest':
         return -1
 
     parsed_version_1 = parse_version(version_1)
@@ -68,7 +70,7 @@ def _compare_version(image_1, image_2):
 
     if parsed_version_1 == parsed_version_2:
         return 0
-    elif parsed_version_1 > parsed_version_2:
+    if parsed_version_1 > parsed_version_2:
         return 1
 
     return -1
@@ -206,24 +208,24 @@ def _print_table(headers, rows):
     # determine largest width for each column
     cols_width = [(len(header) + 2) for header in headers]
     for row in rows:
-        for i in range(0, len(row)):
-            row_width = len(row[i]) + 2
+        for i, entry in enumerate(row):
+            row_width = len(entry) + 2
             if row_width > cols_width[i]:
                 cols_width[i] = row_width
 
     output = ''
     output_cols = []
     # build headers
-    for i in range(0, len(headers)):
-        header_padded = ' {}'.format(headers[i])
+    for i, header in enumerate(headers):
+        header_padded = ' {}'.format(header)
         output_cols.append(header_padded.ljust(cols_width[i]))
     output = ' '.join(output_cols)
 
     # build rows
     for row in rows:
         output_row = []
-        for i in range(0, len(row)):
-            output_value = ' {}'.format(row[i])
+        for i, entry in enumerate(row):
+            output_value = ' {}'.format(entry)
             output_row.append(output_value.ljust(cols_width[i]))
 
         output += '\n{}'.format('|'.join(output_row))
@@ -464,7 +466,7 @@ if __name__ == '__main__':
         """
         docker private registry manager
         """
-        pass
+
     root.add_command(clean)
     root.add_command(del_)
     root.add_command(list_)

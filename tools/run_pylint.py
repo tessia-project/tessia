@@ -32,6 +32,8 @@ LINT_CMD = 'python3 -m pylint'
 #
 # CODE
 #
+
+
 def main():
     """
     Execute pylint with specific configuration file and user provided options
@@ -40,7 +42,7 @@ def main():
         None
 
     Returns:
-        None
+        int: pylint return code
 
     Raises:
         None
@@ -51,26 +53,29 @@ def main():
 
     # use our configuration file
     cmd = '{} --rcfile {}/.pylintrc'.format(LINT_CMD, lib_dir)
+    # flag to control whether a module path was provided
+    path_set = False
 
-    # no arguments provided: check all the files
-    if len(sys.argv) < 2:
-        cmd += ' {0}/tessia/server {0}/tests/unit'.format(lib_dir)
     # process arguments and add them to the command
-    else:
-        # flag to control whether a module path was provided
-        path_set = False
-        for arg in sys.argv[1:]:
-            cmd += ' {}'.format(arg)
-            # not a parameter: mark that a module path was provided
-            if not arg.startswith('-'):
-                path_set = True
-        # no module path provided: check all files
-        if not path_set:
-            cmd += ' {0}/tessia/server {0}/tests/unit'.format(lib_dir)
+    for arg in sys.argv[1:]:
+        cmd += ' {}'.format(arg)
+        # not a parameter: mark that a module path was provided
+        if not arg.startswith('-'):
+            path_set = True
+
+    # no module path provided: check all files
+    if not path_set:
+        cmd += (
+            ' {0}/tessia/server {0}/tests/unit {0}/tools/*.py'
+            ' {0}/tools/dregman'
+            ' {0}/tessia/server/state_machines/ansible/docker_build/'
+            'assets/*.py'
+        ).format(lib_dir)
 
     # execute command and return exit code
     return subprocess.call(cmd, shell=True)
 # main()
+
 
 if __name__ == '__main__':
     sys.exit(main())

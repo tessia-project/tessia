@@ -72,6 +72,10 @@ OPERATING_SYSTEMS = [
     'sles12-default',
     'sles12.4,suse,12,4,SUSE Linux Enterprise Server 12 SP4,'
     'sles12-default',
+    'sles12.5,suse,12,5,SUSE Linux Enterprise Server 12 SP5,'
+    'sles12-default',
+    'sles15.0,suse,15,0,SUSE Linux Enterprise Server 15,'
+    'sles15-default',
     'sles15.1,suse,15,1,SUSE Linux Enterprise Server 15 SP1,'
     'sles15-default',
     'sles15.2,suse,15,2,SUSE Linux Enterprise Server 15 SP2,'
@@ -84,6 +88,8 @@ OPERATING_SYSTEMS = [
     'ubuntu18.04,debian,1804,0,Ubuntu 18.04 LTS,ubuntu18-default',
     'ubuntu18.04.1,debian,1804,1,Ubuntu 18.04.1 LTS,ubuntu18-default',
     'ubuntu18.04.2,debian,1804,2,Ubuntu 18.04.2 LTS,ubuntu18-default',
+    'ubuntu18.04.3,debian,1804,3,Ubuntu 18.04.3 LTS,ubuntu18-default',
+    'ubuntu18.04.4,debian,1804,4,Ubuntu 18.04.4 LTS,ubuntu18-default',
     'ubuntu18.10,debian,1810,0,Ubuntu 18.10,ubuntu18-default',
     'ubuntu19.04,debian,1904,0,Ubuntu 19.04,ubuntu18-default',
     'ubuntu20.04,debian,2004,0,Ubuntu 20.04,ubuntu20-subiquity',

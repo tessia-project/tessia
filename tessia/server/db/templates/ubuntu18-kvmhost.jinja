@@ -334,10 +334,8 @@ d-i preseed/late_command string \
     chroot /target apt-get update && apt-install qemu qemu-kvm libvirt-bin libvirt-doc && \
     chroot /target ln -s /usr/bin/qemu-system-s390x /usr/bin/qemu-kvm && \
     chroot /target usermod -a -G kvm root && \
-    echo "/usr/bin/qemu-kvm rmix" >> /target/etc/apparmor.d/local/usr.sbin.libvirtd
-
-d-i preseed/late_command string \
-echo -e >> /etc/motd \
+    echo "/usr/bin/qemu-kvm rmix" >> /target/etc/apparmor.d/local/usr.sbin.libvirtd ; \
+    echo -e >> /target/etc/motd \
 "**************************************************************\n"\
 "*                                                            *\n"\
 "*                The system was installed using              *\n"\

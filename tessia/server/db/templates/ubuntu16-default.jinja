@@ -107,7 +107,7 @@
 
 {% macro iface_append_hwaddress(iface) -%}
    {% if iface['mac_addr'] -%}
-    sed -i '/iface {{iface['osname']}} /a     hwaddress {{iface['mac_addr']}}' /target/etc/network/interfaces ; \
+    sed -i '/iface {{iface['osname']}} inet static/a     hwaddress {{iface['mac_addr']}}' /target/etc/network/interfaces ; \
    {% endif -%}
 {%- endmacro -%}
 
@@ -335,10 +335,8 @@ d-i preseed/late_command string \
     in-target /sbin/zipl -V ; \
 {%- endif -%}
     {{configure_repos()}}
-    rm -f /bin/nohup ; ln -s /target/usr/bin/nohup /bin/nohup; sync
-
-d-i preseed/late_command string \
-echo -e >> /etc/motd \
+    rm -f /bin/nohup ; ln -s /target/usr/bin/nohup /bin/nohup; sync ; \
+    echo -e >> /target/etc/motd \
 "**************************************************************\n"\
 "*                                                            *\n"\
 "*                The system was installed using              *\n"\

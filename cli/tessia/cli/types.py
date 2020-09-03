@@ -422,6 +422,14 @@ class MACaddress(click.ParamType):
 
         return value
     # convert()
+
+    def matches(self, value):
+        """
+        Check if a value matches MAC address scheme
+        """
+        return bool(re.match(r"^([0-9A-Fa-f]{2}[:]){5}([0-9A-Fa-f]{2})$", 
+                             value))
+
 # MACaddress
 MACADDRESS = MACaddress()
 

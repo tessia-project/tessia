@@ -133,6 +133,34 @@ REQUEST_SCHEMA = {
         "galaxy_req": {
             "type": "string"
         },
+        'preexec_script': {
+            'oneOf': [
+                {
+                    'type': 'string'
+                },
+                {
+                    'type': 'object',
+                    'properties': {
+                        'path': {
+                            'type': 'string',
+                        },
+                        'args': {
+                            'type': 'array',
+                            'items': {
+                                'type': 'string'
+                            }
+                        },
+                        'env': {
+                            'type': 'object',
+                            'additionalProperties': {
+                                'type': 'string'
+                            }
+                        }
+                    },
+                    'required': ['path']
+                }
+            ]
+        },
     },
     'required': [
         'playbook',
@@ -573,12 +601,11 @@ class AnsibleMachine(BaseMachine):
         """
         self._logger.info("executing playbook/galaxy")
 
-        galaxy_req_entry = self._params.get('galaxy_req')
-
         ret_code = self._env.run(
             self._params['repo_info']['url'],
             self._temp_dir, self._params['playbook'],
-            galaxy_req_entry)
+            self._params.get('galaxy_req'),
+            self._params.get('preexec_script'))
         if ret_code != 0:
             raise RuntimeError('playbook execution failed')
     # _stage_exec_playbook()
@@ -670,8 +697,6 @@ class AnsibleMachine(BaseMachine):
             'params': obj_params,
             'repo_info': repo_info,
         }
-
-        result['galaxy_req'] = obj_params.get('galaxy_req')
 
         return result
     # parse()

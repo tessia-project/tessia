@@ -43,11 +43,14 @@ PLAYBOOK_DIR = '/home/ansible/playbook'
 #
 # CODE
 #
+
+
 class EnvDocker(EnvBase):
     """
     Class to build a docker environment to execute ansible playbooks
     independently from each other.
     """
+
     def __init__(self):
         """
         Constructor, creates logger instance and initialize connection
@@ -114,7 +117,8 @@ class EnvDocker(EnvBase):
             self._docker_build()
     # build()
 
-    def run(self, repo_url, repo_dir, playbook_name, galaxy_req=None):
+    def run(self, repo_url, repo_dir, playbook_name, galaxy_req=None,
+            preexec=None):
         """
         Run an ansible playbook inside the environment
 
@@ -125,6 +129,7 @@ class EnvDocker(EnvBase):
                             environment.
             playbook_name (str): playbook name to be executed.
             galaxy_req (str): requirements.yml for galaxy.
+            preexec (dict): preexec script with optional arguments
 
         Returns:
             int: exit code of the ansible playbook
@@ -197,6 +202,34 @@ class EnvDocker(EnvBase):
             # put_archive is used because docker py doesn't have the
             # copy command in the current version of the API.
             container_obj.put_archive(INVENTORY_DIR, temp_fd)
+
+        if preexec:
+            # execute preexec script
+            cmd = []
+            env = None
+            if isinstance(preexec, str):
+                cmd = [preexec]
+            elif isinstance(preexec, dict):
+                cmd = [preexec['path']] + preexec.get('args', [])
+                env = preexec.get('env')
+            else:
+                raise RuntimeError('Invalid preexec_script argument')
+
+            self._logger.info('starting preexec script %s', cmd[0])
+            exec_id = self._client.api.exec_create(
+                container_obj.name,
+                cmd,
+                user="ansible",  # less privileged user
+                environment=env,
+                workdir=PLAYBOOK_DIR)
+            lines = self._client.api.exec_start(exec_id['Id'], stream=True)
+            ret = {'Running': True, 'ExitCode': 0}
+            while ret['Running']:
+                ret = self._client.api.exec_inspect(exec_id['Id'])
+                for line in lines:
+                    print(line.decode('utf-8'), end='')
+            self._logger.info('preexec script finished with exit code %d',
+                              ret['ExitCode'])
 
         if galaxy_req:
             # Start ansible-galaxy

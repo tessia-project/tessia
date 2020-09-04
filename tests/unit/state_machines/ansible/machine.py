@@ -37,6 +37,8 @@ import yaml
 #
 # CODE
 #
+
+
 class TestAnsibleMachine(TestCase):
     """
     Unit testing for the AnsibleMachine class.
@@ -252,6 +254,59 @@ class TestAnsibleMachine(TestCase):
         # retrieve the system profile object
         return query.one()
     # _get_profile()
+
+    def test_preexec(self):
+        """
+        Test secret data recombine
+        """
+        # collect necessary db objects
+        test_system = 'kvm054'
+
+        request = {
+            'source': 'https://example._com/ansible/ansible-example.tgz',
+            'playbook': 'workload1/site.yaml',
+            'systems': [
+                {
+                    'name': test_system,
+                    'groups': ['webservers', 'dbservers'],
+                }
+            ],
+            'preexec_script': 'prepare.sh',
+            'galaxy_req': 'requirements.yaml',
+            'verbosity': 'DEBUG'
+        }
+        machine_obj = machine.AnsibleMachine(str(request))
+        machine_obj.start()
+
+        # validate exec playbook
+        self._mock_env_docker.return_value.run.assert_called_with(
+            request['source'],
+            machine_obj._temp_dir,
+            request['playbook'],
+            request['galaxy_req'],
+            request['preexec_script'])
+        self.assertEqual(
+            len(self._mock_env_docker.return_value.run.mock_calls), 1)
+
+        # validate preexec object
+        request['preexec_script'] = {
+            'path': 'prepare.sh',
+            'args': ['--apply-token'],
+            'env': {
+                'TOKEN': 'secret'
+            }
+        }
+        machine_obj = machine.AnsibleMachine(str(request))
+        machine_obj.start()
+        self._mock_env_docker.return_value.run.assert_called_with(
+            request['source'],
+            machine_obj._temp_dir,
+            request['playbook'],
+            request['galaxy_req'],
+            request['preexec_script'])
+        self.assertEqual(
+            len(self._mock_env_docker.return_value.run.mock_calls), 2)
+    # test_preexec()
 
     def test_start_git(self):
         """

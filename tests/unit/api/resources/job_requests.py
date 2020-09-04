@@ -121,4 +121,38 @@ class TestJobRequest(TestSecureResource):
         self.assertGreater(ttl, 2*86400-120)
         self.assertLess(ttl, 2*86400+120)
     # test_delayed_job_request()
+
+    def test_malformed_request(self):
+        """
+        Test that delayed jobs have correct ttl for secrets
+        """
+        login = 'user_privileged@domain.com'
+        secret = {'TOKEN': secrets.token_urlsafe()}
+        data = {
+            'action_type': 'SUBMIT',
+            'job_type': 'ansible',
+            'start_date': {
+                '$date': int(
+                    (datetime.utcnow() + timedelta(1)).replace(
+                        tzinfo=timezone.utc).timestamp() * 1000)
+            },
+            'parameters': {
+                'source': 'https://oauth:${TOKEN}@example.com/ansible/'
+                          'ansible-example.tgz',
+                'playbook': 'workload1/site.yaml',
+                'systems': [
+                    {
+                        'name': 'kvm054',
+                        'groups': ['webservers', 'dbservers'],
+                    }
+                ],
+                'secrets': secret,
+                'verbosity': 'debug',   # must be uppercase
+            }
+        }
+        data['parameters'] = yaml.dump(data['parameters'],
+                                       default_flow_style=False)
+        resp = self._do_request('create', '{}:a'.format(login), data)
+        self.assertEqual(400, resp.status_code, resp.data)
+    # test_malformed_request()
 # TestJobRequest

@@ -160,8 +160,11 @@ class JobRequestResource(ModelResource):
         extra_vars = None
         if properties['action_type'] == SchedulerRequest.ACTION_SUBMIT:
             machine: BaseMachine = MACHINES.classes[properties['job_type']]
-            properties['parameters'], extra_vars = machine.prefilter(
-                properties['parameters'])
+            try:
+                properties['parameters'], extra_vars = machine.prefilter(
+                    properties['parameters'])
+            except SyntaxError as exc:
+                raise api_exceptions.BaseHttpError(code=400, msg=str(exc))
             # very special case: this machine type needs to know the
             # job requester, so we inject it over extra vars.
             # It's not nice to have an exception, but the alternative is

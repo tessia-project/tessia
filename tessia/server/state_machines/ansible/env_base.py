@@ -47,7 +47,7 @@ class EnvBase(metaclass=abc.ABCMeta):
     # build()
 
     @abc.abstractmethod
-    def run(self, repo_url, repo_dir, playbook_name, galaxy_req):
+    def run(self, repo_url, repo_dir, playbook_name, galaxy_req, preexec):
         """
         Start ansible execution using given directory as ansible config
 
@@ -57,6 +57,7 @@ class EnvBase(metaclass=abc.ABCMeta):
                             are transferred to the run environment.
             playbook_name (str): playbook name to be executed.
             galaxy_req (str): requirements.yml for galaxy.
+            preexec (dict): preexec script with optional arguments
 
         Raises:
             NotImplementedError: as it has to be implemented in concrete

@@ -88,10 +88,20 @@ systems:
 # switch on galaxy and define a path to galaxy requirements file, it has to be present in the repository ("optional")
 galaxy_req: requirements.yml
 
+# run a pre-execution script from a repository ("optional")
+# the script is run after ansible configuration files are created by tessia and can be used to change them
+# preexec_script: prepare.sh                   (short form)
+preexec_script:
+  path: prepare.sh
+  args: ['--apply-token']
+  env:
+    TOKEN: ${other secret}
+
 # secrets section to conceal sensitive values ("optional")
 secrets:
   # a corresponding ${hiden parameter} entry will be replaced with its value
   hidden parameter: some token or other string
+  other secret: some other string to use in pre-execution stage
 ```
 - Job is started by the scheduler: a new process is spawned and the machine execution starts
 - Machine downloads the ansible repository from the specified source url

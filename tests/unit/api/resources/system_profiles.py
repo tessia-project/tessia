@@ -21,6 +21,7 @@ Unit test for system_profiles resource module
 #
 from base64 import b64encode
 from flask import g as flask_global
+from tessia.server.api.resources.system_profiles import CPU_MEM_ERROR_MSG
 from tessia.server.api.resources.system_profiles import MARKER_STRIPPED_SECRET
 from tessia.server.api.resources.system_profiles import SystemProfileResource
 from tessia.server.db import models
@@ -1591,20 +1592,16 @@ class TestSystemProfile(TestSecureResource):
         data['default'] = True
         user_login = '{}:a'.format('user_user@domain.com')
 
-        # try create with wrong for KVM guest cpu number
+        # try to create profile with wrong number of cpus
         data['cpu'] = 0
         data['memory'] = 1024
         resp = self._do_request('create', user_login, data)
-        bad_number_msg = 'For zVM guests number cpu and memory must be ' \
-                         'greater than 0'
-        self._validate_resp(resp, bad_number_msg, 422)
+        self._validate_resp(resp, CPU_MEM_ERROR_MSG, 422)
 
-        # try create with wrong for KVM guest memory number
+        # try to create profile with wrong memory size
         data['cpu'] = 7
         data['memory'] = 0
-        bad_number_msg = 'For zVM guests number cpu and memory must be ' \
-                         'greater than 0'
-        self._validate_resp(resp, bad_number_msg, 422)
+        self._validate_resp(resp, CPU_MEM_ERROR_MSG, 422)
 
         # try create with correct cpu and memory numbers
         data['cpu'] = 7
@@ -1614,12 +1611,12 @@ class TestSystemProfile(TestSecureResource):
         # try update wrong for KVM guest cpu number
         update_data = {'id': prof_id, 'cpu': 0}
         resp = self._do_request('update', user_login, update_data)
-        self._validate_resp(resp, bad_number_msg, 422)
+        self._validate_resp(resp, CPU_MEM_ERROR_MSG, 422)
 
         # try update with wrong for KVM guest memory number
         update_data = {'id': prof_id, 'memory': 0}
         resp = self._do_request('update', user_login, update_data)
-        self._validate_resp(resp, bad_number_msg, 422)
+        self._validate_resp(resp, CPU_MEM_ERROR_MSG, 422)
 
         # try update with correct for KVM guest and memory number
         update_data = {'id': prof_id, 'cpu': 5, 'memory': 2048}

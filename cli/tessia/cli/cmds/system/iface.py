@@ -34,6 +34,7 @@ from tessia.cli.types import ROCE_FID
 from tessia.cli.types import SUBNET
 from tessia.cli.types import QETH_GROUP, QETH_PORTNO
 from tessia.cli.utils import fetch_and_delete
+from xml.etree import ElementTree
 
 import click
 import ipaddress
@@ -68,6 +69,49 @@ ATTR_BY_TYPE = {
 #
 # CODE
 #
+
+def _extract_libvirt_mac_address(libvirt_xml):
+    """
+    Extract mac address if defined in libvirt XML
+
+    Args:
+        libvirt_xml (str): string respresenting libvirt interface configuration
+
+    Returns:
+        str | None: mac address if found
+    """
+    try:
+        root = ElementTree.fromstring(libvirt_xml)
+    except Exception:
+        return None
+    mac_element = root.find("mac")
+    if mac_element is not None:
+        return mac_element.get('address')
+    return None
+
+def _set_libvirt_mac_address(libvirt_xml, new_mac):
+    """
+    Set mac address in libvirt XML
+
+    Args:
+        libvirt_xml (str): string respresenting libvirt interface configuration
+        new_mac (str): mac address to set
+
+    Returns:
+        str: serialized  libvirt xml
+    """
+    try:
+        root = ElementTree.fromstring(libvirt_xml)
+    except Exception:
+        return libvirt_xml
+
+    mac_element = root.find("mac")
+    if mac_element is not None:
+        mac_element.set('address', new_mac)
+    else:
+        ElementTree.SubElement(root, 'mac', {'address': new_mac})
+
+    return ElementTree.tostring(root, encoding="unicode")
 
 @click.command(name='iface-add')
 @click.option('--system', required=True, type=NAME, help="target system")
@@ -141,6 +185,19 @@ def iface_add(**kwargs):
             raise click.ClickException(
                 '--hostiface and --libvirt are mutually exclusive (specify '
                 'one but not both)')
+        # check mac address presence in libvirt definition
+        if 'libvirt' in item.attributes:
+            lv_mac = _extract_libvirt_mac_address(item.attributes['libvirt'])
+            iface_mac = item.get('mac_address')
+            if lv_mac and iface_mac and lv_mac.lower() != iface_mac.lower():
+                raise click.ClickException(
+                    'interface MAC address and libvirt MAC address must match'
+                    ' (or specify either one)')
+            elif lv_mac and not iface_mac:
+                # set iface mac to match libvirt
+                setattr(item, 'mac_address', lv_mac)
+                click.echo('Interface MAC address will be set to match libvirt'
+                           ' definition')
     # ROCE (pci cards)
     elif kwargs['type'] == 'ROCE':
         try:
@@ -331,6 +388,7 @@ def iface_edit(system, cur_name, **kwargs):
             continue
 
         if key == 'mac_address':
+            # try to convert value separately to have a friendlier message
             cur_ctx = click.get_current_context()
             param_obj = None
             # we need the option object to pass in the convert call
@@ -369,6 +427,41 @@ def iface_edit(system, cur_name, **kwargs):
         else:
             raise click.ClickException(
                 'invalid interface type (see iface-types)')
+
+    # Verify mac address consistency in macvtap/libvirt and iface definitons
+    if iface_type == 'MACVTAP' and (
+        # updating mac or libvirt definition
+            kwargs['mac_address'] or kwargs['libvirt']) and (
+        # we (will) have libvirt in attributes and not replaced by hostiface
+            'libvirt' in update_dict.get('attributes', {}) or
+            (item.attributes and 'libvirt' in item.attributes and
+                not 'hostiface' in update_dict.get('attributes', {}))):
+        iface_mac = update_dict.get('mac_address', item['mac_address'])
+        libvirt_xml = update_dict.get('attributes', {}).get('libvirt',
+            item.attributes.get('libvirt'))
+        lv_mac = _extract_libvirt_mac_address(libvirt_xml)
+
+        if kwargs['mac_address'] and kwargs['libvirt'] and iface_mac != lv_mac:
+            # updating both and have conflict
+            raise click.ClickException(
+                'interface MAC address and libvirt MAC address must match'
+                ' (or specify either one)')
+
+        if kwargs['libvirt'] and lv_mac and iface_mac != lv_mac:
+            # updating libvirt, macs different - overwrite iface mac from libvirt,
+            # but test for correctness first and give up if something is broken
+            if MACADDRESS.matches(lv_mac):
+                click.echo('Interface MAC address will be set to match libvirt'
+                           ' definition')
+                update_dict['mac_address'] = lv_mac.lower()
+        elif kwargs['mac_address'] and iface_mac != lv_mac:
+            # updating mac address, update libvirt too
+            updated_xml = _set_libvirt_mac_address(libvirt_xml, iface_mac)
+            if updated_xml != libvirt_xml:
+                if not 'attributes' in update_dict:
+                    update_dict['attributes'] = {}
+                update_dict['attributes']['libvirt'] = updated_xml
+
 
     item.update(**update_dict)
     click.echo('Item successfully updated.')

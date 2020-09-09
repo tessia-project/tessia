@@ -566,8 +566,13 @@ tasks:
       - "Invalid value for '--libvirt': libvirt definition cannot be empty"
     - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='/GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
       - "Invalid value for '--subnet': /GEO_1-NE-1822 is not a valid subnet"
+    - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:00:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
+      - "Error: interface MAC address and libvirt MAC address must match"
     - - system iface-add --system=guest55 --name='default macvtap4' --type=macvtap --devname=en0 --mac=02:03:52:01:ff:01 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
       - Item added successfully.
+    - - system iface-add --system=guest55 --name='default macvtap5' --type=macvtap --devname=en0 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
+      - - Interface MAC address will be set to match libvirt definition
+        - Item added successfully.
     # ROCE card type
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518
       - 'Error: for ROCE cards --fid must be specified'
@@ -764,6 +769,21 @@ tasks:
     - - system iface-list --system=guest55 --name='default macvtap' --long
       - - "Attributes *: {'libvirt': .*"
         - 'Attributes *: ((?!hostiface).)*\n'
+      # update mac address in libvirt
+    - - system iface-edit --system=guest55 --name='default macvtap' --mac=22:44:66:88:aa:cc
+      - Item successfully updated.
+    - - system iface-list --system=guest55 --name='default macvtap' --long
+      - - "Attributes *: {'libvirt': .*"
+        - "Attributes *: .*22:44:66:88:aa:cc"
+        - 'Attributes *: (?s:(?!02:03:52:01:ff:01).)*$'
+      # update mac address with libvirt
+    - - system iface-edit --system=guest55 --name='default macvtap' --libvirt='files/system-command_test/kvm-guest.xml'
+      - - Interface MAC address will be set to match libvirt definition
+        - Item successfully updated.
+    - - system iface-list --system=guest55 --name='default macvtap' --long
+      - "MAC address *: 02:03:52:01:ff:01"
+    - - system iface-edit --system=guest55 --name='default macvtap' --mac=22:44:66:88:aa:cc --libvirt='files/system-command_test/kvm-guest.xml'
+      - "Error: interface MAC address and libvirt MAC address must match"
     - - system iface-edit --system=guest55 --name='default macvtap' --hostiface=enccw0.0.f500
       - Item successfully updated.
       # make sure libvirt was cleared in attributes

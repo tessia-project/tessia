@@ -69,8 +69,9 @@ class _Mediator:
             if not self._mediator_uri:
                 try:
                     redis_url = CONF.get_config().get('mediator')['url']
-                except (TypeError, KeyError):
-                    raise RuntimeError('No mediator configuration found')
+                except (TypeError, KeyError) as exc:
+                    raise RuntimeError(
+                        'No mediator configuration found') from exc
             else:
                 redis_url = self._mediator_uri
             logging.debug("Connecting to redis at %s", redis_url)

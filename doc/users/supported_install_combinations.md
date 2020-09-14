@@ -27,9 +27,9 @@ This page contains a detailed view of the current supported combinations and usa
 
 # Network and volumes on LPAR
 
-| Distro                   | RHEL | SLES | Ubuntu | Fedora |
+| Distro                   | RHEL | SLES | Ubuntu | Fedora*|
 | ------                   | ---  | ---  | -----  | -----  |
-| volume type DASD         | Y    | Y    | Y*     | Y      |
+| volume type DASD         | Y    | Y    | Y**    | Y      |
 | volume type FCP          | Y    | Y    | Y      | Y      |
 | multipath on (FCP only)  | Y    | Y    | Y      | Y      |
 | multipath off (FCP only) | Y    | Y    | Y      | Y      |
@@ -37,7 +37,8 @@ This page contains a detailed view of the current supported combinations and usa
 | layer2 on (OSA only)     | Y    | Y    | Y      | Y      |
 | layer2 off (OSA only)    | Y    | Y    | Y      | Y      |
 
-[*] - Except Ubuntu 16.04 (GA) due to distro installer issues, for details see [ReleaseNotes](https://wiki.ubuntu.com/XenialXerus/ReleaseNotes#IBM_LinuxONE_and_z_Systems_specific_known_issues)
+[*] - latest supported version   
+[**] - Except Ubuntu 16.04 (GA) due to distro installer issues, for details see [ReleaseNotes](https://wiki.ubuntu.com/XenialXerus/ReleaseNotes#IBM_LinuxONE_and_z_Systems_specific_known_issues)
 
 # Network and volumes on z/VM
 
@@ -45,15 +46,16 @@ Except Ubuntu16.04.1 which won't boot its installer's initrd on z/VM, the suppor
 
 # Network and volumes on KVM
 
-| Distro                            | RHEL | SLES | Ubuntu | Fedora |
+| Distro                            | RHEL | SLES | Ubuntu | Fedora*|
 | ------                            | ---  | ---  | -----  | -----  |
-| volume type DASD (through virtio) | N    | Y*   | Y      | N      |
+| volume type DASD (through virtio) | N    | Y**  | Y      | N      |
 | volume type FCP (through virtio)  | Y    | Y    | Y      | Y      |
 | multipath on (FCP only)           | Y    | Y    | Y      | Y      |
 | multipath off (FCP only)          | Y    | Y    | Y      | Y      |
 | network interface MACVTAP         | Y    | Y    | Y      | Y      |
 
-[*] - Except SLES15.0 due to an AutoYaST bug
+[*] - latest supported version      
+[**] - Except SLES15.0 due to an AutoYaST bug and SLES15.2   
 
 # Partitioning on LPAR
 
@@ -108,8 +110,10 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 
 # Distro as KVM hypervisor
 
-| Distro                         | RHEL | SLES | Ubuntu | Fedora |
+| Distro                         | RHEL | SLES | Ubuntu | Fedora*|
 | ------                         | ---  | ---  | -----  | -----  |
-| using distro as KVM hypervisor | Y*   | Y    | Y      | Y      |
+| using distro as KVM hypervisor | Y**  | Y    | Y***   | Y      |
 
-[*] - Except RHEL7.4 and lower
+[\*] - latest supported version   
+[\*\*] - Except RHEL7.\*   
+[\*\*\*] - Except Ubuntu20.\*   

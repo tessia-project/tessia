@@ -43,11 +43,11 @@ class TestEcho(TestCase):
         """
         Prepare the necessary mocks at the beginning of each testcase.
         """
-        patcher = patch.object(machine, 'print', autospect=True)
+        patcher = patch.object(machine, 'print')
         self._mock_print = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(machine, 'sleep', autospect=True)
+        patcher = patch.object(machine, 'sleep')
         self._mock_sleep = patcher.start()
         self.addCleanup(patcher.stop)
 

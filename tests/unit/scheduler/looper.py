@@ -28,7 +28,10 @@ from tessia.server.db.models import User
 from tessia.server.scheduler import looper
 from tessia.server.scheduler import resources_manager
 from tessia.server.scheduler import wrapper
+from tessia.server.scheduler.spawner import (PROCESS_DEAD, PROCESS_RUNNING,
+                                             PROCESS_UNKNOWN, SpawnerError)
 from tests.unit.db.models import DbUnit
+from tests.unit.scheduler.spawner import MockProcess
 from unittest import TestCase
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -39,12 +42,13 @@ import os
 #
 # CONSTANTS AND DEFINITIONS
 #
-FAKE_JOBS_DIR = '/tmp/test-looper/jobs-dir'
 
 #
 # CODE
 #
 # pylint: disable=too-many-public-methods
+
+
 class TestLooper(TestCase):
     """
     Unit test for the looper module
@@ -64,10 +68,17 @@ class TestLooper(TestCase):
         """
         # mock config file for a fake jobs' directory
         patcher = patch.object(looper, 'CONF', autospec=True)
-        patcher.start()
+        mock_conf = patcher.start()
         self.addCleanup(patcher.stop)
-        looper.CONF.get_config.return_value = (
-            {'scheduler': {'jobs_dir': FAKE_JOBS_DIR}})
+        mock_conf.get_config.return_value = {
+            'scheduler': {'jobs_dir': '/tmp/looper-unit-test/jobs'}
+        }
+
+        patcher = patch.object(looper, 'MEDIATOR', autospec=True)
+        mock_conf = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_conf._mediator_uri = os.environ.get(
+            'TESSIA_MEDIATOR_URI').replace('/0', '/1')
 
         # resources manager
         patcher = patch.object(
@@ -78,30 +89,34 @@ class TestLooper(TestCase):
         self.addCleanup(patcher.stop)
 
         # logging module
-        patcher = patch.object(looper, 'logging', autospect=True)
+        patcher = patch.object(looper, 'logging', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)
 
         # signal module
-        patcher = patch.object(looper, 'signal', autospect=True)
+        patcher = patch.object(looper, 'signal')
         self._mock_signal = patcher.start()
         self._mock_signal.SIGTERM = sentinel.SIGTERM
         self._mock_signal.SIGKILL = sentinel.SIGKILL
         self.addCleanup(patcher.stop)
-
-        # os module
-        patcher = patch.object(looper, 'os', autospect=True)
-        self._mock_os = patcher.start()
-        self.addCleanup(patcher.stop)
-        self._mock_os.getcwd.return_value = "/tmp/looper-test-cwd"
-        self._mock_os.path.basename = os.path.basename
 
         # multiprocessing module
         patcher = patch.object(looper, 'multiprocessing', autospec=True)
         self._mock_mp = patcher.start()
         self.addCleanup(patcher.stop)
         self._mock_mp.get_start_method.return_value = 'forkserver'
-        self._mock_mp.Process.return_value.pid = 100000
+
+        # spawner module: prevent wrapper from running
+        patcher = patch.object(looper.spawner.wrapper, 'MachineWrapper',
+                               autospec=True)
+        self._mock_wrapper = patcher.start()
+        self.addCleanup(patcher.stop)
+
+        # spawner module: use custom Process object
+        patcher = patch.object(looper.spawner.multiprocessing, 'Process')
+        self._mock_spawner_mp = patcher.start()
+        self._mock_spawner_mp.side_effect = MockProcess
+        self.addCleanup(patcher.stop)
 
         # make should_run flag alternate between True and False so that loop()
         # will always run 1 iteration only
@@ -119,8 +134,13 @@ class TestLooper(TestCase):
         self.addCleanup(patcher.stop)
 
         # open built-in function
-        patcher = patch.object(looper, 'open', autospect=True)
-        self._mock_open = patcher.start()
+        patcher = patch.object(looper.spawner, 'ForkSpawner', autospec=True)
+        self._mock_spawner = patcher.start()
+        self.addCleanup(patcher.stop)
+        self._mock_spawner.return_value.spawn.return_value = 50000   # any pid
+
+        patcher = patch.object(looper, 'open')
+        self._mock_open_log = patcher.start()
         self.addCleanup(patcher.stop)
 
         # db session
@@ -168,7 +188,6 @@ class TestLooper(TestCase):
                     mode_directive.append(resource)
 
                 parameters.append(' '.join(mode_directive))
-
 
         parameters.append('ECHO STARTING TO SLEEP')
         parameters.append('SLEEP {}'.format(sleep_time))
@@ -310,40 +329,23 @@ class TestLooper(TestCase):
 
         # run one loop to get the job started
         self._mock_resources_man.can_start.return_value = True
-        self._patch_alive_process(job)
+        self._patch_alive_process()
         self._looper.loop()
         self.assertEqual(job.state, job.STATE_RUNNING, job.result)
 
         return job
     # _make_alive_job()
 
-    def _patch_dead_process_bad_cwd(self, ret_code, end_time):
+    def _patch_alive_process(self):
         """
-        Patch with mocks to simulate the case where job's process is alive but
-        has a wrong cwd
-
-        Args:
-            ret_code (int): return code to include in results file
-            end_time (str): end date to include in results file
+        Prepare mocks to simulate that the passed job's process is still
+        running.
         """
-        # make sure mock is clean
-        self._mock_open.side_effect = None
+        self._mock_spawner.return_value.validate.return_value = PROCESS_RUNNING
 
-        # contents of comm file
-        self._mock_open.return_value.__enter__.return_value.read. \
-        return_value = wrapper.WORKER_COMM + "\n"
+    # _patch_alive_process()
 
-        # cwd has a wrong path
-        self._mock_os.readlink.return_value = '/some/wrong/path'
-
-        # contents of result file
-        self._mock_open.return_value.__enter__.return_value.readlines. \
-        return_value = (
-            [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
-    # _patch_dead_process_bad_cwd()
-
-    def _patch_dead_process_no_comm(
-            self, ret_code, end_time, cleanup_code=None):
+    def _patch_dead_process(self, ret_code, end_time, cleanup_code=None):
         """
         Patch with mocks to simulate the case where job's process died because
         /proc/$pid/comm does not exist.
@@ -356,123 +358,26 @@ class TestLooper(TestCase):
         # contents of result file
 
         if cleanup_code is not None:
-            readlines_return = (
-                [str(ret_code), str(cleanup_code),
-                 end_time.strftime(wrapper.DATE_FORMAT)])
+            readlines_return = [str(ret_code), str(cleanup_code),
+                                end_time.strftime(wrapper.DATE_FORMAT)]
         else:
-            readlines_return = (
-                [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
+            readlines_return = [str(ret_code),
+                                end_time.strftime(wrapper.DATE_FORMAT)]
 
-        self._mock_open.return_value.__enter__.return_value.readlines. \
-        return_value = readlines_return
+        self._mock_open_log.return_value.__enter__.return_value.readlines. \
+            return_value = readlines_return
 
-        # mock the open function to failed on first call (no /proc/$pid/comm)
-        # and return a result file on second call.
-        self._mock_open.side_effect = [
-            FileNotFoundError, self._mock_open.return_value]
+        self._mock_spawner.return_value.validate.return_value = PROCESS_DEAD
+
     # _patch_dead_process_no_comm()
 
-    def _patch_dead_process_noread_comm(self, ret_code, end_time):
-        """
-        Patch with mocks to simulate the case where job's process died because
-        /proc/$pid/comm cannot be read (process belongs to another user).
-
-        Args:
-            ret_code (int): return code to include in results file
-            end_time (str): end date to include in results file
-        """
-        # contents of result file
-        self._mock_open.return_value.__enter__.return_value.readlines. \
-        return_value = (
-            [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)])
-
-        # mock the open function to failed on first call (no /proc/$pid/comm)
-        # and return a result file on second call.
-        self._mock_open.side_effect = [
-            PermissionError, self._mock_open.return_value]
-    # _patch_dead_process_noread_comm()
-
-    def _patch_dead_process_no_cwd(self, ret_code, end_time):
-        """
-        Patch with mocks to simulate the case where job's process died because
-        /proc/$pid/cwd points to inexistent directory
-
-        Args:
-            ret_code (int): return code to include in results file
-            end_time (str): end date to include in results file
-        """
-        # make sure mock is clean
-        self._mock_open.side_effect = None
-
-        # return a valid content for reading /proc/$pid/comm
-        self._mock_open.return_value.__enter__.return_value.read. \
-        return_value = wrapper.WORKER_COMM + "\n"
-
-        # fail the call to open /proc/$pid/cwd file
-        self._mock_os.readlink.side_effect = FileNotFoundError
-
-        # return content of results file
-        self._mock_open.return_value.__enter__.return_value.readlines.\
-        return_value = (
-            [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)]
-        )
-    # _patch_dead_process_no_cwd()
-
-    def _patch_dead_process_noread_cwd(self, ret_code, end_time):
-        """
-        Patch with mocks to simulate the case where job's process died because
-        /proc/$pid/cwd is unreadable (process belongs to another user)
-
-        Args:
-            ret_code (int): return code to include in results file
-            end_time (str): end date to include in results file
-        """
-        # make sure mock is clean
-        self._mock_open.side_effect = None
-
-        # return a valid content for reading /proc/$pid/comm
-        self._mock_open.return_value.__enter__.return_value.read. \
-        return_value = wrapper.WORKER_COMM + "\n"
-
-        # fail the call to open /proc/$pid/cwd file
-        self._mock_os.readlink.side_effect = PermissionError
-
-        # return content of results file
-        self._mock_open.return_value.__enter__.return_value.readlines.\
-        return_value = (
-            [str(ret_code), end_time.strftime(wrapper.DATE_FORMAT)]
-        )
-    # _patch_dead_process_noread_cwd()
-
-    def _patch_alive_process(self, job):
-        """
-        Prepare mocks to simulate that the passed job's process is still
-        running.
-
-        Args:
-            job (SchedulerJob): model's instance
-        """
-        self._mock_open.return_value.__enter__.return_value.read. \
-        return_value = wrapper.WORKER_COMM + "\n"
-
-        self._mock_os.readlink.return_value = '{}/{}'.format(
-            FAKE_JOBS_DIR, job.id)
-    # _patch_alive_process()
-
-    def _patch_unknown_process(self, job):
+    def _patch_unknown_process(self):
         """
         Simulate the scenario where the pid of a job belongs to a non tessia
         job.
-
-        Args:
-            job (SchedulerJob): model's instance
         """
-        self._mock_open.return_value.__enter__.return_value.read. \
-        return_value = "some-process"
+        self._mock_spawner.return_value.validate.return_value = PROCESS_UNKNOWN
 
-        self._mock_os.readlink.return_value = (
-            '{}/{}'.format(FAKE_JOBS_DIR, job.id)
-        )
     # _patch_unknown_process()
 
     def test_db_exception(self):
@@ -503,6 +408,9 @@ class TestLooper(TestCase):
             self._mock_resources_man.set_active.call_args[0][0].id,
             job.id)
 
+        job.state = SchedulerJob.STATE_COMPLETED
+        self._session.merge(job)
+
         # job with only exclusive resource allocated
         job = self._make_alive_job(['lpar0'], [])
         self._mock_resources_man.set_active.reset_mock()
@@ -512,6 +420,9 @@ class TestLooper(TestCase):
         self.assertEqual(
             self._mock_resources_man.set_active.call_args[0][0].id,
             job.id)
+
+        job.state = SchedulerJob.STATE_COMPLETED
+        self._session.merge(job)
 
         # job with only shared resource allocated
         job = self._make_alive_job([], ['cpc0'])
@@ -523,11 +434,15 @@ class TestLooper(TestCase):
             self._mock_resources_man.set_active.call_args[0][0].id,
             job.id)
 
+        job.state = SchedulerJob.STATE_COMPLETED
+        self._session.merge(job)
+
         # job with no resource allocated
         job = self._make_alive_job([], [])
         self._mock_resources_man.set_active.reset_mock()
         self._looper = looper.Looper()
         self._looper.initialize()
+
         self._mock_resources_man.set_active.assert_not_called()
 
     # test_init_alive_process()
@@ -598,7 +513,7 @@ class TestLooper(TestCase):
         self._session.commit()
 
         # adjust mocks
-        self._patch_dead_process_no_comm(0, datetime.utcnow())
+        self._patch_dead_process(0, datetime.utcnow())
 
         # initialize Looper
         self._looper = looper.Looper()
@@ -618,7 +533,7 @@ class TestLooper(TestCase):
         """
         # process died by seeing comm does not exist and result is job failed
         job = self._make_alive_job()
-        self._patch_dead_process_no_comm(1, datetime.utcnow())
+        self._patch_dead_process(1, datetime.utcnow())
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -626,7 +541,7 @@ class TestLooper(TestCase):
 
         # process died by seeing comm cannot be read and result is job failed
         job = self._make_alive_job()
-        self._patch_dead_process_noread_comm(1, datetime.utcnow())
+        self._patch_dead_process(1, datetime.utcnow())
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -635,8 +550,7 @@ class TestLooper(TestCase):
         # process died by seeing comm cannot be read and result job failed
         # with an exception
         job = self._make_alive_job()
-        self._patch_dead_process_noread_comm(
-            wrapper.RESULT_EXCEPTION, datetime.utcnow())
+        self._patch_dead_process(wrapper.RESULT_EXCEPTION, datetime.utcnow())
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -645,7 +559,7 @@ class TestLooper(TestCase):
         # process died by seeing cwd points to inexistent directory and result
         # is job completed
         job = self._make_alive_job()
-        self._patch_dead_process_no_cwd(0, datetime.utcnow())
+        self._patch_dead_process(0, datetime.utcnow())
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -653,7 +567,7 @@ class TestLooper(TestCase):
 
         # process died by seeing cwd is wrong and result has invalid exit code
         job = self._make_alive_job()
-        self._patch_dead_process_bad_cwd("not_a_number", datetime.utcnow())
+        self._patch_dead_process("not_a_number", datetime.utcnow())
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -662,8 +576,7 @@ class TestLooper(TestCase):
         # process died by seeing cwd cannot be read and result has job was
         # canceled
         job = self._make_alive_job()
-        self._patch_dead_process_noread_cwd(
-            wrapper.RESULT_CANCELED, datetime.utcnow())
+        self._patch_dead_process(wrapper.RESULT_CANCELED, datetime.utcnow())
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -672,8 +585,7 @@ class TestLooper(TestCase):
         # process died by seeing cwd is wrong and the job was in
         # the process of a normal cleanup
         job = self._make_alive_job()
-        self._patch_dead_process_bad_cwd(
-            wrapper.RESULT_CANCELED, datetime.utcnow())
+        self._patch_dead_process(wrapper.RESULT_CANCELED, datetime.utcnow())
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -682,9 +594,8 @@ class TestLooper(TestCase):
         # process died by seeing /proc/comm was not there, the job was
         # canceled and the cleanup routine timed out
         job = self._make_alive_job()
-        self._patch_dead_process_no_comm(
-            wrapper.RESULT_CANCELED, datetime.utcnow(),
-            cleanup_code=wrapper.RESULT_TIMEOUT)
+        self._patch_dead_process(wrapper.RESULT_CANCELED, datetime.utcnow(),
+                                 cleanup_code=wrapper.RESULT_TIMEOUT)
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -693,9 +604,8 @@ class TestLooper(TestCase):
         # process died by seeing /proc/comm was not there, the job was
         # canceled and the cleanup routine failed with an exit code
         job = self._make_alive_job()
-        self._patch_dead_process_no_comm(
-            wrapper.RESULT_CANCELED, datetime.utcnow(),
-            cleanup_code=2)
+        self._patch_dead_process(wrapper.RESULT_CANCELED, datetime.utcnow(),
+                                 cleanup_code=2)
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -704,9 +614,8 @@ class TestLooper(TestCase):
         # process died by seeing /proc/comm was not there, the job was
         # canceled and the cleanup routine failed with an exception
         job = self._make_alive_job()
-        self._patch_dead_process_no_comm(
-            wrapper.RESULT_CANCELED, datetime.utcnow(),
-            cleanup_code=wrapper.RESULT_EXCEPTION)
+        self._patch_dead_process(wrapper.RESULT_CANCELED, datetime.utcnow(),
+                                 cleanup_code=wrapper.RESULT_EXCEPTION)
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -715,9 +624,8 @@ class TestLooper(TestCase):
         # process died by seeing /proc/comm was not there, the job
         # timed out and the cleanup routine was successful
         job = self._make_alive_job()
-        self._patch_dead_process_no_comm(
-            wrapper.RESULT_TIMEOUT, datetime.utcnow(),
-            cleanup_code=wrapper.RESULT_SUCCESS)
+        self._patch_dead_process(wrapper.RESULT_TIMEOUT, datetime.utcnow(),
+                                 cleanup_code=wrapper.RESULT_SUCCESS)
         self._looper.loop()
 
         job = self._session.query(SchedulerJob).get(job.id)
@@ -748,8 +656,7 @@ class TestLooper(TestCase):
         self.assertEqual(job.state, job.STATE_WAITING, job.result)
 
         # validate behavior
-        self._mock_mp.Process.assert_not_called()
-        self._mock_mp.Process.return_value.start.assert_not_called()
+        self._mock_wrapper.return_value.assert_not_called()
     # test_start_job_cant_start()
 
     def test_start_job_process_start_fail(self):
@@ -765,9 +672,7 @@ class TestLooper(TestCase):
         self._mock_resources_man.can_start.return_value = True
 
         # simulate error to spawn process
-        self._mock_mp.ProcessError = RuntimeError
-        (self._mock_mp.Process.return_value
-         .start.side_effect) = self._mock_mp.ProcessError
+        self._mock_spawner.return_value.spawn.side_effect = SpawnerError
 
         # run one loop to go through the routine
         self._looper.loop()
@@ -776,7 +681,7 @@ class TestLooper(TestCase):
         job = SchedulerJob.query.filter_by(id=request.job_id).one()
         self.assertEqual(job.state, SchedulerJob.STATE_FAILED)
         self.assertEqual(job.result, 'Job failed to start')
-        self._mock_mp.Process.return_value.start.assert_called_with()
+        self._mock_wrapper.return_value.assert_not_called()
 
     # test_start_job_process_start_fail()
 
@@ -890,11 +795,10 @@ class TestLooper(TestCase):
         self.assertEqual(request.state, SchedulerRequest.STATE_COMPLETED)
         self.assertEqual(request.result, 'OK')
         # validate that looper sent signal to process
-        self._mock_os.kill.assert_called_with(
-            job.pid, sentinel.SIGTERM)
+        self._mock_spawner.return_value.terminate.assert_called_with(job)
 
         # simulate process died
-        self._patch_dead_process_no_comm(
+        self._patch_dead_process(
             wrapper.RESULT_CANCELED, datetime.now())
 
         self._looper.loop()
@@ -942,8 +846,7 @@ class TestLooper(TestCase):
             job.result,
             'Job forcefully canceled by user while in cleanup')
         # validate that looper sent signal to process
-        self._mock_os.kill.assert_called_with(
-            job.pid, sentinel.SIGKILL)
+        self._mock_spawner.return_value.terminate.assert_called_with(job, True)
 
     # test_cancel_force()
 
@@ -965,18 +868,13 @@ class TestLooper(TestCase):
         # prepare the mocks to simulate that process died in the meantime by
         # making first call return process is alive and second that process
         # died.
-        self._mock_open.return_value.__enter__.return_value.read. \
-        side_effect = [
-            wrapper.WORKER_COMM + "\n", # process alive
-            FileNotFoundError # process died
-        ]
-        # mock for to make process still alive in first pass
-        self._mock_os.readlink.return_value = '{}/{}'.format(
-            FAKE_JOBS_DIR, job.id)
+        self._mock_spawner.return_value.validate.side_effect = [
+            PROCESS_RUNNING, PROCESS_DEAD]
+
         # contents of result file
-        self._mock_open.return_value.__enter__.return_value.readlines. \
-        return_value = (
-            [str(0), datetime.utcnow().strftime(wrapper.DATE_FORMAT)])
+        self._mock_open_log.return_value.__enter__.return_value.readlines. \
+            return_value = (
+                [str(0), datetime.utcnow().strftime(wrapper.DATE_FORMAT)])
 
         # have the request processed
         self._looper.loop()
@@ -1005,7 +903,7 @@ class TestLooper(TestCase):
         self._session.commit()
 
         # prepare the mocks to simulate that process' state is unknown
-        self._patch_unknown_process(job)
+        self._patch_unknown_process()
 
         # have the request processed
         self._looper.loop()
@@ -1013,7 +911,7 @@ class TestLooper(TestCase):
         # validate states and results
         self.assertEqual(job.state, SchedulerJob.STATE_RUNNING)
         self.assertEqual(request.state, SchedulerRequest.STATE_PENDING)
-        self._mock_os.kill.assert_not_called()
+        self._mock_spawner.return_value.terminate.assert_not_called()
     # test_cancel_unknown_process()
 
     def test_cancel_finished_job(self):

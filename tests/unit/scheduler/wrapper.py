@@ -57,27 +57,27 @@ class TestWrapper(TestCase):
             spec=['warning', 'error', 'debug', 'info'])
 
         # signal module
-        patcher = patch.object(wrapper, 'signal', autospect=True)
+        patcher = patch.object(wrapper, 'signal')
         self._mock_signal = patcher.start()
         self.addCleanup(patcher.stop)
 
         # os module
-        patcher = patch.object(wrapper, 'os', autospect=True)
+        patcher = patch.object(wrapper, 'os', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)
 
         # open built-in function
-        patcher = patch.object(wrapper, 'open', autospect=True)
+        patcher = patch.object(wrapper, 'open')
         self._mock_open = patcher.start()
         self.addCleanup(patcher.stop)
 
         # pickle module
-        patcher = patch.object(wrapper, 'pickle', autospect=True)
+        patcher = patch.object(wrapper, 'pickle', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)
 
         # sys module
-        patcher = patch.object(wrapper, 'sys', autospect=True)
+        patcher = patch.object(wrapper, 'sys', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)
 

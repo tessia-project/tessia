@@ -55,7 +55,7 @@ class TestResourceManager(TestCase):
         self._res_man = resources_manager.ResourcesManager()
 
         patcher = patch.object(resources_manager,
-                               'datetime', autospect=True)
+                               'datetime', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)
 

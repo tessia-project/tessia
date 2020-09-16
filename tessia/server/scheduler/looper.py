@@ -33,16 +33,12 @@ from tessia.server.state_machines import MACHINES
 
 import logging
 import multiprocessing
-import os
 import signal
 import time
 
 #
 # CONSTANTS AND DEFINITIONS
 #
-PROCESS_RUNNING = 0
-PROCESS_DEAD = 1
-PROCESS_UNKNOWN = 2
 
 #
 # CODE
@@ -89,11 +85,10 @@ class Looper:
         self._resources_man = None
         # dict with state machine parsers keyed by name
         self._machines = None
-        # store our working directory to be used for validation of job's
-        # processes
-        self._cwd = ''
         # db session
         self._session = None
+        # spawn strategy instance
+        self._spawner = None
         # mapping of allowed request actions and their methods
         self._request_methods = None
 
@@ -119,7 +114,7 @@ class Looper:
         # pid ended or does not belong to this job: post process job and
         # mark request as failed since job had already ended
         process_state = self._validate_pid(job)
-        if process_state == PROCESS_DEAD:
+        if process_state == spawner.PROCESS_DEAD:
             self._post_process_job(job)
             request.state = SchedulerRequest.STATE_FAILED
             request.result = 'Job has ended while processing request'
@@ -128,7 +123,7 @@ class Looper:
         # we don't know if the process is still alive or belong to a non tessia
         # job: don't send signal, and keep trying the request until the real
         # state of the process is known
-        if process_state == PROCESS_UNKNOWN:
+        if process_state == spawner.PROCESS_UNKNOWN:
             self._logger.warning(
                 "Job %s process is in unknown state, delaying request "
                 "execution", job.id)
@@ -143,7 +138,7 @@ class Looper:
             # ask state machine process to die gracefully. Later we collect all
             # jobs in clean up state that pid has finished and mark them as
             # failed.
-            os.kill(job.pid, signal.SIGTERM)
+            self._spawner.terminate(job)
             request.state = SchedulerRequest.STATE_COMPLETED
             request.result = 'OK'
             job.state = SchedulerJob.STATE_CLEANINGUP
@@ -162,7 +157,7 @@ class Looper:
             # and if the syscall completes the signal will be caught and
             # process will die immediately we ignore this scenario and just
             # finish the job.
-            os.kill(job.pid, signal.SIGKILL)
+            self._spawner.terminate(job, force=True)
             request.state = SchedulerRequest.STATE_COMPLETED
             request.result = 'OK'
             job.state = SchedulerJob.STATE_CANCELED
@@ -437,7 +432,7 @@ class Looper:
             # validate pid to determine if job is still executing (in a reboot
             # scenario all processes died)
             # job has ended: post process job to update its state
-            if self._validate_pid(job) == PROCESS_DEAD:
+            if self._validate_pid(job) == spawner.PROCESS_DEAD:
                 self._post_process_job(job)
                 continue
 
@@ -460,7 +455,7 @@ class Looper:
         for job in active_jobs:
             # validate pid to determine if job is still executing
             # job still running: nothing to do
-            if self._validate_pid(job) != PROCESS_DEAD:
+            if self._validate_pid(job) != spawner.PROCESS_DEAD:
                 continue
 
             # job has ended: post process job to update its state
@@ -590,15 +585,16 @@ class Looper:
             # start job's state machine
             job_dir = '{}/{}'.format(self._jobs_dir, job.id)
             try:
-                process = multiprocessing.Process(
-                    target=spawner.spawn,
-                    args=(
-                        job_dir, job.job_type, complete_parameters,
-                        job.timeout))
+                process_pid = self._spawner.spawn(
+                    job_args={
+                        'job_dir': job_dir,
+                        'job_type': job.job_type,
+                        'job_parameters': complete_parameters,
+                        'timeout': job.timeout
+                    }
+                )
 
-                process.start()
-
-            except multiprocessing.ProcessError as exc:
+            except spawner.SpawnerError as exc:
                 self._logger.warning(
                     'Failed to start job %s: %s', job.id, str(exc))
                 job.state = SchedulerJob.STATE_FAILED
@@ -612,7 +608,7 @@ class Looper:
                 continue
 
             # update job in database to reflect new state
-            job.pid = process.pid
+            job.pid = process_pid
             job.state = SchedulerJob.STATE_RUNNING
             job.result = 'Job is running'
             job.start_date = datetime.utcnow()
@@ -637,70 +633,8 @@ class Looper:
         """
         self._logger.debug('Checking pid %s of job %s', job.pid, job.id)
 
-        inexistent_pid_msg = 'Job {} has inexistent pid {}'.format(
-            job.id, job.pid)
-        no_permission_msg = 'Job {} has inaccessible pid {}'.format(
-            job.id, job.pid)
+        return self._spawner.validate(job)
 
-        try:
-            # the read comm will include a newline, so strip it
-            with open('/proc/{}/comm'.format(job.pid), 'r') as comm_file:
-                proc_comm = comm_file.read().strip()
-        except FileNotFoundError:
-            self._logger.debug(inexistent_pid_msg)
-            return PROCESS_DEAD
-        # permission error in case the pid is recycled and the file is created
-        # with inaccessible permissions
-        except PermissionError:
-            self._logger.debug(no_permission_msg)
-            return PROCESS_DEAD
-        # in rare cases instead of "file not found" we may get a
-        # "no such process" error
-        except ProcessLookupError:
-            self._logger.debug(inexistent_pid_msg)
-            return PROCESS_DEAD
-
-        self._logger.debug('Process comm is %s', proc_comm)
-        comm_ok = bool(proc_comm == wrapper.WORKER_COMM)
-
-        # verify through the current working directory if the process belongs
-        # to the correct job
-        proc_cwd_file = '/proc/{}/cwd'.format(job.pid)
-        try:
-            proc_cwd = os.readlink(proc_cwd_file)
-        except FileNotFoundError:
-            self._logger.debug(inexistent_pid_msg)
-            return PROCESS_DEAD
-        # permission error in case the pid is recycled and the file is created
-        # with inaccessible permissions
-        except PermissionError:
-            self._logger.debug(no_permission_msg)
-            return PROCESS_DEAD
-
-        self._logger.debug('Process cwd is %s', proc_cwd)
-        cwd_ok = bool(os.path.basename(proc_cwd) == str(job.id))
-
-        # Process had time to change its comm and cwd, and they are
-        # both correct: consider process as running
-        if comm_ok and cwd_ok:
-            self._logger.debug('Process is running with cwd and comm correct.')
-            return PROCESS_RUNNING
-
-        # At this point we don't know for sure if the process is correct, it
-        # might not have had time to change its comm or cwd. However we know
-        # that the starting cwd of the worker process is the same as the
-        # looper's cwd so if the process' cwd is neither the final worker
-        # process cwd nor looper's then it must be another process
-        if not cwd_ok and proc_cwd != self._cwd:
-            self._logger.warning(
-                'Process did not start with looper cwd, assuming dead')
-            return PROCESS_DEAD
-
-        # for now assume the process is running and it will eventually either
-        # die or change its cwd/comm
-        self._logger.warning(
-            'Process has not yet set comm and cwd: unknown state.')
-        return PROCESS_UNKNOWN
     # _validate_pid()
 
     def _process_pending_requests(self):
@@ -748,11 +682,10 @@ class Looper:
         self._resources_man = resources_manager.ResourcesManager()
         # dict with state machine parsers keyed by name
         self._machines = MACHINES.classes
-        # store our working directory to be used for validation of job's
-        # processes
-        self._cwd = os.getcwd()
         # db session
         self._session = MANAGER.session
+        # spawn strategy
+        self._spawner = spawner.ForkSpawner()
         # mapping of allowed request actions and their methods
         self._request_methods = {
             SchedulerRequest.ACTION_CANCEL: self._cancel_job,

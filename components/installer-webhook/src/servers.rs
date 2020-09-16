@@ -358,35 +358,28 @@ fn webhook_auth() -> impl Filter<Extract = (EventAuth,), Error = Rejection> + Co
 /// Request filter for multipart data type
 ///
 /// Multipart is used when uploading files to the server.
-/// This filter extracts first uploaded file
+/// This filter extracts uploaded files
 fn multipart_filter_to_events() -> impl Filter<Extract = (Vec<Event>,), Error = Rejection> + Clone {
-    let f = multipart::form().and_then(|form: multipart::FormData| {
-        async {
-            // Collect the fields into (name, value): (String, Vec<u8>)
-            let part: Result<Vec<(String, Vec<u8>)>, warp::Rejection> = form
-                .and_then(|part| {
-                    let name = part.name().to_string();
-                    let value = part.stream().try_fold(Vec::new(), |mut vec, data| {
-                        vec.put(data);
-                        async move { Ok(vec) }
-                    });
-                    value.map_ok(move |vec| (name, vec))
+    multipart::form().and_then(|form: multipart::FormData| async {
+        form.try_fold(Vec::new(), |mut events, part| async {
+            // Take the part with the given name and collect associated stream
+            let name = part.name().to_string();
+            part.stream()
+                .try_fold(Vec::new(), |mut vec, data| async {
+                    vec.put(data);
+                    Ok(vec)
                 })
-                .try_collect()
                 .await
-                .map_err(|e| {
-                    panic!("multipart error: {:?}", e);
-                });
-            part
-        }
-    });
-
-    // convert parts to events
-    f.map(|parts: Vec<(String, Vec<u8>)>| {
-        parts
-            .iter()
-            .map(|(ident, data)| Event::Raw(ident.clone(), data.to_vec()))
-            .collect()
+                .and_then(|data| {
+                    events.push(Event::Raw(name, data));
+                    Ok(events)
+                })
+        })
+        .map_err(|e| {
+            info!("Multipart not accepted: {}", e);
+            warp::reject()
+        })
+        .await
     })
 }
 
@@ -395,7 +388,7 @@ mod tests {
     use super::*;
 
     // Implement PartialEq for test convenience,
-    // main code should not use direct copmarisons
+    // main code should not use direct comparisons
     impl std::cmp::PartialEq for EventAuth {
         fn eq(&self, other: &Self) -> bool {
             self.ident == other.ident && self.signature == other.signature
@@ -492,6 +485,10 @@ mod tests {
             "a sample uploaded file".as_bytes().to_vec(),
         );
         assert_eq!(expected.to_string(), "binary:sample:22");
+        let expected_other = Event::Raw(
+            "other file".to_owned(),
+            "another uploaded file".as_bytes().to_vec(),
+        );
 
         let unexpected = Event::Raw(
             "sample".to_owned(),
@@ -504,6 +501,9 @@ mod tests {
              --{0}\r\n\
              content-disposition: form-data; name=\"sample\"\r\n\r\n\
              a sample uploaded file\r\n\
+             --{0}\r\n\
+             content-disposition: form-data; name=\"other file\"\r\n\r\n\
+             another uploaded file\r\n\
              --{0}--\r\n\
              ",
             boundary
@@ -520,5 +520,28 @@ mod tests {
         let value = request.filter(&filter).await.unwrap();
         assert_eq!(value.get(0), Some(&expected));
         assert_ne!(value.get(0), Some(&unexpected));
+        assert_eq!(value.get(1), Some(&expected_other));
+
+        // test malformed multipart request
+        let body = format!(
+            "\
+             --{0}\r\n\
+             content-disposition: form-data; name=\"sample\"\r\n\r\n\
+             a sample uploaded file\r\n\
+             --wrong boundary--\r\n\
+             ",
+            boundary
+        );
+
+        let request = warp::test::request()
+            .method("POST")
+            .header("content-length", body.len())
+            .header(
+                "content-type",
+                format!("multipart/form-data; boundary={}", boundary),
+            )
+            .body(body);
+        let value = request.filter(&filter).await;
+        assert!(value.is_err());
     }
 }

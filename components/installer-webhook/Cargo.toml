@@ -1,6 +1,6 @@
 [package]
 name = "installer-webhook"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["Alexander Efremkin <aefr@de.ibm.com>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -9,8 +9,11 @@ license = "Apache-2.0"
 futures = "0.3"
 warp = "0.2"
 bytes = "0.5"
-tokio = { version = "0.2", features = ["full"] }
 serde = { version = "1.0.114", features = ["derive"] }
 serde_yaml = "0.8.13"
 log = "0.4.11"
 log4rs = "0.13.0"
+
+[dependencies.tokio]
+version = "0.2"
+features = ["rt-core", "tcp", "time", "macros", "sync", "stream", "signal"]

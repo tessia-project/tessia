@@ -54,15 +54,14 @@ async fn main() {
                 // msg_type for logging purposes
                 let msg_type = msg.get_type();
                 // handle message; may return Err on shutdown
-                let result = control.handle_message(msg);
-                match result {
+                match control.handle_message(msg) {
                     Ok(ok) => {
-                        if let Err(_) = res_channel.send(ok) {
+                        res_channel.send(ok).unwrap_or_else(|_| {
                             info!(
                                 "Message {} handled, but response could not be sent",
                                 msg_type
                             );
-                        }
+                        });
                     }
                     Err(_) => break,
                 }

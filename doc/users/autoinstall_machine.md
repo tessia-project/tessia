@@ -108,4 +108,256 @@ Any kernel arguments for the distro installer defined in this manner will take p
 
 # Autotemplate variables
 
-TODO
+All the necessary information for a template is contained in the `config` dictionary.   
+The following variables/objects are available in the `config` and can be used in a template:
+
+- [ifaces](#ifaces) - interfaces which are attached to the target system profile   
+- [svols](#svols) - storage volumes attached to the system profile   
+- [repos](#repos) - repositories recognized by the autoinstall machine   
+- [server_hostname](#server_hostname) - tessia server hostname   
+- [system_type](#system_type) - target system type   
+- [credentials](#credentials) - credentials used during installation except for ssh root password   
+- [sha512rootpwd](#sha512rootpwd) - ssh root password generated with sha512 algorithm   
+- [hostname](#hostname) - resolvable hostname of the target system or ip address   
+- [autofile](#autofile) - path to the autofile (i.e. kickstart/autoinst/preseed)  
+- [operating_system](#operating_system) - operating system which should be installed   
+- [profile_parameters](#profile_parameters) - custom kernel cmdline parameters for the Linux installer and for the installed system   
+- [gw_iface](#gw_iface) - gateway interface for the target system (i.e. a network interface to perform installation)
+
+Below you can find structure description and a sample of each object.
+
+### ifaces
+```
+ifaces [
+        {'attributes': {'layer2': True|False,
+                        'portno': '0|1',
+                        'ccwgroup': '0.0.f500,0.0.f501,0.0.f502',
+                        'portname': 'OSAPORT'},
+         'type': 'OSA',
+         'mac_addr': '02:20:10:10:76:00',
+         'ip': '192.168.0.9',
+         'ip_type': 'ipv4'|'ipv6',
+         'subnet': '192.168.0.0',
+         'mask': '255.255.255.0',
+         'mask_bits': '24',
+         'search_list': None,
+         'vlan': None,
+         'dns_1': '8.8.8.8',
+         'dns_2': None,
+         'osname': 'enccw0.0.f500',
+         'is_gateway': True,
+         'gateway': '192.168.0.1'},
+
+        {'attributes': {'fid': '111'}, 
+         'type': 'ROCE', 
+         'mac_addr': '02:20:10:10:76:00', 
+         'ip': None, 
+         'subnet': None, 
+         'mask_bits': None, 
+         'mask': None, 
+         'vlan': None, 
+         'osname': 'en518', 
+         'is_gateway': False},
+
+        ...
+]
+
+ifaces [
+        {'attributes': {'hostiface': 'enccw0.0.f500'},
+         'type': 'MACVTAP',   
+         'mac_addr': '02:20:10:10:76:01',
+         'ip': '192.168.2.9',
+         'ip_type': 'ipv4'|'ipv6',
+         'subnet': '192.168.0.0',
+         'mask': '255.255.255.0',
+         'mask_bits': '24',
+         'search_list': None,
+         'vlan': None,
+         'dns_1': '8.8.8.8',
+         'dns_2': None,
+         'osname': 'en0',
+         'is_gateway': True,
+         'gateway': '192.168.0.1'}
+]
+```
+```
+$ tess system iface-types
+
+ Type name |            Description
+-----------+-----------------------------------
+ OSA       | OSA card
+ MACVTAP   | KVM macvtap configured by libvirt
+ ROCE      | PCI card
+```
+### svols
+```
+svols [
+       {'type': 'DASD',
+        'volume_id': '7e2e',
+        'server': 'DS8K16',
+        'system_attributes': {'device': '/dev/disk/by-path/ccw-0.0.7e2e'},
+        'specs': {},
+        'size': 19073,
+        'part_table': {'type': 'dasd',
+                       'table': [{'fs': 'ext3',
+                                  'mo': None,
+                                  'mp': '/',
+                                  'size': 19072,
+                                  'type': 'primary'}]},
+        'is_root': True},
+
+       {'type': 'DASD',
+        'volume_id': '7e2f',
+        'server': 'DS8K16',
+        'system_attributes': {'device': '/dev/disk/by-path/ccw-0.0.7e2f'},
+        'specs': {},
+        'size': 19073,
+        'part_table': {'type': 'dasd',
+                       'table': [{'fs': 'swap',
+                                  'mo': None,
+                                  'mp': None,
+                                  'size': 19072,
+                                  'type': 'primary'}]},
+        'is_root': False},
+
+       {'type': 'FCP',
+        'volume_id': '1020304500000000',
+        'server': 'DS8K22',
+        'system_attributes': {'device': '/dev/disk/by-id/dm-uuid-mpath-33005566777fff5f30000000000008888'},
+        'specs': {'wwid': '33005566777fff5f30000000000008888',
+                  'adapters': [{'devno': '0.0.1900', 'wwpns': ['50050555050555e3']}, 
+                               {'devno': '0.0.1940', 'wwpns': ['50050555051555e3']}], 
+                  'multipath': True},
+        'size': 19073,
+        'part_table': {'type': 'msdos',
+                       'table': [{'fs': 'ext4',
+                                  'mo': None,
+                                  'mp': '/home/user1',
+                                  'size': 9536,
+                                  'type': 'primary'},
+
+                                 {'fs': 'ext2',
+                                  'mo': None,
+                                  'mp': '/home/user2',
+                                  'size': 9536,
+                                  'type': 'primary'}]},
+        'is_root': False},
+
+       {'type': 'HPAV', 
+        'volume_id': 'ed52', 
+        'server': 'DS8K16', 
+        'system_attributes': {'device': '/dev/disk/by-path/ccw-0.0.ed52'}, 
+        'specs': {}, 
+        'size': 0, 
+        'part_table': None, 
+        'is_root': False}
+]
+```
+These volume types are supported:
+```
+$ tess storage vol-types
+
+ Type name |        Description
+-----------+---------------------------
+ DASD      | DASD disk type
+ HPAV      | HPAV alias for DASD disks
+ FCP       | FCP-SCSI disk type
+```
+### repos
+```
+repos [
+       {'url': 'http://myserver.com/suse/s390x/SLES12.3/DVD/',
+        'desc': 'SLES12.3',
+        'name': 'SLES12.3',
+        'os': 'sles12.3',
+        'install_image': None},
+
+       {'url': 'http://myserver.com/ubuntu/UBUNTU20.04/CD',
+        'desc': 'Ubuntu20.04',
+        'name': 'Ubuntu20.04',
+        'os': 'ubuntu20.04',
+        'install_image': 'http://myserver.com/ubuntu/UBUNTU20.04/focal-live-server-20200702-s390x.iso'},
+
+       {'url': 'http://myserver.com/Packages/packages-1/', 
+        'desc': 'packages-1', 
+        'name': 'packages-1', 	
+        'os': None, 
+        'install_image': None}
+]
+```
+`install_image` - differs from 'None' for Ubuntu 20.04 subiquity installer only
+### server_hostname
+```
+server_hostname server.domain
+```
+### system_type
+```
+system_type LPAR|ZVM|KVM
+```
+```
+$ tess system types
+
+ Type name | Architecture |    Description
+-----------+--------------+--------------------
+ CPC       | s390x        | System z CPC
+ LPAR      | s390x        | System z LPAR
+ ZVM       | s390x        | zVM guest
+ KVM       | s390x        | System z KVM guest
+```
+### credentials
+```
+credentials {'admin-user': 'root', 
+             'admin-password': 'mypasswd',
+             'zvm-password': 'zvmpasswd' 
+             'vnc-password': '5Tizv6tj'}
+```
+`zvm-password` - for ZVM system type only  
+`vnc-password` - generated pseudo-random password for VNC session
+### sha512rootpwd
+```
+sha512rootpwd $6$wDDkH53WXF.WgV36$l.3o7Uv01NzJ/klvmjeNVcDMis/jSOeQKhP1aR/ZviC1Ef6vxJmWVfAwzLFJr/RapYTOtu5Kr7DKQqrvJjJW6/
+```
+### hostname
+```
+hostname cpc3lp25.domain.com|192.168.0.9
+```
+### autofile
+```
+autofile http://server.domain.com/static/cpc3lp25-profile1
+```
+### operating_system
+```
+operating_system {'major': 12, 
+                  'minor': 3, 
+                  'pretty_name': 'SUSE Linux Enterprise Server 12 SP3'}
+```
+### profile_parameters
+```
+profile_parameters {'linux-kargs-target': 'selinux=0 nosmt=false', 
+                    'linux-kargs-installer': 'nosmt=true zfcp.allow_lun_scan=0'}
+```
+or
+```
+profile_parameters None
+```
+### gw_iface
+```
+gw_iface {'attributes': {'layer2': True|False,
+                         'portno': '0|1',
+                         'ccwgroup': '0.0.f500,0.0.f501,0.0.f502',
+                         'portname': 'OSAPORT'},
+          'type': 'OSA',
+          'mac_addr': '02:20:10:10:76:00',
+          'ip': '192.168.0.9',
+          'ip_type': 'ipv4'|'ipv6',
+          'subnet': '192.168.0.0',
+          'mask': '255.255.255.0',
+          'mask_bits': '24',
+          'search_list': None,
+          'vlan': None,
+          'dns_1': '8.8.8.8',
+          'dns_2': None,
+          'osname': 'enccw0.0.f500',
+          'is_gateway': True,
+          'gateway': '192.168.0.1'}
+```

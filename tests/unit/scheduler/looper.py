@@ -74,6 +74,13 @@ class TestLooper(TestCase):
             'scheduler': {'jobs_dir': '/tmp/looper-unit-test/jobs'}
         }
 
+        patcher = patch.object(looper.spawner, 'CONF', autospec=True)
+        mock_conf = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock_conf.get_config.return_value = {
+            'scheduler': {'jobs_dir': '/tmp/looper-unit-test/jobs'}
+        }
+
         patcher = patch.object(looper, 'MEDIATOR', autospec=True)
         mock_conf = patcher.start()
         self.addCleanup(patcher.stop)
@@ -133,12 +140,14 @@ class TestLooper(TestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
-        # open built-in function
-        patcher = patch.object(looper.spawner, 'ForkSpawner', autospec=True)
+        # patch spawner implementation
+        patcher = patch.object(looper.spawner, 'ContainerSpawner',
+                               autospec=True)
         self._mock_spawner = patcher.start()
         self.addCleanup(patcher.stop)
         self._mock_spawner.return_value.spawn.return_value = 50000   # any pid
 
+        # open built-in function
         patcher = patch.object(looper, 'open')
         self._mock_open_log = patcher.start()
         self.addCleanup(patcher.stop)

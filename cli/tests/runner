@@ -153,6 +153,7 @@ def exec_(names, api_url, src_dir, cleaner, cov_erase, cov_report):
         failed = True
         click.echo('[init] waiting for API server to come up (30 secs)')
         while time.time() < timeout:
+            time.sleep(1.0)
             try:
                 requests.head(api_url, verify=False)
             except requests.exceptions.HTTPError:

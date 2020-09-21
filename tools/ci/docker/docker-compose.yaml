@@ -3,6 +3,7 @@ version: '2.1'
 services:
   server:
     image: tessia-server:${TESSIA_DOCKER_TAG:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-tessia}_server_1
     environment:
       # for production use one should create an override compose file
       # and set these variables
@@ -12,6 +13,8 @@ services:
       TESSIA_MEDIATOR_URI: "redis://tessia:pass4tessia@mediator:6379/0"
       TESSIA_LIVE_IMG_PASSWD: ${TESSIA_LIVE_IMG_PASSWD:-livepasswd}
       TESSIA_SERVER_FQDN: ${TESSIA_SERVER_FQDN:-server}
+      TESSIA_EXECUTOR_IMAGE: tessia-server:${TESSIA_DOCKER_TAG:-latest}
+      TESSIA_COMPOSE_NAME: ${COMPOSE_PROJECT_NAME:-tessia}
     hostname: ${TESSIA_SERVER_FQDN:-server}
     ports:
       - 80:80
@@ -23,6 +26,7 @@ services:
     volumes:
       - server-etc:/etc/tessia
       - server-jobs:/var/tessia/jobs
+      - server-static:/var/tessia/www
       - /var/run/docker.sock:/var/run/docker.sock
     restart: "always"
     depends_on:
@@ -83,3 +87,4 @@ volumes:
   md-data:
   server-etc:
   server-jobs:
+  server-static:

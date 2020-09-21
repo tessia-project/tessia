@@ -105,6 +105,27 @@ class EnvDocker(EnvBase):
                                'incomplete')
     # _docker_build()
 
+    def _upload_configuration(self, container_obj, config_dir):
+        """
+        Upload ansible configuration to container
+        """
+        def _tar_filter(tarinfo):
+            """Change user for configuration files"""
+            tarinfo.uid = tarinfo.gid = 1000     # default user (ansible)
+            tarinfo.uname = tarinfo.gname = "ansible"
+            return tarinfo
+
+        with BytesIO() as temp_fd:
+            with tarfile.TarFile(fileobj=temp_fd, mode='w') as tar_fd:
+                tar_fd.add(config_dir, arcname='.', filter=_tar_filter)
+            temp_fd.seek(0)
+
+            self._logger.debug('transferring config files to container')
+
+            # put_archive is used because docker py doesn't have the
+            # copy command in the current version of the API.
+            container_obj.put_archive(INVENTORY_DIR, temp_fd)
+
     def build(self):
         """
         Build docker image
@@ -157,9 +178,6 @@ class EnvDocker(EnvBase):
                 detach=True,             # immediately return Container object
                 remove=True,             # Removes container when finished
                 stdout=True, stderr=True,
-                # we would want to start container with root user
-                # to allow PID 1 process to prepare the environment,
-                # and run subprocesses as less privileged users
                 security_opt=["no-new-privileges:true"],  # disables sudo
                 tty=True
             )
@@ -175,7 +193,6 @@ class EnvDocker(EnvBase):
         exec_id = self._client.api.exec_create(
             container_obj.name,
             '/assets/downloader.py',
-            user="ansible",          # less privileged user
             environment={
                 'TESSIA_ANSIBLE_DOCKER_REPO_URL': repo_url,
                 'TESSIA_ANSIBLE_DOCKER_LOG_LEVEL': (
@@ -192,16 +209,7 @@ class EnvDocker(EnvBase):
             raise RuntimeError('Failed to download repository')
 
         # Copy inventory and config files to the ansible container.
-        with BytesIO() as temp_fd:
-            with tarfile.TarFile(fileobj=temp_fd, mode='w') as tar_fd:
-                tar_fd.add(repo_dir, arcname='.')
-            temp_fd.seek(0)
-
-            self._logger.debug('transferring config files to container')
-
-            # put_archive is used because docker py doesn't have the
-            # copy command in the current version of the API.
-            container_obj.put_archive(INVENTORY_DIR, temp_fd)
+        self._upload_configuration(container_obj, repo_dir)
 
         if preexec:
             # execute preexec script
@@ -219,7 +227,6 @@ class EnvDocker(EnvBase):
             exec_id = self._client.api.exec_create(
                 container_obj.name,
                 cmd,
-                user="ansible",  # less privileged user
                 environment=env,
                 workdir=PLAYBOOK_DIR)
             lines = self._client.api.exec_start(exec_id['Id'], stream=True)
@@ -237,7 +244,6 @@ class EnvDocker(EnvBase):
             exec_id = self._client.api.exec_create(
                 container_obj.name,
                 ['ansible-galaxy', 'install', '-r', galaxy_req],
-                user="ansible",  # less privileged user
                 workdir=PLAYBOOK_DIR)
             lines = self._client.api.exec_start(exec_id['Id'], stream=True)
             ret = {'Running': True, 'ExitCode': 0}
@@ -250,7 +256,6 @@ class EnvDocker(EnvBase):
         exec_id = self._client.api.exec_create(
             container_obj.name,
             ['ansible-playbook', playbook_name],
-            user="ansible",          # less privileged user
             workdir=PLAYBOOK_DIR)
         lines = self._client.api.exec_start(exec_id['Id'], stream=True)
         ret = {'Running': True, 'ExitCode': 0}
@@ -263,7 +268,7 @@ class EnvDocker(EnvBase):
             self._logger.info('Container exited abnormally, exit code %d',
                               ret['ExitCode'])
         self._logger.info('removing container...')
-        container_obj.kill()  # SIGKILL
+        container_obj.stop()
 
         return ret['ExitCode']
     # run()

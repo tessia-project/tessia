@@ -120,7 +120,7 @@ class TestEnvDocker(TestCase):
         # Construct a mock class which is returned by docker.from_env()
         attrs = \
             {'images.get.side_effect':
-                 docker.errors.ImageNotFound("image not found"),
+             docker.errors.ImageNotFound("image not found"),
              'api.build.return_value':
                  TestEnvDocker._gen_docker_output_successful()}
         # Monkeypatch docker.cient.DockerClient to be able to patch api
@@ -251,7 +251,6 @@ class TestEnvDockerSuccessful(TestEnvDocker):
             self.docker_client_mock.api.exec_create.call_args_list[0]
         self.assertEqual(args[0], self.docker_containers_mock.name)
         self.assertEqual(args[1], "/assets/downloader.py")
-        self.assertEqual(kwargs["user"], "ansible")
         exp_log_level = self._mock_logger.getEffectiveLevel.return_value
         self.assertEqual(kwargs["environment"],
                          {'TESSIA_ANSIBLE_DOCKER_REPO_URL': REPO_URL,
@@ -268,7 +267,6 @@ class TestEnvDockerSuccessful(TestEnvDocker):
         self.assertEqual(args[0], "tessia_ansible_docker_123456")
         self.assertListEqual(
             args[1], [preexec['path']] + preexec['args'])
-        self.assertEqual(kwargs["user"], "ansible")
         self.assertDictEqual(kwargs["environment"], preexec['env'])
 
         # Check if the ansible galaxy is executed
@@ -277,18 +275,15 @@ class TestEnvDockerSuccessful(TestEnvDocker):
         self.assertEqual(args[0], "tessia_ansible_docker_123456")
         self.assertListEqual(
             args[1], ["ansible-galaxy", "install", "-r", GALAXY_REQ])
-        self.assertEqual(kwargs["user"], "ansible")
 
         # Check if the ansible playbook is executed
         args, kwargs = \
             self.docker_client_mock.api.exec_create.call_args_list[3]
         self.assertEqual(args[0], "tessia_ansible_docker_123456")
         self.assertListEqual(args[1], ["ansible-playbook", PLAYBOOK_NAME])
-        self.assertEqual(kwargs["user"], "ansible")
 
-        # Check kill call
-        self.assertTrue(
-            len(self.docker_containers_mock.kill.mock_calls) == 1)
+        # Check stop container call
+        self.assertEqual(len(self.docker_containers_mock.stop.mock_calls), 1)
 
 
 class TestEnvDockerUnsuccessful(TestEnvDocker):

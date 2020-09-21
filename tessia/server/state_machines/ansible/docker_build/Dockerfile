@@ -45,5 +45,6 @@ RUN apt-get -q update > /dev/null && \
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
 WORKDIR /home/ansible
+USER ansible
 
 ENTRYPOINT ["/bin/cat"]

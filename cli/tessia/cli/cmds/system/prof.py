@@ -112,9 +112,9 @@ def prof_add(**kwargs):
         'system specified not found.')
     if system.type.lower() == 'zvm':
         if not zvm_pass:
-            zvm_pass = click.prompt(ZVM_PROMPT, hide_input=True,
-                                    confirmation_prompt=True, type=TEXT)
-        kwargs['credentials']['zvm-password'] = zvm_pass
+            kwargs['credentials']['zvm-password'] = ""
+        else:
+            kwargs['credentials']['zvm-password'] = zvm_pass
         if zvm_by:
             kwargs['credentials']['zvm-logonby'] = zvm_by
     elif zvm_pass or zvm_by:

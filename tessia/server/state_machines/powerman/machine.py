@@ -545,8 +545,13 @@ class PowerManagerMachine(BaseMachine):
                 'Cannot login to CMS on {}: no z/VM guest defined with '
                 'credentials'.format(system_obj.name))
         if 'zvm-password' not in guest_prof.credentials:
-            raise ValueError('z/VM guest {} has no z/VM credentials '
-                             'defined'.format(guest_prof.system_rel.name))
+            raise ValueError(
+                'z/VM guest {} has no z/VM credentials '
+                'defined'.format(guest_prof.system_rel.name))
+        if not guest_prof.credentials['zvm-password']:
+            raise ValueError('z/VM guest {} has empty z/VM password '
+                             'defined. Please set the correct password.'
+                             .format(guest_prof.system_rel.name))
         term_obj = Terminal()
         guest_params = {'here': True, 'noipl': True}
         if guest_prof.credentials.get('zvm-logonby'):

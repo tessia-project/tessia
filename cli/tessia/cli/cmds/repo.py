@@ -61,7 +61,7 @@ def repo():
 @click.option('--kernel', help="kernel path (when --os is specified)")
 @click.option('--initrd', help="initrd path (when --os is specified)")
 @click.option('--install_image',
-              help="path to installation image (when --os is specified)")
+              help="path to installation image (when --os is specified, for Ubuntu 20.04 subiquity installer only)")
 @click.option('--owner', help="owner of repository")
 @click.option('--project', help="project owning repository")
 @click.option('--desc', help="free form field describing repository")
@@ -110,7 +110,7 @@ def del_(name):
 @click.option('--kernel', help="kernel path (when --os is specified)")
 @click.option('--initrd', help="initrd path (when --os is specified)")
 @click.option('--install_image',
-              help="path to installation image (when --os is specified)")
+              help="path to installation image (when --os is specified, for Ubuntu 20.04 subiquity installer only)")
 @click.option('--owner', help="owner of repository")
 @click.option('--project', help="project owning repository")
 @click.option('--desc', help="free form field describing repository")
@@ -131,7 +131,7 @@ def edit(cur_name, **kwargs):
 @click.option('--initrd', help="filter by initrd path")
 @click.option('--kernel', help="filter by kernel path")
 @click.option('--install_image',
-              help="filter by path to installation image")
+              help="filter by path to installation image, for Ubuntu 20.04 subiquity installer only")
 @click.option('--long', 'long_info', help="show extended information",
               is_flag=True, default=False)
 @click.option('--my', help="show only my own repos", is_flag=True,

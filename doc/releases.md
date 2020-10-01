@@ -15,6 +15,8 @@ limitations under the License.
 -->
 # Release notes
 
+## The project switched to a rolling updates strategy.
+
 ## 18.06 (2018-06-12)
 
 Attention: if you are upgrading from a previous version, this release includes changes to the following installation templates:

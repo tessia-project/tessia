@@ -37,8 +37,8 @@ This page contains a detailed view of the current supported combinations and usa
 | layer2 on (OSA only)     | Y    | Y    | Y      | Y      |
 | layer2 off (OSA only)    | Y    | Y    | Y      | Y      |
 
-[*] - latest supported version   
-[**] - Except Ubuntu 16.04 (GA) due to distro installer issues, for details see [ReleaseNotes](https://wiki.ubuntu.com/XenialXerus/ReleaseNotes#IBM_LinuxONE_and_z_Systems_specific_known_issues)
+[\*] - latest supported version   
+[\*\*] - except Ubuntu 16.04 (GA) due to distro installer issues, for details see [ReleaseNotes](https://wiki.ubuntu.com/XenialXerus/ReleaseNotes#IBM_LinuxONE_and_z_Systems_specific_known_issues)
 
 # Network and volumes on z/VM
 
@@ -54,8 +54,8 @@ Except Ubuntu16.04.1 which won't boot its installer's initrd on z/VM, the suppor
 | multipath off (FCP only)          | Y    | Y    | Y      | Y      |
 | network interface MACVTAP         | Y    | Y    | Y      | Y      |
 
-[*] - latest supported version      
-[**] - Except SLES15.0 due to an AutoYaST bug and SLES15.2   
+[\*] - latest supported version      
+[\*\*] - except SLES15.0 due to an AutoYaST bug and SLES15.2   
 
 # Partitioning on LPAR
 
@@ -76,12 +76,14 @@ Remarks:
 | Ext3                 | Y    | Y    | Y      | Y      |
 | Ext4                 | Y    | Y    | Y      | Y      |
 | XFS                  | Y    | Y    | Y      | Y      |
-| BtrFS (except '/')   | N    | Y    | Y      | N      |
+| BtrFS                | N    | Y*   | N      | N      |
 | ReiserFS             | N    | N    | N      | Y      |
 | JFS                  | N    | N    | N      | N      |
 | FAT16                | N    | N    | N      | N      |
 | FAT32                | N    | N    | N      | N      |
 | set mount options    | Y    | Y    | Y      | Y      |
+
+[*] - except SLES12.\*      
 
 # Partitioning on z/VM
 
@@ -101,12 +103,14 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 | Ext3                 | Y    | Y    | Y      | Y      |
 | Ext4                 | Y    | Y    | Y      | Y      |
 | XFS                  | Y    | Y    | Y      | Y      |
-| BtrFS (except '/')   | N    | Y    | Y      | N      |
+| BtrFS                | N    | Y*   | N      | N      |
 | ReiserFS             | N    | N    | N      | Y      |
 | JFS                  | N    | N    | N      | N      |
 | FAT16                | N    | N    | N      | N      |
 | FAT32                | N    | N    | N      | N      |
 | set mount options    | Y    | Y    | Y      | N      |
+
+[*] - except SLES12.\*      
 
 # Distro as KVM hypervisor
 
@@ -115,5 +119,5 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 | using distro as KVM hypervisor | Y**  | Y    | Y***   | Y      |
 
 [\*] - latest supported version   
-[\*\*] - Except RHEL7.\*   
-[\*\*\*] - Except Ubuntu20.\*   
+[\*\*] - except RHEL7.\*   
+[\*\*\*] - except Ubuntu20.\*   

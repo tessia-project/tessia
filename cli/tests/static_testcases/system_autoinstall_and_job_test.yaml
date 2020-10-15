@@ -267,7 +267,7 @@ tasks:
     - - job output --id=22
       - job not found.
     - - job output --id=1
-      - 'Process Process-1:'
+      - 'socket.gaierror:.*Name or service not known'
       # cover stmt 148 in job.py
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --bg
       - 'Request accepted; job id is #11'

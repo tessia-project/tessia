@@ -685,7 +685,7 @@ class Looper:
         # db session
         self._session = MANAGER.session
         # spawn strategy
-        self._spawner = spawner.ForkSpawner()
+        self._spawner = spawner.ContainerSpawner()
         # mapping of allowed request actions and their methods
         self._request_methods = {
             SchedulerRequest.ACTION_CANCEL: self._cancel_job,

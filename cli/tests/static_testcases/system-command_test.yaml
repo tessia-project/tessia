@@ -374,11 +374,7 @@ tasks:
     - - system add --name=vmguest01 --hyp=cpc3lp53 --type=ZVM --hostname=vmguest01.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
         # login specified, no zvm specified
-    - - - system prof-add --name=login_int --system=vmguest01 --login=root:passwd
-        # enter zvm password
-        - myzvmpasswd
-        # repeat
-        - myzvmpasswd
+    - - system prof-add --name=login_int --system=vmguest01 --login=root:passwd
       - 'Item added successfully.'
     - - system prof-list --name=login_int --system=vmguest01
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
@@ -403,6 +399,16 @@ tasks:
         - ' login_int2 *\| vmguest01 *\|'
     - - system prof-list --name=login_int2 --system=vmguest01 --long
       - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
+        # add/edit profile without z/VM password
+    - - system prof-add --name=without_password --system=vmguest01 --login=root:passwd
+      - 'Item added successfully.'
+    - - system prof-list --name=without_password --system=vmguest01 --long
+      - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
+    - - system prof-edit --name=without_password --system=vmguest01 --zvm-pass=newpassword
+      - 'Item successfully updated'
+    - - system prof-list --name=without_password --system=vmguest01 --long
+      - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
+         # profile with z/VM password
     - - system prof-add --name=default --system=vmguest01 --login=root:passwd --zvm-pass=vmpassword --zvm-by=vmadmin
       - 'Item added successfully.'
     - - system prof-list --name=default --system=vmguest01
@@ -1504,7 +1510,7 @@ tasks:
       - Item successfully updated.
     - - system list --system=cpc8
       - - ' *Name *\| *Hostname *\| *Type *\| *Model *\| *Current state *\| *Owner *\| *Project'
-        - ' *cpc8 *\|' 
+        - ' *cpc8 *\|'
     - - system poweron --system=cpc3lp52 --bg
       - 'Request accepted; job id is #'
     - - system poweroff --system=cpc3lp52 --bg

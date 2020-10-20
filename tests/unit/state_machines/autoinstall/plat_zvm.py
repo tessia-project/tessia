@@ -146,7 +146,7 @@ class TestPlatZvm(TestCase):
         self.db.session.commit()
 
         with self.assertRaisesRegex(
-                ValueError, 'zVM password not available in profile'):
+                ValueError, 'z/VM password not available in profile'):
             plat_zvm.PlatZvm(
                 self._hyper_prof_entry, self._prof_entry, self._os_entry,
                 self._repo_entry, self._gw_iface_entry)
@@ -156,5 +156,31 @@ class TestPlatZvm(TestCase):
         self.db.session.add(self._prof_entry)
         self.db.session.commit()
     # test_init_error()
+
+    def test_empty_password_error(self):
+        """
+        Verify that the platform object cannot be created if z/VM password is
+        empty
+        """
+        orig_cred = self._prof_entry.credentials
+        new_cred = orig_cred.copy()
+        new_cred['zvm-password'] = ''
+        self._prof_entry.credentials = new_cred
+        self.db.session.add(self._prof_entry)
+        self.db.session.commit()
+
+        with self.assertRaisesRegex(
+                ValueError,
+                'An empty z/VM guest password is trying to be used. '
+                'Please set the correct password.'):
+            plat_zvm.PlatZvm(
+                self._hyper_prof_entry, self._prof_entry, self._os_entry,
+                self._repo_entry, self._gw_iface_entry)
+
+        # restore value
+        self._prof_entry.credentials = orig_cred
+        self.db.session.add(self._prof_entry)
+        self.db.session.commit()
+    # test_empty_password_error()
 
 # TestPlatZvm

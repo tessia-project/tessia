@@ -57,12 +57,16 @@ class PlatZvm(PlatBase):
             HypervisorZvm: class instance
 
         Raises:
-            ValueError: in case profile has no zVM password specified
+            ValueError: in case profile has no z/VM password specified
         """
         try:
             zvm_pass = self._guest_prof.credentials['zvm-password']
         except KeyError:
-            raise ValueError('zVM password not available in profile')
+            raise ValueError('z/VM password not available in profile')
+        if not self._guest_prof.credentials['zvm-password']:
+            raise ValueError(
+                'An empty z/VM guest password is trying to be used. '
+                'Please set the correct password.')
         params = {}
         try:
             params['byuser'] = self._guest_prof.credentials['zvm-logonby']

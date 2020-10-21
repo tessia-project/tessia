@@ -373,7 +373,7 @@ tasks:
   system_zvm: # zvm guest system and profile add/update
     - - system add --name=vmguest01 --hyp=cpc3lp53 --type=ZVM --hostname=vmguest01.example.com --desc='SVT Developer 1' --owner=dev1@example.com --project='GEO_1 developers'
       - Item added successfully.
-        # login specified, no zvm specified
+        # login specified, no zvm password specified
     - - system prof-add --name=login_int --system=vmguest01 --login=root:passwd
       - 'Item added successfully.'
     - - system prof-list --name=login_int --system=vmguest01
@@ -381,6 +381,11 @@ tasks:
         - ' login_int *\| vmguest01 *\|'
     - - system prof-list --name=login_int --system=vmguest01 --long
       - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
+        # ask zvm password to create profile
+    - - - system prof-add --name=login_ask_zvm_passwd --system=vmguest01 --login=root:passwd --ask-zvm-pass
+        - myzvmpass
+        - myzvmpass
+      - 'Item added successfully.'
         # no login and no zvm specified
     - - - system prof-add --name=login_int2 --system=vmguest01
         # enter admin username
@@ -389,10 +394,6 @@ tasks:
         - myadminpasswd
         # repeat
         - myadminpasswd
-        # enter zvm password
-        - myzvmpasswd
-        # repeat
-        - myzvmpasswd
       - 'Item added successfully.'
     - - system prof-list --name=login_int2 --system=vmguest01
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'

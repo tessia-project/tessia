@@ -78,6 +78,8 @@ ZVM_PROMPT = 'z/VM password'
               help="operating system (if installed manually)")
 @click.option('--zvm-pass', 'zvm_pass', type=TEXT,
               help="password for access to zvm hypervisor (zVM guests only)")
+@click.option('--ask-zvm-pass', is_flag=True,
+              help="prompt for the zvm password (zVM guests only)")
 @click.option('--zvm-by', 'zvm_by', type=TEXT,
               help="byuser for access to zvm hypervisor (zVM guests only)")
 def prof_add(**kwargs):
@@ -111,13 +113,16 @@ def prof_add(**kwargs):
         {'name': kwargs['system']},
         'system specified not found.')
     if system.type.lower() == 'zvm':
+        if kwargs.pop('ask_zvm_pass'):
+            zvm_pass = click.prompt(ZVM_PROMPT, hide_input=True,
+                                    confirmation_prompt=True, type=TEXT)
         if not zvm_pass:
             kwargs['credentials']['zvm-password'] = ""
         else:
             kwargs['credentials']['zvm-password'] = zvm_pass
         if zvm_by:
             kwargs['credentials']['zvm-logonby'] = zvm_by
-    elif zvm_pass or zvm_by:
+    elif zvm_pass or zvm_by or kwargs.pop('ask_zvm_pass'):
         raise click.ClickException(
             'zVM credentials should be provided for zVM guests only')
 

@@ -447,6 +447,17 @@ tasks:
     - - system prof-list --name=default --system=vmguest01 --long
       - - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
         - "Credentials *: .*'zvm-logonby': 'vmadmin3'"
+    # 'system zvm-pass-update' subcommand
+    - - system zvm-pass-update
+      - Missing option '--name' / '--system'.
+    - - system zvm-pass-update --name
+      - '--name option requires an argument'
+    - - system zvm-pass-update --name=
+      - "Invalid value for '--name' / '--system': value may not be empty"
+    - - system zvm-pass-update --name=wrong_vmguest
+      - system wrong_vmguest not found.
+    - - system zvm-pass-update --name=vmguest01 --zvm-pass-current "old" --zvm-pass-new "new" --bg
+      - 'Request accepted; job id is #'
   system_model:
     - - system model-list
       - - ' *Model name identifier *\| *Architecture *\| *Model title *\| *Model sub-classification *\| *Description'

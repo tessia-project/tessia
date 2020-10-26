@@ -29,6 +29,7 @@ import re
 MY_DIR = os.path.dirname(os.path.abspath(__file__))
 DOCKER_DIR = os.path.abspath('{}/../docker'.format(MY_DIR))
 REPO_DIR = os.path.abspath('{}/../../..'.format(MY_DIR))
+GIT_NAME = 'tessia'
 
 #
 # CODE
@@ -187,15 +188,8 @@ class DockerImage(object):
             work_dir (str): path to work dir in builder
         """
         # determine the name of the git repository
-        cmd = 'cd {} && git remote get-url origin'.format(REPO_DIR)
-        _, stdout = self._session.run(
-            cmd, error_msg='Failed to determine git repo name')
-        git_name = stdout.strip().split('/')[-1][:-4]
-        self._logger.info(
-            '[build] detected git repo name is %s', git_name)
-
-        context_dir = self._prepare_context(git_name, work_dir)
-        self._exec_build(git_name, context_dir)
+        context_dir = self._prepare_context(GIT_NAME, work_dir)
+        self._exec_build(GIT_NAME, context_dir)
     # build()
 
     def cleanup(self):

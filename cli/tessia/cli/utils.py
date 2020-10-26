@@ -56,7 +56,7 @@ def fetch_item(resource, search_fields, error_msg, multi_msg=None):
     Args:
         resource (Client.Resource): rest resource model
         search_fields (dict): filters for search criteria
-        not_found_msg (str): error message if item is not found
+        error_msg (str): error message if item is not found
         multi_msg (str): error message if multiple entries are found
 
     Returns:

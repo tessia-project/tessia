@@ -59,7 +59,7 @@ RUN cd /assets && \
     git clone $git_repo repo-tessia
 
 ### Components builder
-from base as components-build
+FROM base as components-build
 
 RUN apt-get -yq install \
     # rust compiler

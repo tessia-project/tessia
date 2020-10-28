@@ -88,6 +88,8 @@ $ tess system autoinstall --os=os_version --system=cpc3lp25 --repo=osinstall-1 -
 
 # Custom kernel command line arguments
 
+Autoinstall machine uses some kernel command line arguments which are predefined. For the reference see the section [Predefined kernel command line parameters](#predefined-kernel-command-line-parameters). 
+
 For Linux systems you can specify additional kernel command line arguments both for the target (installed) system as well as for the Linux distro's installer during installation time.
 
 To define additional custom kernel command line arguments for your installed system (final state), edit the desired system activation profile with the `--kargs-target` parameter. Example:
@@ -361,3 +363,32 @@ gw_iface {'attributes': {'layer2': True|False,
           'is_gateway': True,
           'gateway': '192.168.0.1'}
 ```
+
+# Predefined kernel command line parameters
+
+Autoinstall machine uses several predefined kernel command line arguments. If necessary, you can override some or specify additional parameters, 
+for the reference see the section [Custom kernel command line arguments](#custom-kernel-command-line-arguments).  
+
+The predefined kernel command line arguments depend on a distro type, system type and iface type. The following predefined parameters are used by autoinstall machine:
+
+### redhat
+LPAR, zVM:  
+`ro ramdisk_size=50000 inst.sshd cio_ignore=all,!condev`  
+KVM:  
+`ro ramdisk_size=50000 inst.sshd`  
+
+### suse
+all system types:  
+`root=/dev/ram1 ro init=/linuxrc TERM=dumb UseVNC=1 linuxrclog=/dev/console UseSSH=1 start_shell`  
+additional parameters for OSA iface type:  
+`zfcp.dif=0 MANUAL=0 InstNetDev=osa OSAInterface=qdio OSAMedium=eth`  
+
+### debian:
+LPAR, zVM:  
+`zfcp.allow_lun_scan=0 zfcp.dif=0 netcfg/use_autoconfig=false netcfg/disable_autoconfig=true netcfg/confirm_static=true priority=critical network-console/start=continue`   
+KVM:  
+`netcfg/use_autoconfig=false netcfg/disable_autoconfig=true netcfg/confirm_static=true priority=critical network-console/start=continue` 
+
+### subiquity:
+all system types:  
+`autoinstall`  

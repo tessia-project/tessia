@@ -37,7 +37,7 @@ This page contains a detailed view of the current supported combinations and usa
 | layer2 on (OSA only)     | Y    | Y    | Y      | Y      |
 | layer2 off (OSA only)    | Y    | Y    | Y      | Y      |
 
-[\*] - latest supported version   
+[\*] - latest supported version (Fedora33)  
 [\*\*] - except Ubuntu 16.04 (GA) due to distro installer issues, for details see [ReleaseNotes](https://wiki.ubuntu.com/XenialXerus/ReleaseNotes#IBM_LinuxONE_and_z_Systems_specific_known_issues)
 
 # Network and volumes on z/VM
@@ -54,7 +54,7 @@ Except Ubuntu16.04.1 which won't boot its installer's initrd on z/VM, the suppor
 | multipath off (FCP only)          | Y    | Y    | Y      | Y      |
 | network interface MACVTAP         | Y    | Y    | Y      | Y      |
 
-[\*] - latest supported version      
+[\*] - latest supported version (Fedora33)      
 [\*\*] - except SLES15.0 due to an AutoYaST bug and SLES15.2   
 
 # Partitioning on LPAR
@@ -118,6 +118,6 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 | ------                         | ---  | ---  | -----  | -----  |
 | using distro as KVM hypervisor | Y**  | Y    | Y***   | Y      |
 
-[\*] - latest supported version   
+[\*] - latest supported version (Fedora33)  
 [\*\*] - except RHEL7.\*   
 [\*\*\*] - except Ubuntu20.\*   

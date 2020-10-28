@@ -148,7 +148,7 @@ chzdev -e dasd {{volume['volume_id']}}
 
 %post
 #!/bin/bash
-echo 'PERMITROOTLOGIN="-oPermitRootLogin=yes"' > /etc/sysconfig/sshd-permitrootlogin
+echo 'PermitRootLogin yes' > /etc/ssh/sshd_config.d/10-tessia.conf
 %end
 
 %post

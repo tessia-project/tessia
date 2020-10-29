@@ -25,6 +25,7 @@ from unittest import TestCase
 from unittest import mock
 from unittest.mock import MagicMock
 
+import inspect
 import json
 import os
 import secrets
@@ -588,6 +589,78 @@ class TestAnsibleMachine(TestCase):
         combined = machine.AnsibleMachine.recombine(parmfile, extra_vars)
         self.assertIn("oauth:{}".format(token), combined)
     # test_secrets()
+
+    def test_var(self):
+        """
+        Test that environment variables are converted into strings
+        """
+        request = inspect.cleandoc("""
+            ---
+            source: "https://git@example.com/ansible/ansible-example.git"
+            playbook: workload1/site.yaml
+            systems:
+                - name: kvm054
+                  groups: [webservers, dbservers]
+            secrets:
+                explicit: "2"
+                implicit: 2
+                tagged: !!str 2
+                block: |
+                    2
+                fold: >
+                    2
+                foldquote: >
+                    "2"
+                var: "something-in"
+                invar: "${var}"
+            preexec_script:
+                path: "./preexec.sh"
+                env:
+                    e: ${explicit}
+                    i: ${implicit}
+                    t: ${tagged}
+                    b: ${block}
+                    f: ${fold}
+                    fq: ${foldquote}
+                    qe: "${explicit}"
+                    qi: "${implicit}"
+                    qt: "${tagged}"
+                    qb: "${block}"
+                    qf: "${fold}"
+                    qfq: "${foldquote}"
+                    ${var}: "anything"
+                    invar: ${var}-${invar}
+            verbosity: DEBUG
+        """)
+        # make sure secret extraction and recombination works
+        parmfile, extra_vars = machine.AnsibleMachine.prefilter(request)
+        self.assertIsNotNone(extra_vars)
+        filtered_parmfile = yaml.safe_load(parmfile)
+        self.assertNotIn('secrets', filtered_parmfile)
+        for var in ('e', 'i', 't', 'b', 'f', 'fq'):
+            self.assertIsInstance(
+                filtered_parmfile['preexec_script']['env'][var], str)
+            self.assertIsInstance(
+                filtered_parmfile['preexec_script']['env']['q' + var], str)
+
+        combined = machine.AnsibleMachine.recombine(parmfile, extra_vars)
+        combined_parmfile = yaml.safe_load(combined)
+        for var in ('e', 'i', 't', 'b', 'f', 'fq'):
+            self.assertIsInstance(
+                combined_parmfile['preexec_script']['env'][var], str)
+            self.assertIsInstance(
+                combined_parmfile['preexec_script']['env']['q' + var], str)
+            self.assertEqual(
+                combined_parmfile['preexec_script']['env'][var],
+                combined_parmfile['preexec_script']['env']['q' + var])
+        self.assertEqual(
+            'anything',
+            combined_parmfile['preexec_script']['env']['something-in'])
+        self.assertEqual(
+            'something-in-${var}',
+            combined_parmfile['preexec_script']['env']['invar'])
+        self.assertIn("e: '2'", combined)
+    # test_var()
 
     def test_url_autoprotect(self):
         """

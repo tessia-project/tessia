@@ -123,7 +123,7 @@ REQUEST_SCHEMA = {
             # dictionary with key:value pairs, values can only be strings
             'type': 'object',
             'additionalProperties': {
-                'type': 'string'
+                'type': ['string', 'number']
             }
         },
         "verbosity": {
@@ -746,18 +746,61 @@ class AnsibleMachine(BaseMachine):
         Method used to inject data separated in preprocessing stage
         back into parameters.
 
+        It parses the yaml text and performs replacements on keys and values
+        in the yaml stream.
+
         Args:
             params (str): state machine parameters
             extra_vars (dict): secret variables
 
         Returns:
             str: final machine parameters
-        """
-        if extra_vars and isinstance(extra_vars, dict):
-            for key, value in extra_vars.items():
-                params = params.replace("${{{}}}".format(key), value)
 
-        return params
+        Raises:
+            SyntaxError: invalid parmfile
+        """
+        if not extra_vars or not isinstance(extra_vars, dict):
+            return params
+
+        # only process parmfile if we have data to set
+        event_stream = []
+        match_vars = {'${{{}}}'.format(var): value
+                      for (var, value) in extra_vars.items()}
+        # regex pattern that can match all vars
+        pattern = re.compile(
+            '|'.join([re.escape(k) for k in match_vars.keys()]),
+            re.M)
+        try:
+            for event in yaml.parse(params):
+                # process only scalar events, i.e. simple keys and values
+                if isinstance(event, yaml.ScalarEvent):
+                    # Processing rules:
+                    # - if a match is only part of value, replace it inline
+                    # - if a match is the value, replace it *and* set
+                    #   implicity to (False, True), i.e. display some tag.
+                    # Setting explicit tags on variable replacement will keep
+                    # yaml parser from doing implicit type conversions
+
+                    # Python 3.8 will have this one-lined, PEP-0572
+                    full_match = pattern.fullmatch(event.value)
+                    if full_match is not None:
+                        # complete match, replace and set to non-implicit
+                        event.value = str(match_vars[full_match[0]])
+                        event.implicit = (False, True)
+                    else:
+                        # concurrent replace (might match nothing)
+                        event.value = pattern.sub(
+                            lambda re_match: match_vars[re_match[0]],
+                            str(event.value))
+
+                # add the event, processed or not, to the stream
+                event_stream.append(event)
+
+        except yaml.parser.ParserError as exc:
+            raise SyntaxError("Invalid request parameters") from exc
+
+        # reassemble yaml file
+        return yaml.emit(event_stream)
     # recombine()
 
     def cleanup(self):

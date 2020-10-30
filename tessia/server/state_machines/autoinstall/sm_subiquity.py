@@ -170,9 +170,12 @@ class SmSubiquityInstaller(SmBase):
                                       event_result,
                                       event_name,
                                       event_description)
-                success = (event_name == "subiquity/Reboot" and
-                           event_result == "SUCCESS" and
-                           event.get("event_type", "") == "finish")
+                success = (
+                    event_name in (
+                        "subiquity/Reboot",
+                        "subiquity/Reboot/apply_autoinstall_config") and
+                    event_result == "SUCCESS" and
+                    event.get("event_type", "") == "finish")
 
                 # track fatal errors too
                 if (event_name.startswith("subiquity/Error") and

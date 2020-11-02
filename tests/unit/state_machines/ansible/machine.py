@@ -258,7 +258,7 @@ class TestAnsibleMachine(TestCase):
 
     def test_preexec(self):
         """
-        Test secret data recombine
+        Test running preexec script
         """
         # collect necessary db objects
         test_system = 'kvm054'
@@ -476,6 +476,29 @@ class TestAnsibleMachine(TestCase):
         self.assertFalse(os.path.exists(machine_obj._temp_dir))
     # test_start_git()
 
+    def test_start_shared(self):
+        """
+        Test shared execution
+        """
+        request = inspect.cleandoc("""
+            ---
+            source: 'https://example._com/ansible/ansible-example.tgz'
+            playbook: 'workload1/site.yaml'
+            systems:
+                - name: kvm054
+                  groups: [webservers, dbservers]
+        """)
+
+        parsed = machine.AnsibleMachine.parse(request)
+        self.assertNotIn('kvm054', parsed['resources']['shared'])
+        self.assertEqual(['kvm054'], parsed['resources']['exclusive'])
+
+        request += '\nshared: true'
+        parsed = machine.AnsibleMachine.parse(request)
+        self.assertIn('kvm054', parsed['resources']['shared'])
+        self.assertEqual([], parsed['resources']['exclusive'])
+    # test_start_shared()
+
     def test_start_web(self):
         """
         Execute a playbook from an archive downloaded from an url
@@ -664,7 +687,7 @@ class TestAnsibleMachine(TestCase):
 
     def test_url_autoprotect(self):
         """
-        Test secret data recombine
+        Test url auth data protection
         """
         test_system = 'kvm054'
         request = {

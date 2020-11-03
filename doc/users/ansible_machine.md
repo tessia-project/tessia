@@ -85,6 +85,9 @@ systems:
     groups:
       - all
 
+# use systems non-exclusively to allow multiple playbooks run simultaneously ("optional")
+shared: true
+
 # switch on galaxy and define a path to galaxy requirements file, it has to be present in the repository ("optional")
 galaxy_req: requirements.yml
 

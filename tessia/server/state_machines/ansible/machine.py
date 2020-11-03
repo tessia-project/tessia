@@ -161,6 +161,9 @@ REQUEST_SCHEMA = {
                 }
             ]
         },
+        'shared': {
+            'type': 'boolean'
+        }
     },
     'required': [
         'playbook',
@@ -685,6 +688,9 @@ class AnsibleMachine(BaseMachine):
 
         # resources used in this job
         used_resources = cls._get_resources(obj_params['systems'])
+        if obj_params.get('shared'):
+            used_resources['shared'].extend(used_resources['exclusive'])
+            used_resources['exclusive'] = []
 
         # validate the source specified
         repo_info = cls._parse_source(obj_params['source'])

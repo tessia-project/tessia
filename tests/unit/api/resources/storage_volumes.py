@@ -41,6 +41,8 @@ import time
 #
 # CODE
 #
+
+
 class TestStorageVolume(TestSecureResource):
     """
     Validates the StorageVolume resource
@@ -137,6 +139,7 @@ class TestStorageVolume(TestSecureResource):
         )
         self.db.session.add(system)
         self.db.session.commit()
+
         def cleanup_helper():
             """Helper to remove system on test end/failure"""
             self.db.session.delete(system)
@@ -756,15 +759,15 @@ class TestStorageVolume(TestSecureResource):
                 }
             ],
         }
-        #perform create request and check if it returns an exception
+        # perform create request and check if it returns an exception
         resp = self._do_request(
             'create', '{}:a'.format('user_hw_admin@domain.com'), data)
         self._assert_failed_req(resp, 400, MSG_INVALID_PTABLE)
-        #prepare an existing entry
+        # prepare an existing entry
         entry = self._create_many_entries(
             'user_hw_admin@domain.com', 1)[0][0]
         entry['part_table'] = data['part_table']
-        #prepare data for update requests
+        # prepare data for update requests
         update_fields = {
             'id': entry['id'],
             'part_table': entry['part_table'],
@@ -1218,9 +1221,19 @@ class TestStorageVolume(TestSecureResource):
                     'project': self._db_entries['Project'][1]['name']}
             self._request_and_assert('update', 'admin:a', data)
             # perform request
-            data = {'id': vol_id, 'size': 10000, 'part_table': None,
-                    'specs': {}, 'system_attributes': {}}
+            data = {'id': vol_id, 'part_table': None, 'system_attributes': {}}
+            if login in ('user_admin@domain.com',):
+                data.update({'size': 10000, 'specs': {}})
             self._request_and_assert('update', '{}:a'.format(login), data)
+
+            # other fields should not be updatable through derived permissions
+            if login not in ('user_admin@domain.com',):
+                data = {'id': vol_id, 'size': 10000}
+                resp = self._do_request('update', '{}:a'.format(login), data)
+                self._assert_failed_req(resp, 403)
+                data = {'id': vol_id, 'specs': {}}
+                resp = self._do_request('update', '{}:a'.format(login), data)
+                self._assert_failed_req(resp, 403)
 
             # update disk (no system update), user has permission to disk but
             # not to system

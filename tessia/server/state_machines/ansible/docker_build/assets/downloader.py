@@ -201,10 +201,13 @@ class RepoDownloader:
                     source_url, stream=True, verify=False, timeout=5)
                 resp.raise_for_status()
                 resp.close()
-            except requests.exceptions.RequestException as exc:
+            except requests.exceptions.HTTPError as exc:
                 raise ValueError(
                     "Source url is not accessible: {} {}".format(
                         exc.response.status_code, exc.response.reason))
+            except requests.exceptions.RequestException as exc:
+                raise ValueError(
+                    "Source url is not accessible: {}".format(str(exc)))
 
         else:
             raise ValueError('Unsupported source url specified')

@@ -18,13 +18,12 @@
 {{ dev_list | join(',') }}
 {% endmacro -%}
 
-# System authorization information
-auth --enableshadow --passalgo=sha512
+# System authorization information, passwords are shadowed by default
+auth --passalgo=sha512
 sshpw --username=root {{config["sha512rootpwd"]}} --iscrypted
 # Use network installation
 url --url="{{config["repos"][0]['url']}}"
-# Use graphical install
-graphical
+# Use graphical install by default
 vnc --password={{config["credentials"]["vnc-password"]}}
 # Run the Setup Agent on first boot
 firstboot --enable
@@ -75,18 +74,41 @@ bootloader --location=mbr --boot-drive={{volume["system_attributes"]["device"].r
 part {% if entry["fs"] == "swap" %}swap{% else %}{{entry["mp"]}}{% endif %} --fstype="{{entry["fs"]}}" --ondisk={{volume["system_attributes"]["device"]}} --size={{entry["size"]}} {% if entry.get("mo") %} --fsoptions="{{entry["mo"]}}" {% endif %}
 {% endfor %}
 {% endfor %}
+
+# The Core group is always selected, not necessary to specify it
 %packages
 @^minimal
-@core
 kexec-tools
 %end
 
-%addon com_redhat_kdump --enable --reserve-mb='auto'
-
+# Enable kdump on the installed system, "--reserve-mb='auto'" by default
+%addon com_redhat_kdump --enable
 %end
+
+{% if config["system_type"] != "KVM" -%}
+%pre
+#!/bin/bash
+# disk configuration adjustments
+  {% for volume in config["svols"] -%}
+    {%- if volume['type'] == 'DASD' -%}
+while [ ! -e {{ volume["system_attributes"]["device"] }} ]; do
+  cio_ignore -r {{ volume['volume_id'] }}; chccwdev -e {{ volume['volume_id'] }}
+  sleep 1
+done
+      {% if volume["part_table"] -%}
+grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{ volume['volume_id'] }}/status && \
+/sbin/dasdfmt -y -d cdl -b 4096 {{ volume["system_attributes"]["device"] }}
+      {% endif -%}
+    {% elif volume['type'] == 'HPAV' -%}
+cio_ignore -r {{ volume['volume_id'] }}; chccwdev -e {{ volume['volume_id'] }}
+    {% endif -%}
+  {% endfor %}
+%end
+{% endif -%}
 
 %post
 #!/bin/bash
+
 # network configuration adjustments
 {% for iface in config["ifaces"] -%}
   {% if iface["systemd_osname"] and iface["osname"] != iface["systemd_osname"] -%}
@@ -113,31 +135,7 @@ sed -i s/IPV6_AUTOCONF=.*/IPV6_AUTOCONF=no/ /etc/sysconfig/network-scripts/ifcfg
 echo 'DOMAIN="{{iface["search_list"]}}"' >> /etc/sysconfig/network-scripts/ifcfg-{{iface["osname"]}}
   {% endif -%}
 {% endfor %}
-%end
 
-{% if config["system_type"] != "KVM" -%}
-%pre
-#!/bin/bash
-# disk configuration adjustments
-  {% for volume in config["svols"] -%}
-    {%- if volume['type'] == 'DASD' -%}
-while [ ! -e {{ volume["system_attributes"]["device"] }} ]; do
-  cio_ignore -r {{ volume['volume_id'] }}; chccwdev -e {{ volume['volume_id'] }}
-  sleep 1
-done
-      {% if volume["part_table"] -%}
-grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{ volume['volume_id'] }}/status && \
-/sbin/dasdfmt -y -d cdl -b 4096 {{ volume["system_attributes"]["device"] }}
-      {% endif -%}
-    {% elif volume['type'] == 'HPAV' -%}
-cio_ignore -r {{ volume['volume_id'] }}; chccwdev -e {{ volume['volume_id'] }}
-    {% endif -%}
-  {% endfor %}
-%end
-{% endif -%}
-
-%post
-#!/bin/bash
 # repositories configuration adjustments
 {% for repo in config["repos"] %}
 cat <<EOF > /etc/yum.repos.d/{{repo['name']}}.repo

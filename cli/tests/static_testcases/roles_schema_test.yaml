@@ -477,7 +477,7 @@ tasks:
       - User has no DELETE permission for the specified resource
       # not own volume but assigned to own system
     - - storage vol-edit --id=3956 --size=20gb
-      - Item successfully updated.
+      - User has no UPDATE permission for the specified volume
     - - storage vol-del --id=3956
       - User has no DELETE permission for the specified resource
       # own volume

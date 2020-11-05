@@ -97,7 +97,7 @@ MSG_INVALID_PTABLE = (
 # that system they are entitled to update these attributes on the volume
 # (note that modifier is actually set by secure_resource and not by user)
 SYS_DERIVED_PERMS = set(
-    ('size', 'part_table', 'specs', 'system_attributes', 'modifier'))
+    ('part_table', 'system_attributes', 'modifier'))
 
 # support map between storage servers and volumes types
 VOL_SERVER_MAP = {

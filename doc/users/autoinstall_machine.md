@@ -124,7 +124,9 @@ The following variables/objects are available in the `config` and can be used in
 - [autofile](#autofile) - path to the autofile (i.e. kickstart/autoinst/preseed)  
 - [operating_system](#operating_system) - operating system which should be installed   
 - [profile_parameters](#profile_parameters) - custom kernel cmdline parameters for the Linux installer and for the installed system   
-- [gw_iface](#gw_iface) - gateway interface for the target system (i.e. a network interface to perform installation)
+- [gw_iface](#gw_iface) - gateway interface for the target system (i.e. a network interface to perform installation)  
+- [root_disk](#root_disk) - disk for root partition, the only disk supported during installation, for Ubuntu templates only   
+- [webhook](#webhook) - installer-webhook for Ubuntu20 subiquity installer only  
 
 Below you can find structure description and a sample of each object.
 
@@ -146,9 +148,10 @@ ifaces [
          'vlan': None,
          'dns_1': '8.8.8.8',
          'dns_2': None,
-         'osname': 'enccw0.0.f500',
+         'osname': 'encf500',
          'is_gateway': True,
-         'gateway': '192.168.0.1'},
+         'gateway': '192.168.0.1',
+         'systemd_osname': 'enccw0.0.f500'},
 
         {'attributes': {'fid': '111'}, 
          'type': 'ROCE', 
@@ -287,7 +290,7 @@ repos [
         'install_image': None}
 ]
 ```
-`install_image` - differs from 'None' for Ubuntu 20.04 subiquity installer only
+`install_image` - differs from 'None' for Ubuntu20 subiquity installer only
 ### server_hostname
 ```
 server_hostname server.domain
@@ -359,9 +362,40 @@ gw_iface {'attributes': {'layer2': True|False,
           'vlan': None,
           'dns_1': '8.8.8.8',
           'dns_2': None,
-          'osname': 'enccw0.0.f500',
+          'osname': 'encf500',
           'is_gateway': True,
-          'gateway': '192.168.0.1'}
+          'gateway': '192.168.0.1',
+          'systemd_osname': 'encf500'}
+
+```
+### root_disk
+```
+root_disk {'type': 'FCP',
+           'volume_id': '1020304500000000',
+           'server': 'DS8K22',
+           'system_attributes': {'device': '/dev/disk/by-id/dm-uuid-mpath-33005566777fff5f30000000000008888'},
+           'specs': {'wwid': '33005566777fff5f30000000000008888',
+                     'adapters': [{'devno': '0.0.1900', 'wwpns': ['50050555050555e3']}, 
+                                  {'devno': '0.0.1940', 'wwpns': ['50050555051555e3']}], 
+                     'multipath': True},
+           'size': 19073,
+           'part_table': {'type': 'msdos',
+                          'table': [{'fs': 'ext4',
+                                     'mo': None,
+                                     'mp': '/',
+                                     'size': 19072,
+                                     'type': 'primary',
+                                     'start': 1,
+                                     'end': 19073,
+                                     'parted_fs': 'ext2',
+                                     'device': ''/dev/disk/by-id/dm-uuid-mpath-33005566777fff5f30000000000008888'}]},
+           'is_root': True}
+```
+### webhook
+```
+webhook {'endpoint': 'http://server.domain.com:7223/log/',
+         'key': 'cpc3lp25-profile1',
+         'token': 'a1BCdIxFnHIqJK_L4MoNhOPuRSxTUVVcuW7caX5Ygdc'}
 ```
 
 # Predefined kernel command line parameters

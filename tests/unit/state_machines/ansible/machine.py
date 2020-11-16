@@ -442,9 +442,12 @@ class TestAnsibleMachine(TestCase):
                 self._mock_open_fd.write.assert_has_calls(
                     inv_calls, any_order=True)
 
-            # add to validate system vars file creation
-            exp_var_files.append(
-                os.path.join(temp_dir_path, 'host_vars', kvm_system + '.yml'))
+        # add to validate system vars file creation
+        exp_var_files.append(
+            os.path.join(temp_dir_path, 'host_vars', kvm_system + '.yml'))
+        exp_var_files.append(
+            os.path.join(temp_dir_path, 'host_vars',
+                         kvm_obj.hostname + '.yml'))
 
         # add to validate groups var file creation
         for group_name, _ in request['groups'].items():

@@ -1,5 +1,6 @@
 uwsgi:
   master: true
+  buffer-size: 12288
   processes: 4
   # allow the GIL to be enabled so that api code can run threads
   enable-threads: true

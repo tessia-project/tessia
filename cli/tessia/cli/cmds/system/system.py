@@ -30,7 +30,7 @@ from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
 from tessia.cli.types import CONSTANT, CustomIntRange, HOSTNAME, \
-    MIB_SIZE, NAME, NAME_URL, VERBOSITY_LEVEL
+    MIB_SIZE, NAME, NAME_URL, TEXT, VERBOSITY_LEVEL
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_and_update
 from tessia.cli.utils import fetch_item
@@ -57,6 +57,9 @@ SYSTEM_FIELDS = (
 SYSTEM_FIELDS_TABLE = (
     'name', 'hostname', 'type', 'model', 'state', 'owner', 'project'
 )
+
+CURRENT_PASSWD_PROMPT = "Current z/VM password"
+NEW_PASSWD_PROMPT = "New z/VM password"
 
 #
 # CODE
@@ -444,5 +447,65 @@ def states(**kwargs):
                     PrintMode.TABLE)
 # states()
 
+@click.command(name='zvm-pass-update')
+@click.pass_context
+@click.option('--name', '--system', required=True, type=NAME,
+              help='system name')
+@click.option('--zvm-pass-current', type=TEXT,
+              help="current password for access to z/VM guest")
+@click.option('--zvm-pass-new', type=TEXT,
+              help="new password for access to z/VM guest")
+@click.option('--bg', is_flag=True,
+              help="do not wait for output after submitting")
+def zvm_pass_update(ctx, name, **kwargs):
+    """
+    update a z/VM password on VM
+    """
+    client = Client()
+    # make sure that system exists, it's faster than submitting a job request
+    # and waiting for it to fail
+    system = fetch_item(client.Systems,
+                        {'name': name},
+                        'system {} not found.'.format(name))
+    if system.type.lower() != 'zvm':
+        raise click.ClickException(
+            'the command applies to z/VM guest only')
+
+    current_passwd = kwargs.pop('zvm_pass_current')
+    if not current_passwd:
+        current_passwd = click.prompt(
+            CURRENT_PASSWD_PROMPT, hide_input=True, type=TEXT)
+
+    new_passwd = kwargs.pop('zvm_pass_new')
+    if not new_passwd:
+        new_passwd = click.prompt(
+            NEW_PASSWD_PROMPT, hide_input=True, confirmation_prompt=True, type=TEXT)
+
+    # system exists, we can submit our job request
+    req_params = {'systems': [{'name': name}]}
+    req_params['current_passwd'] = current_passwd
+    req_params['new_passwd'] = new_passwd
+
+    request = {
+        'action_type': 'SUBMIT',
+        'job_type': 'zvm_passwd',
+        'parameters': json.dumps(req_params)
+    }
+    job_id = wait_scheduler(client, request)
+    # bg flag: do not wait for output, just return to prompt
+    if kwargs['bg']:
+        return
+    try:
+        wait_job_exec(client, job_id)
+        ctx.invoke(job_output, job_id=job_id)
+    except KeyboardInterrupt:
+        cancel_job = click.confirm('\nDo you want to cancel the job?')
+        if not cancel_job:
+            click.echo('warning: job is still running, remember to cancel it '
+                       'if you want to submit a new action for this system')
+            raise
+        ctx.invoke(job_cancel, job_id=job_id)
+# zvm_pass_update()
+
 CMDS = [add, autoinstall, del_, edit, export, import_, info, list_, poweroff,
-        poweron, states, types]
+        poweron, states, types, zvm_pass_update]

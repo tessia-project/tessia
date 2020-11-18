@@ -537,6 +537,12 @@ class AnsibleMachine(BaseMachine):
                 with open(host_vars_file, 'w') as file_fd:
                     yaml.dump(system['vars'], file_fd,
                               default_flow_style=False)
+                if system['name'] != system_obj.hostname:
+                    host_vars_file = os.path.join(host_vars_folder,
+                                                  system_obj.hostname + ".yml")
+                    with open(host_vars_file, 'w') as file_fd:
+                        yaml.dump(system['vars'], file_fd,
+                                default_flow_style=False)
 
         if 'groups' in self._params:
             for group_name, group_dict in self._params['groups'].items():

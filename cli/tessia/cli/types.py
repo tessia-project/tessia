@@ -293,7 +293,13 @@ class JobType(click.ParamType):
     """
     Represents job types.
     """
-    ALLOWED_TYPES = ('ansible', 'autoinstall', 'echo', 'powerman')
+    ALLOWED_TYPES = (
+        'ansible',
+        'autoinstall',
+        'echo',
+        'powerman',
+        'zvm_passwd')
+
     name = 'job_type'
 
     def convert(self, value, param, ctx):

@@ -44,19 +44,6 @@ rootpw --iscrypted {{config["sha512rootpwd"]}}
 # System timezone
 timezone Europe/Berlin
 
-# Activate fcp paths before partitioning section
-{% if config["system_type"] != "KVM" %}
-{% for volume in config["svols"] %}
-{% if volume['type'] == 'FCP' -%}
-{% for adapter in volume['specs']['adapters'] -%}
-{% for wwpn in adapter['wwpns'] -%}
-zfcp --devnum={{adapter['devno'].replace('0.0.', '')}} --wwpn={{wwpn}} --fcplun={{volume['volume_id']}}
-{% endfor -%}
-{% endfor -%}
-{% endif -%}
-{% endfor -%}
-{% endif -%}
-
 # Partition clearing information
 ignoredisk --only-use={{list_real_devs(config["svols"])}}
 clearpart --initlabel --all --drives={{list_devs_with_ptable(config["svols"])}}

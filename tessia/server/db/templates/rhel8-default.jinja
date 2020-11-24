@@ -44,19 +44,6 @@ rootpw --iscrypted {{config["sha512rootpwd"]}}
 # System timezone
 timezone Europe/Berlin
 
-# Activate fcp paths before partitioning section
-{% if config["system_type"] != "KVM" %}
-{% for volume in config["svols"] %}
-{% if volume['type'] == 'FCP' -%}
-{% for adapter in volume['specs']['adapters'] -%}
-{% for wwpn in adapter['wwpns'] -%}
-zfcp --devnum={{adapter['devno'].replace('0.0.', '')}} --wwpn={{wwpn}} --fcplun={{volume['volume_id']}}
-{% endfor -%}
-{% endfor -%}
-{% endif -%}
-{% endfor -%}
-{% endif -%}
-
 # Partition clearing information
 ignoredisk --only-use={{list_real_devs(config["svols"])}}
 clearpart --initlabel --all --drives={{list_devs_with_ptable(config["svols"])}}
@@ -170,22 +157,6 @@ gpgcheck=0
 skip_if_unavailable=False
 EOF
 {% endfor %}
-
-# storage configuration adjustments
-{% if config["system_type"] != "KVM" %}
-{% for volume in config["svols"] %}
-  {%- if volume['type'] == 'DASD' -%}
-chzdev -e dasd {{volume['volume_id']}} -y
-  {% elif volume['type'] == 'FCP' -%}
-    {% for adapter in volume['specs']['adapters'] -%}
-chzdev -e {{adapter['devno']}} -y
-      {% for wwpn in adapter['wwpns'] -%}
-chzdev -e zfcp-lun {{adapter['devno']}}:0x{{wwpn}}:0x{{volume['volume_id']}} -y
-      {% endfor -%}
-    {% endfor -%}
-  {% endif -%}
-{% endfor -%}
-{% endif -%}
 
 echo -e >> /etc/motd \
 "**************************************************************\n"\

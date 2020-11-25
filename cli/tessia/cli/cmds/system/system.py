@@ -25,7 +25,7 @@ from tessia.cli.cmds.job.job import cancel as job_cancel
 from tessia.cli.cmds.job.job import output as job_output
 from tessia.cli.cmds.storage.vol import vol_list
 from tessia.cli.cmds.system.iface import iface_list
-from tessia.cli.cmds.system.prof import prof_list
+from tessia.cli.cmds.system.prof import prof_edit, prof_list
 from tessia.cli.filters import dict_to_filter
 from tessia.cli.output import print_items
 from tessia.cli.output import PrintMode
@@ -455,8 +455,8 @@ def states(**kwargs):
               help="current password for access to z/VM guest")
 @click.option('--zvm-pass-new', type=TEXT,
               help="new password for access to z/VM guest")
-@click.option('--bg', is_flag=True,
-              help="do not wait for output after submitting")
+@click.option('--update_profiles', is_flag=True,
+              help="update profiles with new password")
 def zvm_pass_update(ctx, name, **kwargs):
     """
     update a z/VM password on VM
@@ -492,12 +492,23 @@ def zvm_pass_update(ctx, name, **kwargs):
         'parameters': json.dumps(req_params)
     }
     job_id = wait_scheduler(client, request)
-    # bg flag: do not wait for output, just return to prompt
-    if kwargs['bg']:
-        return
+
+    def update_profile(new_passwd):
+        """Helper function to update profiles with new z/VM password"""
+        for prof in client.SystemProfiles.instances(where={'system': name}):
+            ctx.invoke(
+                prof_edit,
+                system=name,
+                cur_name=prof.name,
+                zvm_pass=new_passwd)
+    # update_profile()
+
     try:
         wait_job_exec(client, job_id)
         ctx.invoke(job_output, job_id=job_id)
+        if kwargs.pop('update_profiles'):
+                update_profile(new_passwd)
+
     except KeyboardInterrupt:
         cancel_job = click.confirm('\nDo you want to cancel the job?')
         if not cancel_job:

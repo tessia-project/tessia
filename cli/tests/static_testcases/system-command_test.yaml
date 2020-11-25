@@ -456,7 +456,9 @@ tasks:
       - "Invalid value for '--name' / '--system': value may not be empty"
     - - system zvm-pass-update --name=wrong_vmguest
       - system wrong_vmguest not found.
-    - - system zvm-pass-update --name=vmguest01 --zvm-pass-current "old" --zvm-pass-new "new" --bg
+    - - system zvm-pass-update --name=vmguest01 --zvm-pass-current "old" --zvm-pass-new "new"
+      - 'Request accepted; job id is #'
+    - - system zvm-pass-update --name=vmguest01 --zvm-pass-current "new" --zvm-pass-new "the_newest" --update_profiles
       - 'Request accepted; job id is #'
   system_model:
     - - system model-list

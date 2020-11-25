@@ -50,7 +50,7 @@ timezone Europe/Berlin
 {% if volume['type'] == 'FCP' -%}
 {% for adapter in volume['specs']['adapters'] -%}
 {% for wwpn in adapter['wwpns'] -%}
-zfcp --devnum={{adapter['devno'].replace('0.0.', '')}} --wwpn={{wwpn}} --fcplun={{volume['volume_id']}}
+zfcp --devnum={{adapter['devno']}} --wwpn={{wwpn}} --fcplun={{volume['volume_id']}}
 {% endfor -%}
 {% endfor -%}
 {% endif -%}

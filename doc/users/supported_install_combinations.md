@@ -108,7 +108,7 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 | JFS                  | N    | N    | N      | N      |
 | FAT16                | N    | N    | N      | N      |
 | FAT32                | N    | N    | N      | N      |
-| set mount options    | Y    | Y    | Y      | N      |
+| set mount options    | Y    | Y    | Y      | Y      |
 
 [*] - except SLES12.\*      
 

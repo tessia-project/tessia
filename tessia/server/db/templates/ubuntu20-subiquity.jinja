@@ -136,15 +136,6 @@ installation we create these auxiliary variables #}
      {%- endfor %}
   {%- endif %}
 {%- endfor -%}
-{%- for svol in config['svols'] %}
-  {%- if svol['type'] == 'FCP' %}
-     {% for adapter in svol['specs']['adapters'] %}
-       {% for wwpn in adapter['wwpns'] %}
-    - chzdev zfcp-lun -e {{adapter['devno']}}:0x{{wwpn}}:0x{{svol['volume_id']}}
-       {%- endfor %}
-     {%- endfor %}
-  {%- endif %}
-{%- endfor -%}
 {%- for iface in config['ifaces'] %}
   {%- if iface['type'] == 'OSA' %}
     - chzdev -e qeth {{iface['attributes']['ccwgroup'].split(',')[0]}}
@@ -159,12 +150,12 @@ installation we create these auxiliary variables #}
 {%- endif %}
 
   locale: en_US.UTF-8
-    
+
   identity:
     username: {{config['credentials']['admin-user']}}
     hostname: {{config['hostname']}}
     password: {{config['sha512rootpwd']}}
-  
+
   ssh:
     install-server: yes
     allow-pw: yes

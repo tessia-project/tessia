@@ -351,13 +351,19 @@ class SmSubiquityInstaller(SmBase):
                     repo['iso_path'] = "{repo}/{iso}".format(
                         repo=repo['url'], iso=repo['install_image'])
                 continue
+            if repo['os']:
+                # repository contains OS, but no install_image
+                # required for Subiquity
+                raise ValueError(
+                    "Subiquity installer requires 'install_image' set "
+                    "in repository {}".format(repo['name']))
             # otherwise ubuntu has everything in /dists/
             try:
                 root_path, comps = repo['url'].split('/dists/', 1)
             except ValueError:
                 raise ValueError(
                     "Repository URL <{}>  is in invalid format, no '/dists/' "
-                    "component found".format(repo['url']))
+                    "component found".format(repo['url'])) from None
             repo['apt_url'] = '{} {}'.format(
                 root_path, comps.replace('/', ' ')).rstrip()
 

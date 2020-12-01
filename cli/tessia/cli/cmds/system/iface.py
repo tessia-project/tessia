@@ -56,14 +56,14 @@ IFACE_TYPE_FIELDS = (
     'name', 'desc'
 )
 
-ATTR_BY_TYPE = {
-    'ccwgroup': 'OSA',
-    'layer2': 'OSA',
-    'portname': 'OSA',
-    'portno': 'OSA',
-    'hostiface': 'MACVTAP',
-    'libvirt': 'MACVTAP',
-    'fid': 'ROCE',
+ATTR_BY_TYPES = {
+    'ccwgroup': ('OSA', 'HSI'),
+    'layer2': ('OSA', 'HSI'),
+    'portname': ('OSA',),
+    'portno': ('OSA',),
+    'hostiface': ('MACVTAP',),
+    'libvirt': ('MACVTAP',),
+    'fid': ('ROCE',)
 }
 
 #
@@ -115,7 +115,8 @@ def _set_libvirt_mac_address(libvirt_xml, new_mac):
 
 @click.command(name='iface-add')
 @click.option('--system', required=True, type=NAME, help="target system")
-@click.option('--name', '--iface', required=True, type=NAME, help="interface name")
+@click.option('--name', '--iface', required=True, type=NAME, 
+              help="interface name")
 @click.option('--type', required=True, type=CONSTANT,
               help="interface type (see iface-types)")
 @click.option('osname', '--devname', required=True, type=IFACE_NAME,
@@ -127,8 +128,9 @@ def _set_libvirt_mac_address(libvirt_xml, new_mac):
               help="ip address to be assigned to interface")
 @click.option('--fid', type=ROCE_FID, help="function ID (ROCE only)")
 @click.option('--layer2', type=click.BOOL,
-              help="enable layer2 mode (OSA only)")
-@click.option('--ccwgroup', type=QETH_GROUP, help="device channels (OSA only)")
+              help="enable layer2 mode (OSA and HSI only)")
+@click.option('--ccwgroup', type=QETH_GROUP, 
+              help="device channels (OSA and HSI only)")
 @click.option('--portno', type=QETH_PORTNO, help="port number (OSA only)")
 @click.option('--portname', help="port name (OSA only)")
 @click.option('--hostiface', type=IFACE_NAME,
@@ -161,8 +163,8 @@ def iface_add(**kwargs):
             continue
 
         # process attribute arg
-        if key in ATTR_BY_TYPE:
-            if ATTR_BY_TYPE[key] != kwargs['type']:
+        if key in ATTR_BY_TYPES:
+            if kwargs['type'] not in ATTR_BY_TYPES[key]:
                 raise click.ClickException(
                     'invalid attribute for this iface type')
 
@@ -173,7 +175,7 @@ def iface_add(**kwargs):
             setattr(item, key, value)
 
     # sanity checks
-    if kwargs['type'] == 'OSA':
+    if kwargs['type'] in ('OSA', 'HSI'):
         try:
             item.attributes['ccwgroup']
         except KeyError:
@@ -368,8 +370,8 @@ def iface_edit(system, cur_name, **kwargs):
             continue
 
         # process attribute arg
-        if key in ATTR_BY_TYPE:
-            if ATTR_BY_TYPE[key] != iface_type:
+        if key in ATTR_BY_TYPES:
+            if iface_type not in ATTR_BY_TYPES[key]:
                 raise click.ClickException(
                     'invalid attribute for this iface type')
 
@@ -406,7 +408,7 @@ def iface_edit(system, cur_name, **kwargs):
 
     # attributes changed: perform sanity checks
     if 'attributes' in update_dict:
-        if iface_type == 'OSA':
+        if iface_type in ('OSA', 'HSI'):
             try:
                 update_dict['attributes']['ccwgroup']
             except KeyError:

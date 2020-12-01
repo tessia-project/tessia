@@ -1,5 +1,5 @@
 {
-    "oneOf": [
+    "anyOf": [
         {
             "properties": {
                 "libvirt": {
@@ -48,6 +48,22 @@
                 "ccwgroup"
             ],
             "title": "osa card",
+            "type": "object"
+        },
+        {
+            "properties": {
+                "ccwgroup": {
+                    "pattern": "^([a-f0-9]\\.){2}[a-f0-9]{4},([a-f0-9]\\.){2}[a-f0-9]{4},([a-f0-9]\\.){2}[a-f0-9]{4}$",
+                    "type": "string"
+                },
+                "layer2": {
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "ccwgroup"
+            ],
+            "title": "hipersockets interface",
             "type": "object"
         },
         {

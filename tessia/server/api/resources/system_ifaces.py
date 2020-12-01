@@ -137,13 +137,16 @@ class SystemIfaceResource(SecureResource):
         self._schemas_by_type = {
             'macvtap': [],
             'osa': [],
+            'hsi': [],
             'roce': [],
         }
-        for schema in SystemIface.get_schema('attributes')['oneOf']:
+        for schema in SystemIface.get_schema('attributes')['anyOf']:
             if schema['title'].lower().startswith('macvtap'):
                 self._schemas_by_type['macvtap'].append(schema)
             elif schema['title'].lower().startswith('osa '):
                 self._schemas_by_type['osa'].append(schema)
+            elif schema['title'].lower().startswith('hipersockets '):
+                self._schemas_by_type['hsi'].append(schema)
             elif schema['title'].lower().startswith('roce '):
                 self._schemas_by_type['roce'].append(schema)
     # __init__()
@@ -271,7 +274,7 @@ class SystemIfaceResource(SecureResource):
             iface_mac = properties['mac_address']
 
         # non osa cards: mac address is always required
-        if iface_type.lower() != 'osa':
+        if iface_type.lower() not in ('osa', 'hsi'):
             if not iface_mac:
                 msg = 'A MAC address must be defined'
                 raise BaseHttpError(code=422, msg=msg)

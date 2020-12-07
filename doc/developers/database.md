@@ -17,7 +17,7 @@ limitations under the License.
 
 ## Considerations
 
-For database handling we use sqlachemy's ORM (Object Relational Mapper) and [alembic](http://alembic.zzzcomputing.com/en/latest/tutorial.html) to manage the migrations.
+For database handling we use sqlachemy's ORM (Object Relational Mapper) and [alembic](https://alembic.sqlalchemy.org/en/latest/tutorial.html) to manage the migrations.
 
 The declarative base and all the models are located in the file `db/models.py`. Any modifications to the database layout are done in this file.
 
@@ -49,7 +49,7 @@ Once you have a dev environment ready to go (see [How to get a dev environment](
   Alembic creates a new revision and a migration script (python file) under `tessia/server/db/alembic/versions` for you.
 - Alembic is configured to autogenerate the changes in the migration script, but it's not 100% safe. Check the file to make sure the correct changes are being applied.
   You might also want to see the resulting sql for verification, this can be accomplished by using the -s option of the upgrade option as in `tess-dbmanage upgrade -s +1`.
-  Only the sql is generated but no actual changes are applied to the database so you can run it as many times as you want.
+  Only the sql is generated but no actual changes are applied to the database so you can run it as many times as you want. Sql mode only supports schema migration (data cannot be queried or updated in sql mode).
   In case something is wrong in the script you can edit it and generate the sql again. If the error was in the models file you can delete the migration file and repeat the previous step.
 - Apply the changes to the database with `tess-dbmanage upgrade +1`
 - Exercise the downgrade as well with `tess-dbmanage downgrade -1`

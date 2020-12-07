@@ -576,6 +576,78 @@ class TestSystemIface(TestSecureResource):
             resp, [entries[0]], 0, read=True)
     # test_list_and_read_restricted_with_role()
 
+    def test_hsi_zvm(self):
+        """
+        Test creation/update of Hipersockets on zVM guests
+        """
+        user_login = 'user_user@domain.com'
+        # create a new zvm system
+        system_obj = models.System(
+            name="vmguest01",
+            state="AVAILABLE",
+            modifier=user_login,
+            type="zvm",
+            hostname="vmguest01.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner=user_login
+        )
+        self.db.session.add(system_obj)
+        self.db.session.commit()
+        # attributes must be stored before the object expires
+        system_id = system_obj.id
+        system_name = system_obj.name
+
+        # generate a new iface entry
+        data = next(self._get_next_entry)
+        data['system'] = system_name
+        data['type'] = 'HSI'
+
+        # layer2 on, mac defined - allowed
+        user_cred = '{}:a'.format('user_user@domain.com')
+        created_id = self._request_and_assert('create', user_cred, data)
+
+        # update layer2 to off, mac gets removed
+        new_attr = data['attributes'].copy()
+        new_attr['layer2'] = False
+        update_data = {'id': created_id, 'attributes': new_attr}
+        resp = self._do_request('update', user_cred, update_data)
+        # include mac in verification
+        update_data['mac_address'] = None
+        self._assert_updated(resp, update_data)
+
+        # try to define mac when layer2 is off - causes error
+        update_data = {'id': created_id, 'mac_address': '00:11:22:33:44:55'}
+        error_msg = 'When layer2 is off no MAC address should be defined'
+        resp = self._do_request('update', user_cred, update_data)
+        self._validate_resp(resp, error_msg, 422)
+
+        # clean up
+        created_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=created_id).one()
+        self.db.session.delete(created_entry)
+
+        # layer2 off, mac specified - not allowed
+        data = next(self._get_next_entry)
+        data['system'] = system_name
+        data['type'] = 'HSI'
+        data['attributes']['layer2'] = False
+        error_msg = 'When layer2 is off no MAC address should be defined'
+        resp = self._do_request('create', user_cred, data)
+        self._validate_resp(resp, error_msg, 422)
+
+        # layer2 off, no mac - success
+        data['mac_address'] = None
+        created_id = self._request_and_assert('create', user_cred, data)
+
+        # clean up
+        created_entry = self.RESOURCE_MODEL.query.filter_by(
+            id=created_id).one()
+        self.db.session.delete(created_entry)
+        models.System.query.filter_by(id=system_id).delete()
+        self.db.session.commit()
+    # test_hsi_zvm()
+
     def test_mac_non_osa(self):
         """
         Test creation/update of non OSA cards - mac is always required

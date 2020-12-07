@@ -33,11 +33,11 @@ IFACE_TYPES = [
     'OSA,OSA card',
     'MACVTAP,KVM macvtap configured by libvirt',
     'ROCE,PCI card',
+    'HSI,Hipersockets',
 
     # TODO:
     #'OVS_BRIDGE,Openvswitch bridge',
     #'LINUX_BRIDGE,Linux bridge',
-    #'HSI,Hipersocket',
     #'OVS_VPORT,Openvswitch virtual port',
 ]
 

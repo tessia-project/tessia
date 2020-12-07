@@ -488,6 +488,7 @@ tasks:
     - - system iface-types
       - - ' *Type name *\| *Description'
         - ' *OSA *\|'
+        - ' *HSI *\|'
         - ' *ROCE *\|'
     - - system iface-types --long
       - 'Type name   : OSA'
@@ -593,6 +594,13 @@ tasks:
     - - system iface-add --system=guest55 --name='default macvtap5' --type=macvtap --devname=en0 --desc='gateway interface' --subnet='GEO_1-NE-1822' --ip=192.168.160.55 --libvirt='files/system-command_test/kvm-guest.xml'
       - - Interface MAC address will be set to match libvirt definition
         - Item added successfully.
+    # HSI card type
+    - - system iface-add --system=cpc3lp52 --name=hiper --type=hsi --devname=enccw8320 --mac=02:57:52:00:70:01 --ccwgroup=8320,8321,8322
+      - 'Error: request failed. Server answered: When layer2 is off no MAC address should be defined'
+    - - system iface-add --system=cpc3lp52 --name=hiper --type=hsi --portno=1 --devname=enccw8320 --mac=02:57:52:00:70:01 --ccwgroup=8320,8321,8322
+      - "Error: invalid attribute for this iface type"
+    - - system iface-add --system=cpc3lp52 --name=hiper --type=hsi --devname=enccw8320 --layer2=1 --mac=02:57:52:00:70:01 --ccwgroup=8320,8321,8322
+      - Item added successfully.
     # ROCE card type
     - - system iface-add --system=cpc3lp52 --name=roce-1 --type=ROCE --devname=en518
       - 'Error: for ROCE cards --fid must be specified'
@@ -748,6 +756,15 @@ tasks:
       - "Invalid value for '--ccwgroup': f501 f502 f503 is not a valid qeth ccwgroup"
     - - system iface-edit --system=cpc3lp52 --name='default osa' --ccwgroup=''
       - "Invalid value for '--ccwgroup':  is not a valid qeth ccwgroup"
+      # hsi
+    - - system iface-edit --system=cpc3lp52 --name=hiper --mac=02:57:52:00:70:02
+      - Item successfully updated.
+    - - system iface-edit --system=cpc3lp52 --name=hiper --layer2=false
+      - Item successfully updated.
+      # mac address removed on layer2 disable
+    - - system iface-list --system=cpc3lp52 --name=hiper --long
+      - 'MAC address *: (?s:(?!02:57:52:00:70:02).)*$'
+      # macvtap
     - - system iface-edit --system=guest55 --name='macvtap'
       - network interface not found.
       # with ip and without subnet

@@ -1,4 +1,4 @@
-# Copyright ${create_date.year} IBM Corp.
+# Copyright 2020 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,27 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""${message}
+"""0.0.13 (Add scheduler index)
 
-Revision ID: ${up_revision}
-Revises: ${down_revision | comma,n}
-Create Date: ${create_date}
+Revision ID: 23056fcccb9d
+Revises: 23277b4480ce
+Create Date: 2020-12-09 20:55:34.272548
 
 """
 
 # revision identifiers, used by Alembic.
-revision = ${repr(up_revision)}
-down_revision = ${repr(down_revision)}
-branch_labels = ${repr(branch_labels)}
-depends_on = ${repr(depends_on)}
+revision = '23056fcccb9d'
+down_revision = '23277b4480ce'
+branch_labels = None
+depends_on = None
 
 from alembic import op
 import sqlalchemy as sa
-${imports if imports else ""}
+
 
 def upgrade():
-    ${upgrades if upgrades else "pass"}
-
+    op.create_index('ix_scheduler_jobs_state_partial', 'scheduler_jobs', ['state'], 
+        postgresql_where=sa.text("((state)::text = ANY ((ARRAY['WAITING'::character varying, 'RUNNING'::character varying, 'CLEANINGUP'::character varying])::text[]))"))
 
 def downgrade():
-    ${downgrades if downgrades else "pass"}
+    op.drop_index('ix_scheduler_jobs_state_partial', 'scheduler_jobs')

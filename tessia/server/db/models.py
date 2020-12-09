@@ -19,7 +19,7 @@ Module containing the sqlalchemy models for the database
 #
 # IMPORTS
 #
-from sqlalchemy import Column
+from sqlalchemy import Column, Index
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.declarative import declared_attr
@@ -2295,3 +2295,13 @@ class SchedulerJob(CommonMixin, BASE):
         return User.login
 
 # SchedulerJob
+
+# Partial index on SchedulerJob.state to select active jobs
+# that need to be monitored
+Index(
+    'ix_scheduler_jobs_state_partial',
+    SchedulerJob.state,
+    unique=False,
+    postgresql_where=SchedulerJob.state.in_(
+        [SchedulerJob.STATE_WAITING, SchedulerJob.STATE_RUNNING,
+         SchedulerJob.STATE_CLEANINGUP]))

@@ -112,14 +112,14 @@ class IpAddressResource(SecureResource):
         try:
             address_obj = ipaddress.ip_address(address)
         except ValueError as exc:
-            msg = "The value '{}={}' is invalid: {}".format(
-                'address', address, str(exc))
+            msg = "Value 'address={}' is invalid: {}".format(
+                address, str(exc))
             raise BaseHttpError(code=400, msg=msg)
 
         subnet_obj = ipaddress.ip_network(subnet, strict=True)
-        if address_obj not in subnet_obj.hosts():
-            msg = ("The value 'address={}' is invalid: ip not within "
-                   "subnet address range".format(address))
+        if address_obj not in subnet_obj:
+            msg = ("Value 'address={}' is not within subnet address range"
+                   " {}".format(address, subnet))
             raise BaseHttpError(code=400, msg=msg)
     # _assert_address()
 

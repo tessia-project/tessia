@@ -81,6 +81,19 @@
             "gateway": "10.1.0.1",
             "dns_1": "10.1.0.2",
             "owner": "user_x_0@domain.com"
+        },
+        {
+            "name": "cpc0 shared ipv6",
+            "dns_2": "2001:db8::d02",
+            "zone": "cpc0",
+            "address": "2001:db8::/48",
+            "modifier": "user_x_0@domain.com",
+            "desc": "Shared subnet of cpc0",
+            "vlan": 1802,
+            "project": "Department x",
+            "gateway": "2001:db8::1",
+            "dns_1": "2001:db8::d01",
+            "owner": "user_x_0@domain.com"
         }
     ],
     "IpAddress": [
@@ -90,6 +103,15 @@
             "modifier": "user_x_0@domain.com",
             "project": "Department x",
             "subnet": "cpc0 shared",
+            "owner": "user_x_0@domain.com",
+            "system": "cpc0"
+        },
+        {
+            "address": "2001:db8::4",
+            "desc": null,
+            "modifier": "user_x_0@domain.com",
+            "project": "Department x",
+            "subnet": "cpc0 shared ipv6",
             "owner": "user_x_0@domain.com",
             "system": "cpc0"
         }

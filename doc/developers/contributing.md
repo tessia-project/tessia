@@ -22,7 +22,7 @@ Contributions are welcome! Here's a step-by-step description of how you can subm
 - Create your branch (i.e. `git checkout -b mybranch master`). Follow this pattern for the branch name:
     - feature/description (for new features)
     - improvement/description (to improve current features)
-    - bug/description (for bug fixes)
+    - fix/description (for bug fixes)
     - doc/description (when only documentation is updated)
     - test/description (when only tests are updated)
 

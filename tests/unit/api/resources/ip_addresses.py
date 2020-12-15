@@ -207,6 +207,43 @@ class TestIpAddress(TestSecureResource):
         self.db.session.commit()
     # test_add_all_fields_no_role()
 
+    def test_add_ipv6(self):
+        """
+        Test add IPv6 address
+        """
+        network_obj = ipaddress.ip_network('2001:db8::/48')
+        # create ip with system, user has permission to both
+        ip_new = {
+            'project': self._db_entries['Project'][0]['name'],
+            'desc': '- Ip address with some *markdown*',
+            'address': str(network_obj[10]),
+            'subnet': 'cpc0 shared ipv6',
+        }
+        created_id = self._request_and_assert(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), ip_new)
+
+        # # clean up
+        self.db.session.query(self.RESOURCE_MODEL).filter_by(
+            id=created_id).delete()
+        self.db.session.commit()
+
+        # ipv6 to ipv4 subnet
+        ip_new['subnet'] = 'cpc0 shared'
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), ip_new)
+        # not within subnet address range
+        self.assertEqual(resp.status_code, 400)
+
+        # ipv6 outside of address range
+        ip_new['subnet'] = 'cpc0 shared ipv6'
+        ip_new['address'] = '2001:db8:ee::1'
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), ip_new)
+        # not within subnet address range
+        self.assertEqual(resp.status_code, 400)
+
+    # test_add_ipv6()
+
     def test_add_mandatory_fields(self):
         """
         Exercise the scenario where a user with permissions creates an item
@@ -272,7 +309,7 @@ class TestIpAddress(TestSecureResource):
         Test if api correctly reports error when invalid values are used for
         a field during creation and update.
         """
-        error_re = "^The value '{}={}' is invalid: .*$"
+        error_re = "^Value '{}={}' is invalid: .*$"
         # specify fields with wrong types
         wrong_data = [
             (
@@ -308,8 +345,8 @@ class TestIpAddress(TestSecureResource):
             """Helper validator"""
             self.assertEqual(resp.status_code, 400)
             msg = (
-                "The value 'address={}' is invalid: ip not within "
-                "subnet address range".format(address)
+                "Value 'address={}' is not within "
+                "subnet address range {}".format(address, '10.1.0.0/16')
             )
             body = json.loads(resp.get_data(as_text=True))
             self.assertEqual(msg, body['message'])

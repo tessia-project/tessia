@@ -61,7 +61,8 @@ RUN cd /assets && \
 ### Components builder
 FROM base as components-build
 
-RUN apt-get -yq install \
+RUN apt-get -q update > /dev/null && \
+    apt-get -yq install \
     # rust compiler
     cargo rustc && \
     # output directory

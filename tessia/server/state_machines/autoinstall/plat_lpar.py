@@ -20,13 +20,16 @@ Module to deal with operations on LPARs
 # IMPORTS
 #
 from copy import deepcopy
+from queue import Queue
 from tessia.server.config import Config
 from tessia.server.db.models import StorageVolume
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
+from threading import Event, Thread
 from urllib.parse import urljoin, urlsplit
 
 import ipaddress
 import logging
+import sys
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -35,6 +38,33 @@ import logging
 #
 # CODE
 #
+
+
+class HmcThread(Thread):
+    """
+    Thread for handling HMC communications
+    """
+
+    def __init__(self, exc_store, target, *args):
+        """
+        Init with exception storage
+
+        Args:
+            exc_store (Queue): a thread-safe storage for exception information
+            target (Callable): thread main function
+            args (Iterable): arguments to thread main function
+        """
+        Thread.__init__(self, name='hmc-thread', target=target, args=args)
+        self.exc_store = exc_store
+
+    def run(self):
+        """
+        Run with exception handling
+        """
+        try:
+            super().run()
+        except Exception:
+            self.exc_store.put(sys.exc_info())
 
 
 class PlatLpar(PlatBase):
@@ -83,6 +113,7 @@ class PlatLpar(PlatBase):
 
         Raises:
             ValueError: in case an unsupported network type is found
+            RuntimeError: baselib exception occurred
         """
         # basic information
         cpu = self._guest_prof.cpu
@@ -171,7 +202,29 @@ class PlatLpar(PlatBase):
         if dns_servers:
             params['boot_params']['netsetup']['dns'] = dns_servers
 
-        self._hyp_obj.start(guest_name, cpu, memory, params)
+        # Run HMC communication in separate thread to be able to continue
+        # with the state machine after boot_notification has been signaled.
+        # Thread will continue running for some time, providing HMC output.
+        # If an exception happens in the thread before boot happened,
+        # we should re-raise it to stop further processing
+        boot_notification = Event()
+        exception_store = Queue()
+        hyp_thread = HmcThread(
+            exception_store, self._hyp_obj.start,
+            guest_name, cpu, memory, params, boot_notification)
+        hyp_thread.start()
+
+        # wait until either we have been notified that we can go on,
+        # or baselib thread has exited for some reason
+        while not boot_notification.wait(5.) and hyp_thread.is_alive():
+            pass
+        if not exception_store.empty():
+            exc_info = exception_store.get()
+            self._logger.debug('HMC thread exception: %s', str(exc_info[1]))
+            raise RuntimeError("Failed to prepare partition") from exc_info[1]
+
+        if boot_notification.is_set():
+            self._logger.debug("Received initial boot complete notification")
     # boot()
 
     def get_vol_devpath(self, vol_obj):

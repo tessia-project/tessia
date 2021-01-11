@@ -112,7 +112,7 @@ class TestPlatLpar(TestCase):
         # We don't test the params argument since it is a complex
         # dictionary generated inside the init function.
         mock_hyp.start.assert_called_with(guest_name, cpu, memory,
-                                          mock.ANY)
+                                          mock.ANY, mock.ANY)
     # test_boot_dasd_osa()
 
     def test_boot_insfile(self):
@@ -216,7 +216,7 @@ class TestPlatLpar(TestCase):
         memory = self._profile_entry.memory
 
         mock_hyp.start.assert_called_with(guest_name, cpu, memory,
-                                          mock.ANY)
+                                          mock.ANY, mock.ANY)
 
         # restore values
         assoc_obj.volume_id = orig_vol_id

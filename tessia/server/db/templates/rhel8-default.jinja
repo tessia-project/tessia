@@ -69,8 +69,8 @@ kexec-tools
 python2
 %end
 
-# Enable kdump on the installed system, "--reserve-mb='auto'" by default
-%addon com_redhat_kdump --enable
+# Enable kdump on the installed system, "--reserve-mb='auto'" should be by default but it isn't
+%addon com_redhat_kdump --enable --reserve-mb='auto'
 %end
 
 {% if config["system_type"] != "KVM" -%}

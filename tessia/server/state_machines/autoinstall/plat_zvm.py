@@ -30,6 +30,12 @@ import logging
 # CONSTANTS AND DEFINITIONS
 #
 
+# VM file transfer uses its own packet size, by default it is rather small
+# and slows down installation kernel transfer over high-latency connections.
+# Not all VMs support values up to 32K, but tests have shown 8000 is well
+# supported.
+DEFAULT_TRANSFER_BUFFER_SIZE = 8000
+
 #
 # CODE
 #
@@ -67,7 +73,9 @@ class PlatZvm(PlatBase):
             raise ValueError(
                 'An empty z/VM guest password is trying to be used. '
                 'Please set the correct password.')
-        params = {}
+        params = {
+            'transfer-buffer-size': DEFAULT_TRANSFER_BUFFER_SIZE
+        }
         try:
             params['byuser'] = self._guest_prof.credentials['zvm-logonby']
         except KeyError:

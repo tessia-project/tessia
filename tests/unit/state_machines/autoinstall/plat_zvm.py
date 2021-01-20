@@ -81,6 +81,10 @@ class TestPlatZvm(TestCase):
         """
         Test the boot operation
         """
+        args = self._mock_hyp_cls.mock_calls[0][1]
+        self.assertEqual('zvm', args[0])
+        self.assertIn('transfer-buffer-size', args[5])
+
         kargs = "param1=value1 param2=value2"
         self._plat.boot(kargs)
         self._mock_hyp_cls.return_value.login.assert_called_with()

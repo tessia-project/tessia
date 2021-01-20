@@ -110,11 +110,14 @@ REQUEST_SCHEMA = {
 #
 # CODE
 #
+
+
 class PowerManagerMachine(BaseMachine):
     """
     This machine is responsible for performing power management actions
     (poweron, poweroff) of the managed systems.
     """
+
     def __init__(self, params):
         """
         See base class docstring.
@@ -939,7 +942,10 @@ class PowerManagerMachine(BaseMachine):
                 raise TimeoutError(
                     'Could not establish a connection to system {} after {} '
                     'seconds'.format(system_name, LOAD_TIMEOUT))
-            if not self._state_match(profile_obj):
+            # do a state match always to log incinsitencies,
+            # raise only if requested
+            if (not self._state_match(profile_obj) and
+                    self._params.get('verify')):
                 raise RuntimeError(
                     'Failed to poweron system {} with expected configuration'
                     .format(system_name))
@@ -976,22 +982,22 @@ class PowerManagerMachine(BaseMachine):
                               'supported', system_name)
             return True
 
-        verify_flag = self._params.get('verify', True)
-        if not verify_flag:
+        if not self._params.get('verify'):
             self._logger.info(
                 'Potential configuration mismatches will be reported as '
                 'warnings because verify flag is off')
+
         try:
             checker = post_install.PostInstallChecker(
-                system_prof, permissive=not verify_flag)
-            checker.verify()
+                system_prof, permissive=True)
+            # checked may still throw on unexpected errors
+            mismatches = checker.verify()
         except Exception as exc:
-            if verify_flag:
-                self._logger.warning('State verification of system %s '
-                                     'failed: %s', system_name, str(exc))
-                return False
+            self._logger.warning('State verification of system %s '
+                                 'failed: %s', system_name, str(exc))
+            return False
 
-        return True
+        return not mismatches
     # _state_match()
 
     def cleanup(self):

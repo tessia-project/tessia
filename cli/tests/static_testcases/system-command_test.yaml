@@ -1359,12 +1359,14 @@ tasks:
       - 'no such option: --forc  Did you mean --force?'
     - - system poweron --name=cpc3lp52 --force
       - 'Failed to establish a new connection'
-    - - system poweron --name=cpc3lp52 --noverify=true
-      - '--noverify option does not take a value'
-    - - system poweron --name=cpc3lp52 --noverif
-      - 'no such option: --noverif  Did you mean --noverify?'
-    - - system poweron --name=cpc3lp52 --noverify
+    - - system poweron --name=cpc3lp52 --verify=true
+      - '--verify option does not take a value'
+    - - system poweron --name=cpc3lp52 --verif
+      - 'no such option: --verif  Did you mean --verify?'
+    - - system poweron --name=cpc3lp52 --verify
       - 'Failed to establish a new connection'
+    - - system poweron --name=cpc3lp52 --noverify
+      - 'is now default and can be omitted'
     - - system poweron --name=cpc3lp52 --exclusive=true
       - '--exclusive option does not take a value'
     - - system poweron --name=cpc3lp52 --exclus

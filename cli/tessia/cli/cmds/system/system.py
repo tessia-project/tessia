@@ -340,7 +340,9 @@ def poweroff(ctx, name, verbosity, bg_flag):
 @click.option('--force', is_flag=True,
               help="force a poweron even if system is already up")
 @click.option('--noverify', is_flag=True,
-              help="do not perform any system state verification")
+              help="Skip system state verification [deprecated, default]")
+@click.option('--verify', is_flag=True,
+              help="Perform system state verification")
 @click.option(
     '--exclusive', is_flag=True,
     help="stop ALL other systems under same hypervisor, USE WITH CARE!")
@@ -358,9 +360,12 @@ def poweron(ctx, name, **kwargs):
     fetch_item(client.Systems, {'name': name},
                'system {} not found.'.format(name))
 
-    req_params = {'systems': [
-        {'action': 'poweron', 'name': name, 'profile_override': {}}
-    ]}
+    req_params = {
+        'systems': [
+            {'action': 'poweron', 'name': name, 'profile_override': {}}
+        ],
+        'verify': kwargs['verify']
+    }
     # profile specified: like system, make sure it exists first
     if kwargs['profile']:
         fetch_item(
@@ -370,7 +375,7 @@ def poweron(ctx, name, **kwargs):
         req_params['systems'][0]['profile'] = kwargs['profile']
 
     if kwargs['noverify']:
-        req_params['verify'] = False
+        click.echo('"noverify" is now default and can be omitted')
     if kwargs['exclusive']:
         req_params['systems'][0]['action'] = 'poweron-exclusive'
     if kwargs['force']:

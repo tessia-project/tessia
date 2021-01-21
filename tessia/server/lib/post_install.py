@@ -128,6 +128,9 @@ class PostInstallChecker:
 
         # fetched at verification time
         self._facts = None
+
+        # collected mismatches
+        self._mismatches = []
     # __init__()
 
     def _exec_ansible(self, module, args=None):
@@ -876,6 +879,7 @@ class PostInstallChecker:
         misconf_exc = Misconfiguration(*args, **kwargs)
         if self._permissive:
             self._logger.warning(str(misconf_exc))
+            self._mismatches.append(misconf_exc)
             return
         raise misconf_exc
     # _report()
@@ -1158,11 +1162,15 @@ class PostInstallChecker:
             areas (list): areas to check, possible values are cpu, kernel, os,
                           memory, network, storage.
 
+        Returns:
+            list: list of mismatches
+
         Raises:
             ValueError: in case an invalid area is specified
             Misconfiguration: if an actual parameter does not match the
                               expected value
         """
+        self._mismatches = []
         self._fetch_facts()
         self._logger.debug(
             'expected params are: %s', pformat(self._expected_params))
@@ -1185,5 +1193,6 @@ class PostInstallChecker:
             except KeyError:
                 raise ValueError('Invalid area {}'.format(area))
             area_method()
+        return self._mismatches
     # verify()
 # PostInstallChecker

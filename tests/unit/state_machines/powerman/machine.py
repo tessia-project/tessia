@@ -98,6 +98,7 @@ class TestPowerManagerMachine(TestCase):
             machine.post_install, 'PostInstallChecker', autospec=True)
         self._mock_post_cls = patcher.start()
         self._mock_post_obj = self._mock_post_cls.return_value
+        self._mock_post_obj.verify.return_value = []
         self.addCleanup(patcher.stop)
     # setUp()
 
@@ -439,7 +440,7 @@ class TestPowerManagerMachine(TestCase):
 
         # validate stage verify
         self._assert_system_up_action(prof_obj, 1)
-        self._mock_post_cls.assert_called_with(prof_obj, permissive=False)
+        self._mock_post_cls.assert_called_with(prof_obj, permissive=True)
         self._mock_post_obj.verify.assert_called_with()
 
     # test_multiple_actions()
@@ -622,7 +623,8 @@ class TestPowerManagerMachine(TestCase):
                     'name': system_obj.name,
                     'force': True
                 },
-            ]
+            ],
+            'verify': True,
         })
         prof_obj = self._get_profile(system_obj.name)
         vol_obj = prof_obj.storage_volumes_rel[0]
@@ -855,7 +857,7 @@ class TestPowerManagerMachine(TestCase):
         self._assert_system_up_action(prof_obj, 1)
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(prof_obj, permissive=False))
+            call(prof_obj, permissive=True))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
 
@@ -925,7 +927,7 @@ class TestPowerManagerMachine(TestCase):
         # validate call to verify if hypervisor matches profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(hyp_prof, permissive=False))
+            call(hyp_prof, permissive=True))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
 
@@ -943,7 +945,7 @@ class TestPowerManagerMachine(TestCase):
         self._assert_system_up_action(prof_obj, 2)
         self.assertEqual(
             self._mock_post_cls.call_args_list[1],
-            call(prof_obj, permissive=False))
+            call(prof_obj, permissive=True))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[1], call())
 
@@ -1024,7 +1026,7 @@ class TestPowerManagerMachine(TestCase):
         # validate call to verify if guest state matched profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(prof_obj, permissive=False))
+            call(prof_obj, permissive=True))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
 
@@ -1038,7 +1040,7 @@ class TestPowerManagerMachine(TestCase):
         # validate call to verify if guest state matched profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[1],
-            call(prof_obj, permissive=False))
+            call(prof_obj, permissive=True))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[1], call())
 
@@ -1142,7 +1144,7 @@ class TestPowerManagerMachine(TestCase):
         self._assert_system_up_action(hyp_prof, 0)
 
         # validate call to verify hypervisor profile
-        self._mock_post_cls.assert_called_with(hyp_prof, permissive=False)
+        self._mock_post_cls.assert_called_with(hyp_prof, permissive=True)
         self._mock_post_obj.verify.assert_called_with()
 
         # no call to power on system
@@ -1169,7 +1171,8 @@ class TestPowerManagerMachine(TestCase):
                     'action': 'poweron',
                     'name': system_obj.name,
                 },
-            ]
+            ],
+            'verify': True,
         })
         error_msg = (
             'Failed to poweron system {} with expected configuration'.format(
@@ -1185,7 +1188,7 @@ class TestPowerManagerMachine(TestCase):
         self._assert_poweron_action('hmc', hyp_prof, prof_obj, 0)
 
         # validate stage verify
-        self._mock_post_cls.assert_called_with(prof_obj, permissive=False)
+        self._mock_post_cls.assert_called_with(prof_obj, permissive=True)
         self._mock_post_obj.verify.assert_called_with()
     # test_poweron_verify_fails()
 
@@ -1233,7 +1236,7 @@ class TestPowerManagerMachine(TestCase):
         # validate that post install was called to verify profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(prof_obj, permissive=False))
+            call(prof_obj, permissive=True))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
     # test_poweron_zvm_dasd()
@@ -1282,7 +1285,7 @@ class TestPowerManagerMachine(TestCase):
         # validate that post install was called to verify profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(prof_obj, permissive=False))
+            call(prof_obj, permissive=True))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
     # test_poweron_zvm()
@@ -1322,7 +1325,7 @@ class TestPowerManagerMachine(TestCase):
 
     # test_poweron_zvm_missing_cred()
 
-    def test_verify_off(self):
+    def test_verify_on(self):
         """
         Try a poweron with verify flag off. This test also covers the usage
         of the default profile when none was specified.
@@ -1352,7 +1355,7 @@ class TestPowerManagerMachine(TestCase):
                     'name': system_obj.name,
                 },
             ],
-            'verify': False
+            'verify': True
         })
 
         machine_obj = machine.PowerManagerMachine(request)
@@ -1430,7 +1433,7 @@ class TestPowerManagerMachine(TestCase):
         # validate that post install was called to verify profile
         self.assertEqual(
             self._mock_post_cls.call_args_list[0],
-            call(prof_obj, permissive=False))
+            call(prof_obj, permissive=True))
         self.assertEqual(
             self._mock_post_obj.verify.call_args_list[0], call())
     # test_poweron_zvm_modified_date()

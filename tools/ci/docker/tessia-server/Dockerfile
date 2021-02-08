@@ -35,6 +35,8 @@ RUN apt-get -q update > /dev/null && \
     libpq5 \
     # useful for administration tasks
     vim \
+    # rust compiler for python cryptography
+    cargo rustc \
     # required by ansible when using ssh connection plugin
     sshpass openssh-client \
     # init-like daemon to manage our services' processes
@@ -61,10 +63,7 @@ RUN cd /assets && \
 ### Components builder
 FROM base as components-build
 
-RUN apt-get -q update > /dev/null && \
-    apt-get -yq install \
-    # rust compiler
-    cargo rustc && \
+RUN \
     # output directory
     mkdir /assets/bin && \
     cd /assets/repo-tessia && \

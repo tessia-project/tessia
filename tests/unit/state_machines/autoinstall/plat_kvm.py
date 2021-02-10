@@ -50,11 +50,6 @@ class TestPlatKvm(TestCase):
         """
         Setup all the mocks used for the execution of the tests.
         """
-        # mock sleep
-        patcher = patch.object(plat_kvm, 'sleep', autospec=True)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
         # patch logger
         patcher = patch.object(plat_kvm, 'logging')
         mock_logging = patcher.start()
@@ -289,18 +284,10 @@ class TestPlatKvm(TestCase):
         # Makes sure the reboot procedure was properly executed.
         mock_ssh_client.login.assert_has_calls([
             mock.call(hostname, user=user, passwd=password, timeout=10),
-            mock.call(
-                self._hyper_profile_entry.system_rel.hostname,
-                user=self._hyper_profile_entry.credentials['admin-user'],
-                passwd=self._hyper_profile_entry.credentials['admin-password'],
-                timeout=10)
         ])
         run_calls = [
             mock.call('sync'),
-            mock.call('nohup poweroff; nohup killall sshd', timeout=1)
-        ] + (
-            [mock.call('virsh domstate {}'.format(
-                self._profile_entry.system_rel.name))] * 3)
+        ]
         mock_shell.run.assert_has_calls(run_calls)
         mock_hyp.reboot.assert_called_with(
             self._profile_entry.system_rel.name, None)

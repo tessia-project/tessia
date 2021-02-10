@@ -18,6 +18,8 @@ RUN apt-get -q update > /dev/null && \
     rsync \
     # and ssh login with password
     sshpass openssh-client \
+    # rust compiler for python cryptography
+    cargo rustc \
     # clone repositories
     git > /dev/null && \
     # clean the cache to free up space

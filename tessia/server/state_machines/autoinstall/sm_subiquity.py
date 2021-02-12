@@ -19,12 +19,12 @@ Machine for auto installation of debian based operating systems.
 #
 # IMPORTS
 #
+from enum import Enum
 from secrets import token_urlsafe
 from tessia.server.config import Config
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tessia.server.state_machines.autoinstall.sm_base import TEMPLATES_DIR
-from time import time
-from time import sleep
+from time import monotonic, sleep
 from urllib.parse import urlparse
 
 import jinja2
@@ -36,10 +36,134 @@ import requests
 #
 # CONSTANTS AND DEFINITIONS
 #
+EventMarker = Enum('EventMarker', 'NONE SUCCESS FAIL')
 
 #
 # CODE
 #
+
+
+class LogEvent:
+    """
+    Event parsed from event stream
+    """
+
+    def __init__(self, event_string):
+        """
+        Constructor
+
+        Arguments:
+            event_string (str): string describing event
+        """
+        self._name = ''
+        self._result = ''
+        self._origin = ''
+        self._type = ''
+        self._description = ''
+
+        # binary/raw events, only metadata is logged
+        if event_string.startswith('binary:'):
+            self._name = 'binary'
+            self._str = event_string[7:]
+            return
+
+        try:
+            event_object = json.loads(event_string)
+        except json.JSONDecodeError:
+            self._str = 'Undecodeable event: {}'.format(event_string)
+            return
+
+        self._name = event_object.get("name", "?name?")
+        self._origin = event_object.get("origin", "?origin?")
+        self._result = event_object.get("result", "START")
+
+        if self._origin == 'watchdog':
+            self._str = "File {} {}".format(
+                self._name,
+                "retrieved" if self._result == 'SUCCESS' else "not present")
+        else:
+            self._type = event_object.get("event_type", "")
+            self._description = event_object.get("description", "")
+            if self._description:
+                self._description = ": " + self._description
+
+            self._str = "{} {} {}".format(
+                self._result, self._name, self._description)
+    # __init__()
+
+    def __str__(self):
+        """
+        Return string definition of an event
+        """
+        return self._str
+    # __str__()
+# LogEvent()
+
+
+class LogWatcher:
+    """
+    Installation state detector
+    """
+
+    def __init__(self, end_time):
+        """
+        Constructor
+
+        Arguments:
+            end_time (number): when to stop watching
+        """
+        self._end_watch = end_time
+
+        self._success = False
+        self._failure = False
+
+    def process(self, event, current_time):
+        """
+        Find out if it is failure or success
+
+        Arguments:
+            event (LogEvent): a set of values from log
+            current_time (number): current time
+
+        Returns:
+            EventMarker: what does the event signify
+
+        """
+        if (event._name in (
+                "subiquity/Reboot",
+                "subiquity/Reboot/reboot") and
+                event._result == "SUCCESS" and
+                event._type == "finish"):
+            self._success = True
+            return EventMarker.SUCCESS
+
+        if (event._name.startswith("subiquity/Error") and
+                "/var/crash" in event._description):
+            self._failure = True
+            # we want to exit the loop now, but we should
+            # wait for additional watchdog messages to come
+            self._end_watch = current_time + 10
+            return EventMarker.FAIL
+
+        return EventMarker.NONE
+
+    def is_success(self):
+        """
+        Has detector found successful state
+        """
+        return self._success
+
+    def is_failure(self):
+        """
+        Has detector found failure state
+        """
+        return self._failure
+
+    def should_stop(self, current_time):
+        """
+        Should detector stop running
+        """
+        return self.is_success() or (current_time > self._end_watch)
 
 
 class SmSubiquityInstaller(SmBase):
@@ -123,16 +247,16 @@ class SmSubiquityInstaller(SmBase):
         Query events stream from webhook
         """
         max_wait_install = 3600
-        timeout_installation = time() + max_wait_install
+        timeout_installation = monotonic() + max_wait_install
 
-        success = False
-        failure = False
+        watcher = LogWatcher(timeout_installation)
+
         frequency_check = 2.5
         last_event = 0
 
         watchdog_events = []
 
-        while not success and time() <= timeout_installation:
+        while not watcher.should_stop(monotonic()):
             session_logs = self._session.get(
                 "{}/session/{}/logs".format(self._webhook_control,
                                             self._session_id),
@@ -146,63 +270,26 @@ class SmSubiquityInstaller(SmBase):
             events = session_logs.json()
             last_event += len(events)
             for event_string in events:
-                if event_string.startswith('binary:'):
-                    self._logger.debug("Binary event logged: %s",
-                                       event_string[7:])
-                    continue
-
-                try:
-                    event = json.loads(event_string)
-                except json.JSONDecodeError:
-                    self._logger.debug("Undecodeable event: %s", event_string)
-                    continue
-
-                # parse event data
-                event_description = event.get("description", "")
-                if event_description:
-                    event_description = ": " + event_description
-                event_name = event.get("name", "?name?")
-                event_result = event.get("result", "START")
-                if event["origin"] == 'watchdog':
-                    watchdog_events.append(event)
+                log_event = LogEvent(event_string)
+                if log_event._origin == 'watchdog':
+                    watchdog_events.append(log_event)
                 else:
-                    self._logger.info("%s %s %s",
-                                      event_result,
-                                      event_name,
-                                      event_description)
-                success = (
-                    event_name in (
-                        "subiquity/Reboot",
-                        "subiquity/Reboot/reboot",
-                        "subiquity/Reboot/apply_autoinstall_config") and
-                    event_result == "SUCCESS" and
-                    event.get("event_type", "") == "finish")
+                    self._logger.info("%s", str(log_event))
 
-                # track fatal errors too
-                if (event_name.startswith("subiquity/Error") and
-                        "/var/crash" in event_description):
+                marker = watcher.process(log_event, monotonic())
+                if marker == EventMarker.FAIL:
                     self._logger.fatal("Detected installation failure")
-                    failure = True
-                    # we want to exit the loop now, but we should
-                    # wait for additional watchdog messages to come
-                    timeout_installation = time() + 10
 
             sleep(frequency_check)
 
-        if failure:
-            # dump what we know
-            for event in watchdog_events:
-                if event.get('result') == 'SUCCESS':
-                    self._logger.debug("%s: retrieved",
-                                       event.get(
-                                           'name', '(unspecified log name)'))
-                else:
-                    self._logger.debug("%s: not present",
-                                       event.get(
-                                           'name', '(unspecified log name)'))
-            raise RuntimeError('Installation could not be completed')
+        if not watcher.is_success():
+            if watcher.is_failure():
+                # dump what we know
+                for event in watchdog_events:
+                    self._logger.debug("%s", str(event))
+                raise RuntimeError('Installation could not be completed')
 
-        if not success:
+            # no failure detected, but no success either
             raise TimeoutError('Installation Timeout: The installation'
                                ' process is taking too long')
 

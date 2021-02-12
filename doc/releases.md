@@ -15,6 +15,19 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.0.2 (the latest)
+
+- Add z/VM transfer buffer size option [link](https://gitlab.com/tessia-project/tessia/-/commit/64be44fdfd81241226c80831d6dc6cdf0e2b0f40)
+- Do not fail poweron job on verification error [link](https://gitlab.com/tessia-project/tessia/-/commit/067216fc6667b1288da6c36855f1ff131f6b27a4)
+- Switch off I/O device auto-configuration for SLES15.2 [link](https://gitlab.com/tessia-project/tessia/-/commit/cbae4a640f883d30c07812d2a0b460c5bab7bba7)
+- Update kdump options in RHEL8 templates [link](https://gitlab.com/tessia-project/tessia/-/commit/75e4fd3b574896d05068a76e8e9786bf4e17a0ce)
+
+tessia-baselib:
+- Proceed with installation on 'Base cpu cannot be detached' [link](https://gitlab.com/tessia-project/tessia-baselib/-/commit/dc9fe84e35170a1fa1ffce7ab73a66807d68cf56)
+- Fix broken long kernel command lines [link](https://gitlab.com/tessia-project/tessia-baselib/-/commit/2e74c823b0c8a41b909af89d60c59ed3834b4983)
+- Fix sending commands to HMC too early [link](https://gitlab.com/tessia-project/tessia-baselib/-/commit/a7e8967080999f18f841312d8bd854d3bf2aa9a0)
+- Improve interaction with HMC [link](https://gitlab.com/tessia-project/tessia-baselib/-/commit/7f7d238233a896af16258be3e167f42904dbdc1d)
+
 ## The project switched to a rolling updates strategy.
 
 ## 18.06 (2018-06-12)

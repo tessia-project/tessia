@@ -43,7 +43,7 @@ class DockerImageServer(DockerImage):
         docker_cmd = self._gen_docker_cmd(
             'run', args='--rm -v $PWD:/root/tessia-server:ro',
             cmd='bash -c "cd /root/tessia-server && tools/run_pylint.py && '
-                'tools/run_tests.py"'
+                'tools/run_tests.py && tools/run_pytest_tests.py"'
         )
         ret_code, output = self._session.run(docker_cmd)
         if ret_code != 0:

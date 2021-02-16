@@ -465,7 +465,7 @@ class Manager():
                 self._stage_args['unittest_path'])
         else:
             cmd = ('-c "cd /root/tessia && tools/run_pylint.py && '
-                   'tools/run_tests.py"')
+                   'tools/run_tests.py && tools/run_pytest_tests.py"')
         try:
             compose_obj.prepare()
             ret_code, _ = compose_obj.run(

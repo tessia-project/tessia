@@ -423,10 +423,13 @@ class SmBase(metaclass=abc.ABCMeta):
             with open(TEMPLATES_DIR + template_filename, "r") as template_file:
                 template_content = template_file.read()
         except FileNotFoundError:
-            # specific template does not exist: use the distro type template
+            # specific kernel command line template does not exist: use
+            # the distro type template
             self._logger.debug(
-                "No template found for OS '%s', using generic template for "
-                "type '%s'", self._os.name, self._os.type)
+                "No kernel command line template found for OS '%s', "
+                "using generic template for type '%s'",
+                self._os.name,
+                self._os.type)
             template_filename = '{}.cmdline.jinja'.format(self._os.type)
             # generic template always exists, if for some reason it is not
             # there it's a server installation error which must be fixed so let
@@ -581,6 +584,8 @@ class SmBase(metaclass=abc.ABCMeta):
         self._logger.info("generating autofile")
         self._remove_autofile()
         template = jinja2.Template(self._template.content)
+        self._logger.info(
+            "autotemplate will be used: '%s'", self._template.name)
 
         autofile_content = template.render(config=self._info)
 

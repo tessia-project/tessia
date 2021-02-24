@@ -471,6 +471,8 @@ class SmSubiquityInstaller(SmBase):
         self._logger.info("generating autofile")
         self._remove_autofile()
         template = jinja2.Template(self._template.content)
+        self._logger.info(
+            "autotemplate will be used: '%s'", self._template.name)
 
         autofile_content = template.render(config=self._info)
 

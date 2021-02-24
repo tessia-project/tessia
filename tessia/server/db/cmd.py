@@ -385,7 +385,7 @@ def show_rev(args):
 # show_rev()
 
 
-def current(_):
+def current(_): # pylint: disable=useless-param-doc,useless-type-doc
     """
     Show the current database revision
 

@@ -21,6 +21,9 @@ Machine for auto installation of debian based operating systems.
 #
 from enum import Enum
 from secrets import token_urlsafe
+from tessia.server.state_machines.autoinstall.plat_base import PlatBase
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
 from tessia.server.config import Config
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tessia.server.state_machines.autoinstall.sm_base import TEMPLATES_DIR
@@ -116,6 +119,28 @@ class LogWatcher:
 
         self._success = False
         self._failure = False
+    # __init__()
+
+    @staticmethod
+    def _is_success_trigger(event):
+        """
+        Detect success from event. May be overridden
+        """
+        return (event._name in (
+                "subiquity/Reboot",
+                "subiquity/Reboot/reboot")
+                and event._result == "SUCCESS"
+                and event._type == "finish")
+    # _is_success_trigger()
+
+    @staticmethod
+    def _is_failure_trigger(event):
+        """
+        Detect failure from event. May be overridden
+        """
+        return (event._name.startswith("subiquity/Error")
+                and "/var/crash" in event._description
+                and not "server_request_fail" in event._description)
 
     def process(self, event, current_time):
         """
@@ -129,16 +154,11 @@ class LogWatcher:
             EventMarker: what does the event signify
 
         """
-        if (event._name in (
-                "subiquity/Reboot",
-                "subiquity/Reboot/reboot") and
-                event._result == "SUCCESS" and
-                event._type == "finish"):
+        if self._is_success_trigger(event):
             self._success = True
             return EventMarker.SUCCESS
 
-        if (event._name.startswith("subiquity/Error") and
-                "/var/crash" in event._description):
+        if self._is_failure_trigger(event):
             self._failure = True
             # we want to exit the loop now, but we should
             # wait for additional watchdog messages to come
@@ -147,13 +167,15 @@ class LogWatcher:
 
         return EventMarker.NONE
 
-    def is_success(self):
+    @property
+    def success(self):
         """
         Has detector found successful state
         """
         return self._success
 
-    def is_failure(self):
+    @property
+    def failure(self):
         """
         Has detector found failure state
         """
@@ -163,7 +185,22 @@ class LogWatcher:
         """
         Should detector stop running
         """
-        return self.is_success() or (current_time > self._end_watch)
+        return self.success or (current_time > self._end_watch)
+
+
+class LogWatcherUbuntu2010(LogWatcher):
+    """
+    Installation state detector for Ubuntu 20.10
+    """
+
+    def _is_success_trigger(self, event):
+        """
+        Detect success from event. May be overridden
+        """
+        return (event._name == "subiquity/Reboot/apply_autoinstall_config"
+                and event._result == "SUCCESS"
+                and event._type == "finish")
+    # _is_success_trigger()
 
 
 class SmSubiquityInstaller(SmBase):
@@ -173,13 +210,12 @@ class SmSubiquityInstaller(SmBase):
     # the type of linux distribution supported
     DISTRO_TYPE = 'subiquity'
 
-    def __init__(self, os_entry, profile_entry, template_entry, *args,
-                 **kwargs):
+    def __init__(self, model: AutoinstallMachineModel,
+                 platform: PlatBase, *args, **kwargs):
         """
         Constructor
         """
-        super().__init__(
-            os_entry, profile_entry, template_entry, *args, **kwargs)
+        super().__init__(model, platform, *args, **kwargs)
         self._logger = logging.getLogger(__name__)
 
         # get communication settings from config
@@ -199,7 +235,7 @@ class SmSubiquityInstaller(SmBase):
 
         self._session_secret = token_urlsafe()
         self._session_id = "{}-{}".format(
-            self._system.name, self._profile.name)
+            self._profile.system_name, self._profile.profile_name)
 
         # use a common requests session during the whole install process
         self._session = requests.Session()
@@ -233,7 +269,14 @@ class SmSubiquityInstaller(SmBase):
         data = {
             "id": self._session_id,
             "log_path": os.getcwd(),
-            "timeout": 600,
+            # Timeout after last message received by webhook, after which
+            # session is considered "hanging" and therefore removed.
+            # There is an installation step, which downloads security updates,
+            # during which the system reports nothing, so this timeout
+            # is somewhat large. At the same time, installer keeps an eye on
+            # crashes, so larger values should not present an issue
+            # of a failed installation hanging for too long.
+            "timeout": 1200,
             "secret": self._session_secret
         }
         http_result = self._session.post(self._webhook_control + "/session",
@@ -249,7 +292,11 @@ class SmSubiquityInstaller(SmBase):
         max_wait_install = 3600
         timeout_installation = monotonic() + max_wait_install
 
-        watcher = LogWatcher(timeout_installation)
+        if self._model.operating_system.major == 2010:
+            # Use different marker for Ubuntu 20.10
+            watcher = LogWatcherUbuntu2010(timeout_installation)
+        else:
+            watcher = LogWatcher(timeout_installation)
 
         frequency_check = 2.5
         last_event = 0
@@ -282,8 +329,8 @@ class SmSubiquityInstaller(SmBase):
 
             sleep(frequency_check)
 
-        if not watcher.is_success():
-            if watcher.is_failure():
+        if not watcher.success:
+            if watcher.failure:
                 # dump what we know
                 for event in watchdog_events:
                     self._logger.debug("%s", str(event))
@@ -341,11 +388,11 @@ class SmSubiquityInstaller(SmBase):
         http_result = self._session.delete("{}/session/{}".format(
             self._webhook_control, self._session_id))
         if http_result.status_code != 200:
-            self._logger.info("Webhook session %s not removed: %s",
-                              self._session_id, http_result.text)
+            self._logger.debug("Webhook session %s not removed: %s",
+                               self._session_id, http_result.text)
         else:
-            self._logger.info("Removed webhook session %s: %s",
-                              self._session_id, http_result.text)
+            self._logger.debug("Removed webhook session %s: %s",
+                               self._session_id, http_result.text)
         self._session.close()
 
         super().cleanup()
@@ -494,9 +541,18 @@ class SmSubiquityInstaller(SmBase):
             autofile.write("")
         # Write the autofile in the directory that the state machine
         # is executed.
-        with open("./" + os.path.basename(self._autofile_path),
-                  "w") as autofile:
-            autofile.write(autofile_content)
+        autofile_in_jobdir = os.path.join(
+            self._work_dir, os.path.basename(self._autofile_path))
+
+        try:
+            with open(autofile_in_jobdir, "w") as autofile:
+                autofile.write(autofile_content)
+        except IsADirectoryError:
+            # if for some reason we store template files as is, in a directory,
+            # use 'user-data' name in that directory
+            with open(os.path.join(autofile_in_jobdir, 'user-data'),
+                      "w") as autofile:
+                autofile.write(autofile_content)
     # create_autofile()
 
     def target_reboot(self):
@@ -504,6 +560,7 @@ class SmSubiquityInstaller(SmBase):
         Skip reboot step, it is done automatically
         """
         self._logger.info("waiting for system to reboot")
+        self._platform.set_boot_device(self._profile.get_boot_device())
     # target_reboot()
 
     def wait_install(self):

@@ -19,9 +19,11 @@ Machine for auto installation of Anaconda based operating systems.
 #
 # IMPORTS
 #
+from tessia.server.state_machines.autoinstall.plat_base import PlatBase
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
-from time import time
-from time import sleep
+from time import sleep, time
 
 import logging
 import re
@@ -47,27 +49,14 @@ class SmAnaconda(SmBase):
     # the type of linux distribution supported
     DISTRO_TYPE = 'redhat'
 
-    def __init__(self, os_entry, profile_entry, template_entry, *args,
-                 **kwargs):
+    def __init__(self, model: AutoinstallMachineModel,
+                 platform: PlatBase, *args, **kwargs):
         """
         Constructor
         """
-        # make sure minimum ram is available
-        no_ram = bool(
-            profile_entry.memory < MIN_MIB_MEM and (
-                os_entry.pretty_name.startswith(FEDORA_ID) or
-                (os_entry.pretty_name.startswith(RHEL_ID) and
-                 (os_entry.major == 7 and os_entry.minor >= 5) or
-                 (os_entry.major > 7))
-            )
-        )
-        if no_ram:
-            raise ValueError(
-                "Installations of '{}' require at least {}MiB of memory"
-                .format(os_entry.pretty_name, MIN_MIB_MEM))
+        self._assert_minumum_requirements(model)
 
-        super().__init__(
-            os_entry, profile_entry, template_entry, *args, **kwargs)
+        super().__init__(model, platform, *args, **kwargs)
         self._logger = logging.getLogger(__name__)
     # __init__()
 
@@ -91,6 +80,34 @@ class SmAnaconda(SmBase):
             iface["systemd_osname"] = "enc{}".format(
                 ccwgroup[0].lstrip('.0'))
     # _add_systemd_osname()
+
+    @classmethod
+    def _assert_minumum_requirements(cls, model: AutoinstallMachineModel):
+        """
+        Assert that miminum requrements are satisfied
+
+        Args:
+            model: autoinstall machine model
+
+        Raises:
+            ValueError: minimum requirements are not met
+        """
+        os_entry = model.operating_system
+        profile_entry = model.system_profile
+        # make sure minimum ram is available
+        no_ram = bool(
+            profile_entry.memory < MIN_MIB_MEM and (
+                os_entry.pretty_name.startswith(FEDORA_ID) or
+                (os_entry.pretty_name.startswith(RHEL_ID) and
+                 (os_entry.major == 7 and os_entry.minor >= 5) or
+                 (os_entry.major > 7))
+            )
+        )
+        if no_ram:
+            raise ValueError(
+                "Installations of '{}' require at least {}MiB of memory"
+                .format(os_entry.pretty_name, MIN_MIB_MEM))
+    # _assert_minumum_requirements()
 
     def collect_info(self):
         """

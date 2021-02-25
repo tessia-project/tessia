@@ -19,8 +19,9 @@ Module to deal with operations on zVM guests
 #
 # IMPORTS
 #
-from copy import deepcopy
-from tessia.baselib.hypervisors import Hypervisor
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
+from tessia.baselib.hypervisors.zvm import HypervisorZvm
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
 
@@ -55,37 +56,29 @@ class PlatZvm(PlatBase):
         self._logger = logging.getLogger(__name__)
     # __init__()
 
-    def _create_hyp(self):
+    @classmethod
+    def create_hypervisor(cls, model: AutoinstallMachineModel):
         """
         Create an instance of baselib's hypervisor.
 
         Returns:
             HypervisorZvm: class instance
-
-        Raises:
-            ValueError: in case profile has no z/VM password specified
         """
-        try:
-            zvm_pass = self._guest_prof.credentials['zvm-password']
-        except KeyError:
-            raise ValueError('z/VM password not available in profile')
-        if not self._guest_prof.credentials['zvm-password']:
-            raise ValueError(
-                'An empty z/VM guest password is trying to be used. '
-                'Please set the correct password.')
         params = {
             'transfer-buffer-size': DEFAULT_TRANSFER_BUFFER_SIZE
         }
-        try:
-            params['byuser'] = self._guest_prof.credentials['zvm-logonby']
-        except KeyError:
-            pass
-        hyp = Hypervisor(
-            self._hyp_type, self._guest_prof.system_rel.name,
-            self._hyp_system.hostname, self._guest_prof.system_rel.name,
-            zvm_pass, params)
+        params['byuser'] = (
+            model.system_profile.hypervisor.connection_parameters.get(
+                'logon-by'))
+
+        hyp = HypervisorZvm(
+            model.system_profile.system_name,
+            model.system_profile.hypervisor.zvm_address,
+            model.system_profile.hypervisor.credentials['user'],
+            model.system_profile.hypervisor.credentials['password'],
+            params)
         return hyp
-    # _create_hyp()
+    # create_hypervisor()
 
     @staticmethod
     def _zvm_jsonify_iface(iface_entry):
@@ -102,46 +95,75 @@ class PlatZvm(PlatBase):
             ValueError: in case interface type is not supported
         """
         # osa card: use only the base address
-        if iface_entry.type.lower() == 'osa':
+        if isinstance(iface_entry, AutoinstallMachineModel.OsaInterface):
             ccw_base = []
-            for channel in iface_entry.attributes['ccwgroup'].split(','):
+            for channel in iface_entry.ccwgroup.split(','):
                 ccw_base.append(channel.split('.')[-1])
-            result = {
+            return {
                 'id': ','.join(ccw_base),
-                'type': iface_entry.type.lower(),
+                'type': 'osa',
             }
-        elif iface_entry.type.lower() == 'roce':
-            result = {
-                'id': iface_entry.attributes['fid'],
+        if isinstance(iface_entry,
+                      AutoinstallMachineModel.HipersocketsInterface):
+            ccw_base = []
+            for channel in iface_entry.ccwgroup.split(','):
+                ccw_base.append(channel.split('.')[-1])
+            return {
+                'id': ','.join(ccw_base),
+                'type': 'hsi',
+            }
+        if isinstance(iface_entry, AutoinstallMachineModel.RoceInterface):
+            return {
+                'id': iface_entry.fid,
                 'type': 'pci',
             }
-        else:
-            raise ValueError('Unsupported network card type {}'
-                             .format(iface_entry.type))
-        return result
+
+        raise ValueError('Unsupported network card type {}'
+                         .format(iface_entry.__class__.__qualname__))
     # _zvm_jsonify_iface()
 
     @staticmethod
-    def _zvm_jsonify_vol(vol_entry):
+    def _zvm_jsonify_vol(vol_entry: AutoinstallMachineModel.Volume):
         """
         Format a volume object to a json format expected by baselib.
 
         Args:
-            vol_entry (StorageVolume): db entry
+            vol_entry: db entry
 
         Returns:
             dict: volume information as expected by baselib
-        """
-        result = {'type': vol_entry.type_rel.name.lower()}
-        if result['type'] != 'fcp':
-            result['devno'] = vol_entry.volume_id.split('.')[-1]
-            if result['type'] == 'hpav':
-                result['type'] = 'dasd'
-            return result
 
-        result['adapters'] = deepcopy(vol_entry.specs['adapters'])
-        result['lun'] = vol_entry.volume_id
-        return result
+        Raises:
+            ValueError: in case interface type is not supported
+        """
+        if isinstance(vol_entry, AutoinstallMachineModel.DasdVolume):
+            return {
+                'type': 'dasd',
+                'devno': vol_entry.device_id
+            }
+        if isinstance(vol_entry, AutoinstallMachineModel.HpavVolume):
+            return {
+                'type': 'hpav',
+                'devno': vol_entry.device_id
+            }
+        if isinstance(vol_entry, AutoinstallMachineModel.ScsiVolume):
+            # compatibility layer to existing templates:
+            # provide paths grouped by adapters
+            adapters = {}
+            for adapter, wwpn in vol_entry.paths:
+                if not adapter in adapters:
+                    adapters[adapter] = [wwpn]
+                else:
+                    adapters[adapter].append(wwpn)
+
+            return {
+                'type': 'fcp',
+                'adapters': [{'devno': adapter, 'wwpns': wwpns}
+                             for adapter, wwpns in adapters.items()],
+                'lun': vol_entry.lun
+            }
+        raise ValueError('Unsupported storage type {}'
+                         .format(vol_entry.volume_type))
     # _zvm_jsonify_vol()
 
     def boot(self, kargs):
@@ -152,16 +174,16 @@ class PlatZvm(PlatBase):
             kargs (str): kernel command line args for os' installer
         """
         # basic information
-        cpu = self._guest_prof.cpu
+        cpu = self._guest_prof.cpus
         memory = self._guest_prof.memory
-        guest_name = self._guest_prof.system_rel.name
+        guest_name = self._guest_prof.system_name
 
         # prepare entries in the format expected by baselib
         svols = []
-        for svol in self._guest_prof.storage_volumes_rel:
+        for svol in self._guest_prof.volumes:
             svols.append(self._zvm_jsonify_vol(svol))
         ifaces = []
-        for iface in self._guest_prof.system_ifaces_rel:
+        for iface in self._guest_prof.ifaces:
             ifaces.append(self._zvm_jsonify_iface(iface))
 
         # repository related information
@@ -188,34 +210,15 @@ class PlatZvm(PlatBase):
         self._hyp_obj.logoff()
     # boot()
 
-    def get_vol_devpath(self, vol_obj):
+    def set_boot_device(self, boot_device):
         """
-        Given a volume entry, return the correspondent device path on operating
-        system.
+        Set boot device to perform later boot
 
         Args:
-            vol_obj (StorageVolume): db entry
-
-        Returns:
-            str: device path
-
-        Raises:
-            RuntimeError: in case the volume type is unknown
+            boot_device (dict): boot device description
+                "storage" (StorageVolume): volume
+                "network" (string): URI with boot source
         """
-        if vol_obj.type in ('DASD', 'HPAV'):
-            vol_id = vol_obj.volume_id
-            if vol_id.find('.') < 0:
-                vol_id = '0.0.' + vol_id
-            return '/dev/disk/by-path/ccw-{}'.format(vol_id)
-
-        if vol_obj.type == 'FCP':
-            if vol_obj.specs['multipath']:
-                prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
-            else:
-                prefix = '/dev/disk/by-id/scsi-{}'
-            return prefix.format(vol_obj.specs['wwid'])
-
-        raise RuntimeError(
-            "Unknown volume type '{}'".format(vol_obj.type))
-    # get_vol_devpath()
+        self._logger.debug("set_boot_device on z/VM is not implemented")
+    # set_boot_device()
 # PlatZvm

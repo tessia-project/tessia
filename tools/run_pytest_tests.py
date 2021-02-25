@@ -30,11 +30,17 @@ import sys
 #
 # CONSTANTS AND DEFINITIONS
 #
-CMD_RUN_PYTEST = "python3 -m pytest {}"
+CMD_RUN_PYTEST = ("coverage run --source=tessia/server"
+                  " -m pytest -p no:cacheprovider {}")
+CMD_RUN_PARTIAL_PYTEST = ("coverage run --include=tessia/server/{}/*"
+                          " -m pytest -p no:cacheprovider {}")
+CMD_COVERAGE_REPORT = "coverage report -m"
 
 #
 # CODE
 #
+
+
 def main():
     """
     Execute pytest command
@@ -55,8 +61,21 @@ def main():
 
     cmds = []
 
-    # execute all tests
-    cmds.append(CMD_RUN_PYTEST.format('tests_pytest'))
+    # no arguments provided: execute all tests
+    if len(sys.argv) < 2:
+        cmds.append(CMD_RUN_PYTEST.format('tests_pytest'))
+
+    # tests path provided: use it and filter reported coverage
+    # by specifying --include instead of --source
+    # (see https://coverage.readthedocs.io/en/coverage-5.5/source.html#source)
+    else:
+        include_path = os.path.dirname(
+            sys.argv[1].replace('tests_pytest/', ''))
+        cmds.append(CMD_RUN_PARTIAL_PYTEST.format(
+            include_path, sys.argv[1]))
+
+    # display report
+    cmds.append(CMD_COVERAGE_REPORT)
 
     if not os.environ.get('TESSIA_DB_TEST_URI'):
         try:
@@ -82,6 +101,7 @@ def main():
     # execute and return exit code
     return subprocess.call(cmd, shell=True)
 # main()
+
 
 if __name__ == '__main__':
     sys.exit(main())

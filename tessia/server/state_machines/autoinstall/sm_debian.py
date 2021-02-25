@@ -19,6 +19,9 @@ Machine for auto installation of debian based operating systems.
 #
 # IMPORTS
 #
+from tessia.server.state_machines.autoinstall.plat_base import PlatBase
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from time import time
 from time import sleep
@@ -42,13 +45,12 @@ class SmDebianInstaller(SmBase):
     # the type of linux distribution supported
     DISTRO_TYPE = 'debian'
 
-    def __init__(self, os_entry, profile_entry, template_entry, *args,
-                 **kwargs):
+    def __init__(self, model: AutoinstallMachineModel,
+                 platform: PlatBase, *args, **kwargs):
         """
         Constructor
         """
-        super().__init__(
-            os_entry, profile_entry, template_entry, *args, **kwargs)
+        super().__init__(model, platform, *args, **kwargs)
         self._logger = logging.getLogger(__name__)
     # __init__()
 

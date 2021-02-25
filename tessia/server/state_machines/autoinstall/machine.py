@@ -19,27 +19,39 @@ State machine that performs the installation of Linux Distros.
 #
 # IMPORTS
 #
+from socket import gethostbyname
 from jsonschema import validate
-from jsonschema.exceptions import ValidationError
 from tessia.server.db.connection import MANAGER
-from tessia.server.db.models import OperatingSystem
-from tessia.server.db.models import Template
-from tessia.server.db.models import System, SystemProfile
+from tessia.server.lib.post_install import PostInstallChecker
 from tessia.server.state_machines.base import BaseMachine
+from tessia.server.state_machines.autoinstall.dbcontroller import \
+    DbController
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
+from tessia.server.state_machines.autoinstall.plat_lpar import PlatLpar
+from tessia.server.state_machines.autoinstall.plat_kvm import PlatKvm
+from tessia.server.state_machines.autoinstall.plat_zvm import PlatZvm
 from tessia.server.state_machines.autoinstall.sm_anaconda import SmAnaconda
 from tessia.server.state_machines.autoinstall.sm_autoyast import SmAutoyast
 from tessia.server.state_machines.autoinstall.sm_debian import \
     SmDebianInstaller
 from tessia.server.state_machines.autoinstall.sm_subiquity import \
     SmSubiquityInstaller
+from urllib.parse import urlsplit
 
+import ipaddress
 import json
 import logging
+import os
 
 #
 # CONSTANTS AND DEFINITIONS
 #
 MACHINE_DESCRIPTION = 'Autoinstall {} with OS {}'
+
+# directory containing the kernel cmdline templates
+CMDLINE_TEMPLATES_DIR = os.path.dirname(
+    os.path.abspath(__file__)) + "/templates/"
 
 # Schema for the installation request
 INSTALL_REQ_PARAMS_SCHEMA = {
@@ -88,163 +100,179 @@ class AutoInstallMachine(BaseMachine):
         See base class docstring.
 
         Args:
-            params (str): A string containing a json in the format:
-            {
-                "template": "<name of the template>",
-                "os": "<name of the operating system>",
-                "profile": "<system_name>[/<name of the profile>]"
-            }
+            params (str): string representation of JSON object
+                          with schema INSTALL_REQ_PARAMS_SCHEMA
         """
         super().__init__(params)
 
         # open the db connection
         MANAGER.connect()
 
-        self._params = self.parse(params)['params']
+        parsed = self.parse(params)
+        self._params = parsed['params']
 
         # apply custom log level if specified
         self._log_config(self._params.get('verbosity'))
         self._logger = logging.getLogger(__name__)
 
+        self._model = self._model_from_params(self._params)
         self._machine = self._create_machine()
     # __init__()
+
+    def _create_platform(self):
+        """
+        Create an instance of machine platform, which is linked to
+        baselib's hypervisor
+        """
+        hyp_profile_obj = self._model.system_profile.hypervisor
+        if isinstance(hyp_profile_obj,
+                      AutoinstallMachineModel.HmcHypervisor):
+            plat_class = PlatLpar
+        elif isinstance(hyp_profile_obj,
+                        AutoinstallMachineModel.ZvmHypervisor):
+            plat_class = PlatZvm
+        elif isinstance(hyp_profile_obj,
+                        AutoinstallMachineModel.KvmHypervisor):
+            plat_class = PlatKvm
+        else:
+            raise RuntimeError('Support for {} is not implemented'.format(
+                hyp_profile_obj.__class__.__qualname__))
+
+        hyp_obj = plat_class.create_hypervisor(self._model)
+        platform = plat_class(self._model, hyp_obj)
+        return platform
+    # _create_platform()
 
     def _create_machine(self):
         """
         Create the correct state machine based on the operating system being
         installed.
         """
-        # get the os entry in db
-        os_entry = self._get_os(self._params['os'])
-        # get template entry in db
-        template_entry = self._get_template(
-            os_entry, self._params.get('template'))
-        # get the profile entry in db
-        prof_entry = self._get_profile(
-            self._params['system'], self._params.get("profile"))
-        # get user defined repositories, if any
-        custom_repos = self._params.get('repos', None)
+        self._model.validate()
 
-        option_legacy = (prof_entry.parameters and
-                         "tessia_option_installer=legacy" in
-                         prof_entry.parameters.get('linux-kargs-installer', '')
-                         )
-
-        try:
-            if os_entry.type == 'debian' and os_entry.major >= 2004:
-                if option_legacy:
-                    self._logger.info("NOTE: tessia_option_installer=legacy"
-                                      " is specified in the profile")
-                    self._logger.info("NOTE: please make sure that repo and"
-                                      " template are set accordingly")
-                    self._logger.info("NOTE: failure to do so will result in"
-                                      " cryptic error messages")
-                    sm_class = SUPPORTED_TYPES[os_entry.type]
-                else:
-                    sm_class = SmSubiquityInstaller
-            else:
-                sm_class = SUPPORTED_TYPES[os_entry.type]
-        except KeyError:
+        # model can accept any OS type, but we have only this many implemented
+        os_entry = self._model.operating_system
+        if os_entry.type not in SUPPORTED_TYPES:
             raise ValueError("OS type '{}' is not supported for installation"
                              .format(os_entry.type))
-        return sm_class(os_entry, prof_entry, template_entry, custom_repos)
+
+        if os_entry.type == 'debian' and os_entry.major >= 2004:
+            if os_entry.minor == 0 and self._model.ubuntu20_legacy_installer:
+                self._logger.info("NOTE: tessia_option_installer=legacy"
+                                  " is specified in the profile")
+                self._logger.info("NOTE: please make sure that repo and"
+                                  " template are set accordingly")
+                self._logger.info("NOTE: failure to do so will result in"
+                                  " cryptic error messages")
+                sm_class = SUPPORTED_TYPES[os_entry.type]
+            else:
+                sm_class = SmSubiquityInstaller
+        else:
+            sm_class = SUPPORTED_TYPES[os_entry.type]
+
+        dbctrl = DbController(MANAGER)
+        platform = self._create_platform()
+        # PostInstallChecker expects database objects, so we fetch them again
+        _, profile_obj = dbctrl._get_sysprof_entries(
+            self._model.system_profile.system_name,
+            self._model.system_profile.profile_name)
+
+        # we pass os_entry, which is compatible to database entry
+        post_install = PostInstallChecker(profile_obj, os_entry,
+                                          permissive=True)
+        self._logger.debug("Creating machine class %s for %s",
+                           sm_class.__name__, str(os_entry))
+        machine = sm_class(self._model, platform,
+                           post_install_checker=post_install)
+        machine.persist_init_data(dbctrl)
+        return machine
     # _create_machine()
 
     @staticmethod
-    def _get_os(os_name):
+    def _filter_os_repos_by_subnet(
+            os_repos: "list[AutoinstallMachineModel.OsRepository]",
+            # pylint: disable=line-too-long
+            subnets: "list[union[ipaddress.IPv4Network,ipaddress.IPv6Network]]"):
         """
-        Return the OS version to be used for the installation
-
-        Args:
-            os_name (str): os identifier
-
-        Returns:
-            OperatingSystem: db entry
-
-        Raises:
-            ValueError: in case specified os does not exist
+        From os repos choose those that are in specified subnets
         """
-        os_entry = OperatingSystem.query.filter_by(
-            name=os_name).one_or_none()
-        if os_entry is None:
-            raise ValueError('OS {} not found'.format(os_name))
-        return os_entry
-    # _get_os()
+        result = []
+        for os_repo in os_repos:
+            try:
+                repo_addr = gethostbyname(
+                    urlsplit(os_repo.url).netloc.rsplit('@', 1)[-1])
+                address_pyobj = ipaddress.ip_address(repo_addr)
+            # can't resolve repo's hostname: skip it
+            except Exception:
+                continue
+            if any(address_pyobj in subnet for subnet in subnets):
+                result.append(os_repo)
+
+        return result
+    # _filter_os_repos_by_subnet()
 
     @staticmethod
-    def _get_profile(system_name, profile_name):
+    def _get_installer_cmdline_template(
+            os_entry: AutoinstallMachineModel.OperatingSystem):
         """
-        Get a SystemProfile instance based on the system and profile names
-        passed in the request parameters. In case only the system name is
-        provided, the default profile will be used.
-
-        Args:
-            system_name (str): system name in db
-            profile_name (str): profile name in db
-
-        Raises:
-            ValueError: in case instance cannot be found
-
-        Returns:
-            SystemProfile: a SystemProfile instance.
+        Retrieve installation kernel command line
         """
-        if profile_name is not None:
-            profile = SystemProfile.query.join(
-                'system_rel'
-            ).filter(
-                SystemProfile.name == profile_name
-            ).filter(
-                System.name == system_name
-            ).one_or_none()
-            if profile is None:
-                raise ValueError('Profile {} not found'.format(profile_name))
+        # use a corresponding generic template for the OS type
+        # Note that actual template may be overridden by state machine
+        template_filename = '{}.cmdline.jinja'.format(os_entry.type)
+
+        with open(CMDLINE_TEMPLATES_DIR + template_filename,
+                  "r") as template_file:
+            template_content = template_file.read()
+
+        return AutoinstallMachineModel.Template(template_filename,
+                                                template_content)
+    # _get_installer_cmdline_template()
+
+    def _model_from_params(self, params):
+        """
+        Create model from machine params
+        """
+        # we can use static class, not an instance,
+        # because instance only makes sure database is connected
+        dbctrl = DbController(MANAGER)
+        os_entry, os_repos = dbctrl.get_os(params['os'])
+
+        if 'template' in params:
+            template_entry = dbctrl.get_template(params['template'])
+        elif os_entry.template_name:
+            template_entry = dbctrl.get_template(os_entry.template_name)
         else:
-            profile = SystemProfile.query.join(
-                'system_rel'
-            ).filter(
-                SystemProfile.default == bool(True)
-            ).filter(
-                SystemProfile.system == system_name
-            ).one_or_none()
-            if profile is None:
-                raise ValueError(
-                    'Default profile for system {} not available'.format(
-                        system_name)
-                )
+            raise ValueError("No installation template for OS '{}' specified"
+                             .format(os_entry.name))
 
-        return profile
-    # _get_profile()
+        # get installer template
+        installer_template = self._get_installer_cmdline_template(os_entry)
 
-    @staticmethod
-    def _get_template(os_entry, template_name=None):
-        """
-        Get template entry in db
+        system_model = dbctrl.get_system(params['system'],
+                                         params.get("profile"))
+        # from all the os repos choose those that can be accessed
+        # via gateway interface define on the system
+        gateway_subnets = [network.subnet for network in
+                           system_model.list_gateway_networks()]
+        accessible_os_repos = self._filter_os_repos_by_subnet(
+            os_repos, gateway_subnets)
+        if not accessible_os_repos:
+            # fallback if no "better" repo was found
+            accessible_os_repos = os_repos
 
-        Args:
-            os_entry (OperatingSystem): db entry
-            template_name (str): template identifier
+        custom_os_repos, custom_package_repos = dbctrl.get_custom_repos(
+            params.get('repos', []))
+        install_opts = dbctrl.get_install_opts(params['system'],
+                                               params.get("profile"))
 
-        Returns:
-            Template: db entry
+        model = AutoinstallMachineModel(os_entry, accessible_os_repos,
+                                        template_entry, installer_template,
+                                        custom_os_repos, custom_package_repos,
+                                        system_model, install_opts)
 
-        Raises:
-            ValueError: if template name does not exist
-        """
-        # template not specified: use OS' default
-        if not template_name:
-            if os_entry.template_rel is None:
-                raise ValueError('OS {} has no default template defined'
-                                 .format(os_entry.name))
-            return os_entry.template_rel
-
-        template_entry = Template.query.filter_by(
-            name=template_name).one_or_none()
-        if template_entry is None:
-            raise ValueError('Template {} not found'.format(
-                template_name))
-
-        return template_entry
-    # _get_template()
+        return model
+    # _model_from_params()
 
     def cleanup(self):
         """
@@ -265,7 +293,10 @@ class AutoInstallMachine(BaseMachine):
             the INSTALL_REQ_PARAMS_SCHEMA variable.
 
         Returns:
-            dict: Resources allocated for the installation.
+            dict: Resources allocated for the installation
+                  Has "resources" and "description" entries
+                  (tp be conusmed by scheduler)
+                  and "params" as a an object according to schema
 
         Raises:
             SyntaxError: if content is in wrong format.
@@ -277,67 +308,17 @@ class AutoInstallMachine(BaseMachine):
         except Exception as exc:
             raise SyntaxError("Invalid request parameters") from exc
 
-        os_entry = cls._get_os(params['os'])
-        cls._get_template(os_entry, params.get('template'))
-
-        if os_entry.type not in SUPPORTED_TYPES:
-            raise ValueError("OS type '{}' is not supported for installation"
-                             .format(os_entry.type))
-
+        # make a few requests to get necessary parameters
+        dbctrl = DbController(MANAGER)
         # check which format the profile parameter is using
-        profile = cls._get_profile(params['system'], params.get("profile"))
-        system = profile.system_rel
-
+        system, _ = dbctrl._get_sysprof_entries(params['system'], None)
+        os_entry, _ = dbctrl.get_os(params['os'])
         result = {
             'resources': {'shared': [], 'exclusive': []},
             'description': MACHINE_DESCRIPTION.format(
                 system.name, os_entry.name),
             'params': params
         }
-
-        # check required FCP parameters- use schema to validate specs field
-        volumes = profile.storage_volumes_rel
-        for vol in volumes:
-            if vol.type_rel.name == 'FCP':
-                fcp_schema = vol.get_schema('specs')['oneOf'][0]
-                try:
-                    validate(vol.specs, fcp_schema)
-                except ValidationError as exc:
-                    raise ValueError(
-                        'failed to validate FCP parameters {} of volume {}: '
-                        '{}'.format(vol.specs, vol.volume_id, exc.message))
-
-        # make sure we have a valid network interface to perform installation
-        gw_iface = profile.gateway_rel
-        # gateway interface not defined: use first available
-        if gw_iface is None:
-            try:
-                gw_iface = profile.system_ifaces_rel[0]
-            except IndexError:
-                msg = 'No network interface attached to perform installation'
-                raise ValueError(msg)
-            if not gw_iface.ip_address_rel:
-                raise ValueError(
-                    "Gateway network interface <{}> has no IP address assigned"
-                    .format(gw_iface.name)
-                )
-            if not gw_iface.ip_address_rel.subnet_rel.gateway:
-                raise ValueError(
-                    "Subnet <{}> of the gateway network interface <{}> has no "
-                    "gateway route defined".format(
-                        gw_iface.ip_address_rel.subnet_rel.name, gw_iface.name)
-                )
-
-        # sanity check, without hypervisor it's not possible to manage
-        # system
-        if not system.hypervisor_id:
-            raise ValueError(
-                'System {} cannot be installed because it has no '
-                'hypervisor defined'.format(system.name))
-
-        # in case the system profile has no hypervisor profile defined the
-        # machine's constructor will use the hypervisor's default profile,
-        # therefore there is no need to check it here.
 
         # the system being installed is considered an exclusive resource
         result['resources']['exclusive'].append(system.name)
@@ -348,6 +329,13 @@ class AutoInstallMachine(BaseMachine):
             result.get("resources").get("shared").append(system.name)
             system = system.hypervisor_rel
 
+        # check required FCP parameters- use schema to validate specs field
+        # -- should be checked in API instead
+
+        # in case the system profile has no hypervisor profile defined the
+        # machine's constructor will use the hypervisor's default profile,
+        # therefore there is no need to check it here.
+
         return result
     # parse()
 
@@ -355,10 +343,19 @@ class AutoInstallMachine(BaseMachine):
         """
         Proxy the call to the real machine to start execution.
         """
-        ret_val = self._machine.start()
+        try:
+            self._machine.start()
+        except:
+            DbController(MANAGER).clear_target_os_field(self._model)
+            raise
+
+        # if we got here, machine executed successfully
+        # update OS field on the target system
+        DbController(MANAGER).set_target_os_field(self._model)
+
         # To make sure the cleaning_up variable is set correctly,
         # run the cleanup here.
         self.cleanup()
-        return ret_val
+        return 0
     # start()
 # AutoInstallMachine

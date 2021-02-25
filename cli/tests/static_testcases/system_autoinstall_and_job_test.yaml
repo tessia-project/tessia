@@ -119,11 +119,11 @@ tasks:
     - - system autoinstall --os=rhel7.2 --system=
       - "Invalid value for '--system': value may not be empty"
     - - system autoinstall --os=rhel7.2 --template=RHEL7.3 --system=cpc3lp52
-      - 'request failed, reason is: Parsing of parameters failed with: Template RHEL7.3 not found'
+      - 'Template RHEL7.3 not found'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55
-      - 'request failed, reason is: Parsing of parameters failed with: Default profile for system cpc3lp55 not available'
+      - 'Parsing of parameters failed with: System cpc3lp55 not found'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --profile='DASD1'
-      - 'request failed, reason is: Parsing of parameters failed with: Profile DASD1 not found'
+      - 'Profile DASD1 for system cpc3lp52 not found'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52
       - 'Failed to establish a new connection'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity
@@ -147,10 +147,10 @@ tasks:
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=invalid=name
       - "Error: 'invalid=name' is not a valid URL or name"
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=http://_myserver.z --repo=valid-name
-      - 'request failed, reason is: Parsing of parameters failed with: Default profile for system cpc3lp55 not available'
+      - 'Parsing of parameters failed with: System cpc3lp55 not found'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --bg
-      - 'Request accepted; job id is #8'
-    - - job output --id=8
+      - 'Request accepted; job id is #10'
+    - - job output --id=10
       - 'Failed to establish a new connection'
   job_command:
     # job help
@@ -201,8 +201,8 @@ tasks:
     - - job submit --type=autoinstall --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --startdate="1970-10-10 10:10:10"
       - "Error: jobs with start date must have --timeout specified"
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --startdate="1970-10-10 10:10:10" --timeout=60 --prio=2
-      - "To see the output after the job starts, type 'tess job output --id=10'"
-    - - job output --id=10
+      - "To see the output after the job starts, type 'tess job output --id=12'"
+    - - job output --id=12
       - 'Hello, world!'
     # job list
     - - job list
@@ -266,12 +266,12 @@ tasks:
       - "Invalid value for '--id':  is not a valid integer"
     - - job output --id=22
       - job not found.
-    - - job output --id=1
+    - - job output --id=3
       - 'socket.gaierror:.*Name or service not known'
       # cover stmt 148 in job.py
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --bg
-      - 'Request accepted; job id is #11'
-    - - job output --id=11
+      - 'Request accepted; job id is #13'
+    - - job output --id=13
       - 'Hello, world!'
     # job req-list
     - - job req-list
@@ -344,14 +344,14 @@ tasks:
     - - job cancel --id=27
       - 'request failed. Server answered: Job id provided does not exist'
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --bg
-      - 'Request accepted; job id is #12'
-    - - job cancel --id=12
+      - 'Request accepted; job id is #14'
+    - - job cancel --id=14
       - 'Request accepted; job #\d+ canceled'
-    - - job list --id=12
-      - 'Job ID         : 12'
+    - - job list --id=14
+      - 'Job ID         : 14'
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --timeout=1 --bg
-      - 'Request accepted; job id is #13'
+      - 'Request accepted; job id is #15'
     - - job list
       - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
-    - - job list --id=13
-      - 'Job ID         : 13'
+    - - job list --id=15
+      - 'Job ID         : 15'

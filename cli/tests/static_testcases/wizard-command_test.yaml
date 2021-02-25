@@ -31,6 +31,13 @@ tasks:
       - Item added successfully.
     - - net subnet-add --zone=zone-b --name='zone-b-s1920' --address=192.168.0.0/24  --gw=192.168.0.1 --dns1=192.168.200.241 --vlan=1900 --project='lab-admins' --desc='Subnet 192.168.0.x in zone B'
       - Item added successfully.
+    # cpc related configuration
+    - - system prof-add --profile default --default --system=cpc1 --cpu 120 --memory 16TiB --login 'hmc:something'
+      - Item added successfully.
+    - - storage vol-add --type=DASD --server=ds8k10 --id=c6c6 --size=1gib --desc='CPC live image'
+      - Item added successfully.
+    - - system vol-attach --vol c6c6 --system cpc1 --profile default
+      - Volume attached successfully.
     # zvm guest related entries
     - - storage vol-add --type=DASD --server=ds8k10 --id=0123 --size=7gib --desc='To exercise reusing already existing volume'
       - Item added successfully.
@@ -271,7 +278,7 @@ tasks:
         - y
         # choose OS
         - "1"
-      - No install repository available for the specified OS
+      - Unsupported interface type ROCE attached to system cp1lp10 profile wizard-profile1
       # verification section - make sure all resources were correctly created
     - - system list --name=cp1lp10 --long
       - - 'Hostname *: cp1lp10\.example\._com'

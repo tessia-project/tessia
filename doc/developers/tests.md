@@ -23,8 +23,12 @@ All testing in the project is automated by creating unit tests and integration t
     - [How to run client tests individually](#how-to-run-client-tests-individually)
     - [How to create client tests](#how-to-create-client-tests)
 - [Unit tests](#unit-tests)
+    - [Motivation](#motivation)
+    - [Key ideas](#key-ideas)
     - [How to run unit tests](#how-to-run-unit-tests)
-    - [How to create unit tests](#how-to-create-unit-tests)
+- [Unit tests (legacy)](#unit-tests-legacy)
+    - [How to run unit tests](#how-to-run-unit-tests-legacy)
+    - [How to create unit tests](#how-to-create-unit-tests-legacy)
 - [Linting](#linting)
     - [How to execute the lint validator](#how-to-execute-the-lint-validator)
 
@@ -275,11 +279,52 @@ tasks:
 
 # Unit tests
 
+(NOTE: the section will be updated and refined in the future)
+
+For the new functionality and in the case of refactoring, please use this section. When working with legacy unit tests, you need to follow the steps described in [Unit tests (legacy)](#unit-tests)
+
+## Motivation
+
+The old unit tests showed good test coverage. But in the process of operating and maintaining the code, we found that old approach requires a lot of overhead. At the same time, many existing unit tests are very fragile and difficult to keep up to date.
+
+Therefore, it was decided to develop and apply a new method in the development of unit tests.The changes are not about using a new tool, but about a new general approach to development.
+
+## Key ideas
+
+* For us, **a unit under test is a unit of behavior**.
+* High test coverage does not mean code is well-tested. At the same time, too low testing coverage is a clear indicator of code quality problems.
+* An unit test code is a code. Its maintaining also requires effort and time. At the same time, not all tests are equally valuable.
+* Focus on business logic, not on services layers.
+* Focus on the end result, not on the implementation details.
+* All types of tests (unit and integration) are dedicated to different purposes and have different properties, but should be considered as a single system for checking the quality of the code.
+
+## Toolkit
+
+pytest(6.2.0 and higher): [documentation](https://docs.pytest.org/en/latest/contents.html).
+
+## How to run unit tests
+
+Pre-requisite: to go forward with this section, you must have the docker images already built. Learn how in [How to setup a development environment](dev_env.md).
+
+First step is to start the containers in devmode using the orc tool:
+
+```
+[user@myhost tessia]$ tools/ci/orc run --devmode
+...
+```
+Second step is to start the script:
+```
+[user@myhost tessia]$ docker exec tessia_server_1 /root/tessia/tools/run_pytest_tests.py
+...
+```
+
+# Unit tests (legacy)
+
 Every module must have a corresponding unit test to validate it works. The tests are located under the folder `tests/unit` and follow the pattern `tests/unit/%{module_location}/%{module_name}.py`.
 
 For example, for a module located at `tessia/server/common/logger.py` the corresponding unit test is `tests/unit/common/logger.py`. That helps keeping things organized and makes it easier to determine which test(s) validate a given module/package/functionality.
 
-## How to run unit tests
+## How to run unit tests (legacy)
 
 Pre-requisite: to go forward with this section, you must have the docker images already built. Learn how in [How to setup a development environment](dev_env.md).
 An alternative method is to use a virtualenv created via [tox](https://tox.readthedocs.io/en/latest/index.html) as explained 
@@ -353,7 +398,7 @@ The script will execute the unit test and provide a code coverage report so that
 
 Once you have finished your work, use `docker-compose stop` to stop the services and `tools/ci/orc cleanup` if you want to clean everything (containers, images, volumes, networks).
 
-## How to create unit tests
+## How to create unit tests (legacy)
 
 The tests are created on top of python's standard library [unittest](https://docs.python.org/3/library/unittest.html). We also make extensive use of the mock library [unittest.mock](https://docs.python.org/3/library/unittest.mock.html) in order to lessen the effort of creating tests, as creating stubs might take a considerable amount of time.
 

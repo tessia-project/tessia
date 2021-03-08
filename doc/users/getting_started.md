@@ -152,11 +152,11 @@ Description    : Storage server 1
 Again by using the `storage` sub-family we can register the first volumes in the tool:
 
 ```
-$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2d --size=7gb --desc='to be used as the live-image disk on cpc3'
+$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2d --size=7gb --project devops --desc='to be used as the live-image disk on cpc3'
 Item added successfully.
-$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2e --size=7gb --desc='for use by lpar cpc3lp25'
+$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2e --size=7gb --project devops --desc='for use by lpar cpc3lp25'
 Item added successfully.
-$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2f --size=7gb --desc='for use by lpar cpc3lp25'
+$ tess storage vol-add --server=ds8k16 --type=DASD --id=7e2f --size=7gb --project devops --desc='for use by lpar cpc3lp25'
 Item added successfully.
 
 $ tess storage vol-list --long --server=ds8k16
@@ -525,6 +525,29 @@ Description                : gateway interface
 In the example above we followed the recommended convention and named it after the channel number.
 
 The system configuration is done and it is now ready for installation.
+
+## Register an supported operating system (admin only)
+
+Only the administrator can add an operating system to the supported list.  
+```
+tess os add --name ubuntu16.04.1 --type debian --major 1604 --minor 1 --pname "Ubuntu 16.04.1 LTS" --template ubuntu16-default
+```
+
+Now you can see the operating system in the corresponding list:
+
+```
+$ tess os list --long 
+
+OS identifier            : ubuntu16.04.1
+OS type                  : debian
+Major version            : 1604
+Minor version            : 1
+Pretty name              : Ubuntu 16.04.1 LTS
+Default install template : ubuntu16-default
+
+```
+
+**Important:** The ```$ tess os list``` provides a list of the operating systems that are supported for installation on this tessia instance. But for a successful installation, the repository must also be available.
 
 ## Register a package repository
 

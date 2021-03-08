@@ -57,6 +57,8 @@ The server container runs the API and job scheduler while the client contains th
 From this point you can manage the service with the usual `docker-compose` commands. If you want to manage it from a different folder, simply copy the generated files
 `.env` and `.docker-compose.yaml` to the desired folder.
 
+**IMPORTANT**: A process inside tessia-server container needs to access host docker socket to spawn new job containers. In the case of using SELinux, additional docker-compose.yaml settings may be required. Please take a look at [the relevant docker documentation](https://docs.docker.com/storage/bind-mounts/#configure-the-selinux-label) for more detailed information.
+
 **IMPORTANT**: In order to be able to install LPARs, one more step is needed.
 Refer to the section [Deployment of the auxiliar live-image](#deployment-of-the-auxiliar-live-image) for details.
 

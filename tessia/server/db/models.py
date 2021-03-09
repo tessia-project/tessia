@@ -2297,6 +2297,24 @@ class SchedulerJob(CommonMixin, BASE):
 
 # SchedulerJob
 
+
+class HmcCanary(BASE):
+    """HMCs under Canary monitoring."""
+
+    __tablename__ = 'hmc_canary'
+
+    name = Column(String, nullable=False, unique=True, primary_key=True)
+    status = Column(String, nullable=False)
+    cpc_status = Column(postgresql.JSONB, nullable=True)
+    last_update = Column(DateTime(timezone=False),
+                         server_default=func.now(),
+                         nullable=False)
+    def __repr__(self):
+        """Object representation."""
+        return "<HmcCanary(name='{}')>".format(self.name)
+    # __repr()__
+#HmcCanary
+
 # Partial index on SchedulerJob.state to select active jobs
 # that need to be monitored
 Index(

@@ -241,6 +241,7 @@ if __name__ == '__main__':
                 'tess-dbmanage = tessia.server.db.cmd:main',
                 'tess-api = tessia.server.api.cmd:main',
                 'tess-scheduler = tessia.server.scheduler.cmd:main',
+                'tess-canary = tessia.server.lib.canary.cmd:main',
             ]
         },
         install_requires=_find_requirements(),

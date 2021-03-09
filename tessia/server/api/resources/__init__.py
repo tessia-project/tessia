@@ -20,6 +20,7 @@ Expose the API resources
 # IMPORTS
 #
 from tessia.server.api.resources.auto_templates import AutoTemplateResource
+from tessia.server.api.resources.hmc_canary import HMCCanaryResource
 from tessia.server.api.resources.iface_types import IfaceTypeResource
 from tessia.server.api.resources.ip_addresses import IpAddressResource
 from tessia.server.api.resources.job_requests import JobRequestResource
@@ -51,6 +52,7 @@ from tessia.server.api.resources.operating_systems import \
 #
 RESOURCES = [
     AutoTemplateResource,
+    HMCCanaryResource,
     IfaceTypeResource,
     IpAddressResource,
     JobRequestResource,

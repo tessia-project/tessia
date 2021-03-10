@@ -17,7 +17,6 @@ server_url=${TESSIA_SERVER_URL:-https://server:5000}
 
 function _set_url() {
     # set the api url in the global conf file
-    mkdir /etc/tessia-cli >/dev/null || true
     echo "server_url: $server_url" > /etc/tessia-cli/config.yaml
 }
 

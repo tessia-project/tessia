@@ -113,6 +113,6 @@ COPY --from=components-build /assets/bin/installer-webhook /usr/local/bin/
 
 EXPOSE 80 5000 7223
 
-VOLUME ["/etc/tessia", "/var/tessia/jobs", "/var/run/docker.sock"]
+VOLUME ["/etc/tessia", "/var/tessia/jobs"]
 
 ENTRYPOINT ["/entrypoint"]

@@ -3,7 +3,7 @@
 # can be removed when 2.8 is out
 psycopg2>=2.7 --no-binary psycopg2
 # ORM tool
-SQLAlchemy>=1.3.12
+SQLAlchemy==1.3.23
 # database migrations
 alembic>=0.8.6
 # support to yaml file format

@@ -19,10 +19,10 @@ Module to deal with operations on KVM guests
 #
 # IMPORTS
 #
-from sqlalchemy.orm.attributes import flag_modified
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
 from tessia.baselib.common.ssh.client import SshClient
-from tessia.server.db.connection import MANAGER
-from tessia.server.db.models import SystemProfile
+from tessia.baselib.hypervisors.kvm import HypervisorKvm
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
 from xml.etree import ElementTree
@@ -34,7 +34,7 @@ import logging
 #
 DISK_TEMPLATE = """
     <disk type="{disk_type}" device="disk">
-      <driver name="qemu" type="{driver}" cache='none'/>
+      <driver name="qemu" type="{driver}" cache="none"/>
       <source {src_type}="{src_dev}"/>
       <target dev="{target_dev}" bus="virtio"/>
       <address type="ccw" cssid="0xfe" ssid="0x0" devno="{devno}"/>
@@ -75,94 +75,125 @@ class PlatKvm(PlatBase):
         else:
             self._devpath_prefix = '/dev/disk/by-path/ccw-0.{}.{}'
 
-        # define a mapping of volumes and their stable device paths
-        self._devpath_by_vol = {}
-
-        guest_prof = SystemProfile.query.filter_by(
-            id=self._guest_prof.id).one()
-        self._vols = list(guest_prof.storage_volumes_rel)
-        self._kvm_vol_init(self._vols)
+        self._kvm_vol_init(self._guest_prof.volumes)
     # __init__()
 
-    @staticmethod
-    def _kvm_get_vol_devpath_on_host(vol_obj):
+    @classmethod
+    def create_hypervisor(cls, model: AutoinstallMachineModel):
         """
-        Given a volume entry, return the correspondent device path on operating
-        system.
-
-        Args:
-            vol_obj (StorageVolume): volume sqlsa object
-
-        Returns:
-            str: device path
-
-        Raises:
-            ValueError: in case volume type is not supported
+        Create an instance of baselib's hypervisor. Here we have no
+        knowledge about parameters so _create_hyp can be re-implemented
+        by children classes
         """
-        if vol_obj.type == 'DASD':
-            vol_id = vol_obj.volume_id
-            if vol_id.find('.') < 0:
-                vol_id = '0.0.' + vol_id
-            return '/dev/disk/by-path/ccw-{}'.format(vol_id)
-
-        if vol_obj.type == 'FCP':
-            if vol_obj.specs['multipath']:
-                prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
-            else:
-                prefix = '/dev/disk/by-id/scsi-{}'
-            return prefix.format(vol_obj.specs['wwid'])
-
-        raise ValueError(
-            'Unsupported volume type {}'.format(vol_obj.type))
-    # _kvm_get_vol_devpath_on_host()
+        return HypervisorKvm(
+            model.system_profile.hypervisor.name,
+            model.system_profile.hypervisor.kvm_host,
+            model.system_profile.hypervisor.credentials['user'],
+            model.system_profile.hypervisor.credentials['password'],
+            None)
+    # create_hypervisor()
 
     @staticmethod
-    def _kvm_jsonify_iface(iface_entry):
+    def _kvm_jsonify_iface(
+            iface_entry: AutoinstallMachineModel.NetworkInterface):
         """
         Format an iface object to a json format expected by baselib.
         """
-        result = {
-            "attributes": iface_entry.attributes,
+        if isinstance(iface_entry,
+                      AutoinstallMachineModel.MacvtapHostInterface):
+            return {
+                "attributes": {
+                    'hostiface': iface_entry.hostiface
+                },
+                "mac_address": iface_entry.mac_address,
+                "type": 'MACVTAP'
+            }
+        if isinstance(iface_entry,
+                      AutoinstallMachineModel.MacvtapLibvirtInterface):
+            return {
+                "attributes": {
+                    'libvirt': iface_entry.libvirt
+                },
+                "mac_address": iface_entry.mac_address,
+                "type": 'MACVTAP'
+            }
+        if isinstance(iface_entry, AutoinstallMachineModel.OsaInterface):
+            return {
+                'ccwgroup': iface_entry.ccwgroup,
+                'layer2': iface_entry.layer2,
+                'portno': iface_entry.portno,
+                'portname': iface_entry.portname,
+                'type': 'OSA'
+            }
+        return {
             "mac_address": iface_entry.mac_address,
-            "type": iface_entry.type
+            "type": 'UNKNOWN'
         }
-        return result
     # _kvm_jsonify_iface()
 
     @staticmethod
-    def _kvm_jsonify_vol(vol_entry):
+    def _kvm_jsonify_vol(storage_vol):
         """
         Format a volume object to a json format expected by baselib.
         """
-        result = {
-            "type": vol_entry.type_rel.name,
-            "volume_id": vol_entry.volume_id,
-            "system_attributes": vol_entry.system_attributes,
-            "specs": vol_entry.specs,
-        }
+        if isinstance(storage_vol, AutoinstallMachineModel.ScsiVolume):
+            result = {
+                "type": storage_vol.volume_type,
+                "volume_id": storage_vol.lun,
+                "system_attributes": {
+                    'libvirt': storage_vol.libvirt_definition
+                },
+                "specs": {},
+            }
+            # compatibility layer to baselib:
+            # provide paths grouped by adapters
+            adapters = {}
+            for adapter, wwpn in storage_vol.paths:
+                if not adapter in adapters:
+                    adapters[adapter] = [wwpn]
+                else:
+                    adapters[adapter].append(wwpn)
+
+            result["specs"] = {
+                'adapters': [{'devno': adapter, 'wwpns': wwpns}
+                             for adapter, wwpns in adapters.items()],
+                'multipath': storage_vol.multipath,
+                'wwid': storage_vol.wwid
+            }
+        else:
+            result = {
+                "type": storage_vol.volume_type,
+                "volume_id": storage_vol.device_id,
+                "system_attributes": {
+                    'libvirt': storage_vol.libvirt_definition
+                },
+                "specs": {},
+            }
         return result
     # _kvm_jsonify_vol()
 
-    def _kvm_vol_create_libvirt(self, vol_obj, target_dev, devno):
+    def _kvm_vol_create_libvirt(self, vol_obj: AutoinstallMachineModel.Volume,
+                                target_dev: str, devno: int):
         """
         Create a libvirt definition for the given volume.
 
         Args:
-            vol_obj (StorageVolume): volume sqlsa object
-            target_dev (str): vda, vdb, etc.
-            devno (int): 1, 500, etc.
+            vol_obj: volume sqlsa object
+            target_dev: vda, vdb, etc.
+            devno: 1, 500, etc.
 
         Returns:
             str: libvirt xml definition
         """
-        if vol_obj.type in ('FCP', 'DASD'):
+        if isinstance(vol_obj, (AutoinstallMachineModel.DasdVolume,
+                                AutoinstallMachineModel.ScsiVolume)):
             disk_type = 'block'
             src_type = 'dev'
             driver = 'raw'
         else:
             disk_type = ''
             src_type = ''
-            driver = 'unsupported-{}'.format(vol_obj.type)
+            driver = 'unsupported-{}'.format(vol_obj.volume_type)
         # The handling of the following disks is not supported yet,
         # so we are disabling it temporally.
         # elif vol_obj.type == 'RAW':
@@ -174,9 +205,9 @@ class PlatKvm(PlatBase):
         #    src_type = 'file'
         #    driver = 'qcow2'
         boot_tag = ''
-        if vol_obj.part_table:
-            for part in vol_obj.part_table.get('table', []):
-                if part['mp'] == '/':
+        if vol_obj.partitions:
+            for part in vol_obj.partitions:
+                if part.mount_point == '/':
                     boot_tag = '<boot order="1"/>'
                     break
 
@@ -185,7 +216,7 @@ class PlatKvm(PlatBase):
             disk_type=disk_type,
             driver=driver,
             src_type=src_type,
-            src_dev=self._kvm_get_vol_devpath_on_host(vol_obj),
+            src_dev=vol_obj.device_path,
             target_dev=target_dev,
             devno='0x' + hex_devno,
             boot_tag=boot_tag,
@@ -210,7 +241,7 @@ class PlatKvm(PlatBase):
                     yield "vd{}{}{}".format(i, j, k)
     # _kvm_vol_devs_generator()
 
-    def _kvm_vol_init(self, vols):
+    def _kvm_vol_init(self, vols: "list[AutoinstallMachineModel.Volume]"):
         """
         Receive a list of volumes and process them, this means:
         - if a libvirt definition exists, parse its xml and extract devpath
@@ -233,25 +264,18 @@ class PlatKvm(PlatBase):
         # later to avoid conflicts with volumes that have libvirt defined
         # by user.
         dyn_vols = []
-        # We need to test for valid types before anything so that we avoid
-        # checking the device type twice.
-        valid_vol_types = ["FCP", "DASD", "RAW", "QCOW2"]
         for vol in vols:
-            if vol.type_rel.name not in valid_vol_types:
-                raise RuntimeError(
-                    "Unknown volume type'{}'".format(vol.type))
             # no libvirt definition: process it later
-            if vol.system_attributes.get('libvirt') is None:
+            if not vol.libvirt_definition:
                 dyn_vols.append(vol)
                 continue
 
             # parse the user-defined xml
             self._logger.info(
                 'Applying user-defined libvirt xml for volume %s',
-                vol.human_name
+                str(vol)
             )
-            result = self._kvm_vol_parse_libvirt(
-                vol.system_attributes['libvirt'])
+            result = self._kvm_vol_parse_libvirt(vol.libvirt_definition)
             # device is of same type used for dynamic entries: add it to the
             # used map
             if result['bus'] == 'virtio' and result['ssid'] == 0:
@@ -272,7 +296,8 @@ class PlatKvm(PlatBase):
             used_devs[result['dev']] = True
 
             # store the devpath of the parsed volume
-            self._devpath_by_vol[vol.id] = result['devpath']
+            vol.device_path = result['devpath']
+            # self._devpath_by_vol[vol.id] = result['devpath']
 
         # no volumes without libvirt definition: nothing more to do
         # There is no need to return right away since it will not
@@ -284,8 +309,7 @@ class PlatKvm(PlatBase):
         # create libvirt definitions
         for vol in dyn_vols:
             self._logger.info(
-                'Volume %s has no libvirt xml, generating one',
-                vol.human_name)
+                'Volume %s has no libvirt xml, generating one', str(vol))
 
             # generate a valid target dev
             target_dev = next(dev_generate)
@@ -305,18 +329,14 @@ class PlatKvm(PlatBase):
             # database so that future poweron actions have a way to reconstruct
             # the same setup, otherwise the operating system might not find the
             # expected disks anymore as they might have different device paths.
-            vol.system_attributes['libvirt'] = result['libvirt']
-            # to make sure sqlalchemy sees the object has changed
-            flag_modified(vol, 'system_attributes')
-            MANAGER.session.add(vol)
-            # store the devpath corresponding to the libvirt definition
-            self._devpath_by_vol[vol.id] = result['devpath']
+            vol.libvirt_definition = result['libvirt']
+            vol.device_path = result['devpath']
+            # self._devpath_by_vol[vol.id] = result['devpath']
 
             self._logger.debug('Libvirt xml for volume %s is:\n%s',
-                               vol.human_name, result['libvirt'])
+                               str(vol), result['libvirt'])
 
-        MANAGER.session.commit()
-    # _kvm_vol_init()
+    # _kvm_vol_init()``
 
     def _kvm_vol_parse_libvirt(self, libvirt_xml):
         """
@@ -350,13 +370,6 @@ class PlatKvm(PlatBase):
         # determine the device based on bus and arch type, this can be extended
         # for more buses and arch types over time
         if bus == 'virtio':
-
-            # at the moment only s390 is supported
-            arch = self._guest_prof.system_rel.type_rel.arch
-            if arch != 's390x':
-                raise RuntimeError(
-                    'Unsupported system architecture {}'.format(arch))
-
             # for s390 we use ccw addressing to determine device path
             try:
                 address = libvirt_tree.find('address')
@@ -388,16 +401,16 @@ class PlatKvm(PlatBase):
             kargs (str): kernel command line args for os' installer
         """
         # basic information
-        cpu = self._guest_prof.cpu
+        cpu = self._guest_prof.cpus
         memory = self._guest_prof.memory
-        guest_name = self._guest_prof.system_rel.name
+        guest_name = self._guest_prof.system_name
 
         # prepare entries in the format expected by baselib
         svols = []
-        for svol in self._vols:
+        for svol in self._guest_prof.volumes:
             svols.append(self._kvm_jsonify_vol(svol))
         ifaces = []
-        for iface in self._guest_prof.system_ifaces_rel:
+        for iface in self._guest_prof.ifaces:
             ifaces.append(self._kvm_jsonify_iface(iface))
 
         # repository related information
@@ -422,38 +435,18 @@ class PlatKvm(PlatBase):
         self._hyp_obj.start(guest_name, cpu, memory, params)
     # boot()
 
-    def get_vol_devpath(self, vol_obj):
-        """
-        Given a volume entry, return the correspondent device path on operating
-        system.
-
-        Args:
-            vol_obj (StorageVolume): sqlsa object
-
-        Returns:
-            str: device path in the form /dev/xxxx
-        """
-        # devpath was already determined during initialization time, just
-        # return it
-        return self._devpath_by_vol[vol_obj.id]
-    # get_vol_devpath()
-
-    def reboot(self, system_profile):
+    def reboot(self):
         """
         Restart the guest after installation is finished.
-
-        Args:
-            system_profile (SystemProfile): db's entry
         """
         self._logger.info('rebooting the system now')
 
-        hostname = system_profile.system_rel.hostname
-        user = system_profile.credentials['admin-user']
-        password = system_profile.credentials['admin-password']
+        hostname = self._model.system_profile.hostname
+        user = self._model.os_credentials['user']
+        password = self._model.os_credentials['password']
 
         ssh_client = SshClient()
-        ssh_client.login(hostname, user=user, passwd=password,
-                         timeout=10)
+        ssh_client.login(hostname, user=user, passwd=password, timeout=10)
         shell = ssh_client.open_shell()
         # in certain installations files created by post-install scripts don't
         # get written to disk if we don't call sync before rebooting
@@ -461,6 +454,19 @@ class PlatKvm(PlatBase):
         shell.close()
         ssh_client.logoff()
 
-        self._hyp_obj.reboot(system_profile.system_rel.name, None)
+        self._hyp_obj.reboot(self._model.system_profile.system_name, None)
     # reboot()
+
+    def set_boot_device(self, boot_device):
+        """
+        Set boot device to perform later boot
+
+        Args:
+            boot_device (dict): boot device description
+                "storage" (StorageVolume): volume
+                "network" (string): URI with boot source
+        """
+        self._logger.debug("set_boot_device on KVM is a no-op")
+
+    # set_boot_device()
 # PlatKvm

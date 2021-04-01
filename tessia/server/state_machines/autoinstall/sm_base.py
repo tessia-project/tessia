@@ -20,21 +20,16 @@ Base state machine for auto installation of operating systems
 # IMPORTS
 #
 from collections import OrderedDict
-from copy import deepcopy
-from datetime import datetime
 from functools import cmp_to_key
 from shutil import rmtree
-from socket import gethostbyname
+from tessia.server.state_machines.autoinstall.plat_base import PlatBase
+from tessia.server.state_machines.autoinstall.dbcontroller import DbController
 from tessia.baselib.common.ssh.client import SshClient
 from tessia.server.config import Config
-from tessia.server.db.connection import MANAGER
-from tessia.server.db.models import Repository, System, SystemProfile
-from tessia.server.lib.post_install import PostInstallChecker
-from tessia.server.state_machines.autoinstall.plat_lpar import PlatLpar
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
 from tessia.server.state_machines.autoinstall.plat_kvm import PlatKvm
-from tessia.server.state_machines.autoinstall.plat_zvm import PlatZvm
-from time import sleep
-from time import time
+from time import sleep, time
 from urllib.parse import urlsplit
 
 import abc
@@ -44,7 +39,6 @@ import jinja2
 import logging
 import os
 import random
-import re
 import string
 
 #
@@ -52,11 +46,7 @@ import string
 #
 # timeout used for ssh connection attempts
 CONNECTION_TIMEOUT = 600
-PLATFORMS = {
-    'lpar': PlatLpar,
-    'kvm': PlatKvm,
-    'zvm': PlatZvm,
-}
+
 # directory containing the kernel cmdline templates
 TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates/"
 
@@ -72,206 +62,58 @@ class SmBase(metaclass=abc.ABCMeta):
     agnostic go here.
     """
     @abc.abstractmethod
-    def __init__(self, os_entry, profile_entry, template_entry,
-                 custom_repos=None):
+    def __init__(self, model: AutoinstallMachineModel,
+                 platform: PlatBase,
+                 post_install_checker=None):
         """
         Store the objects and create the right platform object
         """
-        self._os = os_entry
-        self._profile = profile_entry
-        self._template = template_entry
-        self._system = profile_entry.system_rel
+        self._model = model
+        self._os = model.operating_system
+        self._profile = model.system_profile
+        self._template = model.template
+        # self._system = profile_entry.system_rel
         self._logger = logging.getLogger(__name__)
 
-        self._gw_iface = self._get_gw_iface()
+        self._gw_iface = model.system_profile._gateway
 
         # prepare the list of repositories
-        self._repos = self._get_repos(custom_repos)
+        self._repos = [model.os_repos[0]] + model.package_repos
 
-        # sanity check, without hypervisor it's not possible to manage
-        # system
-        if not self._system.hypervisor_id:
-            raise ValueError(
-                'System {} cannot be installed because it has no '
-                'hypervisor defined'.format(self._system.name))
-
-        hyp_profile_obj = self._profile.hypervisor_profile_rel
-        # no hypervisor profile defined: use default
-        if not hyp_profile_obj:
-            hyp_profile_obj = SystemProfile.query.join(
-                'system_rel'
-            ).filter(
-                System.id == self._system.hypervisor_id
-            ).filter(
-                SystemProfile.default == bool(True)
-            ).first()
-            if not hyp_profile_obj:
-                raise ValueError(
-                    'Hypervisor {} of system {} has no default profile '
-                    'defined'.format(self._system.hypervisor_rel.name,
-                                     self._system.name))
-
-        # Create the appropriate platform object according to the system being
-        # installed.
-        hyp_type = self._system.type_rel.name.lower()
-        try:
-            plat_class = PLATFORMS[hyp_type]
-        except KeyError:
-            raise RuntimeError('Platform type {} is not supported'.format(
-                hyp_type))
-        self._platform = plat_class(
-            hyp_profile_obj,
-            self._profile,
-            self._os,
-            self._repos[0],
-            self._gw_iface)
+        self._platform = platform
+        self._post_install_checker = post_install_checker
 
         # The path and url for the auto file.
         autoinstall_config = Config.get_config().get('auto_install')
         if not autoinstall_config:
             raise RuntimeError('No auto_install configuration provided')
-        autofile_name = '{}-{}'.format(self._system.name, self._profile.name)
+        autofile_name = '{}-{}'.format(self._profile.system_name,
+                                       self._profile.profile_name)
         autofile_name = autofile_name.replace(' ', '-')
         self._autofile_url = '{}/{}'.format(
             autoinstall_config["url"], autofile_name)
         self._autofile_path = os.path.join(
             autoinstall_config["dir"], autofile_name)
+        self._work_dir = os.getcwd()
         # set during collect_info state
         self._info = None
     # __init__()
-
-    def _get_gw_iface(self):
-        """
-        Return the gateway interface object assigned to this installation
-        """
-        gw_iface = self._profile.gateway_rel
-        # gateway interface not defined: use first available
-        if gw_iface is None:
-            try:
-                gw_iface = self._profile.system_ifaces_rel[0]
-            except IndexError:
-                msg = 'No network interface attached to perform installation'
-                raise RuntimeError(msg)
-        return gw_iface
-    # _get_gw_iface()
-
-    def _get_repos(self, custom_repos):
-        """
-        Prepare the list of repositories to be used for the installation.
-
-        Args:
-            custom_repos (list): user defined repositories
-
-        Returns:
-            list: list of repository db objects
-
-        Raises:
-            ValueError: in case user specified a repo which doesn't exist
-            RuntimeError: if no install repository is available for the OS
-        """
-        if not custom_repos:
-            custom_repos = []
-
-        repos = []
-        # after processing we must have the repo to use during installation
-        install_repo = None
-        # check the repositories specified by the user
-        for repo_entry in custom_repos:
-            repo_obj = None
-            for scheme in ('http', 'https', 'ftp', 'file'):
-                if not repo_entry.startswith('{}://'.format(scheme)):
-                    continue
-                try:
-                    urlsplit(repo_entry).hostname
-                except Exception:
-                    raise ValueError(
-                        'Repository <{}> specified by user is not a valid URL'
-                        .format(repo_entry))
-                # sanitize to avoid invalid syntax problems with distro package
-                # managers
-                repo_name = re.sub('[^a-zA-Z0-9]', '_', repo_entry)
-                repo_obj = Repository(
-                    name=repo_name,
-                    desc='User defined repo {}'.format(repo_name),
-                    url=repo_entry,
-                    owner='admin', project='Admins', modifier='admin'
-                )
-                repos.append(repo_obj)
-                break
-            # entry was a url: there's no need to query the db
-            if repo_obj:
-                continue
-
-            # see if name refers to a registered repository
-            repo_obj = Repository.query.filter_by(name=repo_entry).first()
-            if not repo_obj:
-                raise ValueError(
-                    "Repository <{}> specified by user does not exist"
-                    .format(repo_entry))
-            # user specified an install repository: use it
-            if repo_obj.operating_system_rel == self._os:
-                install_repo = repo_obj
-            # package repository: don't use for installation, just add to the
-            # list
-            else:
-                repos.append(repo_obj)
-        # no install repo defined by user: try to find one automatically
-        if not install_repo:
-            # no install repos available for this os: abort, can't install
-            if not self._os.repository_rel:
-                raise RuntimeError(
-                    'No install repository available for the specified OS')
-
-            # preferably use a repository in the same subnet as the system
-            for repo_obj in self._os.repository_rel:
-                try:
-                    repo_addr = gethostbyname(
-                        urlsplit(repo_obj.url).netloc.rsplit('@', 1)[-1])
-                    address_pyobj = ipaddress.ip_address(repo_addr)
-                # can't resolve repo's hostname: skip it
-                except Exception:
-                    continue
-                for iface_obj in self._profile.system_ifaces_rel:
-                    # no ip assigned: skip iface
-                    if not iface_obj.ip_address_rel:
-                        continue
-                    subnet_pyobj = ipaddress.ip_network(
-                        iface_obj.ip_address_rel.subnet_rel.address,
-                        strict=True)
-                    # ip assigned to iface is in same subnet as repo's
-                    # hostname: use this repo as install media
-                    if address_pyobj in subnet_pyobj:
-                        install_repo = repo_obj
-                        break
-                if install_repo:
-                    break
-            # no repo in same subnet as system's interfaces: simply use first
-            # in the list
-            if not install_repo:
-                install_repo = self._os.repository_rel[0]
-
-        # install repo is the first entry in the repo list
-        repos.insert(0, install_repo)
-
-        return repos
-    # _get_repos()
 
     def _get_ssh_conn(self):
         """
         Auxiliary method to get a ssh connection and shell to the target system
         being installed.
         """
-        hostname = self._profile.system_rel.hostname
-        user = self._profile.credentials['admin-user']
-        password = self._profile.credentials['admin-password']
-
         conn_timeout = time() + CONNECTION_TIMEOUT
         self._logger.info('Waiting for connection to be available (%s secs)',
                           CONNECTION_TIMEOUT)
         while time() < conn_timeout:
             try:
                 ssh_client = SshClient()
-                ssh_client.login(hostname, user=user, passwd=password)
+                ssh_client.login(
+                    self._profile.hostname,
+                    user=self._model.os_credentials['user'],
+                    passwd=self._model.os_credentials['password'])
                 ssh_shell = ssh_client.open_shell()
                 return ssh_client, ssh_shell
             # different errors can happen depending on the state of the
@@ -284,45 +126,80 @@ class SmBase(metaclass=abc.ABCMeta):
             "Timeout occurred while trying to connect to the target system.")
     # _get_ssh_conn()
 
-    def _parse_iface(self, iface, gateway_iface):
+    def _parse_iface(self, iface: AutoinstallMachineModel.NetworkInterface,
+                     is_gateway_iface: bool):
         """
         Auxiliary method to parse the information of a network interface
 
         Args:
-            iface (SystemIface):  a SystemIface instance.
-            gateway_iface (bool): a flag to indicate that the interface being
-                                  parsed is the default gateway interface.
+            iface: model's NetworkInterface instance.
 
         Returns:
             dict: a dictionary containing the parsed information.
+
+        Raises:
+            ValueError: unknown interface type
         """
-        result = {"attributes": iface.attributes}
-        result["type"] = iface.type
+        result = {"attributes": {}}
+        if isinstance(iface, AutoinstallMachineModel.OsaInterface):
+            result['attributes'] = {
+                'ccwgroup': iface.ccwgroup,
+                'layer2': iface.layer2,
+                'portno': iface.portno if iface.portno is not None else '0',
+                # portname is no longer used, but left for compatibility
+                'portname': iface.portname if iface.portname else 'OSAPORT',
+            }
+            result["type"] = 'OSA'
+        elif isinstance(iface, AutoinstallMachineModel.HipersocketsInterface):
+            result["type"] = 'HSI'
+            result['attributes'] = {
+                'ccwgroup': iface.ccwgroup,
+                'layer2': iface.layer2
+            }
+        elif isinstance(iface,
+                        AutoinstallMachineModel.MacvtapLibvirtInterface):
+            result["type"] = 'MACVTAP'
+            result['attributes'] = {
+                'libvirt': iface.libvirt
+            }
+        elif isinstance(iface, AutoinstallMachineModel.MacvtapHostInterface):
+            result["type"] = 'MACVTAP'
+            result['attributes'] = {
+                'hostiface': iface.hostiface
+            }
+        elif isinstance(iface, AutoinstallMachineModel.RoceInterface):
+            result["type"] = 'ROCE'
+            result['attributes'] = {
+                'fid': iface.fid
+            }
+        else:
+            raise ValueError('Unexpected interface type {}'.format(
+                iface.__class__.__qualname__))
+
         result["mac_addr"] = iface.mac_address
         # iface has no ip associated: set empty values
-        if iface.ip_address_rel is None:
+        if not iface.subnets:
             result["ip"] = None
             result["subnet"] = None
             result["mask_bits"] = None
             result["mask"] = None
             result["vlan"] = None
         else:
-            subnet_pyobj = ipaddress.ip_network(
-                iface.ip_address_rel.subnet_rel.address, strict=True)
-            result["ip"] = iface.ip_address_rel.address
-            result["ip_type"] = (
-                "ipv6" if isinstance(subnet_pyobj, ipaddress.IPv6Network)
-                else "ipv4")
-            result["subnet"] = str(subnet_pyobj.network_address)
-            result["mask"] = str(subnet_pyobj.netmask)
-            result["mask_bits"] = str(subnet_pyobj.prefixlen)
-            result["search_list"] = iface.ip_address_rel.subnet_rel.search_list
-            result["vlan"] = iface.ip_address_rel.subnet_rel.vlan
-            result["dns_1"] = iface.ip_address_rel.subnet_rel.dns_1
-            result["dns_2"] = iface.ip_address_rel.subnet_rel.dns_2
+            # only use first available subnet by default
+            subnet_model = iface.subnets[0]
+            result["ip"] = str(subnet_model.ip_address)
+            result["ip_type"] = ("ipv6" if isinstance(subnet_model.subnet,
+                                                      ipaddress.IPv6Network)
+                                 else "ipv4")
+            result["subnet"] = str(subnet_model.subnet.network_address)
+            result["mask"] = str(subnet_model.subnet.netmask)
+            result["mask_bits"] = str(subnet_model.subnet.prefixlen)
+            result["search_list"] = subnet_model.search_list
+            result["vlan"] = subnet_model.vlan
+            result["dns_1"], result["dns_2"] = subnet_model.dns[0:2]
 
         # determine whether device name must be truncated due to kernel limit
-        result["osname"] = iface.osname
+        result["osname"] = iface.os_device_name
         if result["vlan"]:
             osname_maxlen = 15 - (len(str(result["vlan"])) + 1)
             trunc_name = '{}.{}'.format(
@@ -333,50 +210,74 @@ class SmBase(metaclass=abc.ABCMeta):
         if len(result["osname"]) > osname_maxlen:
             result["osname"] = result["osname"][:osname_maxlen]
             self._logger.warning(
-                "Truncating device name of network interface '%s' from '%s' "
+                "Truncating network interface device name '%s' "
                 "to '%s' to fit the 15 characters limit of the Linux kernel. "
                 "Consider setting a device name for the interface within that "
-                "limit.", iface.name, iface.osname, trunc_name)
+                "limit.", iface.os_device_name, trunc_name)
 
-        result["is_gateway"] = gateway_iface
-        if gateway_iface:
+        result["is_gateway"] = is_gateway_iface
+        if is_gateway_iface:
             # gateway interface was checked in parse for ip address existence
-            result["gateway"] = iface.ip_address_rel.subnet_rel.gateway
-
-        # osa: add some sensitive defaults
-        if result['type'] == 'OSA':
-            result['attributes'].setdefault('portno', '0')
-            result['attributes'].setdefault('portname', 'OSAPORT')
+            result["gateway"] = str(iface.gateway_subnets[0].gateway)
 
         return result
     # _parse_iface()
 
-    def _parse_svol(self, storage_vol):
+    def _parse_svol(self, storage_vol: AutoinstallMachineModel.Volume):
         """
         Auxiliary method to parse the information of a storage volume,
         (eg: type of disk, partition table, etc).
 
         Args:
-            storage_vol (StorageVolume): a StorageVolume instance.
+            storage_vol: a StorageVolume instance.
 
         Returns:
             dict: a dictionary with all the parsed information.
         """
         # make a copy of the dicts to avoid changing the db object
         result = {}
-        result["type"] = storage_vol.type_rel.name
-        result["volume_id"] = storage_vol.volume_id
-        result["server"] = storage_vol.server
-        result["system_attributes"] = deepcopy(storage_vol.system_attributes)
-        result["specs"] = deepcopy(storage_vol.specs)
-        result["size"] = storage_vol.size
-        result["part_table"] = deepcopy(storage_vol.part_table)
+        result["type"] = storage_vol.volume_type
+        if (isinstance(storage_vol, (AutoinstallMachineModel.DasdVolume,
+                                     AutoinstallMachineModel.HpavVolume))):
+            result["volume_id"] = storage_vol.device_id
+        elif isinstance(storage_vol, AutoinstallMachineModel.ScsiVolume):
+            result["volume_id"] = storage_vol.lun
+        result["system_attributes"] = {
+            "device": storage_vol.device_path
+        }
+        result["specs"] = {}
+        if isinstance(storage_vol, AutoinstallMachineModel.ScsiVolume):
+            # compatibility layer to existing templates:
+            # provide paths grouped by adapters
+            adapters = {}
+            for adapter, wwpn in storage_vol.paths:
+                if not adapter in adapters:
+                    adapters[adapter] = [wwpn]
+                else:
+                    adapters[adapter].append(wwpn)
+
+            result["specs"] = {
+                'adapters': [{'devno': adapter, 'wwpns': wwpns}
+                             for adapter, wwpns in adapters.items()],
+                'multipath': storage_vol.multipath,
+                'wwid': storage_vol.wwid
+            }
+        if not isinstance(storage_vol, AutoinstallMachineModel.HpavVolume):
+            result["size"] = storage_vol.size
+        result["part_table"] = None
         result["is_root"] = False
 
-        # device path not user-defined: determine it based on the platform
-        if "device" not in result["system_attributes"]:
-            result["system_attributes"]["device"] = \
-                self._platform.get_vol_devpath(storage_vol)
+        if storage_vol.partitions:
+            result['part_table'] = {'type': storage_vol.partition_table_type}
+            result['part_table']['table'] = [
+                {
+                    'mp': partition.mount_point,
+                    'size': partition.size,
+                    'fs': partition.filesystem,
+                    'type': partition.part_type,
+                    'mo': partition.mount_opts,
+                } for partition in storage_vol.partitions
+            ]
 
         try:
             part_table = result["part_table"]["table"]
@@ -394,6 +295,12 @@ class SmBase(metaclass=abc.ABCMeta):
         # fits
         if scheme_size == result['size']:
             result['part_table']['table'][-1]['size'] -= 1
+        elif scheme_size > result['size']:
+            self._logger.warning(
+                "Partition table for device '%s' is larger than device size. "
+                "This may cause installation to fail. Please update device "
+                "size or partition table acordingly", result['volume_id']
+            )
 
         return result
     # _parse_svol()
@@ -417,27 +324,7 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Returns installer kernel command line from the template
         """
-        # try to find a template specific to this OS version
-        template_filename = '{}.cmdline.jinja'.format(self._os.name)
-        try:
-            with open(TEMPLATES_DIR + template_filename, "r") as template_file:
-                template_content = template_file.read()
-        except FileNotFoundError:
-            # specific kernel command line template does not exist: use
-            # the distro type template
-            self._logger.debug(
-                "No kernel command line template found for OS '%s', "
-                "using generic template for type '%s'",
-                self._os.name,
-                self._os.type)
-            template_filename = '{}.cmdline.jinja'.format(self._os.type)
-            # generic template always exists, if for some reason it is not
-            # there it's a server installation error which must be fixed so let
-            # the exception go up
-            with open(TEMPLATES_DIR + template_filename, "r") as template_file:
-                template_content = template_file.read()
-
-        template_obj = jinja2.Template(template_content)
+        template_obj = jinja2.Template(self._model.installer_template.content)
         return template_obj.render(config=self._info).strip()
 
     @property
@@ -455,14 +342,18 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Initialization, clean the current OS in the SystemProfile.
         """
-        self._profile.operating_system_id = None
-        MANAGER.session.commit()
+        # self._profile.operating_system_id = None
+        # MANAGER.session.commit()
     # init()
 
     def check_installation(self):
         """
         Make sure that the installation was successfully completed.
         """
+        if not self._post_install_checker:
+            self._logger.info("Skipping post-installation checks")
+            return
+
         # make sure a connection is possible before we use the checker
         ssh_client, shell = self._get_ssh_conn()
 
@@ -480,14 +371,13 @@ class SmBase(metaclass=abc.ABCMeta):
         conn_timeout = time() + CONNECTION_TIMEOUT
         while True:
             try:
-                checker = PostInstallChecker(
-                    self._profile, self._os, permissive=True)
-                checker.verify()
+                self._post_install_checker.verify()
             except ConnectionError:
                 if time() > conn_timeout:
                     raise ConnectionError('Timeout occurred while trying to '
                                           'connect to target system')
-                self._logger.debug('post install failed:', exc_info=True)
+                self._logger.debug('post install did not connect to target:',
+                                   exc_info=True)
                 sleep(5)
                 continue
             break
@@ -513,25 +403,35 @@ class SmBase(metaclass=abc.ABCMeta):
             'svols': [],
             'repos': [],
             'server_hostname': urlsplit(self._autofile_url).hostname,
-            'system_type': self._system.type,
-            'credentials': self._profile.credentials,
+            'system_type': self._profile.system_type.name,
+            'credentials': {
+                'admin-user': self._model.os_credentials['user'],
+                'admin-password': self._model.os_credentials['password'],
+            },
             'sha512rootpwd': (
-                crypt.crypt(self._profile.credentials["admin-password"])),
-            'hostname': self._system.hostname,
+                crypt.crypt(self._model.os_credentials["password"])),
+            'hostname': self._profile.hostname,
             'autofile': self._autofile_url,
             'operating_system': {
                 'major': self._os.major,
                 'minor': self._os.minor,
                 'pretty_name': self._os.pretty_name,
             },
-            'profile_parameters': self._profile.parameters,
+            'profile_parameters': {}
         }
+        if self._model.installer_cmdline:
+            info['profile_parameters']['linux-kargs-installer'] = \
+                self._model.target_cmdline
+        if self._model.target_cmdline:
+            info['profile_parameters']['linux-kargs-target'] = \
+                self._model.target_cmdline
+
         # add repo entries
         for repo_obj in self._repos:
             repo = {
                 'url': repo_obj.url, 'desc': repo_obj.desc,
                 'name': repo_obj.name.replace(' ', '_'),
-                'os': repo_obj.operating_system,
+                'os': repo_obj.installable_os,
                 'install_image': repo_obj.install_image,
             }
             if not repo['desc']:
@@ -544,23 +444,23 @@ class SmBase(metaclass=abc.ABCMeta):
 
         # iterate over all available volumes and ifaces and filter data for
         # template processing later
-        has_root = False
-        for svol in self._profile.storage_volumes_rel:
-            svol_dict = self._parse_svol(svol)
-            if svol_dict['is_root']:
-                if has_root:
-                    raise ValueError(
-                        'Partitioning scheme has multiple root disks defined')
-                has_root = True
-            info['svols'].append(svol_dict)
-        if not has_root:
+        info['svols'] = [self._parse_svol(svol)
+                         for svol in self._profile.volumes]
+
+        num_roots = sum([vol['is_root'] for vol in info['svols']])
+        if num_roots < 1:
             raise ValueError('Partitioning scheme has no root disk defined')
+        if num_roots > 1:
+            raise ValueError(
+                'Partitioning scheme has multiple root disks defined')
+
         # make sure hpav aliases come after dasds so that the templates always
         # activate the base devices first
 
         def compare(item_1, item_2):
             """Helper to sort hpav as last"""
-            if item_1['type'] == 'HPAV' or item_1['type'] > item_2['type']:
+            if (item_1['type'] == 'HPAV' or
+                    item_1['type'] > item_2['type']):
                 return 1
             if item_1['type'] == item_2['type']:
                 return 0
@@ -568,10 +468,10 @@ class SmBase(metaclass=abc.ABCMeta):
         # compare()
         info['svols'].sort(key=cmp_to_key(compare))
 
-        for iface in self._profile.system_ifaces_rel:
-            info['ifaces'].append(self._parse_iface(
-                iface, iface == self._gw_iface))
-            if info['ifaces'][-1]['is_gateway']:
+        for iface in self._profile.ifaces:
+            is_gateway = (iface == self._profile.gateway_interface)
+            info['ifaces'].append(self._parse_iface(iface, is_gateway))
+            if is_gateway:
                 info['gw_iface'] = info['ifaces'][-1]
 
         self._info = info
@@ -595,19 +495,33 @@ class SmBase(metaclass=abc.ABCMeta):
             autofile.write(autofile_content)
         # Write the autofile in the directory that the state machine
         # is executed.
-        with open("./" + os.path.basename(
-                self._autofile_path), "w") as autofile:
+        with open(os.path.join(self._work_dir, os.path.basename(
+                self._autofile_path)), "w") as autofile:
             autofile.write(autofile_content)
     # create_autofile()
+
+    def persist_init_data(self, dbctrl: DbController):
+        """
+        Store model changes if necessary. Called after initialization
+
+        Args:
+            dbctrl: database controller
+        """
+        if isinstance(self._platform, PlatKvm):
+            # KVM needs to store device paths and libvirt configuration
+            num_update_volumes = dbctrl.update_libvirt_on_volume(
+                self._model, self._profile.volumes)
+            self._logger.debug("Updated libvirt definitions on %d volumes",
+                               num_update_volumes)
+            for volume_model in self._profile.volumes:
+                self._logger.debug("system_attributes: %s",
+                                   volume_model.libvirt_definition)
+    # persist_init_data()
 
     def post_install(self):
         """
         Perform post installation activities.
         """
-        # Change the operating system in the profile.
-        self._profile.operating_system_id = self._os.id
-        self._system.modified = datetime.utcnow()
-        MANAGER.session.commit()
     # post_install()
 
     def target_boot(self):
@@ -615,9 +529,8 @@ class SmBase(metaclass=abc.ABCMeta):
         Performs the boot of the target system to initiate the installation
         """
         kargs = self._render_installer_cmdline()
-        if self._profile.parameters and (
-                self._profile.parameters.get('linux-kargs-installer')):
-            custom_kargs = self._profile.parameters['linux-kargs-installer']
+        if self._model.installer_cmdline:
+            custom_kargs = self._model.installer_cmdline
             # below we use a dict to remove duplicated parameters, the code
             # assumes no kernel params have empty spaces as values
             # (i.e. param="foo bar") so if this is ever to be supported
@@ -633,8 +546,6 @@ class SmBase(metaclass=abc.ABCMeta):
             for name, value in kargs_dict.items():
                 if value is None:
                     custom_kargs.append(name)
-                elif name.startswith("tessia_option"):
-                    pass
                 else:
                     custom_kargs.append('{}={}'.format(name, value))
             kargs = ' '.join(custom_kargs)
@@ -647,7 +558,11 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Performs a reboot of the target system after installation is done
         """
-        self._platform.reboot(self._profile)
+        # set boot device to the boot device from used profile
+        self._platform.set_boot_device(self._profile.get_boot_device())
+
+        # reboot the system
+        self._platform.reboot()
     # target_reboot()
 
     @abc.abstractmethod
@@ -689,6 +604,5 @@ class SmBase(metaclass=abc.ABCMeta):
         self.post_install()
 
         self._logger.info('Installation finished successfully')
-        return 0
     # start()
 # SmBase

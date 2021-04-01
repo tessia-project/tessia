@@ -19,6 +19,9 @@ Machine for auto installation of Autoyast based operating systems
 #
 # IMPORTS
 #
+from tessia.server.state_machines.autoinstall.plat_base import PlatBase
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from time import sleep
 from time import time
@@ -40,17 +43,16 @@ class SmAutoyast(SmBase):
     # the type of linux distribution supported
     DISTRO_TYPE = 'suse'
 
-    def __init__(self, os_entry, profile_entry, template_entry, *args,
-                 **kwargs):
+    def __init__(self, model: AutoinstallMachineModel,
+                 platform: PlatBase, *args, **kwargs):
         """
         Constructor
         """
-        super().__init__(
-            os_entry, profile_entry, template_entry, *args, **kwargs)
+        super().__init__(model, platform, *args, **kwargs)
         self._logger = logging.getLogger(__name__)
 
         # roce card installations are not supported
-        if self._gw_iface.type == 'ROCE':
+        if isinstance(self._gw_iface, AutoinstallMachineModel.RoceInterface):
             raise ValueError('Installations using a ROCE card as the gateway '
                              'interface are not supported by AutoYast')
     # __init__()
@@ -124,7 +126,8 @@ class SmAutoyast(SmBase):
         kexecs into the installed system.
         """
         # kvm guest installation: kexec does not work, perform normal reboot
-        if self._system.type == 'KVM':
+        if isinstance(self._profile.hypervisor,
+                      AutoinstallMachineModel.KvmHypervisor):
             self._logger.info("Rebooting into installed system")
             super().target_reboot()
             return
@@ -147,6 +150,10 @@ class SmAutoyast(SmBase):
         # wait a while before moving to next stage to be sure no connection is
         # made still to installer environment.
         sleep(5)
+
+        # update boot device
+        self._platform.set_boot_device(self._profile.get_boot_device())
+
     # target_reboot()
 
     def wait_install(self):

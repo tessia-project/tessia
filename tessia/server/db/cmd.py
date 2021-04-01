@@ -389,9 +389,6 @@ def current(_): # pylint: disable=useless-param-doc,useless-type-doc
     """
     Show the current database revision
 
-    Args:
-        _ (argparse.Namespace): not used
-
     Raises:
         alembic exceptions
     """

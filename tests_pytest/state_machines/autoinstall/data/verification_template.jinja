@@ -1,0 +1,33 @@
+{# Verification template #}
+{%- set root_svol = config['root_disk'] -%}
+{%- set gw_iface = config['gw_iface'] -%}
+system:
+  type: {{config["system_type"]}}
+  hostname: {{config["hostname"]}}
+ifaces:
+{% for iface in config["ifaces"] %}
+  - osname: {{ iface["osname"] }}
+    ip: {{ iface["ip"] }}
+    type: {{ iface['type'] }}
+    is_gateway: {{iface["is_gateway"]}}
+{% endfor %}
+gw_iface:
+  osname: {{gw_iface['osname']}}
+  type: {{gw_iface['type']}}
+  ip: {{gw_iface['ip']}}
+  gateway: {{ gw_iface['gateway'] }}
+volumes:
+{% for volume in config["svols"] %}
+  - is_root: {{volume["is_root"]}}
+    type: {{volume['type']}}
+{%   if volume['is_root'] %}
+    partitions:
+{%     for part in volume["part_table"]["table"] %}
+      - fs: {{ part['fs'] }}
+        mp: {{ part['mp'] }}
+        size: {{ part["size"] ~ 'M' }}
+{%     endfor %}
+{%-   endif %}
+{% endfor %}
+user:
+    login: {{config['credentials']['admin-user']}}

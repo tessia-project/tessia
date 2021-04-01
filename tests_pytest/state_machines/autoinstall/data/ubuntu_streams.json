@@ -1,0 +1,302 @@
+{
+    "ubuntu20.04": [
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616423030.9400604,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config/copy_logs_to_target",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616423030.944353,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config/copy_logs_to_target",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616423030.9735355,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616423031.007492,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot",
+            "description": "completed",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616423031.0123575,
+            "level": "INFO",
+            "result": "SUCCESS"
+        }
+    ],
+    "ubuntu20.04.1": [
+        {
+            "name": "subiquity/Reboot/load_autoinstall_data",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616423212.662139,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/load_autoinstall_data",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616423212.6664073,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616423585.116572,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config/copy_logs_to_target",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616423585.120761,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config/copy_logs_to_target",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616423585.1496704,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616423585.1844952,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot",
+            "description": "completed",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616423585.1898224,
+            "level": "INFO",
+            "result": "SUCCESS"
+        }
+    ],
+    "ubuntu20.04.2": [
+        {
+            "name": "subiquity/Reboot/load_autoinstall_data",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616425204.7214365,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/load_autoinstall_data",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616425204.727552,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616425210.1272047,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616425210.1315122,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/copy_logs_to_target",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616425323.6190226,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/copy_logs_to_target",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616425323.6491861,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/reboot",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616425323.6539743,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/reboot",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616425323.6887715,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        }
+    ],
+    "ubuntu20.10": [
+        {
+            "name": "subiquity/Reboot/load_autoinstall_data",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616424010.0597973,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/load_autoinstall_data",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616424010.0639572,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616424216.1208582,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config/copy_logs_to_target",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616424216.125031,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config/copy_logs_to_target",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616424216.1504657,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616424216.183478,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        }
+    ],
+    "ubuntu21.04": [
+        {
+            "name": "subiquity/Reboot/load_autoinstall_data",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616424906.898996,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/load_autoinstall_data",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616424906.9032054,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616424912.3437448,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/apply_autoinstall_config",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616424912.3480678,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/copy_logs_to_target",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616425007.3545938,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/copy_logs_to_target",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616425007.3802493,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        },
+        {
+            "name": "subiquity/Reboot/reboot",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1616425007.3849707,
+            "level": "DEBUG"
+        },
+        {
+            "name": "subiquity/Reboot/reboot",
+            "description": "",
+            "event_type": "finish",
+            "origin": "curtin",
+            "timestamp": 1616425007.4483879,
+            "level": "DEBUG",
+            "result": "SUCCESS"
+        }
+    ]
+}

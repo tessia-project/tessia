@@ -19,15 +19,16 @@ Module to deal with operations on LPARs
 #
 # IMPORTS
 #
-from copy import deepcopy
 from queue import Queue
+
+from tessia.baselib.hypervisors.hmc import HypervisorHmc
+from tessia.server.state_machines.autoinstall.model import \
+    AutoinstallMachineModel
 from tessia.server.config import Config
-from tessia.server.db.models import StorageVolume
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from threading import Event, Thread
 from urllib.parse import urljoin, urlsplit
 
-import ipaddress
 import logging
 import sys
 
@@ -83,19 +84,6 @@ class PlatLpar(PlatBase):
         # create HMC session
         self._hyp_obj.login()
 
-        # make sure the CPC of the LPAR has a live-image disk configured
-        try:
-            self._live_src = self._hyp_prof.storage_volumes_rel[0]
-        except IndexError:
-            try:
-                self._live_src = (
-                    self._hyp_prof.parameters['liveimg-insfile-url'])
-            except (KeyError, TypeError):
-                raise ValueError(
-                    'CPC {} has neither an auxiliary disk (DPM and classic '
-                    ' mode) nor an insfile URL (DPM only) registered to '
-                    'serve the live-image required for installation'
-                    .format(self._hyp_prof.system_rel.name)) from None
         try:
             self._live_passwd = Config.get_config().get(
                 'auto_install')['live_img_passwd']
@@ -103,6 +91,114 @@ class PlatLpar(PlatBase):
             raise ValueError(
                 'Live-image password missing in config file') from None
     # __init__()
+
+    @staticmethod
+    def _boot_device_to_baselib_params(boot_device):
+        """
+        Convert boot device specs to baselib parameters
+
+        Args:
+            boot_device (StorageVolume): boot device
+
+        Returns:
+            Tuple[dict, string]: (params, None) or (None, error)
+
+        Raises:
+            RuntimeError: no paths available for SCSI device
+        """
+        params = None
+        if isinstance(boot_device, AutoinstallMachineModel.ScsiVolume):
+            if not boot_device.paths:
+                raise RuntimeError(
+                    "Boot device {} has no paths available".format(
+                        boot_device.lun
+                    ))
+
+            adapter, wwpn = boot_device.paths[0]
+            params = {
+                'boot_method': 'scsi',
+                'devicenr': adapter,
+                'wwpn': wwpn,
+                'lun': boot_device.lun,
+                'uuid': boot_device.wwid[-32:],
+            }
+            # NOTE: WWIDs specified in storage in general follow
+            # udev rules, which commonly add a prefix '3' to volume UUID.
+            # The UUID itself is 32 nibbles long, but may be 16 or something
+            # else entirely. There is no exact rule to figure out
+            # one from the other, but otherwise we would have to have
+            # very similar data (wwid and uuid) in device configuration.
+        else:
+            params = {
+                'boot_method': 'dasd',
+                'devicenr': boot_device.device_id
+            }
+
+        if params:
+            return (params, None)
+        return (None, "No boot parameters specified")
+    # _boot_device_to_baselib_params()
+
+    @classmethod
+    def _boot_options_to_baselib_params(cls, boot_options: dict):
+        """
+        Convert boot device specs to baselib parameters
+
+        Args:
+            boot_options: CPC boot options
+
+        Returns:
+            Tuple[dict, string]: (params, None) or (None, error)
+
+        Raises:
+            ValueError: failed to parse boot URI
+        """
+        params = None
+        if boot_options['boot-method'] == 'storage':
+            if 'boot-device-lun' in boot_options:
+                params = {
+                    'boot_method': 'scsi',
+                    'devicenr': boot_options['boot-device'],
+                    'wwpn': boot_options['boot-device-wwpn'],
+                    'lun': boot_options['boot-device-lun'],
+                    'uuid': boot_options['boot-device-uuid'],
+                }
+            else:
+                params = {
+                    'boot_method': 'dasd',
+                    'devicenr': boot_options['boot-device']
+                }
+        elif boot_options['boot-method'] == 'network':
+            boot_uri = boot_options['boot-uri']
+            try:
+                parsed_url = urlsplit(boot_uri)
+            except ValueError as exc:
+                return (None, 'Boot URL {} is invalid: {}'.format(
+                    boot_uri, str(exc)))
+            params = {
+                'boot_method': parsed_url.scheme,
+                'insfile': ''.join(parsed_url[1:]),
+            }
+
+        if params:
+            return (params, None)
+        return (None, "No boot parameters specified")
+    # _boot_device_to_baselib_params()
+
+    @classmethod
+    def create_hypervisor(cls, model: AutoinstallMachineModel):
+        """
+        Create an instance of baselib's hypervisor. Here we have no
+        knowledge about parameters so _create_hyp can be re-implemented
+        by children classes
+        """
+        return HypervisorHmc(
+            model.system_profile.hypervisor.name,
+            model.system_profile.hypervisor.hmc_address,
+            model.system_profile.hypervisor.credentials['user'],
+            model.system_profile.hypervisor.credentials['password'],
+            None)
+    # create_hypervisor()
 
     def boot(self, kargs):
         """
@@ -116,9 +212,9 @@ class PlatLpar(PlatBase):
             RuntimeError: baselib exception occurred
         """
         # basic information
-        cpu = self._guest_prof.cpu
+        cpu = self._guest_prof.cpus
         memory = self._guest_prof.memory
-        guest_name = self._guest_prof.system_rel.name
+        guest_name = self._hyp_system.boot_options['partition-name']
 
         # repository related information
         repo = self._repo
@@ -127,80 +223,48 @@ class PlatLpar(PlatBase):
 
         # parameters argument, see baselib schema for details
         params = {}
-        # serve live image from aux disk
-        if isinstance(self._live_src, StorageVolume):
-            if self._live_src.type.lower() == 'fcp':
-                # WARNING: so far with DS8K storage servers the wwid seems to
-                # correspond to the uuid by removing only the first digit, but
-                # this not documented so it might change in future or even be
-                # different with other storage types
-                vol_uuid = self._live_src.specs['wwid'][1:]
-                params['boot_params'] = {
-                    'boot_method': 'scsi',
-                    'devicenr': (
-                        self._live_src.specs['adapters'][0]['devno']),
-                    'wwpn': self._live_src.specs['adapters'][0]['wwpns'][0],
-                    'lun': self._live_src.volume_id,
-                    'uuid': vol_uuid,
-                }
-            else:
-                params['boot_params'] = {
-                    'boot_method': 'dasd',
-                    'devicenr': self._live_src.volume_id
-                }
-        # serve live image from network (DPM only)
-        else:
-            try:
-                parsed_url = urlsplit(self._live_src)
-            except ValueError as exc:
-                raise ValueError('Live image URL {} is invalid: {}'
-                                 .format(self._live_src, str(exc)))
-            params['boot_params'] = {
-                'boot_method': parsed_url.scheme,
-                'insfile': ''.join(parsed_url[1:]),
-            }
+        params['boot_params'], err = self._boot_options_to_baselib_params(
+            self._hyp_system.boot_options
+        )
+        if err:
+            raise RuntimeError(err)
+
         params['boot_params']['netboot'] = {
             "kernel_url": kernel_uri,
             "initrd_url": initrd_uri,
             "cmdline": kargs
         }
-        subnet_pyobj = ipaddress.ip_network(
-            self._gw_iface.ip_address_rel.subnet_rel.address, strict=True)
+        subnet_model = self._gw_iface.gateway_subnets[0]
         # network configuration
         params['boot_params']['netsetup'] = {
             "mac": self._gw_iface.mac_address,
-            "ip": self._gw_iface.ip_address_rel.address,
-            "mask": subnet_pyobj.prefixlen,
-            "gateway": self._gw_iface.ip_address_rel.subnet_rel.gateway,
+            "ip": str(subnet_model.ip_address),
+            "mask": subnet_model.subnet.prefixlen,
+            "gateway": str(subnet_model.gateway),
             "password": self._live_passwd,
         }
-        if self._gw_iface.ip_address_rel.subnet_rel.vlan:
+        if subnet_model.vlan:
             params['boot_params']['netsetup']['vlan'] = (
-                self._gw_iface.ip_address_rel.subnet_rel.vlan)
+                subnet_model.vlan)
         # osa cards
-        if self._gw_iface.type.lower() == 'osa':
+        if isinstance(self._gw_iface, AutoinstallMachineModel.OsaInterface):
             params['boot_params']['netsetup']['type'] = 'osa'
             params['boot_params']['netsetup']['device'] = (
-                self._gw_iface.attributes['ccwgroup']
-                .split(",")[0].split('.')[-1])
-            options = deepcopy(self._gw_iface.attributes)
-            options.pop('ccwgroup')
-            params['boot_params']['netsetup']['options'] = options
+                self._gw_iface.ccwgroup.split(",")[0].split('.')[-1])
+            params['boot_params']['netsetup']['options'] = {
+                'layer2': self._gw_iface.layer2,
+                'portno': self._gw_iface.portno,
+                'portname': self._gw_iface.portname,
+            }
         # roce cards
-        elif self._gw_iface.type.lower() == 'roce':
+        elif isinstance(self._gw_iface, AutoinstallMachineModel.RoceInterface):
             params['boot_params']['netsetup']['type'] = 'pci'
-            params['boot_params']['netsetup']['device'] = (
-                self._gw_iface.attributes['fid'])
+            params['boot_params']['netsetup']['device'] = self._gw_iface.fid
         else:
             raise ValueError('Unsupported network card type {}'
                              .format(self._gw_iface.type))
-        dns_servers = []
-        if self._gw_iface.ip_address_rel.subnet_rel.dns_1:
-            dns_servers.append(self._gw_iface.ip_address_rel.subnet_rel.dns_1)
-        if self._gw_iface.ip_address_rel.subnet_rel.dns_2:
-            dns_servers.append(self._gw_iface.ip_address_rel.subnet_rel.dns_2)
-        if dns_servers:
-            params['boot_params']['netsetup']['dns'] = dns_servers
+        if subnet_model.dns:
+            params['boot_params']['netsetup']['dns'] = subnet_model.dns
 
         # Run HMC communication in separate thread to be able to continue
         # with the state machine after boot_notification has been signaled.
@@ -227,35 +291,22 @@ class PlatLpar(PlatBase):
             self._logger.debug("Received initial boot complete notification")
     # boot()
 
-    def get_vol_devpath(self, vol_obj):
+    def set_boot_device(self, boot_device):
         """
-        Given a volume entry, return the correspondent device path on operating
-        system.
+        Set boot device to perform later boot
 
         Args:
-            vol_obj (StorageVolume): db entry
-
-        Returns:
-            str: device path
+            boot_device (dict): boot device description
+                "storage" (StorageVolume): volume
+                "network" (string): URI with boot source
 
         Raises:
-            RuntimeError: in case the volume type is unknown
+            RuntimeError: invalid parameters
         """
-        if vol_obj.type in ('DASD', 'HPAV'):
-            vol_id = vol_obj.volume_id
-            if vol_id.find('.') < 0:
-                vol_id = '0.0.' + vol_id
-            return '/dev/disk/by-path/ccw-{}'.format(vol_id)
-
-        if vol_obj.type == 'FCP':
-            if vol_obj.specs['multipath']:
-                prefix = '/dev/disk/by-id/dm-uuid-mpath-{}'
-            else:
-                prefix = '/dev/disk/by-id/scsi-{}'
-            return prefix.format(vol_obj.specs['wwid'])
-
-        raise RuntimeError(
-            "Unknown volume type'{}'".format(vol_obj.type))
-
-    # get_vol_devpath()
+        guest_name = self._hyp_system.boot_options['partition-name']
+        params, err = self._boot_device_to_baselib_params(boot_device)
+        if err:
+            raise RuntimeError("Missing set_boot_device parameters")
+        self._hyp_obj.set_boot_device(guest_name, params)
+    # set_boot_device()
 # PlatLpar

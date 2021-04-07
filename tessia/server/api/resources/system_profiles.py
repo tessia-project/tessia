@@ -21,6 +21,7 @@ Resource definition
 #
 from copy import deepcopy
 from flask import g as flask_global
+from flask_potion import exceptions as potion_exceptions
 from flask_potion import fields
 from flask_potion.routes import Route
 from flask_potion.contrib.alchemy.fields import InlineModel
@@ -30,6 +31,7 @@ from jsonschema.exceptions import ValidationError
 from sqlalchemy.exc import IntegrityError
 from tessia.server.api.db import API_DB
 from tessia.server.api.exceptions import BaseHttpError
+from tessia.server.api.exceptions import ConflictError
 from tessia.server.api.exceptions import ItemNotFoundError
 from tessia.server.api.resources.secure_resource import NAME_PATTERN
 from tessia.server.api.resources.secure_resource import SecureResource
@@ -503,7 +505,6 @@ class SystemProfileResource(SecureResource):
         """
 
         item = self.manager.read(system_profile_id)
-
         # validate permission on the object - use the associated system
         self._perman.can(
             'UPDATE', flask_global.auth_user, item.system_rel, 'system')
@@ -571,6 +572,94 @@ class SystemProfileResource(SecureResource):
         # which case it can use the provided id to request the item)
         return updated_item.id
     # do_update()
+
+    @Route.POST(lambda r: '/<{}:id>/clone'.format(
+        r.meta.id_converter), rel="prof_clone")
+    def profile_clone(self, properties, id): # pylint: disable=redefined-builtin,invalid-name
+        """
+        Cloning a system activation profile.
+        """
+        # get an original profile for cloning
+        item = self.manager.read(id)
+
+        # preparing the fields for a profile-clone
+        new_prof = dict()
+
+        new_prof['default'] = False
+        new_prof['name'] = properties['name']
+
+        new_prof['cpu'] = item.cpu
+        new_prof['system'] = item.system
+        new_prof['memory'] = item.memory
+        new_prof['parameters'] = item.parameters
+        new_prof['credentials'] = item.credentials
+
+        # check if the system has hypervisor profile and get it
+        target_system = System.query.filter(
+            System.name == item.system).one_or_none()
+        hypervisor_profile = SystemProfile.query.filter(
+            SystemProfile.system_id == target_system.hypervisor_id
+        ).filter(
+            SystemProfile.id == item.hypervisor_profile_id
+        ).one_or_none()
+
+        if hypervisor_profile:
+            new_prof['hypervisor_profile'] = hypervisor_profile.name
+
+        # add a profile-clone
+        try:
+            new_prof_id = self.do_create(new_prof)
+        except potion_exceptions.DuplicateKey as exc:
+            raise ConflictError(exc, self)
+
+        # get original volume and iface associations
+        vols = StorageVolumeProfileAssociation.query.filter_by(
+            profile_id=id).all()
+        ifaces = SystemIfaceProfileAssociation.query.filter_by(
+            profile_id=id).all()
+
+        # create clone volume and iface associations
+        for vol in vols:
+            new_attach = StorageVolumeProfileAssociation(
+                profile_id=new_prof_id, volume_id=vol.volume_id)
+            API_DB.db.session.add(new_attach)
+
+        for iface in ifaces:
+            new_attach = SystemIfaceProfileAssociation(
+                profile_id=new_prof_id, iface_id=iface.iface_id)
+            API_DB.db.session.add(new_attach)
+
+        API_DB.db.session.commit()
+
+        # there may be a situation when there is a gateway record,
+        # but the interface itself is not available more. So we can only
+        # rely on the ifaces records after all association actions.
+        gw_iface = SystemIface.query.filter_by(
+            system_id=target_system.id, name=item.gateway
+        ).one_or_none()
+
+        system_iface = None
+
+        upd_new_prof = dict()
+        upd_new_prof['gateway'] = None
+
+        if gw_iface:
+            system_iface = SystemIfaceProfileAssociation.query.filter_by(
+                iface_id=gw_iface.id).one_or_none()
+
+        if system_iface:
+            upd_new_prof['gateway'] = gw_iface.name
+
+        if upd_new_prof['gateway']:
+            try:
+                self.do_update(upd_new_prof, new_prof_id)
+            except potion_exceptions.DuplicateKey as exc:
+                raise ConflictError(exc, self)
+
+        return new_prof_id
+    # profile_clone()
+
+    profile_clone.request_schema = fields.Object({'name': fields.String()})
 
     @Route.POST(
         lambda r: '/<{}:id>/storage_volumes'.format(

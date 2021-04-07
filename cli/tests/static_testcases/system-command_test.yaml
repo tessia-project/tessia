@@ -131,6 +131,8 @@ tasks:
       - 'Usage: tess system prof-edit'
     - - system prof-list -h
       - 'Usage: tess system prof-list'
+    - - system prof-clone -h
+      - 'Usage: tess system prof-clone'
     - - system states -h
       - 'Usage: tess system states'
     - - system types -h
@@ -1292,6 +1294,18 @@ tasks:
     - - system prof-list --name=DASD4 --system=cpc3lp52
       - '.*\|.*\|.*\|.*\|.*\| *\[DS8K16/3952\]\(swap\), \[DS8K16/3956\]\(root\) *\|'
       # end testing (root)(swap) in in prof-list
+    # 'system prof-clone' subcommand
+    - - system prof-clone --src-profile='DASD4' --new-profile 'DASD4_clone'
+      - Missing option '--system'.
+    - - system prof-clone --system=cpc3lp52 --new-profile 'DASD4_clone'
+      - Missing option '--src-profile'.
+    - - system prof-clone --system=cpc3lp52 --src-profile 'DASD4'
+      - Missing option '--new-profile'.
+    - - system prof-clone --system=cpc3lp52 --src-profile='DASD4' --new-profile 'DASD4_clone'
+      - Cloning completed successfully.
+    - - system prof-clone --system=cpc3lp52 --src-profile='DASD4' --new-profile 'DASD4_clone'
+      - 'request failed. Server answered: An item with the provided value'
+    # end 'system prof-clone' subcommand
     - - system vol-attach --system=cpc3 --profile='default cpc3' --vol=3950
       - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
     - - system vol-attach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3950
@@ -1446,6 +1460,8 @@ tasks:
     - - system prof-del --system=cpc3lp52 --name=DASD17
       - Item successfully deleted.
     - - system prof-del --system=cpc3lp52 --name=DASD
+      - Item successfully deleted.
+    - - system prof-del --system=cpc3lp52 --profile 'DASD4_clone'
       - Item successfully deleted.
     - - system prof-list --system=cpc3lp52
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'

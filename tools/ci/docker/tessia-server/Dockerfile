@@ -76,6 +76,14 @@ RUN \
 ### Server image
 FROM base as server
 
+ARG user=tessia
+ARG group=tessia
+ARG uid=1000
+ARG gid=1000
+
+RUN groupadd -g ${gid} ${group} && \
+    useradd -u ${uid} -g ${gid} -m ${user}
+
 # server installation
 RUN cd /assets/repo-tessia && \
     # web server for api service
@@ -84,11 +92,10 @@ RUN cd /assets/repo-tessia && \
     pip3 install -U -r requirements.txt -r dev-requirements.txt . && \
     ./setup.py -q install_data && \
     # files settings
-    useradd -m tessia && \
-    install -m 700 -g tessia -o tessia -d /etc/tessia && \
-    install -m 600 -g tessia -o tessia /usr/local/etc/tessia/* /etc/tessia && \
+    install -m 700 -g ${group} -o ${user} -d /etc/tessia && \
+    install -m 600 -g ${group} -o ${user} /usr/local/etc/tessia/* /etc/tessia && \
     rm -rf /usr/local/etc/tessia && \
-    install -m 755 -g tessia -o tessia -d /var/tessia /var/tessia/jobs /var/tessia/www /var/log/tessia && \
+    install -m 755 -g ${group} -o ${user} -d /var/tessia /var/tessia/jobs /var/tessia/www /var/log/tessia && \
     # used to manage startup of the api and scheduler daemons
     cp /assets/supervisord.conf /etc/supervisor/conf.d/tessia.conf && \
     # tool used to handle yaml files from cmdline

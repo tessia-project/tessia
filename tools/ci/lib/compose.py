@@ -357,7 +357,7 @@ class ComposeInstance():
         cmd_env = os.environ.copy()
         cmd_env['db_token'] = output.strip()
         ret_code, output = self._session.run(
-            'docker exec {0} bash -c "umask 077; mkdir {1} &>/dev/null; '
+            'docker exec --user root {0} bash -c "umask 077; mkdir {1} &>/dev/null; '
             'echo $db_token > {1}/auth.key && chown -R admin. {1}"'
             .format(client_id, '/home/admin/.tessia-cli'), env=cmd_env
         )

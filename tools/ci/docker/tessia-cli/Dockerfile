@@ -7,6 +7,14 @@ ARG git_repo=/assets/tessia.git
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+ARG user=tessia
+ARG group=tessia
+ARG uid=1000
+ARG gid=1000
+
+RUN groupadd -g ${gid} ${group} && \
+    useradd -u ${uid} -g ${gid} -m ${user}
+
 RUN apt-get -q update > /dev/null && \
     # Install the distro dependencies.
     # ATTENTION: make sure to keep a comment for each on why is it needed.
@@ -53,5 +61,12 @@ RUN cd /assets && \
     python3-dev > /dev/null && \
     mv /assets/entrypoint /entrypoint && \
     rm -rf /assets
+
+RUN mkdir -p /etc/tessia-cli && \
+    chown -R ${user}:${group} /etc/tessia-cli
+
+VOLUME ["/etc/tessia-cli"]
+
+USER ${user}
 
 ENTRYPOINT ["/entrypoint"]

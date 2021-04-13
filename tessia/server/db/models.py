@@ -1023,7 +1023,8 @@ class SystemProfile(CommonMixin, SchemaMixin, BASE):
     system_id = Column(
         Integer, ForeignKey('systems.id'), index=True, nullable=False)
     gateway_id = Column(Integer, ForeignKey('system_ifaces.id'))
-    operating_system_id = Column(Integer, ForeignKey('operating_systems.id'))
+    operating_system_id = Column(Integer, ForeignKey('operating_systems.id',
+                                                     ondelete='SET NULL'))
     default = Column(Boolean, nullable=False)
     cpu = Column(Integer)
     memory = Column(BigInteger)

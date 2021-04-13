@@ -366,4 +366,31 @@ def prof_list(**kwargs):
                     entries, PrintMode.TABLE)
 # prof_list()
 
-CMDS = [prof_add, prof_del, prof_edit, prof_list]
+@click.command(name='prof-clone',
+               short_help='cloning a system activation profile')
+@click.option('--system', required=True, type=NAME, help='target system')
+@click.option('profile', '--src-profile', required=True,
+              type=NAME, help='name of an activation profile for cloning')
+@click.option('new_profile', '--new-profile', required=True,
+              type=NAME, help='name of an activation profile-clone')
+def prof_clone(system, profile, new_profile):
+    """
+    a system activation profile cloning
+    """
+    # fetch data from server
+    client = Client()
+
+    prof_obj = fetch_item(
+        client.SystemProfiles,
+        {'system': system, 'name': profile},
+        'no profile found.'
+    )
+
+    new_prof = dict()
+    new_prof['name'] = new_profile
+    prof_obj.prof_clone(**new_prof)
+
+    click.echo('Cloning completed successfully.')
+# prof_clone()
+
+CMDS = [prof_add, prof_del, prof_edit, prof_list, prof_clone]

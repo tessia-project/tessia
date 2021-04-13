@@ -116,6 +116,8 @@ class DbController:
         Return SubnetAffiliation for a network interface
         """
         ip_addr = profile_iface.ip_address_rel
+        if ip_addr is None:
+            return None
         subnet = ip_addr.subnet_rel
         model_subnet = AutoinstallMachineModel.SubnetAffiliation(
             ip_addr.address,
@@ -228,7 +230,7 @@ class DbController:
             profile.cpu, profile.memory)
 
         # add network interfaces
-        for index, profile_iface in enumerate(profile.system_ifaces_rel):
+        for profile_iface in profile.system_ifaces_rel:
             if profile_iface.type == 'OSA':
                 model_iface = AutoinstallMachineModel.OsaInterface(
                     profile_iface.attributes.get('ccwgroup'),
@@ -259,22 +261,29 @@ class DbController:
                     os_device_name=profile_iface.osname,
                     mac_address=profile_iface.mac_address
                 )
+            elif profile_iface.type == 'ROCE':
+                model_iface = AutoinstallMachineModel.RoceInterface(
+                    profile_iface.attributes.get('fid'),
+                    os_device_name=profile_iface.osname,
+                    mac_address=profile_iface.mac_address
+                )
             else:
                 raise ValueError(
                     "Unsupported interface type {} attached to system {} "
                     "profile {}".format(profile_iface.type, system.name,
                                         profile.name))
-            model_iface.add_to_subnet(
-                self._get_iface_subnet(profile_iface))
+
+            iface_subnet = self._get_iface_subnet(profile_iface)
+            if iface_subnet:
+                model_iface.add_to_subnet(iface_subnet)
             # One of the interfaces shuold be set as "gateway" so that
             # tessia could connect to it.
             # TODO: improve default gateway selection, because it is
-            # currently non-deterministic ("first" from database).
-            # DB model for SystemProfile asserts that gateway is added
-            # to the list of all interfaces, so we do not check it here
+            # currently non-deterministic ("first" passing from database).
             result.add_network_interface(
                 model_iface,
-                index == 0 or profile.gateway_rel == profile_iface)
+                (not result.gateway_interface and model_iface.gateway_subnets)
+                or (profile.gateway_rel == profile_iface))
 
         # add volumes
         for profile_volume in profile.storage_volumes_rel:

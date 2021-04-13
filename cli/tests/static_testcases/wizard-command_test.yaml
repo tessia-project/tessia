@@ -278,7 +278,7 @@ tasks:
         - y
         # choose OS
         - "1"
-      - Unsupported interface type ROCE attached to system cp1lp10 profile wizard-profile1
+      - No OS repository available for OS fedora29
       # verification section - make sure all resources were correctly created
     - - system list --name=cp1lp10 --long
       - - 'Hostname *: cp1lp10\.example\._com'

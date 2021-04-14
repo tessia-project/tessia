@@ -429,13 +429,19 @@ class SmBase(metaclass=abc.ABCMeta):
         # add repo entries
         for repo_obj in self._repos:
             repo = {
-                'url': repo_obj.url, 'desc': repo_obj.desc,
+                'url': repo_obj.url,
+                'desc': repo_obj.desc,
                 'name': repo_obj.name.replace(' ', '_'),
-                'os': repo_obj.installable_os,
-                'install_image': repo_obj.install_image,
+                'os': ''
             }
             if not repo['desc']:
                 repo['desc'] = repo['name']
+
+            if isinstance(repo_obj, AutoinstallMachineModel.OsRepository):
+                repo.update({
+                    'os': repo_obj.installable_os,
+                    'install_image': repo_obj.install_image,
+                })
             info['repos'].append(repo)
 
         # generate pseudo-random password for vnc session

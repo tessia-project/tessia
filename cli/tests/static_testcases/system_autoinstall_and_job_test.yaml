@@ -148,7 +148,7 @@ tasks:
       - "Error: 'invalid=name' is not a valid URL or name"
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=http://_myserver.z --repo=valid-name
       - 'Parsing of parameters failed with: System cpc3lp55 not found'
-    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --bg
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --bg --repo=http://example.com/repo 
       - 'Request accepted; job id is #10'
     - - job output --id=10
       - 'Failed to establish a new connection'

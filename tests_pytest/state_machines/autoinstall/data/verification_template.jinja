@@ -30,4 +30,10 @@ volumes:
 {%-   endif %}
 {% endfor %}
 user:
-    login: {{config['credentials']['admin-user']}}
+  login: {{config['credentials']['admin-user']}}
+repos:
+{% for repo in config["repos"] %}
+  - name: {{repo['name']}}
+    url: {{repo['url']}}
+    desc: {{repo['desc']}}
+{% endfor %}

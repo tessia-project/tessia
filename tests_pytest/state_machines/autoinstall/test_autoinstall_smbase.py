@@ -332,8 +332,12 @@ def test_template_lpar_dasd(lpar_dasd_system, default_os_tuple, tmpdir):
     """
     Test major template parameters
     """
-    model = AutoinstallMachineModel(*default_os_tuple,
-                                    lpar_dasd_system, CREDS)
+    *os_tuple, _, _ = default_os_tuple
+    package_repo = AutoinstallMachineModel.PackageRepository(
+        'aux', 'http://example.com/repo', 'package repo')
+
+    model = AutoinstallMachineModel(
+        *os_tuple, [], [package_repo], lpar_dasd_system, CREDS)
     hyp = plat_lpar.PlatLpar.create_hypervisor(model)
     platform = plat_lpar.PlatLpar(model, hyp)
 
@@ -350,8 +354,10 @@ def test_template_lpar_dasd(lpar_dasd_system, default_os_tuple, tmpdir):
     assert autofile['gw_iface']['osname'] == 'enccw0b01'
     assert autofile['volumes'][0]['type'] == 'DASD'
     assert autofile['volumes'][0]['partitions'] == [
-        { 'fs': 'ext4', 'mp': '/', 'size': '18000M' }
+        {'fs': 'ext4', 'mp': '/', 'size': '18000M'}
     ]
+    assert autofile['repos'][0]['name'] == 'os-repo'
+    assert autofile['repos'][1]['name'] == 'aux'
 
 
 def test_template_kvm_scsi(kvm_scsi_system, default_os_tuple, tmpdir):
@@ -375,4 +381,3 @@ def test_template_kvm_scsi(kvm_scsi_system, default_os_tuple, tmpdir):
     assert autofile['gw_iface']['type'] == 'MACVTAP'
     assert autofile['gw_iface']['osname'] == 'eth0'
     assert autofile['ifaces'][0]['is_gateway']
-

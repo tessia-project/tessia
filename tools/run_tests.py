@@ -112,7 +112,7 @@ def main():
     # that we set an env variable pointing to an empty config file so that
     # any 'leaked' modules will reach this file instead of a random file from
     # the filesystem.
-    temp_file = NamedTemporaryFile()
+    temp_file = NamedTemporaryFile() # pylint: disable=consider-using-with
     os.environ['TESSIA_CFG'] = temp_file.name
 
     # show command line to user

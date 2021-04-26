@@ -262,11 +262,11 @@ class MachineWrapper:
         Raises:
         """
         os.makedirs(self._run_dir, exist_ok=True)
-        log_file = open('{}/output'.format(self._run_dir), 'wb')
-        sys.stdout.flush()
-        os.dup2(log_file.fileno(), sys.stdout.fileno())
-        sys.stderr.flush()
-        os.dup2(log_file.fileno(), sys.stderr.fileno())
+        with open('{}/output'.format(self._run_dir), 'wb') as log_file:
+            sys.stdout.flush()
+            os.dup2(log_file.fileno(), sys.stdout.fileno())
+            sys.stderr.flush()
+            os.dup2(log_file.fileno(), sys.stderr.fileno())
 
         # replace the original print by one that always performs flush
         # so that output goes directly to the file

@@ -51,7 +51,7 @@ class TestAuthPackageAndBase(TestCase):
         self.mock_config = self.patcher_config.start()
 
         # create a temp directory where we can store our fake module
-        self.module_dir = TemporaryDirectory()
+        self.module_dir = TemporaryDirectory() # pylint: disable=consider-using-with
 
         # write the contents of the fake module
         fake_mod_name = 'test'

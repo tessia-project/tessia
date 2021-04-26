@@ -87,3 +87,13 @@ scheduler:
 installer-webhook:
   webhook_port: 7223
   control_port: 7224
+
+# monitoring HMC availability (Canary)
+canary:
+  # enable HMC polling
+  check_on: True
+  # waiting time between HMC polls (in seconds)
+  # minimum value is 60
+  waiting_time: 60
+  # insecure request warnings
+  insecure_warnings: False

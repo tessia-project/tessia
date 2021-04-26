@@ -26,8 +26,9 @@ from tessia.cli.cmds.autotemplate import autotemplate
 from tessia.cli.cmds.conf import conf
 from tessia.cli.cmds.conf import key_gen
 from tessia.cli.cmds.job import job
-from tessia.cli.cmds.perm import perm
+from tessia.cli.cmds.monitoring import monitoring
 from tessia.cli.cmds.net import net
+from tessia.cli.cmds.perm import perm
 from tessia.cli.cmds.repo import repo
 from tessia.cli.cmds.storage import storage
 from tessia.cli.cmds.system import system
@@ -48,6 +49,7 @@ CMDS = [
     autotemplate,
     conf,
     job,
+    monitoring,
     net,
     _os,
     perm,

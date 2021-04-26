@@ -57,7 +57,7 @@ class EnvConfig:
         # them point to the same config mock. Instead we use the env variable
         # pointing to a temp file to achieve global setup.
         self._orig_var = os.environ.get('TESSIA_CFG')
-        self._temp_tessia_cfg = NamedTemporaryFile(mode='w')
+        self._temp_tessia_cfg = NamedTemporaryFile(mode='w') # pylint: disable=consider-using-with
         os.environ['TESSIA_CFG'] = self._temp_tessia_cfg.name
         # set the config file content
         self._temp_tessia_cfg.write(yaml.dump(content))

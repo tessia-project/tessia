@@ -329,8 +329,8 @@ class ResourcesManager:
         start_date = job.start_date
 
         # Expired start date, assume the job will be scheduled now.
-        if job.start_date < now:
-            start_date = now
+        start_date = max(start_date, now)
+
 
         # Check if any active jobs would prevent this job from executing.
         for resource in job.resources.get(MODE_EXCLUSIVE, []):
@@ -378,8 +378,7 @@ class ResourcesManager:
 
                 other_start_date = other_job.start_date
 
-                if other_start_date < now:
-                    other_start_date = now
+                other_start_date = max(other_start_date, now)
 
                 if self._check_overlap(start_date, other_start_date,
                                        job.timeout, other_job.timeout):

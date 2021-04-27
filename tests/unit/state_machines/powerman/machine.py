@@ -1130,7 +1130,8 @@ class TestPowerManagerMachine(TestCase):
                     'action': 'poweron',
                     'name': system_obj.name,
                 },
-            ]
+            ],
+            'verify': True
         })
         error_msg = (
             'Cannot poweron system {} because hypervisor {} does '

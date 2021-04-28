@@ -865,7 +865,8 @@ class PowerManagerMachine(BaseMachine):
                     'Hypervisor %s is up', hyp_profile.system_rel.name)
                 # hypervisor is up but profile doesn't match: fatal error,
                 # cannot continue
-                if not self._state_match(hyp_profile):
+                if (not self._state_match(hyp_profile) and
+                        self._params.get('verify')):
                     raise RuntimeError(
                         'Cannot poweron system {} because hypervisor {} does '
                         'not match expected profile {}'.format(

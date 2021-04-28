@@ -19,7 +19,7 @@ cio_ignore=all,!condev,{{ cio_ignore_devnos | join(',') }}
 {%- endmacro %}
 {% if config["gw_iface"]["type"] == "OSA" %}
   {% set ccwgroup = config["gw_iface"]["attributes"]["ccwgroup"].split(',') %}
-  {% set special_args %} {{cio_ignore(config['svols'], config['ifaces'])}} zfcp.dif=0 MANUAL=0 ReadChannel={{ccwgroup[0]}} WriteChannel={{ccwgroup[1]}} DataChannel={{ccwgroup[2]}} InstNetDev=osa Layer2={% if config["gw_iface"]["attributes"]["layer2"] %}1{% else %}0{% endif %} OSAHWAddr={% if config["gw_iface"]["mac_addr"] %}{{config["gw_iface"]["mac_addr"]}}{% endif %} OSAInterface=qdio OSAMedium=eth PortNo={{config["gw_iface"]["attributes"]["portno"]}} {% endset %}
+  {% set special_args %} {{cio_ignore(config['svols'], config['ifaces'])}} zfcp.dif=0 MANUAL=0 ReadChannel={{ccwgroup[0]}} WriteChannel={{ccwgroup[1]}} DataChannel={{ccwgroup[2]}} InstNetDev=osa Layer2={% if config["gw_iface"]["attributes"]["layer2"] %}1{% else %}0{% endif %} OSAHWAddr={% if config["gw_iface"]["mac_addr"] %}{{config["gw_iface"]["mac_addr"]}}{% endif %} OSAInterface=qdio PortNo={{config["gw_iface"]["attributes"]["portno"]}} {% endset %}
 {% else %}
   {% set special_args %}Netdevice={{config["gw_iface"]["mac_addr"]}}{% endset %}
 {% endif %}

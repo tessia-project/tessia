@@ -415,7 +415,7 @@ KVM:
 all system types:  
 `root=/dev/ram1 ro init=/linuxrc TERM=dumb UseVNC=1 linuxrclog=/dev/console UseSSH=1 start_shell`  
 additional parameters for OSA iface type:  
-`zfcp.dif=0 MANUAL=0 InstNetDev=osa OSAInterface=qdio OSAMedium=eth`  
+`zfcp.dif=0 MANUAL=0 InstNetDev=osa OSAInterface=qdio`
 
 ### debian:
 LPAR, zVM:  

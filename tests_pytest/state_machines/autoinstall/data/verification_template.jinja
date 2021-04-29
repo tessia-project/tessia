@@ -16,6 +16,12 @@ gw_iface:
   type: {{gw_iface['type']}}
   ip: {{gw_iface['ip']}}
   gateway: {{ gw_iface['gateway'] }}
+{% if gw_iface["search_list"] %}
+  search_list:
+{%   for search_entry in gw_iface["search_list"].split() %}
+    - {{ search_entry }}
+{%   endfor %}
+{% endif %}
 volumes:
 {% for volume in config["svols"] %}
   - is_root: {{volume["is_root"]}}

@@ -428,7 +428,8 @@ def osa_iface():
     result = AutoinstallMachineModel.OsaInterface(
         '0b01,0b02,0b03', False, os_device_name='enccw0b01',
         subnets=[AutoinstallMachineModel.SubnetAffiliation(
-            ip_address='10.0.0.15', subnet='10.0.0.0/24', gateway='10.0.0.1')])
+            ip_address='10.0.0.15', subnet='10.0.0.0/24', gateway='10.0.0.1',
+            search_list='example.com local')])
     yield result
 
 

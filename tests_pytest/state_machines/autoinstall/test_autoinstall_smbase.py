@@ -352,6 +352,8 @@ def test_template_lpar_dasd(lpar_dasd_system, default_os_tuple, tmpdir):
     assert autofile['system']['hostname'] == 'lp10.local'
     assert autofile['gw_iface']['type'] == 'OSA'
     assert autofile['gw_iface']['osname'] == 'enccw0b01'
+    assert autofile['gw_iface']['search_list'] == ['example.com', 'local']
+    assert autofile['ifaces'][0]['osname'] == 'enccw0b01'
     assert autofile['volumes'][0]['type'] == 'DASD'
     assert autofile['volumes'][0]['partitions'] == [
         {'fs': 'ext4', 'mp': '/', 'size': '18000M'}

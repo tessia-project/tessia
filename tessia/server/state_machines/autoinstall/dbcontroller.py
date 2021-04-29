@@ -124,7 +124,8 @@ class DbController:
             subnet.address,
             gateway=subnet.gateway,
             vlan=subnet.vlan,
-            dns=[dns for dns in [subnet.dns_1, subnet.dns_2] if dns]
+            dns=[dns for dns in [subnet.dns_1, subnet.dns_2] if dns],
+            search_list=subnet.search_list or ''
         )
         return model_subnet
 

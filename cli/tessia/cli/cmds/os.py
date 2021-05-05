@@ -50,12 +50,12 @@ VERSION_TYPE = CustomIntRange(min=0)
 
 @click.group(name='os')
 def _os():
-    """manage the supported operating systems"""
+    """manage the operating systems"""
     pass
 # _os()
 
 @_os.command('add',
-             short_help='add a supported operating system (admin only)')
+             short_help='add an operating system (admin only)')
 @click.option('--name', '--os', required=True, type=NAME, help="OS identifier")
 @click.option('--type', required=True, type=OS_TYPES, help="OS type")
 @click.option('--major', required=True, type=VERSION_TYPE,
@@ -67,7 +67,7 @@ def _os():
 @click.option('--template', type=NAME, help="default install template")
 def os_add(**kwargs):
     """
-    add a supported operating system (admin only)
+    add an operating system (admin only)
     """
     client = Client()
 
@@ -80,11 +80,11 @@ def os_add(**kwargs):
 # os_add()
 
 @_os.command('del',
-             short_help='remove a supported operating system (admin only)')
+             short_help='remove an operating system (admin only)')
 @click.option('--name', '--os', required=True, type=NAME, help="OS to delete")
 def os_del(name):
     """
-    remove a supported operating system (admin only)
+    remove an operating system (admin only)
     """
     client = Client()
 
@@ -126,7 +126,7 @@ def os_edit(cur_name, **kwargs):
 @click.option('--template', type=NAME, help="filter by default template")
 def os_list(**kwargs):
     """
-    list the supported operating systems
+    list the operating systems for auto-installations
     """
     # fetch data from server
     client = Client()

@@ -59,6 +59,7 @@ def status(**kwargs):
     entries = client.HmcCanary.instances(**parsed_filter)
 
     # find CPC by name, if specified
+    entries_by_cpc = []
     is_found = False
     if check_cpc is not None:
         for hmc_entry in entries:
@@ -66,6 +67,7 @@ def status(**kwargs):
                       if field['name'] == check_cpc]
             if fields:
                 is_found = True
+                entries_by_cpc.append(hmc_entry)
             setattr(hmc_entry, 'cpc_status', fields)
 
     if is_found is False and check_cpc is not None:
@@ -88,8 +90,8 @@ def status(**kwargs):
         print_items(TYPE_FIELDS_HMC, client.HmcCanary, parser_map, entries,
                     PrintMode.LONG)
     else:
-        print_items(TYPE_FIELDS_CPC, client.HmcCanary, parser_map, entries,
-                    PrintMode.LONG)
+        print_items(TYPE_FIELDS_CPC, client.HmcCanary, parser_map,
+                    entries_by_cpc, PrintMode.LONG)
 # status()
 
 CMDS = [status]

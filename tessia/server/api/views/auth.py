@@ -221,12 +221,12 @@ def authorize(decorated_view):
             raise UnauthorizedError()
 
         # set model as session variable
-        flask_global.auth_user = user_entry
+        flask_global.auth_user = user_entry # pylint: disable=assigning-non-slot
 
         # this might be relevant depending on the nature of the operation.
         # i.e. api key operations are only allowed after entering password
         # (basic scheme)
-        flask_global.auth_method = auth_scheme
+        flask_global.auth_method = auth_scheme # pylint: disable=assigning-non-slot
 
         return decorated_view(*args, **kwargs)
     # authenticate()

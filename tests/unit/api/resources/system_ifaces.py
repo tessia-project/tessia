@@ -83,6 +83,7 @@ class TestSystemIface(TestSecureResource):
         super(TestSystemIface, cls).setUpClass()
 
         # set requester for next queries
+        # pylint: disable=assigning-non-slot
         flask_global.auth_user = models.User.query.filter(
             models.User.login == 'user_hw_admin@domain.com'
         ).one()

@@ -970,7 +970,7 @@ class Repository(CommonMixin, ResourceMixin, BASE):
     __tablename__ = "repositories"
 
     name = Column(String, unique=True, nullable=False)
-    url = Column(String, unique=True, nullable=False)
+    url = Column(String, nullable=False)
     # the path in the repo to the kernel, initrd and image
     kernel = Column(String)
     initrd = Column(String)

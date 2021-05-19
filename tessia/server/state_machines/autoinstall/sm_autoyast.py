@@ -110,15 +110,15 @@ class SmAutoyast(SmBase):
         super().check_installation()
     # check_installation()
 
-    def collect_info(self):
+    def fill_template_vars(self):
         """
         See SmBase for docstring.
         """
         # collect repos, volumes, ifaces
-        super().collect_info()
+        super().fill_template_vars()
         self._logger.info('auto-generated password for VNC is %s',
                           self._info['credentials']['vnc-password'])
-    # collect_info()
+    # fill_template_vars()
 
     def target_reboot(self):
         """

@@ -19,6 +19,7 @@ Module to deal with operations on LPARs
 #
 # IMPORTS
 #
+from collections import defaultdict
 from queue import Queue
 
 from tessia.baselib.hypervisors.hmc import HypervisorHmc
@@ -73,13 +74,19 @@ class PlatLpar(PlatBase):
     Handling for HMC's LPARs
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model: AutoinstallMachineModel,
+                 hypervisor: HypervisorHmc = None):
         """
         Constructor, validate values provided.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(model)
         # create our own logger so that the right module name is in output
         self._logger = logging.getLogger(__name__)
+
+        if hypervisor:
+            self._hyp_obj = hypervisor
+        else:
+            self._hyp_obj = PlatLpar.create_hypervisor(model)
 
         # create HMC session
         self._hyp_obj.login()
@@ -149,9 +156,6 @@ class PlatLpar(PlatBase):
 
         Returns:
             Tuple[dict, string]: (params, None) or (None, error)
-
-        Raises:
-            ValueError: failed to parse boot URI
         """
         params = None
         if boot_options['boot-method'] == 'storage':
@@ -185,6 +189,99 @@ class PlatLpar(PlatBase):
         return (None, "No boot parameters specified")
     # _boot_device_to_baselib_params()
 
+    def _prepare_network_parameters(self):
+        """
+        Prepare network configuration for baselib
+
+        Raises:
+            ValueError: unsupported network card
+
+        Returns:
+            dict: netsetup for baselib
+        """
+        subnet_model = self._gw_iface.gateway_subnets[0]
+        # network configuration
+        netsetup = {
+            "mac": self._gw_iface.mac_address,
+            "ip": str(subnet_model.ip_address),
+            "mask": subnet_model.subnet.prefixlen,
+            "gateway": str(subnet_model.gateway),
+            "password": self._live_passwd,
+        }
+        if subnet_model.vlan:
+            netsetup['vlan'] = (
+                subnet_model.vlan)
+        # osa cards
+        if isinstance(self._gw_iface, AutoinstallMachineModel.OsaInterface):
+            netsetup['type'] = 'osa'
+            netsetup['device'] = (
+                self._gw_iface.ccwgroup.split(",")[0].split('.')[-1])
+            netsetup['options'] = {
+                'layer2': self._gw_iface.layer2,
+                'portno': self._gw_iface.portno,
+                'portname': self._gw_iface.portname,
+            }
+        # roce cards
+        elif isinstance(self._gw_iface, AutoinstallMachineModel.RoceInterface):
+            netsetup['type'] = 'pci'
+            netsetup['device'] = self._gw_iface.fid
+        else:
+            raise ValueError('Unsupported network card type {}'
+                             .format(self._gw_iface.type))
+        if subnet_model.dns:
+            netsetup['dns'] = subnet_model.dns
+
+        return netsetup
+    # _prepare_network_parameters()
+
+    def _prepare_installation_parameters(self, kargs):
+        """
+        Prepare network installation parameters for baselib
+        using repository information
+
+        Args:
+            kargs (str): kernel command line args for os' installer
+
+        Returns:
+            dict: netboot for baselib
+        """
+        repo = self._repo
+        kernel_uri = urljoin(repo.url + '/', repo.kernel.strip('/'))
+        initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
+
+        return {
+            "kernel_url": kernel_uri,
+            "initrd_url": initrd_uri,
+            "cmdline": kargs
+        }
+
+    def _update_model_scsi_volumes(self, volumes_desc):
+        """
+        Update SCSI volumes that match descriptors
+        """
+
+        # model identifies disks by LUN, but descriptors
+        # may have multiple paths with different LUNs.
+        # Let's regroup incoming data first
+        paths_by_luns = defaultdict(list)
+        for volume_desc in volumes_desc:
+            for path in volume_desc['paths']:
+                paths_by_luns[path['lun'].lower()].append(
+                    (path['device_nr'].lower(),
+                     path['wwpn'].lower()))
+
+        # add paths to model SCSI volume if there are none specified
+        for volume in self._model.system_profile.volumes:
+            if (isinstance(volume, AutoinstallMachineModel.ScsiVolume)
+                    and not volume.paths):
+                for adapter, wwpn in paths_by_luns[volume.lun.lower()]:
+                    volume.add_path(adapter, wwpn)
+                if paths_by_luns[volume.lun.lower()]:
+                    self._logger.debug("Added paths for volume %s", volume.lun)
+                else:
+                    self._logger.warning("HMC reported no paths for volume %s",
+                                         volume.lun)
+
     @classmethod
     def create_hypervisor(cls, model: AutoinstallMachineModel):
         """
@@ -200,26 +297,18 @@ class PlatLpar(PlatBase):
             None)
     # create_hypervisor()
 
-    def boot(self, kargs):
+    def prepare_guest(self):
         """
-        Perform a boot operation so that the installation process can start.
-
-        Args:
-            kargs (str): kernel command line args for os' installer
+        Initialize guest (activate, prepare hardware etc.)
+        and boot live image.
 
         Raises:
-            ValueError: in case an unsupported network type is found
-            RuntimeError: baselib exception occurred
+            RuntimeError: wrong options passed
         """
         # basic information
         cpu = self._guest_prof.cpus
         memory = self._guest_prof.memory
         guest_name = self._hyp_system.boot_options['partition-name']
-
-        # repository related information
-        repo = self._repo
-        kernel_uri = urljoin(repo.url + '/', repo.kernel.strip('/'))
-        initrd_uri = urljoin(repo.url + '/', repo.initrd.strip('/'))
 
         # parameters argument, see baselib schema for details
         params = {}
@@ -229,67 +318,18 @@ class PlatLpar(PlatBase):
         if err:
             raise RuntimeError(err)
 
-        params['boot_params']['netboot'] = {
-            "kernel_url": kernel_uri,
-            "initrd_url": initrd_uri,
-            "cmdline": kargs
-        }
-        subnet_model = self._gw_iface.gateway_subnets[0]
-        # network configuration
-        params['boot_params']['netsetup'] = {
-            "mac": self._gw_iface.mac_address,
-            "ip": str(subnet_model.ip_address),
-            "mask": subnet_model.subnet.prefixlen,
-            "gateway": str(subnet_model.gateway),
-            "password": self._live_passwd,
-        }
-        if subnet_model.vlan:
-            params['boot_params']['netsetup']['vlan'] = (
-                subnet_model.vlan)
-        # osa cards
-        if isinstance(self._gw_iface, AutoinstallMachineModel.OsaInterface):
-            params['boot_params']['netsetup']['type'] = 'osa'
-            params['boot_params']['netsetup']['device'] = (
-                self._gw_iface.ccwgroup.split(",")[0].split('.')[-1])
-            params['boot_params']['netsetup']['options'] = {
-                'layer2': self._gw_iface.layer2,
-                'portno': self._gw_iface.portno,
-                'portname': self._gw_iface.portname,
-            }
-        # roce cards
-        elif isinstance(self._gw_iface, AutoinstallMachineModel.RoceInterface):
-            params['boot_params']['netsetup']['type'] = 'pci'
-            params['boot_params']['netsetup']['device'] = self._gw_iface.fid
-        else:
-            raise ValueError('Unsupported network card type {}'
-                             .format(self._gw_iface.type))
-        if subnet_model.dns:
-            params['boot_params']['netsetup']['dns'] = subnet_model.dns
+        # call baselib to bring up the guest system
+        self._hyp_obj.start(guest_name, cpu, memory, params)
 
-        # Run HMC communication in separate thread to be able to continue
-        # with the state machine after boot_notification has been signaled.
-        # Thread will continue running for some time, providing HMC output.
-        # If an exception happens in the thread before boot happened,
-        # we should re-raise it to stop further processing
-        boot_notification = Event()
-        exception_store = Queue()
-        hyp_thread = HmcThread(
-            exception_store, self._hyp_obj.start,
-            guest_name, cpu, memory, params, boot_notification)
-        hyp_thread.start()
+        # query storage configuration after activation
+        storage_info = self._hyp_obj.query_dpm_storage_devices(guest_name)
+        self._logger.debug(
+            "Retrieved data about %d devices in storage groups for system %s",
+            len(storage_info), guest_name)
+        self._update_model_scsi_volumes([volume for volume in storage_info
+                                         if volume.get('type') == 'SCSI'])
 
-        # wait until either we have been notified that we can go on,
-        # or baselib thread has exited for some reason
-        while not boot_notification.wait(5.) and hyp_thread.is_alive():
-            pass
-        if not exception_store.empty():
-            exc_info = exception_store.get()
-            self._logger.debug('HMC thread exception: %s', str(exc_info[1]))
-            raise RuntimeError("Failed to prepare partition") from exc_info[1]
-
-        if boot_notification.is_set():
-            self._logger.debug("Received initial boot complete notification")
-    # boot()
+    # prepare_guest()
 
     def set_boot_device(self, boot_device):
         """
@@ -309,4 +349,52 @@ class PlatLpar(PlatBase):
             raise RuntimeError("Missing set_boot_device parameters")
         self._hyp_obj.set_boot_device(guest_name, params)
     # set_boot_device()
+
+    def start_installer(self, kargs):
+        """
+        Perform a boot operation so that the installation process can start.
+
+        Args:
+            kargs (str): kernel command line args for os' installer
+
+        Raises:
+            RuntimeError: wrong options passed
+        """
+        guest_name = self._hyp_system.boot_options['partition-name']
+
+        # parameters argument, see baselib schema for details
+        params = {
+            'boot_params': {
+                'boot_method': 'none',
+                'netsetup': self._prepare_network_parameters(),
+                'netboot': self._prepare_installation_parameters(kargs),
+            }
+        }
+
+        # call baselib to continue with the installer
+
+        # Run HMC communication in separate thread to be able to continue
+        # with the state machine after boot_notification has been signaled.
+        # Thread will continue running for some time, providing HMC output.
+        # If an exception happens in the thread before boot happened,
+        # we should re-raise it to stop further processing
+        boot_notification = Event()
+        exception_store = Queue()
+        hyp_thread = HmcThread(
+            exception_store, self._hyp_obj.start,
+            guest_name, 0, 0, params, boot_notification)
+        hyp_thread.start()
+
+        # wait until either we have been notified that we can go on,
+        # or baselib thread has exited for some reason
+        while not boot_notification.wait(5.) and hyp_thread.is_alive():
+            pass
+        if not exception_store.empty():
+            exc_info = exception_store.get()
+            self._logger.debug('HMC thread exception: %s', str(exc_info[1]))
+            raise RuntimeError("Failed to start installation") from exc_info[1]
+
+        if boot_notification.is_set():
+            self._logger.debug("Received initial boot complete notification")
+    # start_installer()
 # PlatLpar

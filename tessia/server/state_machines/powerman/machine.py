@@ -25,7 +25,9 @@ from itertools import chain
 from jsonschema import validate
 from tessia.baselib.common.s3270.terminal import Terminal
 from tessia.baselib.guests import Guest
-from tessia.baselib.hypervisors import Hypervisor
+from tessia.baselib.hypervisors.hmc import HypervisorHmc
+from tessia.baselib.hypervisors.kvm import HypervisorKvm
+from tessia.baselib.hypervisors.zvm import HypervisorZvm
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import System, SystemProfile
 from tessia.server.lib import post_install
@@ -158,19 +160,25 @@ class PowerManagerMachine(BaseMachine):
         """
         # a root volume must be available
         root_vol = None
+        boot_vol = None
         for vol_obj in profile_obj.storage_volumes_rel:
             if not vol_obj.part_table:
                 continue
             for entry in vol_obj.part_table.get("table", []):
                 if entry["mp"] == "/":
                     root_vol = vol_obj
-                    break
+                elif entry["mp"] == "/boot":
+                    boot_vol = vol_obj
+
+        if not boot_vol:
+            boot_vol = root_vol
         if not root_vol:
             raise ValueError(
                 'Profile {} has no volume containing a root partition'
                 .format(profile_obj.name))
         # save reference to root volume for use in other stages
         profile_obj.root_vol = root_vol
+        profile_obj.boot_vol = boot_vol
 
         if (profile_obj.system_rel.type.lower() == 'zvm' and
                 ('zvm-password' not in profile_obj.credentials)):
@@ -322,8 +330,7 @@ class PowerManagerMachine(BaseMachine):
         return resources
     # _get_resources()
 
-    @staticmethod
-    def _get_start_params_lpar(hyp_prof, guest_prof):
+    def _start_hypervisor_lpar(self, hyp_prof, guest_prof):
         """
         Define the parameters in baselib format to start a LPAR system
 
@@ -343,37 +350,67 @@ class PowerManagerMachine(BaseMachine):
                 .format(guest_prof.name))
         root_vol = guest_prof.root_vol
 
+        baselib_hyp = HypervisorHmc(
+            hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
+            hyp_prof.credentials['admin-user'],
+            hyp_prof.credentials['admin-password'], None)
+        # login to hypervisor, but do not start machine
+        baselib_hyp.login()
+
         params = {}
         if root_vol.type.lower() == 'fcp':
-            # WARNING: so far with DS8K storage servers the wwid seems to
-            # correspond to the uuid by removing only the first digit, but this
-            # not documented so it might change in future or even be different
-            # with other storage types
-            vol_uuid = root_vol.specs['wwid'][1:]
-            params['boot_params'] = {
-                'boot_method': 'scsi',
-                'devicenr': root_vol.specs['adapters'][0]['devno'],
-                'wwpn': root_vol.specs['adapters'][0]['wwpns'][0],
-                'lun': root_vol.volume_id,
-                'uuid': vol_uuid,
-            }
+            if not root_vol.specs.get('adapters'):
+                self._logger.debug("Querying HMC for storage configuration")
+                # there are no adapters defined - query hypervisor for them
+                storage_descriptors = baselib_hyp.query_dpm_storage_devices(
+                    guest_prof.system_rel.name)
+                # find first one matching volume id
+                for volume_desc in [volume for volume in storage_descriptors
+                                    if volume.get('type') == 'SCSI']:
+                    for path in volume_desc['paths']:
+                        if path['lun'].lower() == root_vol.volume_id.lower():
+                            params['boot_params'] = {
+                                'boot_method': 'scsi',
+                                'devicenr': path['device_nr'].lower(),
+                                'wwpn': path['wwpn'].lower(),
+                                'lun': root_vol.volume_id,
+                                'uuid': volume_desc['uuid'],
+                            }
+                            break
+                    if params.get('boot_params'):
+                        break
+                if not params.get('boot_params'):
+                    raise ValueError(
+                        'Cannot boot: no paths found for FCP volume {}'.format(
+                            root_vol.volume_id))
+
+            else:
+                # WARNING: so far with DS8K storage servers the wwid seems to
+                # correspond to the uuid by removing only the first digit, but
+                # this not documented so it might change in future or even be
+                # different with other storage types
+                vol_uuid = root_vol.specs['wwid'][1:]
+                params['boot_params'] = {
+                    'boot_method': 'scsi',
+                    'devicenr': root_vol.specs['adapters'][0]['devno'],
+                    'wwpn': root_vol.specs['adapters'][0]['wwpns'][0],
+                    'lun': root_vol.volume_id,
+                    'uuid': vol_uuid,
+                }
         else:
             params['boot_params'] = {
                 'boot_method': 'dasd',
                 'devicenr': root_vol.volume_id
             }
 
-        init_params = (
-            'hmc', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
-            hyp_prof.credentials['admin-user'],
-            hyp_prof.credentials['admin-password'], None)
-        start_params = (guest_prof.system_rel.name, guest_prof.cpu,
-                        guest_prof.memory, params)
-        return (init_params, start_params)
-    # _get_start_params_lpar()
+        baselib_hyp.start(guest_prof.system_rel.name, guest_prof.cpu,
+                          guest_prof.memory, params)
+
+        baselib_hyp.logoff()
+    # _start_hypervisor_lpar()
 
     @staticmethod
-    def _get_start_params_kvm(hyp_prof, guest_prof):
+    def _start_hypervisor_kvm(hyp_prof, guest_prof):
         """
         Define the parameters in baselib format to start a KVM guest system
 
@@ -423,17 +460,18 @@ class PowerManagerMachine(BaseMachine):
                 'boot_method': 'disk'
             }
         }
-        init_params = (
-            'kvm', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
+        baselib_hyp = HypervisorKvm(
+            hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             hyp_prof.credentials['admin-user'],
             hyp_prof.credentials['admin-password'], None)
-        start_params = (guest_prof.system_rel.name, guest_prof.cpu,
-                        guest_prof.memory, params)
-        return (init_params, start_params)
-    # _get_start_params_kvm()
+        baselib_hyp.login()
+        baselib_hyp.start(guest_prof.system_rel.name, guest_prof.cpu,
+                          guest_prof.memory, params)
+        baselib_hyp.logoff()
+    # _start_hypervisor_kvm()
 
     @staticmethod
-    def _get_start_params_zvm(hyp_prof, guest_prof):
+    def _start_hypervisor_zvm(hyp_prof, guest_prof):
         """
         Define the parameters in baselib format to start a zVM guest system
 
@@ -489,22 +527,22 @@ class PowerManagerMachine(BaseMachine):
         else:
             init_params = None
 
-        init_args = (
-            'zvm', hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
+        baselib_hyp = HypervisorZvm(
+            hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             guest_prof.system_rel.name,
             guest_prof.credentials['zvm-password'],
             init_params)
-
+        baselib_hyp.login()
         # define args for the start call
         start_params = {
             'ifaces': ifaces,
             'storage_volumes': svols,
             'boot_method': 'disk',
         }
-        start_args = (guest_prof.system_rel.name, guest_prof.cpu,
-                      guest_prof.memory, start_params)
-        return (init_args, start_args)
-    # _get_start_params_zvm()
+        baselib_hyp.start(guest_prof.system_rel.name, guest_prof.cpu,
+                          guest_prof.memory, start_params)
+        baselib_hyp.logoff()
+    # _start_hypervisor_zvm()
 
     @staticmethod
     def _is_system_up(system_prof, guest_prof=None):
@@ -712,13 +750,13 @@ class PowerManagerMachine(BaseMachine):
 
         # normalize names for baselib
         try:
-            hyp_type = {'cpc': 'hmc', 'lpar': 'kvm'}[hyp_type]
+            hyp_class = {'cpc': HypervisorHmc, 'lpar': HypervisorKvm}[hyp_type]
         except KeyError:
             raise ValueError("Unknown type '{}' for system {}".format(
                 hyp_type, hyp_prof.system_rel.name))
 
-        baselib_hyp = Hypervisor(
-            hyp_type, hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
+        baselib_hyp = hyp_class(
+            hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             hyp_prof.credentials['admin-user'],
             hyp_prof.credentials['admin-password'], None)
         baselib_hyp.login()
@@ -746,8 +784,8 @@ class PowerManagerMachine(BaseMachine):
         except KeyError:
             pass
 
-        baselib_hyp = Hypervisor(
-            'zvm', hyp_prof.system_rel.name,
+        baselib_hyp = HypervisorZvm(
+            hyp_prof.system_rel.name,
             hyp_prof.system_rel.hostname,
             guest_name,
             guest_prof.credentials['zvm-password'],
@@ -788,21 +826,15 @@ class PowerManagerMachine(BaseMachine):
 
         system_type = guest_prof.system_rel.type.lower()
         if system_type == 'lpar':
-            method = self._get_start_params_lpar
+            self._start_hypervisor_lpar(hyp_prof, guest_prof)
         elif system_type == 'kvm':
-            method = self._get_start_params_kvm
+            self._start_hypervisor_kvm(hyp_prof, guest_prof)
         elif system_type == 'zvm':
-            method = self._get_start_params_zvm
+            self._start_hypervisor_zvm(hyp_prof, guest_prof)
         else:
             raise ValueError(
                 'Unsupported system type {}'.format(system_type)
             )
-
-        init_args, start_args = method(hyp_prof, guest_prof)
-        baselib_hyp = Hypervisor(*init_args)
-        baselib_hyp.login()
-        baselib_hyp.start(*start_args)
-        baselib_hyp.logoff()
 
         self._powered_on[guest_prof.system_rel.name] = guest_prof
         self._logger.info('System %s successfully powered on', system_name)

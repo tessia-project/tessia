@@ -384,9 +384,14 @@ def vol_add(**kwargs):
             item['specs']['multipath'] = True
 
         # wwid or no fcp path specified: report error
-        if 'wwid' not in item['specs'] or 'adapters' not in item['specs']:
-            raise click.ClickException('both --path and --wwid must be '
-                                       'specified')
+        if 'wwid' not in item['specs']:
+            raise click.ClickException('--wwid must be specified')
+        if 'adapters' not in item['specs']:
+            click.echo(
+                'Note: there are no paths to this volume.'
+                ' FCP volumes without configured paths'
+                ' may be inaccessible.'
+                )
     item.save()
     click.echo('Item added successfully.')
 # vol_add()
@@ -504,8 +509,11 @@ def vol_edit(server, cur_id, **kwargs):
                     update_dict['specs']['adapters'].pop(index)
             # at least one path must be available
             if not update_dict['specs']['adapters']:
-                raise click.ClickException(
-                    'fcp volume must have at least one path')
+                click.echo(
+                    'Note: there are no more paths to this volume.'
+                    ' FCP volumes without configured paths'
+                    ' may be inaccessible.'
+                    )
 
         elif key == 'wwid':
             if item['type'] != 'FCP':

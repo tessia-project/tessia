@@ -1074,7 +1074,7 @@ class PostInstallChecker:
                     continue
 
                 # go over each fcp path combination and verify if it's there
-                for exp_adapter in svol['specs']['adapters']:
+                for exp_adapter in svol['specs'].get('adapters', []):
                     exp_devno = exp_adapter['devno']
                     # not in full format: normalize it
                     if exp_devno.find('.') == -1:

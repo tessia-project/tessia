@@ -109,12 +109,12 @@ class SmAnaconda(SmBase):
                 .format(os_entry.pretty_name, MIN_MIB_MEM))
     # _assert_minumum_requirements()
 
-    def collect_info(self):
+    def fill_template_vars(self):
         """
         See SmBase for docstring.
         """
         # collect repos, volumes, ifaces
-        super().collect_info()
+        super().fill_template_vars()
 
         self._logger.info('auto-generated password for VNC is %s',
                           self._info['credentials']['vnc-password'])
@@ -122,7 +122,7 @@ class SmAnaconda(SmBase):
         for iface in self._info["ifaces"] + [self._info['gw_iface']]:
             if iface["type"] == "OSA":
                 self._add_systemd_osname(iface)
-    # collect_info()
+    # fill_template_vars()
 
     def wait_install(self):
         """

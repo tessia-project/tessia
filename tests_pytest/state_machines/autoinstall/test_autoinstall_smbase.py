@@ -92,6 +92,75 @@ class NullPostInstallChecker:
         return []
 
 
+class TestModelUpdate:
+    """
+    Test model updates during autoinstallation
+    """
+
+    class UpdatingHypervisor(NullHypervisor):
+        """
+        Hypervisor that returns some valid data about storage volumes
+        """
+
+        @tracked
+        def query_dpm_storage_devices(self, guest_name):
+            """Query storage devices on DPM"""
+            return [
+                {'type': 'SCSI', 'is_fulfilled': True, 'size': 19.07,
+                 'paths': [{'device_nr': 'FC00',
+                            'wwpn': '5005076309049435',
+                            'lun': 'CD0F0000'}]
+                 }]
+
+    @pytest.fixture
+    def scsi_volume_without_paths(self):
+        """
+        A single-partition SCSI volume
+        """
+        result = AutoinstallMachineModel.ScsiVolume(
+            'cd0f0000', 20_000_000, multipath=True,
+            wwid='36005076309ffd435000000000000cd0f')
+        result.set_partitions('msdos', [{
+            'mount_point': '/data',
+            'size': 18_000,
+            'filesystem': 'ext4',
+            'part_type': 'primary',
+            'mount_opts': None,
+        }])
+        yield result
+
+    @pytest.fixture(autouse=True)
+    def mock_hypervisors(self, monkeypatch):
+        """
+        Use hypevisor stub instead of real sessions
+        """
+        monkeypatch.setattr(plat_lpar, 'HypervisorHmc',
+                            TestModelUpdate.UpdatingHypervisor)
+
+    def test_model_update(self, lpar_scsi_system, default_os_tuple, tmpdir,
+                          scsi_volume_without_paths):
+        """
+        Attempt to install "nothing" on an LPAR on SCSI disk
+        Verify that hypervisor is called with correct parameters
+        and post-install checker is run
+        """
+        model = AutoinstallMachineModel(*default_os_tuple,
+                                        lpar_scsi_system, CREDS)
+        model.system_profile.add_volume(scsi_volume_without_paths)
+        checker = NullPostInstallChecker()
+        hyp = plat_lpar.PlatLpar.create_hypervisor(model)
+        platform = plat_lpar.PlatLpar(model, hyp)
+        # autoinstall machines use their own working directory
+        # and have to be initialized in a temporary environment
+        with tmpdir.as_cwd():
+            smbase = NullMachine(model, platform, checker)
+
+        smbase.start()
+
+        assert len(model.system_profile.volumes) == 2
+        assert model.system_profile.volumes[1].paths
+
+
 @pytest.fixture(autouse=True)
 def mock_config(monkeypatch, tmp_path):
     """
@@ -155,7 +224,7 @@ def test_boot_and_postinstall_check_on_lpar_dasd(
     smbase.start()
 
     assert checker.verify.called_once
-    sys, cpus, mem, attrs, *_ = hyp.start.last_call
+    sys, cpus, mem, attrs, *_ = hyp.start.calls[0]
     assert sys == lpar_dasd_system.hypervisor.boot_options['partition-name']
     assert cpus == lpar_dasd_system.cpus
     assert mem == lpar_dasd_system.memory
@@ -186,7 +255,7 @@ def test_boot_and_postinstall_check_on_lpar_scsi(
     smbase.start()
 
     assert checker.verify.called_once
-    sys, cpus, mem, attrs, *_ = hyp.start.last_call
+    sys, cpus, mem, attrs, *_ = hyp.start.calls[0]
     assert sys == lpar_scsi_system.hypervisor.boot_options['partition-name']
     assert cpus == lpar_scsi_system.cpus
     assert mem == lpar_scsi_system.memory
@@ -217,7 +286,7 @@ def test_boot_and_postinstall_check_on_vm_dasd(
     smbase.start()
 
     assert checker.verify.called_once
-    sys, cpus, mem, attrs, *_ = hyp.start.last_call
+    sys, cpus, mem, attrs, *_ = hyp.start.calls[0]
     assert sys == vm_dasd_system.system_name
     assert cpus == vm_dasd_system.cpus
     assert mem == vm_dasd_system.memory
@@ -246,7 +315,7 @@ def test_boot_and_postinstall_check_on_vm_scsi(
     smbase.start()
 
     assert checker.verify.called_once
-    sys, cpus, mem, attrs, *_ = hyp.start.last_call
+    sys, cpus, mem, attrs, *_ = hyp.start.calls[0]
     assert sys == vm_scsi_system.system_name
     assert cpus == vm_scsi_system.cpus
     assert mem == vm_scsi_system.memory
@@ -276,7 +345,7 @@ def testboot_and_postinstall_check_on_kvm_scsi(
     smbase.start()
 
     assert checker.verify.called_once
-    sys, cpus, mem, attrs, *_ = hyp.start.last_call
+    sys, cpus, mem, attrs, *_ = hyp.start.calls[0]
     assert sys == kvm_scsi_system.system_name
     assert cpus == kvm_scsi_system.cpus
     assert mem == kvm_scsi_system.memory
@@ -319,7 +388,7 @@ def test_network_boot_on_lpar_scsi(
 
     smbase.start()
 
-    sys, cpus, mem, attrs, *_ = hyp.start.last_call
+    sys, cpus, mem, attrs, *_ = hyp.start.calls[0]
     assert sys == hmc_hypervisor.boot_options['partition-name']
     assert cpus == system.cpus
     assert mem == system.memory

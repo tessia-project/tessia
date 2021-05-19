@@ -405,7 +405,7 @@ def scsi_volume():
     A single-partition SCSI volume
     """
     result = AutoinstallMachineModel.ScsiVolume(
-        'abcd', 20_000_000, multipath=True,
+        'bcde0000', 20_000_000, multipath=True,
         wwid='36005076309ffd4350000000000007926')
     result.create_paths(
         ['0.0.fc00', '0.0.fc40'],

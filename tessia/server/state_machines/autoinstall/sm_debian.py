@@ -167,12 +167,12 @@ class SmDebianInstaller(SmBase):
         return fs_name
     # _convert_fs()
 
-    def collect_info(self):
+    def fill_template_vars(self):
         """
         See SmBase for docstring.
         """
         # collect repos, volumes, ifaces
-        super().collect_info()
+        super().fill_template_vars()
 
         # Gather the device numbers of the disks and the paths
         # (denov, wwpn, lun).
@@ -260,7 +260,7 @@ class SmDebianInstaller(SmBase):
                     "component found".format(repo['url']))
             repo['apt_url'] = '{} {}'.format(
                 root_path, comps.replace('/', ' ')).rstrip()
-    # collect_info()
+    # fill_template_vars()
 
     def wait_install(self):
         """

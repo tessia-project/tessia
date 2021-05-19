@@ -309,7 +309,7 @@ class DbController:
                     specs.get('wwid'),
                     device_path=dev_path
                 )
-                for adapter in specs.get('adapters'):
+                for adapter in specs.get('adapters', []):
                     model_vol.create_paths([adapter.get('devno')],
                                            adapter.get('wwpns'))
             elif profile_volume.type == 'HPAV':

@@ -23,6 +23,7 @@ from tessia.cli.client import Client
 from tessia.cli.config import CONF
 from tessia.cli.cmds.job.job import cancel as job_cancel
 from tessia.cli.cmds.job.job import output as job_output
+from tessia.cli.cmds.net.ip import ip_list
 from tessia.cli.cmds.storage.vol import vol_list
 from tessia.cli.cmds.system.iface import iface_list
 from tessia.cli.cmds.system.prof import prof_edit, prof_list
@@ -243,6 +244,10 @@ def info(ctx, **kwargs):
     # iface info
     click.echo('\nNetwork interfaces\n------------------', nl=False)
     ctx.invoke(iface_list, system=kwargs['system'])
+    # ip info
+    click.echo('\nIP addresses\n------------------', nl=False)
+    ctx.invoke(ip_list, system=kwargs['system'])
+
 # info()
 
 @click.command(name='list')

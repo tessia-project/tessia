@@ -19,7 +19,6 @@ Interface for epresentation of each platform type
 #
 # IMPORTS
 #
-from tessia.baselib.hypervisors.base import HypervisorBase
 from tessia.server.state_machines.autoinstall.model import \
     AutoinstallMachineModel
 from tessia.baselib.common.ssh.client import SshClient
@@ -46,8 +45,7 @@ class PlatBase(metaclass=abc.ABCMeta):
     Base class for all platforms
     """
 
-    def __init__(self, model: AutoinstallMachineModel,
-            hypervisor: HypervisorBase):
+    def __init__(self, model: AutoinstallMachineModel):
         """
         Constructor, store references and create hypervisor object
 
@@ -63,25 +61,7 @@ class PlatBase(metaclass=abc.ABCMeta):
         self._os = model.operating_system
         self._repo = model.os_repos[0]
         self._gw_iface = model.system_profile.gateway_interface
-
-        # base class no knowledge about parameters so _create_hyp can be
-        # implemented by children classes
-        self._hyp_obj = hypervisor
     # __init__()
-
-    @abc.abstractmethod
-    def boot(self, kargs):
-        """
-        Perform a boot operation so that the installation process can start.
-
-        Args:
-            kargs (str): kernel command line args for os' installer
-
-        Raises:
-            NotImplementedError: as it should be implemented by child class
-        """
-        raise NotImplementedError()
-    # boot()
 
     @classmethod
     def create_hypervisor(cls, model: AutoinstallMachineModel):
@@ -92,6 +72,17 @@ class PlatBase(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
     # create_hypervisor()
+
+    @abc.abstractmethod
+    def prepare_guest(self):
+        """
+        Initialize guest (activate, prepare hardware etc.)
+
+        Raises:
+            NotImplementedError: as it should be implemented by child class
+        """
+        raise NotImplementedError()
+    # prepare_guest()
 
     def reboot(self):
         """
@@ -133,4 +124,18 @@ class PlatBase(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
     # set_boot_device()
+
+    @abc.abstractmethod
+    def start_installer(self, kargs):
+        """
+        Perform a boot operation so that the installation process can start.
+
+        Args:
+            kargs (str): kernel command line args for os' installer
+
+        Raises:
+            NotImplementedError: as it should be implemented by child class
+        """
+        raise NotImplementedError()
+    # start_installer()
 # PlatBase

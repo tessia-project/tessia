@@ -398,12 +398,12 @@ class SmSubiquityInstaller(SmBase):
         super().cleanup()
     # cleanup()
 
-    def collect_info(self):
+    def fill_template_vars(self):
         """
         See SmBase for docstring.
         """
         # collect repos, volumes, ifaces
-        super().collect_info()
+        super().fill_template_vars()
 
         # Gather the device numbers of the disks and the paths
         # (denov, wwpn, lun).
@@ -509,7 +509,7 @@ class SmSubiquityInstaller(SmBase):
             "key": self._session_id,
             "token": self._session_secret
         }
-    # collect_info()
+    # fill_template_vars()
 
     def create_autofile(self):
         """

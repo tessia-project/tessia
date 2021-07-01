@@ -49,6 +49,11 @@ class NullHypervisor(HypervisorBase):
         """Logon from hypervisor always succeeds"""
 
     @tracked
+    def query_dpm_storage_devices(self, guest_name):
+        """Query storage devices on DPM"""
+        return []
+
+    @tracked
     def set_boot_device(self, guest_name, boot_device_params):
         """Set boot device alwas succeeds"""
 

@@ -165,10 +165,10 @@ def test_systemd_osa_name_rhel7(hmc_hypervisor,
     with tmpdir.as_cwd():
         autofile_dir = os.getcwd()
         instmachine = SmAnaconda(model, platform)
-    instmachine.init()
-    instmachine.collect_info()
+    instmachine.init_target()
+    instmachine.fill_template_vars()
     instmachine.create_autofile()
-    instmachine.target_boot()
+    instmachine.boot_installer()
 
     with open(os.path.join(autofile_dir, 'lp10-default')) as f:
         autofile = f.read()
@@ -211,10 +211,10 @@ def test_systemd_osa_name_rhel8(zvm_hypervisor,
     with tmpdir.as_cwd():
         autofile_dir = os.getcwd()
         instmachine = SmAnaconda(model, platform)
-    instmachine.init()
-    instmachine.collect_info()
+    instmachine.init_target()
+    instmachine.fill_template_vars()
     instmachine.create_autofile()
-    instmachine.target_boot()
+    instmachine.boot_installer()
 
     with open(os.path.join(autofile_dir, 'vm25-two-osa')) as f:
         autofile = f.read()

@@ -95,7 +95,7 @@ class SmBase(metaclass=abc.ABCMeta):
         self._autofile_path = os.path.join(
             autoinstall_config["dir"], autofile_name)
         self._work_dir = os.getcwd()
-        # set during collect_info state
+        # set during fill_template_vars state
         self._info = None
     # __init__()
 
@@ -338,13 +338,35 @@ class SmBase(metaclass=abc.ABCMeta):
         raise NotImplementedError()
     # DISTRO_TYPE
 
-    def init(self):
+    def boot_installer(self):
         """
-        Initialization, clean the current OS in the SystemProfile.
+        Performs the boot of the target system to initiate the installation
         """
-        # self._profile.operating_system_id = None
-        # MANAGER.session.commit()
-    # init()
+        kargs = self._render_installer_cmdline()
+        if self._model.installer_cmdline:
+            custom_kargs = self._model.installer_cmdline
+            # below we use a dict to remove duplicated parameters, the code
+            # assumes no kernel params have empty spaces as values
+            # (i.e. param="foo bar") so if this is ever to be supported
+            # the implementation below needs to be improved
+            kargs_dict = OrderedDict()
+            for param in kargs.split() + custom_kargs.split():
+                try:
+                    name, value = param.split('=', 1)
+                except ValueError:
+                    name, value = param, None
+                kargs_dict[name] = value
+            custom_kargs = []
+            for name, value in kargs_dict.items():
+                if value is None:
+                    custom_kargs.append(name)
+                else:
+                    custom_kargs.append('{}={}'.format(name, value))
+            kargs = ' '.join(custom_kargs)
+        self._logger.info('kernel cmdline for installer is: %s', kargs)
+
+        self._platform.start_installer(kargs)
+    # boot_installer()
 
     def check_installation(self):
         """
@@ -393,7 +415,30 @@ class SmBase(metaclass=abc.ABCMeta):
         self._remove_autofile()
     # cleanup()
 
-    def collect_info(self):
+    def create_autofile(self):
+        """
+        Fill the template and create the autofile in the target location
+        """
+        self._logger.info("generating autofile")
+        self._remove_autofile()
+        template = jinja2.Template(self._template.content)
+        self._logger.info(
+            "autotemplate will be used: '%s'", self._template.name)
+
+        autofile_content = template.render(config=self._info)
+
+        # Write the autofile for usage during installation
+        # by the distro installer.
+        with open(self._autofile_path, "w") as autofile:
+            autofile.write(autofile_content)
+        # Write the autofile in the directory that the state machine
+        # is executed.
+        with open(os.path.join(self._work_dir, os.path.basename(
+                self._autofile_path)), "w") as autofile:
+            autofile.write(autofile_content)
+    # create_autofile()
+
+    def fill_template_vars(self):
         """
         Prepare all necessary information for the template rendering by
         populating the self._info dict. Can be implemented by children classes.
@@ -481,30 +526,15 @@ class SmBase(metaclass=abc.ABCMeta):
                 info['gw_iface'] = info['ifaces'][-1]
 
         self._info = info
-    # collect_info()
+    # fill_template_vars()
 
-    def create_autofile(self):
+    def init_target(self):
         """
-        Fill the template and create the autofile in the target location
+        Initialize target machine (configure, activate etc.)
+        without booting into installer
         """
-        self._logger.info("generating autofile")
-        self._remove_autofile()
-        template = jinja2.Template(self._template.content)
-        self._logger.info(
-            "autotemplate will be used: '%s'", self._template.name)
-
-        autofile_content = template.render(config=self._info)
-
-        # Write the autofile for usage during installation
-        # by the distro installer.
-        with open(self._autofile_path, "w") as autofile:
-            autofile.write(autofile_content)
-        # Write the autofile in the directory that the state machine
-        # is executed.
-        with open(os.path.join(self._work_dir, os.path.basename(
-                self._autofile_path)), "w") as autofile:
-            autofile.write(autofile_content)
-    # create_autofile()
+        self._platform.prepare_guest()
+    # init_target()
 
     def persist_init_data(self, dbctrl: DbController):
         """
@@ -529,36 +559,6 @@ class SmBase(metaclass=abc.ABCMeta):
         Perform post installation activities.
         """
     # post_install()
-
-    def target_boot(self):
-        """
-        Performs the boot of the target system to initiate the installation
-        """
-        kargs = self._render_installer_cmdline()
-        if self._model.installer_cmdline:
-            custom_kargs = self._model.installer_cmdline
-            # below we use a dict to remove duplicated parameters, the code
-            # assumes no kernel params have empty spaces as values
-            # (i.e. param="foo bar") so if this is ever to be supported
-            # the implementation below needs to be improved
-            kargs_dict = OrderedDict()
-            for param in kargs.split() + custom_kargs.split():
-                try:
-                    name, value = param.split('=', 1)
-                except ValueError:
-                    name, value = param, None
-                kargs_dict[name] = value
-            custom_kargs = []
-            for name, value in kargs_dict.items():
-                if value is None:
-                    custom_kargs.append(name)
-                else:
-                    custom_kargs.append('{}={}'.format(name, value))
-            kargs = ' '.join(custom_kargs)
-        self._logger.info('kernel cmdline for installer is: %s', kargs)
-
-        self._platform.boot(kargs)
-    # target_boot()
 
     def target_reboot(self):
         """
@@ -585,17 +585,17 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Start the states' transition.
         """
-        self._logger.info('new state: init')
-        self.init()
+        self._logger.info('new state: init_target')
+        self.init_target()
 
-        self._logger.info('new state: collect_info')
-        self.collect_info()
+        self._logger.info('new state: fill_template_vars')
+        self.fill_template_vars()
 
         self._logger.info('new state: create_autofile')
         self.create_autofile()
 
-        self._logger.info('new state: target_boot')
-        self.target_boot()
+        self._logger.info('new state: boot_installer')
+        self.boot_installer()
 
         self._logger.info('new state: wait_install')
         self.wait_install()

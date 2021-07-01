@@ -88,9 +88,19 @@ class TestPowerManagerMachine(TestCase):
         self._mock_term_obj = self._mock_term_cls.return_value
         self.addCleanup(patcher.stop)
 
-        patcher = patch.object(machine, 'Hypervisor')
-        self._mock_hyp_cls = patcher.start()
-        self._mock_hyp_obj = self._mock_hyp_cls.return_value
+        patcher = patch.object(machine, 'HypervisorHmc')
+        self._mock_hyp_cls_hmc = patcher.start()
+        self._mock_hyp_obj_hmc = self._mock_hyp_cls_hmc.return_value
+        self.addCleanup(patcher.stop)
+
+        patcher = patch.object(machine, 'HypervisorKvm')
+        self._mock_hyp_cls_kvm = patcher.start()
+        self._mock_hyp_obj_kvm = self._mock_hyp_cls_kvm.return_value
+        self.addCleanup(patcher.stop)
+
+        patcher = patch.object(machine, 'HypervisorZvm')
+        self._mock_hyp_cls_zvm = patcher.start()
+        self._mock_hyp_obj_zvm = self._mock_hyp_cls_zvm.return_value
         self.addCleanup(patcher.stop)
 
         # mock for post_install module
@@ -119,28 +129,35 @@ class TestPowerManagerMachine(TestCase):
             guest_prof (SystemProfile): guest profile db object, only used when
                                         hyp_type is zvm
         """
+        hyp_cls, hyp_obj = {
+            'hmc': (self._mock_hyp_cls_hmc, self._mock_hyp_obj_hmc),
+            'kvm': (self._mock_hyp_cls_kvm, self._mock_hyp_obj_kvm),
+            'zvm': (self._mock_hyp_cls_zvm, self._mock_hyp_obj_zvm)
+        }[hyp_type]
+
         if hyp_type == 'zvm':
             byuser = guest_prof.credentials.get('zvm-logonby')
             init_params = {}
             if byuser:
                 init_params['byuser'] = byuser
             hyp_args = (
-                hyp_type, hyp_prof_obj.system_rel.name,
+                hyp_prof_obj.system_rel.name,
                 hyp_prof_obj.system_rel.hostname,
                 guest_obj.name,
                 guest_prof.credentials['zvm-password'],
                 init_params)
         else:
             hyp_args = (
-                hyp_type, hyp_prof_obj.system_rel.name,
+                hyp_prof_obj.system_rel.name,
                 hyp_prof_obj.system_rel.hostname,
                 hyp_prof_obj.credentials['admin-user'],
                 hyp_prof_obj.credentials['admin-password'], None)
+
         self.assertEqual(
-            self._mock_hyp_cls.call_args_list[hyp_index], call(*hyp_args))
+            hyp_cls.call_args_list[hyp_index], call(*hyp_args))
         self.assertEqual(
-            self._mock_hyp_obj.login.call_args_list[hyp_index], call())
-        self.assertEqual(self._mock_hyp_obj.stop.call_args_list[stop_index],
+            hyp_obj.login.call_args_list[hyp_index], call())
+        self.assertEqual(hyp_obj.stop.call_args_list[stop_index],
                          call(guest_obj.name, {}))
 
     # _assert_poweroff_action()
@@ -163,6 +180,12 @@ class TestPowerManagerMachine(TestCase):
         Raises:
             RuntimeError: in case developer pass an unknown guest profile
         """
+        hyp_cls, hyp_obj = {
+            'hmc': (self._mock_hyp_cls_hmc, self._mock_hyp_obj_hmc),
+            'kvm': (self._mock_hyp_cls_kvm, self._mock_hyp_obj_kvm),
+            'zvm': (self._mock_hyp_cls_zvm, self._mock_hyp_obj_zvm)
+        }[hyp_type]
+
         os_obj = hyp_prof_obj.operating_system_rel
         if (hyp_type != 'hmc' and os_obj and
                 os_obj.type.lower() in ('cms', 'zcms')):
@@ -171,22 +194,22 @@ class TestPowerManagerMachine(TestCase):
             if byuser:
                 params = {'byuser': byuser}
             hyp_args = (
-                'zvm', hyp_prof_obj.system_rel.name,
+                hyp_prof_obj.system_rel.name,
                 hyp_prof_obj.system_rel.hostname,
                 guest_prof_obj.system_rel.name,
                 guest_prof_obj.credentials['zvm-password'],
                 params)
         else:
             hyp_args = (
-                hyp_type, hyp_prof_obj.system_rel.name,
+                hyp_prof_obj.system_rel.name,
                 hyp_prof_obj.system_rel.hostname,
                 hyp_prof_obj.credentials['admin-user'],
                 hyp_prof_obj.credentials['admin-password'], None)
 
-        self.assertEqual(self._mock_hyp_cls.call_args_list[mock_index],
+        self.assertEqual(hyp_cls.call_args_list[mock_index],
                          call(*hyp_args))
         self.assertEqual(
-            self._mock_hyp_obj.login.call_args_list[mock_index], call())
+            hyp_obj.login.call_args_list[mock_index], call())
 
         # build params
         params = {}
@@ -270,7 +293,7 @@ class TestPowerManagerMachine(TestCase):
         check_mem = guest_prof_obj.memory
         if custom_mem:
             check_mem = custom_mem
-        self._mock_hyp_obj.start.assert_called_with(
+        hyp_obj.start.assert_called_with(
             guest_prof_obj.system_rel.name, check_cpu, check_mem, params)
     # _assert_poweron_action()
 
@@ -436,7 +459,7 @@ class TestPowerManagerMachine(TestCase):
         # validate call to poweroff kvm guest
         kvm_obj = System.query.filter_by(name='kvm054').one()
         hyp_prof = self._get_profile(kvm_obj.hypervisor_rel.name)
-        self._assert_poweroff_action('kvm', hyp_prof, kvm_obj, 2, -1)
+        self._assert_poweroff_action('kvm', hyp_prof, kvm_obj, 0, -1)
 
         # validate stage verify
         self._assert_system_up_action(prof_obj, 1)
@@ -891,7 +914,8 @@ class TestPowerManagerMachine(TestCase):
         machine_obj.start()
 
         # validate that stop was called only once
-        self._mock_hyp_obj.stop.assert_called_once_with(system_obj.name, {})
+        self._mock_hyp_obj_kvm.stop.assert_called_once_with(
+            system_obj.name, {})
     # test_poweroff_already_down()
 
     def test_poweron_force(self):
@@ -985,7 +1009,7 @@ class TestPowerManagerMachine(TestCase):
         # validate call to verify if system was up
         self._assert_system_up_action(prof_obj, 1)
         # no call to power on system
-        self._mock_hyp_cls.assert_not_called()
+        self._mock_hyp_cls_kvm.assert_not_called()
 
         # validate that system modified time is not updated
         updated_system_obj = System.query.filter_by(name=test_system).one()
@@ -1078,7 +1102,7 @@ class TestPowerManagerMachine(TestCase):
         # validate that last call was to verify if hypervisor was up
         self._assert_system_up_action(hyp_prof_obj, -1)
         # no call to power on system
-        self._mock_hyp_cls.assert_not_called()
+        self._mock_hyp_cls_kvm.assert_not_called()
     # test_poweron_hypervisor_not_up(self):
 
     def test_poweron_hypervisor_no_profile(self):
@@ -1149,7 +1173,7 @@ class TestPowerManagerMachine(TestCase):
         self._mock_post_obj.verify.assert_called_with()
 
         # no call to power on system
-        self._mock_hyp_cls.assert_not_called()
+        self._mock_hyp_cls_kvm.assert_not_called()
     # test_poweron_hypervisor_profile_no_match
 
     def test_poweron_verify_fails(self):

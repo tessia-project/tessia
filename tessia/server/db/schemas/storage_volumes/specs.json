@@ -27,7 +27,7 @@
                             "wwpns"
                         ]
                     },
-                    "minItems": 1
+                    "minItems": 0
                 },
                 "multipath": {
                     "type": "boolean"
@@ -38,7 +38,6 @@
                 }
             },
             "required": [
-                "adapters",
                 "multipath",
                 "wwid"
             ]

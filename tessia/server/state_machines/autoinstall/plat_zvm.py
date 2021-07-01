@@ -47,13 +47,20 @@ class PlatZvm(PlatBase):
     Handling of zVM guests
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model: AutoinstallMachineModel,
+                 hypervisor: HypervisorZvm = None):
         """
         Constructor, validate values provided.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(model)
         # create our own logger so that the right module name is in output
         self._logger = logging.getLogger(__name__)
+
+        if hypervisor:
+            self._hyp_obj = hypervisor
+        else:
+            self._hyp_obj = PlatZvm.create_hypervisor(model)
+
     # __init__()
 
     @classmethod
@@ -166,7 +173,27 @@ class PlatZvm(PlatBase):
                          .format(vol_entry.volume_type))
     # _zvm_jsonify_vol()
 
-    def boot(self, kargs):
+    def prepare_guest(self):
+        """
+        Initialize guest (activate, prepare hardware etc.)
+
+        Does nothing in current implementation; requires support in baselib
+        """
+    # prepare_guest()
+
+    def set_boot_device(self, boot_device):
+        """
+        Set boot device to perform later boot
+
+        Args:
+            boot_device (dict): boot device description
+                "storage" (StorageVolume): volume
+                "network" (string): URI with boot source
+        """
+        self._logger.debug("set_boot_device on z/VM is not implemented")
+    # set_boot_device()
+
+    def start_installer(self, kargs):
         """
         Perform a network boot operation to start the installation process
 
@@ -208,17 +235,6 @@ class PlatZvm(PlatBase):
         self._hyp_obj.start(guest_name, cpu, memory, params)
         # clear the underlying s3270 process
         self._hyp_obj.logoff()
-    # boot()
+    # start_installer()
 
-    def set_boot_device(self, boot_device):
-        """
-        Set boot device to perform later boot
-
-        Args:
-            boot_device (dict): boot device description
-                "storage" (StorageVolume): volume
-                "network" (string): URI with boot source
-        """
-        self._logger.debug("set_boot_device on z/VM is not implemented")
-    # set_boot_device()
 # PlatZvm

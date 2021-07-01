@@ -298,13 +298,11 @@ tasks:
     - - storage vol-add --server=DS8K16 --id=ED52 --type=HPAV
       - Item added successfully.
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT'
-      - 'both --path and --wwid must be specified'
+      - '--wwid must be specified'
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=false
-      - 'both --path and --wwid must be specified'
+      - '--wwid must be specified'
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=false --path='1800,100207630503c001'
-      - 'both --path and --wwid must be specified'
-    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=false --wwid=11002076305aac1a0000000000002206
-      - 'both --path and --wwid must be specified'
+      - '--wwid must be specified'
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --addpath='1800,100207630513c001' --wwid=11002076305aac1a0000000000002206
       - 'no such option: --addpath'
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c001' --wwid=11002076305aac1a0000000000002206 --mpath
@@ -321,8 +319,14 @@ tasks:
       - "Invalid value for '--wwid': 5555.50 is not a valid wwid"
     - - storage vol-add --server=DS8K16 --type=FCP --id=1022400200000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c1ae' --path='1800,100207630513c1ae' --mpath=false --wwid=11002076305aac1a0000000000002202
       - Item added successfully.
-    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400300000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='1800,100207630503c000' --path='1800,100207630508c000' --path='1800,100207630510c000' --path='1800,100207630513c000' --path='1880,100207630503c000' --path='1880,100207630508c000' --path='1880,100207630510c000' --path='1880,100207630513c000' --wwid=11002076305aac1a0000000000002207
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400300000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --path='0.0.1800:100207630503c000' --path='0.1.1800:100207630508c000' --path='0.2.1800:100207630510c000' --path='0.3.1800/100207630513c000' --path='0.0.1880,100207630503c000' --path='1880,100207630508c000' --path='1880,100207630510c000' --path='1880,100207630513c000' --wwid=11002076305aac1a0000000000002207
       - Item added successfully.
+    # no paths check
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1022400f00000000 --size=10gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=false --wwid=11002076305aac1a000000000000220f
+      - - there are no paths to this volume
+        - Item added successfully.
+    - - storage vol-del --server=DS8K16 --id=1022400f00000000
+      - Item successfully deleted.
     # 'storage vol-list' subcommand
     - - storage vol-list
       - ' *3955 *\|'
@@ -478,7 +482,8 @@ tasks:
       - Item successfully updated.
        # delete the only path
     - - storage vol-edit --id=1022400200000000 --delpath='1800,100207630503c1ae'
-      - fcp volume must have at least one path
+      - - there are no more paths to this volume
+        - Item successfully updated.
     - - storage vol-edit --id=1022400200000000 --wwid=
       - "Invalid value for '--wwid':  is not a valid wwid"
         # wwpn not found: no error message
@@ -488,8 +493,8 @@ tasks:
       - "Invalid value for '--delpath': 0x5555 is not a valid wwpn"
     - - storage vol-edit --id=1022400200000000 --delpath='55,100207630503c1a1'
       - "Invalid value for '--delpath': 55 is not a valid devno"
-    - - storage vol-edit --id=1022400200000000 --delpath='1800 100207630503c1a1'
-      - "Invalid value for '--delpath': 1800 100207630503c1a1 is not a valid FCP path"
+    - - storage vol-edit --id=1022400200000000 --delpath='1800-100207630503c1a1'
+      - "Invalid value for '--delpath': 1800-100207630503c1a1 is not a valid FCP path"
     - - storage vol-edit --id=1022400200000000 --delpath='1800,100207630503c1a1'
       - Item successfully updated.
         # adapter not found: no error message
@@ -497,7 +502,7 @@ tasks:
       - Item successfully updated.
     - - storage vol-edit --id=1022400200000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=false --wwid=11002076305aac1a0000000000002202
       - Item successfully updated.
-    - - storage vol-edit --id=1022400300000000 --addpath='1800,100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002203
+    - - storage vol-edit --id=1022400300000000 --addpath='1800:100207630503c1ae' --addpath='1800,100207630508c1ae' --addpath='1800,100207630510c1ae' --addpath='1800,100207630513c1ae' --addpath='1880,100207630503c1ae' --addpath='1880,100207630508c1ae' --addpath='1880,100207630510c1ae' --addpath='1880,100207630513c1ae' --mpath=true --wwid=11002076305aac1a0000000000002203
       - Item successfully updated.
     # test conflicting ids
     - - storage vol-edit --id=3953 --desc='volume description'

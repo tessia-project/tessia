@@ -54,13 +54,19 @@ class PlatKvm(PlatBase):
     Handling for KVM guests
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model: AutoinstallMachineModel,
+                 hypervisor: HypervisorKvm = None):
         """
         Perform libvirt processing of the guest devices.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(model)
         # create our own logger so that the right module name is in output
         self._logger = logging.getLogger(__name__)
+
+        if hypervisor:
+            self._hyp_obj = hypervisor
+        else:
+            self._hyp_obj = PlatKvm.create_hypervisor(model)
 
         # create virsh session
         self._hyp_obj.login()
@@ -393,7 +399,37 @@ class PlatKvm(PlatBase):
         raise RuntimeError('Unsupported bus type {}'.format(bus))
     # _kvm_vol_parse_libvirt()
 
-    def boot(self, kargs):
+    def prepare_guest(self):
+        """
+        Initialize guest (activate, prepare hardware etc.)
+
+        Does nothing in current implementation; requires support in baselib
+        """
+    # prepare_guest()
+
+    def reboot(self):
+        """
+        Restart the guest after installation is finished.
+        """
+        self._logger.info('rebooting the system now')
+
+        hostname = self._model.system_profile.hostname
+        user = self._model.os_credentials['user']
+        password = self._model.os_credentials['password']
+
+        ssh_client = SshClient()
+        ssh_client.login(hostname, user=user, passwd=password, timeout=10)
+        shell = ssh_client.open_shell()
+        # in certain installations files created by post-install scripts don't
+        # get written to disk if we don't call sync before rebooting
+        shell.run('sync')
+        shell.close()
+        ssh_client.logoff()
+
+        self._hyp_obj.reboot(self._model.system_profile.system_name, None)
+    # reboot()
+
+    def start_installer(self, kargs):
         """
         Perform a boot operation so that the installation process can start.
 
@@ -433,29 +469,7 @@ class PlatKvm(PlatBase):
         }
 
         self._hyp_obj.start(guest_name, cpu, memory, params)
-    # boot()
-
-    def reboot(self):
-        """
-        Restart the guest after installation is finished.
-        """
-        self._logger.info('rebooting the system now')
-
-        hostname = self._model.system_profile.hostname
-        user = self._model.os_credentials['user']
-        password = self._model.os_credentials['password']
-
-        ssh_client = SshClient()
-        ssh_client.login(hostname, user=user, passwd=password, timeout=10)
-        shell = ssh_client.open_shell()
-        # in certain installations files created by post-install scripts don't
-        # get written to disk if we don't call sync before rebooting
-        shell.run('sync')
-        shell.close()
-        ssh_client.logoff()
-
-        self._hyp_obj.reboot(self._model.system_profile.system_name, None)
-    # reboot()
+    # start_installer()
 
     def set_boot_device(self, boot_device):
         """

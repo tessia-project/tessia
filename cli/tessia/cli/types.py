@@ -173,9 +173,12 @@ class FcpPath(click.ParamType):
         after removing possible '0x' prefixes.
         """
         try:
-            devno, wwpn = value.lower().split(',')
+            # allow various common delimiters
+            devno, wwpn = re.split('[:,/ ]+', value.lower())
         except ValueError:
-            self.fail('{} is not a valid FCP path'.format(value), param, ctx)
+            self.fail('{value} is not a valid FCP path in format '
+                      '"{fmt}"'.format(value=value, fmt=FcpPath.name),
+                      param, ctx)
 
         # save original values for unsuccessful verification output
         orig_devno = devno

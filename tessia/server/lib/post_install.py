@@ -325,6 +325,8 @@ class PostInstallChecker:
         params['total_memory'] = self._fetch_memory()
 
         # fetch DNS config from systemd-resolve, not collected by ansible
+        if not params['ansible_dns'].get('nameservers'):
+            params['ansible_dns']['nameservers'] = []
         for dns_server in self._fetch_systemd_dns():
             if not dns_server in params['ansible_dns']['nameservers']:
                 params['ansible_dns']['nameservers'].append(dns_server)

@@ -100,7 +100,6 @@ chzdev -p qeth {{iface['attributes']['ccwgroup']}} portno=1
     <init-scripts config:type="list">
       <script>
         <filename>repos.sh</filename>
-        <interpreter>shell</interpreter>
         <source><![CDATA[
 #!/bin/bash
 echo "Adding additional repositories..."
@@ -113,7 +112,6 @@ zypper ar -C -G -n '{{repo['desc']}}' {{repo['url']}} {{repo['name']}}
 {% if config["system_type"] != "KVM" -%}
       <script>
         <filename>osname.sh</filename>
-        <interpreter>shell</interpreter>
         <source><![CDATA[
 #!/bin/bash
 echo "Adjusting OSA cards osname configuration..."
@@ -165,11 +163,10 @@ echo -e >> /etc/motd \
       <forceboot config:type="boolean">false</forceboot>
       <final_reboot config:type="boolean">true</final_reboot>
       <final_halt config:type="boolean">false</final_halt>
-      <final_restart_services>false</final_restart_services>
+      <final_restart_services config:type="boolean">false</final_restart_services>
     </mode>
     <proposals config:type="list"/>
     <storage>
-      <partition_alignment config:type="symbol">align_optimal</partition_alignment>
     {% set multipath = [] %}
     {% for volume in config["svols"] %}
       {% if volume["specs"]["multipath"] %}
@@ -185,7 +182,7 @@ echo -e >> /etc/motd \
   </general>
    <kdump>
     <add_crash_kernel config:type="boolean">true</add_crash_kernel>
-    <crash_kernel>1G-:128M</crash_kernel>
+    <crash_kernel>1G-:192M</crash_kernel>
     <general>
       <KDUMP_COMMANDLINE/>
       <KDUMP_COMMANDLINE_APPEND/>
@@ -229,20 +226,19 @@ echo -e >> /etc/motd \
       <resolv_conf_policy>auto</resolv_conf_policy>
       <write_hostname config:type="boolean">false</write_hostname>
       <nameservers config:type="list">
-      {% for iface in config["ifaces"] -%}
+      {%- for iface in config["ifaces"] %}
         {% if iface["dns_1"] %}<nameserver>{{ iface["dns_1"] }}</nameserver>{% endif %}
         {% if iface["dns_2"] %}<nameserver>{{ iface["dns_2"] }}</nameserver>{% endif %}
-      {% endfor -%}
+      {%- endfor %}
       </nameservers>
+      {%- set search_list = config["ifaces"]|map(attribute="search_list", default="")|join(" ")|trim %}
+      {% if search_list %}
       <searchlist config:type="list">
-      {% for iface in config["ifaces"] -%}
-        {% if iface["search_list"] -%}
-          {% for search_entry in iface["search_list"].split() -%}
+          {%- for search_entry in search_list.split() %}
         <search>{{ search_entry }}</search>
-          {% endfor -%}
-        {% endif -%}
-      {% endfor -%}
+          {%- endfor %}
       </searchlist>
+      {% endif %}
     </dns>
     <interfaces config:type="list">
     {% for iface in config["ifaces"] %}

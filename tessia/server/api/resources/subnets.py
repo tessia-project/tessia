@@ -193,6 +193,7 @@ class SubnetResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, subnet_id):
         """
         Overriden method to perform sanity checks on the address and gateway

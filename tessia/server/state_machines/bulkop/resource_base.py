@@ -39,7 +39,8 @@ class ResourceHandlerBase(metaclass=abc.ABCMeta):
         self._perman = PermManager()
     # __init__()
 
-    @abc.abstractstaticmethod
+    @staticmethod
+    @abc.abstractmethod
     def headers_match(headers):
         """
         Return True if the provided headers match the resource type

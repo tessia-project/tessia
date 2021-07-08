@@ -276,7 +276,8 @@ class TestSecureResource(TestCase):
         return resp
     # _do_request()
 
-    @abc.abstractclassmethod
+    @classmethod
+    @abc.abstractmethod
     def _entry_gen(cls):
         """
         This is the generator responsible for creating new items of the given

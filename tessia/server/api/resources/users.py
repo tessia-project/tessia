@@ -108,6 +108,7 @@ class UserResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, user_id):
         """
         Overridden method to perform case sensitivity on the login provided.

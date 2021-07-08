@@ -72,6 +72,7 @@ class UserRoleResource(SecureResource):
             title=DESC['role'], description=DESC['role'])
     # Schema
 
+    # pylint: disable=arguments-renamed
     def do_read(self, user_role_id):
         """
         Custom implementation of item reading.
@@ -99,6 +100,7 @@ class UserRoleResource(SecureResource):
         return item
     # do_read()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, user_role_id):
         """
         Custom update action, blocks this operation as it is not allowed.

@@ -140,6 +140,7 @@ class RepositoryResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, repo_id):
         """
         Overriden method to perform sanity check on the address provided.

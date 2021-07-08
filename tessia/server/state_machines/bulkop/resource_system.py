@@ -329,9 +329,9 @@ class ResourceHandlerSystem(ResourceHandlerBase):
             desc = ''
             for key, value in changes_diff.items():
                 desc += ' {}={}(previous <{}>)'.format(
-                    key.upper(), changes_diff[key],
+                    key.upper(), value,
                     getattr(iface_obj, key.lower()))
-                setattr(iface_obj, key.lower(), changes_diff[key])
+                setattr(iface_obj, key.lower(), value)
 
             desc = 'updating iface {}/{}:{}'.format(
                 sys_obj.name, iface_obj.name, desc)
@@ -411,9 +411,9 @@ class ResourceHandlerSystem(ResourceHandlerBase):
             desc = ''
             for key, value in changes_diff.items():
                 desc += ' {}={}(previous <{}>)'.format(
-                    key.upper(), changes_diff[key],
+                    key.upper(), value,
                     getattr(sys_obj, key.lower()))
-                setattr(sys_obj, key.lower(), changes_diff[key])
+                setattr(sys_obj, key.lower(), value)
             desc = 'updating system {}:{}'.format(sys_obj.name, desc)
             self._logger.info(desc)
 

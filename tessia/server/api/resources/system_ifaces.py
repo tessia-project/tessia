@@ -340,6 +340,7 @@ class SystemIfaceResource(SecureResource):
         return item.id
     # do_create()
 
+    # pylint: disable=arguments-renamed
     def do_delete(self, system_iface_id):
         """
         Verify if the user attempting to delete the instance has permission
@@ -364,6 +365,7 @@ class SystemIfaceResource(SecureResource):
         return True
     # do_delete()
 
+    # pylint: disable=arguments-renamed
     def do_read(self, system_iface_id):
         """
         Custom implementation of iface reading. Use permissions from the
@@ -388,6 +390,7 @@ class SystemIfaceResource(SecureResource):
         return item
     # do_read()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, system_iface_id):
         """
         Custom implementation of update. Perform some sanity checks and

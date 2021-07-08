@@ -249,6 +249,7 @@ class IpAddressResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
+    # pylint: disable=arguments-renamed
     def do_read(self, ipaddr_id):
         """
         Custom implementation of item reading. Use permissions from the
@@ -281,6 +282,7 @@ class IpAddressResource(SecureResource):
         return item
     # do_read()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, ipaddr_id):
         """
         Overriden method to perform sanity check on the address provided.

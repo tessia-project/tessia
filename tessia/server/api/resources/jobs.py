@@ -160,8 +160,13 @@ class JobResource(ModelResource):
 
         # read the content of the file
         try:
-            lines = open(
-                '{}/{}/output'.format(jobs_dir, id), 'r').readlines()
+            with open('{}/{}/output'.format(jobs_dir, id), 'r') as file:
+                lines = file.readlines()
+                # -1 means retrieve the complete content starting at the offset
+                if qty == -1:
+                    return ''.join(lines[offset:])
+                return ''.join(lines[offset:offset+qty])
+
         # perhaps the file was not created yet, so retrieve job to determine
         # if this is the case or if job id was wrong
         except FileNotFoundError:
@@ -173,13 +178,6 @@ class JobResource(ModelResource):
             msg = 'Access to file forbidden'
             raise BaseHttpError(500, msg=msg)
 
-        # -1 means retrieve the complete content starting at the offset
-        if qty == -1:
-            output = ''.join(lines[offset:])
-        else:
-            output = ''.join(lines[offset:offset+qty])
-
-        return output
     # it's important to use FieldSet or Schema otherwise Potion will not parse
     # the parameters from the request query string to the view's arguments
     output.request_schema = FieldSet({

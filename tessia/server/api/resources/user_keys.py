@@ -125,6 +125,7 @@ class UserKeyResource(SecureResource):
         return [item.key_id, item.key_secret]
     # do_create()
 
+    # pylint: disable=arguments-renamed
     def do_delete(self, key_id):
         """
         Custom implementation of key deletion. Enforce password based
@@ -199,6 +200,7 @@ class UserKeyResource(SecureResource):
         return self.manager.paginated_instances(**kwargs)
     # do_list()
 
+    # pylint: disable=arguments-renamed
     def do_read(self, key_id):
         """
         Custom implementation of key reading. Make sure only admin users can
@@ -225,6 +227,7 @@ class UserKeyResource(SecureResource):
         return self.manager.read(key_id)
     # do_read()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, key_id):
         """
         Custom update action, blocks this operation as it is not allowed. Users

@@ -182,9 +182,9 @@ class ResourceHandlerIpAddress(ResourceHandlerBase):
             desc = ''
             for key, value in changes_diff.items():
                 desc += ' {}={}(previous <{}>)'.format(
-                    key.upper(), changes_diff[key],
+                    key.upper(), value,
                     getattr(ip_obj, key.lower()))
-                setattr(ip_obj, key.lower(), changes_diff[key])
+                setattr(ip_obj, key.lower(), value)
 
             # mark resource as last modified by requester
             ip_obj.modifier_id = self._requester.id

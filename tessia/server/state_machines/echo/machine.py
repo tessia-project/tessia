@@ -71,7 +71,7 @@ class EchoMachine(BaseMachine):
     # cleanup()
 
     @classmethod
-    def parse(cls, content):
+    def parse(cls, params):
         """
         Parse an echo-format content. The syntax is one statement per line,
         which can be a system allocation, a message to be echoed, or a sleep.
@@ -88,7 +88,7 @@ class EchoMachine(BaseMachine):
         ECHO cleanup done
 
         Args:
-            content (str): the content to be parsed
+            params (str): the content to be parsed
 
         Returns:
             dict: containing resources allocated and list of commands
@@ -110,7 +110,7 @@ class EchoMachine(BaseMachine):
         cleanup = False
         commands = ret['commands']
 
-        lines = content.split('\n')
+        lines = params.split('\n')
         for index, line in enumerate(lines):
             fields = line.split('#', 1)[0].split()
 

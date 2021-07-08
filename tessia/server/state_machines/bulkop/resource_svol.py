@@ -242,9 +242,9 @@ class ResourceHandlerStorageVolume(ResourceHandlerBase):
             desc = ''
             for key, value in changes_diff.items():
                 desc += ' {}={}(previous <{}>)'.format(
-                    key.upper(), changes_diff[key],
+                    key.upper(), value,
                     getattr(vol_obj, key.lower()))
-                setattr(vol_obj, key.lower(), changes_diff[key])
+                setattr(vol_obj, key.lower(), value)
 
             # mark resource as last modified by requester
             vol_obj.modifier_id = self._requester.id
@@ -326,7 +326,7 @@ class ResourceHandlerStorageVolume(ResourceHandlerBase):
             for key, value in changes_diff.items():
                 if key != 'specs':
                     desc += ' {}={}(previous <{}>)'.format(
-                        key.upper(), changes_diff[key],
+                        key.upper(), value,
                         getattr(vol_obj, key.lower()))
                 else:
                     # report which fields changed
@@ -335,7 +335,7 @@ class ResourceHandlerStorageVolume(ResourceHandlerBase):
                     if specs_new['wwid'] != vol_obj.specs.get('wwid', ''):
                         desc += ' WWID={}(previous <{}>)'.format(
                             specs_new['wwid'], vol_obj.specs.get('wwid', ''))
-                setattr(vol_obj, key.lower(), changes_diff[key])
+                setattr(vol_obj, key.lower(), value)
 
             # mark resource as last modified by requester
             vol_obj.modifier_id = self._requester.id

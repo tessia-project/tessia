@@ -400,6 +400,7 @@ class SystemProfileResource(SecureResource):
         return item.id
     # do_create()
 
+    # pylint: disable=arguments-renamed
     def do_delete(self, system_profile_id):
         """
         Verify if the user attempting to delete the instance has permission
@@ -461,6 +462,7 @@ class SystemProfileResource(SecureResource):
             ret_instances, kwargs['page'], kwargs['per_page'])
     # do_list()
 
+    # pylint: disable=arguments-renamed
     def do_read(self, system_profile_id):
         """
         Custom implementation of profile reading. Use permissions from the
@@ -485,6 +487,7 @@ class SystemProfileResource(SecureResource):
         return item
     # do_read()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, system_profile_id):
         """
         Custom implementation of update. Perform some sanity checks and

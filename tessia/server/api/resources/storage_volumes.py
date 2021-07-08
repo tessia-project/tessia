@@ -464,6 +464,7 @@ class StorageVolumeResource(SecureResource):
         return super().do_create(properties)
     # do_create()
 
+    # pylint: disable=arguments-renamed
     def do_read(self, svol_id):
         """
         Custom implementation of item reading. Use permissions from the
@@ -496,6 +497,7 @@ class StorageVolumeResource(SecureResource):
         return item
     # do_read()
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, svol_id):
         """
         Overriden method to perform sanity checks. See parent class for

@@ -265,6 +265,7 @@ class SystemResource(SecureResource):
     bulk.response_schema = fields.String(
         title="result output", description="content in CSV format")
 
+    # pylint: disable=arguments-renamed
     def do_update(self, properties, system_id):
         """
         Custom implementation of system update. Perform some sanity checks.

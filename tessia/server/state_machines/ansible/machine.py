@@ -571,10 +571,10 @@ class AnsibleMachine(BaseMachine):
         inventory_file = os.path.join(self._temp_dir, INVENTORY_FILE_NAME)
         with open(inventory_file, 'w') as file_fd:
             # create each group section
-            for group in groups:
-                file_fd.write('[{}]\n'.format(group))
+            for group_name, group_contents in groups.items():
+                file_fd.write('[{}]\n'.format(group_name))
                 # write the hosts belonging to this group
-                for entry in groups[group]:
+                for entry in group_contents:
                     file_fd.write(
                         '{hostname} ansible_host={hostname} '
                         'ansible_user={user} '

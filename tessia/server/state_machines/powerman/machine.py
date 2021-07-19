@@ -28,6 +28,8 @@ from tessia.baselib.guests import Guest
 from tessia.baselib.hypervisors.hmc import HypervisorHmc
 from tessia.baselib.hypervisors.kvm import HypervisorKvm
 from tessia.baselib.hypervisors.zvm import HypervisorZvm
+from tessia.baselib.hypervisors.hmc.volume_descriptor import \
+    FcpVolumeDescriptor
 from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import System, SystemProfile
 from tessia.server.lib import post_install
@@ -359,43 +361,45 @@ class PowerManagerMachine(BaseMachine):
 
         params = {}
         if root_vol.type.lower() == 'fcp':
+            # NOTE: wwid corresponds to volume uuid with a one-digit prefix,
+            # so we can obtain one from the other, but not the other way around
+            root_vol_uuid = root_vol.specs['wwid'][1:].lower()
             if not root_vol.specs.get('adapters'):
                 self._logger.debug("Querying HMC for storage configuration")
                 # there are no adapters defined - query hypervisor for them
                 storage_descriptors = baselib_hyp.query_dpm_storage_devices(
                     guest_prof.system_rel.name)
-                # find first one matching volume id
-                for volume_desc in [volume for volume in storage_descriptors
-                                    if volume.get('type') == 'SCSI']:
-                    for path in volume_desc['paths']:
-                        if path['lun'].lower() == root_vol.volume_id.lower():
-                            params['boot_params'] = {
-                                'boot_method': 'scsi',
-                                'devicenr': path['device_nr'].lower(),
-                                'wwpn': path['wwpn'].lower(),
-                                'lun': root_vol.volume_id,
-                                'uuid': volume_desc['uuid'],
-                            }
-                            break
-                    if params.get('boot_params'):
-                        break
-                if not params.get('boot_params'):
+                # find first one matching volume wwpn
+                root_desc = [volume for volume in storage_descriptors
+                             if isinstance(volume, FcpVolumeDescriptor)
+                             and volume.uuid.lower() == root_vol_uuid]
+                if not root_desc:
+                    raise ValueError(
+                        'Cannot boot: found no volume mathcing UUID {}'
+                        'that is specified for FCP volume {}'.format(
+                            root_vol_uuid, root_vol.volume_id
+                        ))
+                volume_desc = root_desc[0]
+                if not volume_desc.paths:
                     raise ValueError(
                         'Cannot boot: no paths found for FCP volume {}'.format(
                             root_vol.volume_id))
 
+                path = volume_desc.paths[0]
+                params['boot_params'] = {
+                    'boot_method': 'scsi',
+                    'devicenr': path['device_nr'].lower(),
+                    'wwpn': path['wwpn'].lower(),
+                    'lun': path['lun'],
+                    'uuid': volume_desc.uuid,
+                }
             else:
-                # WARNING: so far with DS8K storage servers the wwid seems to
-                # correspond to the uuid by removing only the first digit, but
-                # this not documented so it might change in future or even be
-                # different with other storage types
-                vol_uuid = root_vol.specs['wwid'][1:]
                 params['boot_params'] = {
                     'boot_method': 'scsi',
                     'devicenr': root_vol.specs['adapters'][0]['devno'],
                     'wwpn': root_vol.specs['adapters'][0]['wwpns'][0],
                     'lun': root_vol.volume_id,
-                    'uuid': vol_uuid,
+                    'uuid': root_vol_uuid,
                 }
         else:
             params['boot_params'] = {

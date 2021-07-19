@@ -153,7 +153,7 @@ class PlatZvm(PlatBase):
                 'type': 'hpav',
                 'devno': vol_entry.device_id
             }
-        if isinstance(vol_entry, AutoinstallMachineModel.ScsiVolume):
+        if isinstance(vol_entry, AutoinstallMachineModel.ZfcpVolume):
             # compatibility layer to existing templates:
             # provide paths grouped by adapters
             adapters = {}

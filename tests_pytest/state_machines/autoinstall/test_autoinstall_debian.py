@@ -184,7 +184,7 @@ def test_successful_installation_on_kvm_complex(
         'mount_opts': None,
     }, ])
 
-    scsi_data_volume = AutoinstallMachineModel.ScsiVolume(
+    scsi_data_volume = AutoinstallMachineModel.ZfcpVolume(
         '40a040b400c800dc', 20_000, multipath=True,
         wwid='36005076309ffd435000000000000c8dc')
     scsi_data_volume.create_paths(
@@ -198,7 +198,7 @@ def test_successful_installation_on_kvm_complex(
         'mount_opts': None,
     }])
 
-    scsi_predefined_volume = AutoinstallMachineModel.ScsiVolume(
+    scsi_predefined_volume = AutoinstallMachineModel.ZfcpVolume(
         '40a040b400c800dd', 25_000, multipath=True,
         wwid='36005076309ffd435000000000000c8dd'
     )
@@ -307,7 +307,7 @@ def test_successful_installation_on_zvm_complex(
 
     hpav_volume = AutoinstallMachineModel.HpavVolume('abfe')
 
-    scsi_data_volume = AutoinstallMachineModel.ScsiVolume(
+    scsi_data_volume = AutoinstallMachineModel.ZfcpVolume(
         '40a040b400c800dc', 20_000, multipath=True,
         wwid='36005076309ffd435000000000000c8dc')
     scsi_data_volume.create_paths(
@@ -407,7 +407,7 @@ def test_successful_installation_on_lpar_complex(
         os_device_name='pci0n2',
         subnets=[])
 
-    scsi_root_volume = AutoinstallMachineModel.ScsiVolume(
+    scsi_root_volume = AutoinstallMachineModel.ZfcpVolume(
         '40a040b400c800dc', 20_000, multipath=True,
         wwid='36005076309ffd435000000000000c8dc')
     scsi_root_volume.create_paths(

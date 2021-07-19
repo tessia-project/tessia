@@ -26,6 +26,7 @@ A smallest implementation on SmBase is used to test common features
 # IMPORTS
 #
 from pathlib import Path
+from tessia.baselib.hypervisors.hmc.volume_descriptor import FcpVolumeDescriptor
 from tessia.server.config import Config
 from tessia.server.state_machines.autoinstall import plat_lpar, plat_zvm, plat_kvm
 from tessia.server.state_machines.autoinstall import plat_base, sm_base
@@ -106,18 +107,21 @@ class TestModelUpdate:
         def query_dpm_storage_devices(self, guest_name):
             """Query storage devices on DPM"""
             return [
-                {'type': 'SCSI', 'is_fulfilled': True, 'size': 19.07,
-                 'paths': [{'device_nr': 'FC00',
-                            'wwpn': '5005076309049435',
-                            'lun': 'CD0F0000'}]
-                 }]
+                FcpVolumeDescriptor(
+                    **{'uri': '/api/storage-volumes/1', 'attachment': 'fcp',
+                       'is_fulfilled': True, 'size': 19.07,
+                       'uuid': '6005076309FFD435000000000000CD0F',
+                       'paths': [{'device_nr': 'FC00',
+                                  'wwpn': '5005076309049435',
+                                  'lun': 'CD0F0000'}]
+                       })]
 
     @pytest.fixture
     def scsi_volume_without_paths(self):
         """
         A single-partition SCSI volume
         """
-        result = AutoinstallMachineModel.ScsiVolume(
+        result = AutoinstallMachineModel.ZfcpVolume(
             'cd0f0000', 20_000_000, multipath=True,
             wwid='36005076309ffd435000000000000cd0f')
         result.set_partitions('msdos', [{
@@ -137,8 +141,9 @@ class TestModelUpdate:
         monkeypatch.setattr(plat_lpar, 'HypervisorHmc',
                             TestModelUpdate.UpdatingHypervisor)
 
-    def test_model_update(self, lpar_scsi_system, default_os_tuple, tmpdir,
-                          scsi_volume_without_paths):
+    def test_model_update_adds_fcp_paths(
+            self, lpar_scsi_system, default_os_tuple, tmpdir,
+            scsi_volume_without_paths):
         """
         Attempt to install "nothing" on an LPAR on SCSI disk
         Verify that hypervisor is called with correct parameters

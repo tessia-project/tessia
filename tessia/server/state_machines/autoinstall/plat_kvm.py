@@ -142,7 +142,7 @@ class PlatKvm(PlatBase):
         """
         Format a volume object to a json format expected by baselib.
         """
-        if isinstance(storage_vol, AutoinstallMachineModel.ScsiVolume):
+        if isinstance(storage_vol, AutoinstallMachineModel.ZfcpVolume):
             result = {
                 "type": storage_vol.volume_type,
                 "volume_id": storage_vol.lun,
@@ -192,7 +192,7 @@ class PlatKvm(PlatBase):
             str: libvirt xml definition
         """
         if isinstance(vol_obj, (AutoinstallMachineModel.DasdVolume,
-                                AutoinstallMachineModel.ScsiVolume)):
+                                AutoinstallMachineModel.ZfcpVolume)):
             disk_type = 'block'
             src_type = 'dev'
             driver = 'raw'

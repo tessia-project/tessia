@@ -26,4 +26,4 @@ docker>=3.5.0
 # mediator component
 redis>=3.5.0
 # tessia-baselib and its dependencies
-git+https://gitlab.com/tessia-project/tessia-baselib.git@1.2.14#egg=tessia-baselib
+git+https://gitlab.com/tessia-project/tessia-baselib.git@1.3.0#egg=tessia-baselib

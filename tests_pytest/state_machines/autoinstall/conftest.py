@@ -482,7 +482,7 @@ def zvm_hypervisor():
     """
     hypervisor = AutoinstallMachineModel.ZvmHypervisor(
         'vmhost', 'vmhost.local',
-        {'user': '', 'password': ''},
+        {'user': 'guest', 'password': 'guest'},
         {'logon-by': None, 'no-cms': True, })
     return hypervisor
 

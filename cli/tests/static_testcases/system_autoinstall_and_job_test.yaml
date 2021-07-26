@@ -6,6 +6,7 @@ tasks_order:
   - lpar_add
   - system_autoinstall
   - job_command
+  - system_autoinstall_fail
 tasks:
   base_add:
     # lab admin to create the lab resources
@@ -355,3 +356,33 @@ tasks:
       - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
     - - job list --id=15
       - 'Job ID         : 15'
+  system_autoinstall_fail:
+    # switch to lab admin user
+    - - - conf key-gen
+        - lab_admin@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    # configuration failure: autoinstall on volume that is less than partitions in size
+    - - storage vol-add --server=DS8K16 --type=FCP --id=1023500100000000 --size=20gb --owner=dev1@example.com --project='GEO_1 developers' --desc='For tessia SVT' --mpath=true --wwid=11002076305aac1a0000000000002205
+      - Item added successfully.
+    - - storage part-init --id=1023500100000000 --label=msdos
+      - Partition table successfully initialized.
+    - - storage part-add --id=1023500100000000 --fs=ext4 --size=18gb --mp=/
+      - Partition successfully added.
+    - - storage part-add --id=1023500100000000 --fs=swap --size=1gb
+      - Partition successfully added.
+    - - storage vol-edit --server=DS8K16 --id=1023500100000000 --size=10gb
+      - Item successfully updated.
+    - - system prof-add --system=cpc3lp52 --name='FCP root2' --cpu=4 --memory=2048mb --login='root:mypasswd' --hyp='default cpc3'
+      - Item added successfully.
+    - - system iface-attach --system=cpc3lp52 --profile='FCP root2' --iface='default osa'
+      - Network interface attached successfully.
+    - - system vol-attach --system=cpc3lp52 --profile='FCP root2' --vol=1023500100000000
+      - Volume attached successfully.
+    # switch to target user
+    - - - conf key-gen
+        - dev1@example.com
+        - password
+      - Key successfully created and added to client configuration.
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --profile='FCP root2'
+      - 'Partitioning exceeds volume size'

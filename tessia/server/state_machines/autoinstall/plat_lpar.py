@@ -23,6 +23,8 @@ from collections import defaultdict
 from queue import Queue
 
 from tessia.baselib.hypervisors.hmc import HypervisorHmc
+from tessia.baselib.hypervisors.hmc.volume_descriptor import \
+    FcpVolumeDescriptor
 from tessia.server.state_machines.autoinstall.model import \
     AutoinstallMachineModel
 from tessia.server.config import Config
@@ -114,7 +116,7 @@ class PlatLpar(PlatBase):
             RuntimeError: no paths available for SCSI device
         """
         params = None
-        if isinstance(boot_device, AutoinstallMachineModel.ScsiVolume):
+        if isinstance(boot_device, AutoinstallMachineModel.ZfcpVolume):
             if not boot_device.paths:
                 raise RuntimeError(
                     "Boot device {} has no paths available".format(
@@ -127,7 +129,7 @@ class PlatLpar(PlatBase):
                 'devicenr': adapter,
                 'wwpn': wwpn,
                 'lun': boot_device.lun,
-                'uuid': boot_device.wwid[-32:],
+                'uuid': boot_device.uuid,
             }
             # NOTE: WWIDs specified in storage in general follow
             # udev rules, which commonly add a prefix '3' to volume UUID.
@@ -187,7 +189,7 @@ class PlatLpar(PlatBase):
         if params:
             return (params, None)
         return (None, "No boot parameters specified")
-    # _boot_device_to_baselib_params()
+    # _boot_options_to_baselib_params()
 
     def _prepare_network_parameters(self):
         """
@@ -255,32 +257,37 @@ class PlatLpar(PlatBase):
             "cmdline": kargs
         }
 
-    def _update_model_scsi_volumes(self, volumes_desc):
+    def _update_model_zfcp_volumes(self, volumes_desc):
         """
-        Update SCSI volumes that match descriptors
+        Update zFCP volumes that match descriptors
+
+        Args:
+            volumes_desc (list): list of volume descriptors from baselib
         """
 
         # model identifies disks by LUN, but descriptors
         # may have multiple paths with different LUNs.
         # Let's regroup incoming data first
-        paths_by_luns = defaultdict(list)
+        paths_by_uuids = defaultdict(list)
         for volume_desc in volumes_desc:
-            for path in volume_desc['paths']:
-                paths_by_luns[path['lun'].lower()].append(
+            for path in volume_desc.paths:
+                paths_by_uuids[volume_desc.uuid.lower()].append(
                     (path['device_nr'].lower(),
                      path['wwpn'].lower()))
 
         # add paths to model SCSI volume if there are none specified
         for volume in self._model.system_profile.volumes:
-            if (isinstance(volume, AutoinstallMachineModel.ScsiVolume)
+            if (isinstance(volume, AutoinstallMachineModel.ZfcpVolume)
                     and not volume.paths):
-                for adapter, wwpn in paths_by_luns[volume.lun.lower()]:
+                for adapter, wwpn in paths_by_uuids[volume.uuid]:
                     volume.add_path(adapter, wwpn)
-                if paths_by_luns[volume.lun.lower()]:
+                if paths_by_uuids[volume.uuid]:
                     self._logger.debug("Added paths for volume %s", volume.lun)
                 else:
-                    self._logger.warning("HMC reported no paths for volume %s",
-                                         volume.lun)
+                    self._logger.warning(
+                        "HMC reported no paths for volume %s with WWID %s",
+                        volume.lun, volume.wwid)
+    # _update_model_zfcp_volumes()
 
     @classmethod
     def create_hypervisor(cls, model: AutoinstallMachineModel):
@@ -326,9 +333,9 @@ class PlatLpar(PlatBase):
         self._logger.debug(
             "Retrieved data about %d devices in storage groups for system %s",
             len(storage_info), guest_name)
-        self._update_model_scsi_volumes([volume for volume in storage_info
-                                         if volume.get('type') == 'SCSI'])
-
+        self._update_model_zfcp_volumes(
+            [volume for volume in storage_info
+             if isinstance(volume, FcpVolumeDescriptor)])
     # prepare_guest()
 
     def set_boot_device(self, boot_device):

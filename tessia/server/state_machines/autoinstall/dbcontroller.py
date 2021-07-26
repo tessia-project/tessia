@@ -89,7 +89,7 @@ class DbController:
                     'boot-device': adapter['devno'],
                     'boot-device-wwpn': adapter['wwpns'][0],
                     'boot-device-lun': volume.volume_id,
-                    'boot-device-uuid': volume.specs.get('wwid', '')[-32:],
+                    'boot-device-uuid': volume.specs.get('wwid', '')[1:],
                 }
                 # NOTE: WWIDs specified in storage in general follow
                 # udev rules, which commonly add a prefix '3' to volume UUID.
@@ -302,7 +302,7 @@ class DbController:
                     device_path=dev_path
                 )
             elif profile_volume.type == 'FCP':
-                model_vol = AutoinstallMachineModel.ScsiVolume(
+                model_vol = AutoinstallMachineModel.ZfcpVolume(
                     profile_volume.volume_id,
                     profile_volume.size,
                     specs.get('multipath'),
@@ -566,7 +566,7 @@ class DbController:
                                 AutoinstallMachineModel.DasdVolume)
                         and volume_model.device_id == volume_obj.volume_id)
                     or (isinstance(volume_model,
-                                   AutoinstallMachineModel.ScsiVolume)
+                                   AutoinstallMachineModel.ZfcpVolume)
                         and volume_model.lun == volume_obj.volume_id)):
                     # got it
                     result += 1

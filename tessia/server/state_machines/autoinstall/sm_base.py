@@ -240,13 +240,13 @@ class SmBase(metaclass=abc.ABCMeta):
         if (isinstance(storage_vol, (AutoinstallMachineModel.DasdVolume,
                                      AutoinstallMachineModel.HpavVolume))):
             result["volume_id"] = storage_vol.device_id
-        elif isinstance(storage_vol, AutoinstallMachineModel.ScsiVolume):
+        elif isinstance(storage_vol, AutoinstallMachineModel.ZfcpVolume):
             result["volume_id"] = storage_vol.lun
         result["system_attributes"] = {
             "device": storage_vol.device_path
         }
         result["specs"] = {}
-        if isinstance(storage_vol, AutoinstallMachineModel.ScsiVolume):
+        if isinstance(storage_vol, AutoinstallMachineModel.ZfcpVolume):
             # compatibility layer to existing templates:
             # provide paths grouped by adapters
             adapters = {}

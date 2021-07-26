@@ -215,19 +215,19 @@ class AutoinstallMachineModel:
         def __repr__(self):
             return "HpavVolume<{}>".format(self.device_id)
 
-    class ScsiVolume(Volume):
+    class ZfcpVolume(Volume):
         """
-        SCSI volume
+        zFCP volume
         """
 
         def __init__(self, lun: str, size: int, multipath: bool,
-                     wwid: str = '', **kwargs):
+                     wwid: str, **kwargs):
             super().__init__(**kwargs)
-            self.lun = lun
+            self.lun = lun.lower()
             self.size = size
             self.multipath = multipath
             self.paths = []
-            self.wwid = wwid
+            self.wwid = wwid.lower()
 
             if not self.device_path:
                 if self.multipath:
@@ -241,7 +241,7 @@ class AutoinstallMachineModel:
 
         def add_path(self, adapter: str, wwpn: str):
             """
-            Add a single SCSI path
+            Add a single FCP path
             """
             self.paths.append((adapter, wwpn))
 
@@ -254,11 +254,21 @@ class AutoinstallMachineModel:
                     self.add_path(adapter, wwpn)
 
         @property
+        def uuid(self):
+            """
+            UUID from WWID
+            """
+            return self.wwid[1:]
+
+        @property
         def volume_type(self):
+            """
+            Static volume type
+            """
             return 'FCP'
 
         def __repr__(self):
-            return "ScsiVolume<{}>".format(self.lun)
+            return "ZfcpVolume<{}>".format(self.lun)
 
     class SubnetAffiliation:
         """

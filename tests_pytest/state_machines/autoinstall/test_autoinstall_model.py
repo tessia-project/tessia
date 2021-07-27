@@ -23,6 +23,7 @@ Test Autoinstall model
 #
 from tessia.server.state_machines.autoinstall.model import AutoinstallMachineModel
 
+import pytest
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -186,3 +187,40 @@ def test_model_prefers_custom_os_repos():
 
     # other os repo goes to packages
     assert not model.package_repos
+
+
+def test_model_rejects_invalid_partitioning(
+        default_os_tuple, osa_iface, zvm_hypervisor, creds):
+    """
+    When volume partitions exceed volume size, model is rejected
+    """
+
+    volume = AutoinstallMachineModel.ZfcpVolume(
+            'cd0f0000', 20_000, multipath=True,
+            wwid='36005076309ffd435000000000000cd0f')
+    volume.set_partitions('msdos', [{
+        'mount_point': '/',
+        'size': 19_000,
+        'filesystem': 'ext4',
+        'part_type': 'primary',
+        'mount_opts': None,
+    }, {
+        'mount_point': '',
+        'size': 2_000,
+        'filesystem': 'swap',
+        'part_type': 'primary',
+        'mount_opts': None,
+    }])
+    system_profile = AutoinstallMachineModel.SystemProfile(
+        'vm25', 'default',
+        hypervisor=zvm_hypervisor,
+        hostname='vm25.local',
+        cpus=4, memory=8192,
+        volumes=[volume],
+        interfaces=[(osa_iface, True)]
+    )
+    model = AutoinstallMachineModel(*default_os_tuple,
+                                    system_profile, creds)
+
+    with pytest.raises(ValueError, match="exceeds volume size"):
+        model.validate()

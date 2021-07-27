@@ -195,6 +195,9 @@ class AutoinstallMachineModel:
         def __repr__(self):
             return "DasdVolume<{}>".format(self.device_id)
 
+        def __str__(self):
+            return "DasdVolume<{}>".format(self.device_id)
+
     class HpavVolume(Volume):
         """
         HPAV volume or alias
@@ -213,6 +216,9 @@ class AutoinstallMachineModel:
             return 'HPAV'
 
         def __repr__(self):
+            return "HpavVolume<{}>".format(self.device_id)
+
+        def __str__(self):
             return "HpavVolume<{}>".format(self.device_id)
 
     class ZfcpVolume(Volume):
@@ -268,6 +274,9 @@ class AutoinstallMachineModel:
             return 'FCP'
 
         def __repr__(self):
+            return "ZfcpVolume<{}>".format(self.lun)
+
+        def __str__(self):
             return "ZfcpVolume<{}>".format(self.lun)
 
     class SubnetAffiliation:
@@ -710,4 +719,19 @@ class AutoinstallMachineModel:
                 " or gateway route".format(
                     self.system_profile._gateway.os_device_name
                 ))
+
+        # verify that total partition size is not bigger than disk size
+        failing_volume_ids = []
+        for volume in [volume for volume in self.system_profile.volumes
+                       if isinstance(volume, (self.DasdVolume,
+                                              self.ZfcpVolume))]:
+            total_part_size = sum(
+                [partition.size for partition in volume.partitions])
+            if total_part_size > volume.size:
+                failing_volume_ids.append(str(volume))
+
+        if failing_volume_ids:
+            raise ValueError(
+                "Partitioning exceeds volume size for volumes {}".format(
+                    failing_volume_ids))
 # AutoinstallMachineModel

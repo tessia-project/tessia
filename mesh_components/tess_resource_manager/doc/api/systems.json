@@ -1,0 +1,3698 @@
+{
+  "description": "A system contains volumes and network interfaces associated through boot profiles",
+  "links": [
+    {
+      "href": "/systems/bulk",
+      "method": "GET",
+      "rel": "bulk",
+      "schema": {
+        "additionalProperties": true,
+        "properties": {
+          "sort": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "description": "Sort by $uri in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "desc": {
+                "description": "Sort by desc in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "hostname": {
+                "description": "Sort by hostname in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "hypervisor": {
+                "description": "Sort by hypervisor in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "model": {
+                "description": "Sort by model in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "modified": {
+                "description": "Sort by modified in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "modifier": {
+                "description": "Sort by modifier in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "name": {
+                "description": "Sort by name in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "owner": {
+                "description": "Sort by owner in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "project": {
+                "description": "Sort by project in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "state": {
+                "description": "Sort by state in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "type": {
+                "description": "Sort by type in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "where": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\/systems\\/[^/]+$",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "pattern": "^\\/systems\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "pattern": "^\\/systems\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "pattern": "^\\/systems\\/[^/]+$",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "desc": {
+                "anyOf": [
+                  {
+                    "description": "Description",
+                    "title": "Description",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Description",
+                        "title": "Description",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Description",
+                        "title": "Description",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Description",
+                          "title": "Description",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "hostname": {
+                "anyOf": [
+                  {
+                    "description": "Hostname",
+                    "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                    "title": "Hostname",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Hostname",
+                        "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                        "title": "Hostname",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Hostname",
+                        "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                        "title": "Hostname",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Hostname",
+                          "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                          "title": "Hostname",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "hypervisor": {
+                "anyOf": [
+                  {
+                    "description": "Hypervisor name",
+                    "title": "Hypervisor name",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Hypervisor name",
+                        "title": "Hypervisor name",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Hypervisor name",
+                        "title": "Hypervisor name",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Hypervisor name",
+                          "title": "Hypervisor name",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "model": {
+                "anyOf": [
+                  {
+                    "description": "Model",
+                    "title": "Model",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Model",
+                        "title": "Model",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Model",
+                        "title": "Model",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Model",
+                          "title": "Model",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "modified": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Last modified",
+                    "properties": {
+                      "$date": {
+                        "type": "integer"
+                      }
+                    },
+                    "title": "Last modified",
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$between": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Last modified",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Last modified",
+                          "type": "object"
+                        },
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "$between"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Last modified",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Last modified",
+                          "type": "object"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "modifier": {
+                "anyOf": [
+                  {
+                    "description": "Modified by",
+                    "title": "Modified by",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Modified by",
+                        "title": "Modified by",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Modified by",
+                        "title": "Modified by",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Modified by",
+                          "title": "Modified by",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "description": "Name",
+                    "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                    "title": "Name",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Name",
+                        "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                        "title": "Name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Name",
+                        "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                        "title": "Name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Name",
+                          "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                          "title": "Name",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "owner": {
+                "anyOf": [
+                  {
+                    "description": "Owner",
+                    "title": "Owner",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Owner",
+                        "title": "Owner",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Owner",
+                        "title": "Owner",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Owner",
+                          "title": "Owner",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "project": {
+                "anyOf": [
+                  {
+                    "description": "Project",
+                    "title": "Project",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Project",
+                        "title": "Project",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Project",
+                        "title": "Project",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Project",
+                          "title": "Project",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "state": {
+                "anyOf": [
+                  {
+                    "description": "Current state",
+                    "title": "Current state",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Current state",
+                        "title": "Current state",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Current state",
+                        "title": "Current state",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Current state",
+                          "title": "Current state",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "description": "Type",
+                    "title": "Type",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Type",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Type",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Type",
+                          "title": "Type",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "targetSchema": {
+        "description": "content in CSV format",
+        "title": "result output",
+        "type": "string"
+      }
+    },
+    {
+      "href": "/systems",
+      "method": "POST",
+      "rel": "create",
+      "schema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/systems/{id}",
+      "method": "DELETE",
+      "rel": "destroy"
+    },
+    {
+      "href": "/systems",
+      "method": "GET",
+      "rel": "instances",
+      "schema": {
+        "additionalProperties": true,
+        "properties": {
+          "page": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "per_page": {
+            "default": 75,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "sort": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "description": "Sort by $uri in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "desc": {
+                "description": "Sort by desc in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "hostname": {
+                "description": "Sort by hostname in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "hypervisor": {
+                "description": "Sort by hypervisor in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "model": {
+                "description": "Sort by model in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "modified": {
+                "description": "Sort by modified in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "modifier": {
+                "description": "Sort by modifier in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "name": {
+                "description": "Sort by name in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "owner": {
+                "description": "Sort by owner in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "project": {
+                "description": "Sort by project in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "state": {
+                "description": "Sort by state in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "type": {
+                "description": "Sort by type in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "where": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\/systems\\/[^/]+$",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "pattern": "^\\/systems\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "pattern": "^\\/systems\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "pattern": "^\\/systems\\/[^/]+$",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "desc": {
+                "anyOf": [
+                  {
+                    "description": "Description",
+                    "title": "Description",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Description",
+                        "title": "Description",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Description",
+                        "title": "Description",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Description",
+                          "title": "Description",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "hostname": {
+                "anyOf": [
+                  {
+                    "description": "Hostname",
+                    "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                    "title": "Hostname",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Hostname",
+                        "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                        "title": "Hostname",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Hostname",
+                        "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                        "title": "Hostname",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Hostname",
+                          "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                          "title": "Hostname",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "hypervisor": {
+                "anyOf": [
+                  {
+                    "description": "Hypervisor name",
+                    "title": "Hypervisor name",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Hypervisor name",
+                        "title": "Hypervisor name",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Hypervisor name",
+                        "title": "Hypervisor name",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Hypervisor name",
+                          "title": "Hypervisor name",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "model": {
+                "anyOf": [
+                  {
+                    "description": "Model",
+                    "title": "Model",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Model",
+                        "title": "Model",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Model",
+                        "title": "Model",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Model",
+                          "title": "Model",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "modified": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Last modified",
+                    "properties": {
+                      "$date": {
+                        "type": "integer"
+                      }
+                    },
+                    "title": "Last modified",
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$between": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Last modified",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Last modified",
+                          "type": "object"
+                        },
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "$between"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Last modified",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Last modified",
+                          "type": "object"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "modifier": {
+                "anyOf": [
+                  {
+                    "description": "Modified by",
+                    "title": "Modified by",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Modified by",
+                        "title": "Modified by",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Modified by",
+                        "title": "Modified by",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Modified by",
+                          "title": "Modified by",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "description": "Name",
+                    "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                    "title": "Name",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Name",
+                        "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                        "title": "Name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Name",
+                        "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                        "title": "Name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Name",
+                          "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                          "title": "Name",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "owner": {
+                "anyOf": [
+                  {
+                    "description": "Owner",
+                    "title": "Owner",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Owner",
+                        "title": "Owner",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Owner",
+                        "title": "Owner",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Owner",
+                          "title": "Owner",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "project": {
+                "anyOf": [
+                  {
+                    "description": "Project",
+                    "title": "Project",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Project",
+                        "title": "Project",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Project",
+                        "title": "Project",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Project",
+                          "title": "Project",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "state": {
+                "anyOf": [
+                  {
+                    "description": "Current state",
+                    "title": "Current state",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Current state",
+                        "title": "Current state",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Current state",
+                        "title": "Current state",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Current state",
+                          "title": "Current state",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "description": "Type",
+                    "title": "Type",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Type",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Type",
+                        "title": "Type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Type",
+                          "title": "Type",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "targetSchema": {
+        "items": {
+          "$ref": "#"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "href": "/systems/{id}",
+      "method": "GET",
+      "rel": "self",
+      "targetSchema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/systems/{id}",
+      "method": "PATCH",
+      "rel": "update",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "desc": {
+            "description": "Description",
+            "title": "Description",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hostname": {
+            "description": "Hostname",
+            "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+            "title": "Hostname",
+            "type": "string"
+          },
+          "hypervisor": {
+            "description": "Hypervisor name",
+            "title": "Hypervisor name",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "model": {
+            "description": "Model",
+            "title": "Model",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Name",
+            "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+            "title": "Name",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Owner",
+            "title": "Owner",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "project": {
+            "description": "Project",
+            "title": "Project",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "description": "Current state",
+            "title": "Current state",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "description": "Type",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  ],
+  "properties": {
+    "$uri": {
+      "pattern": "^\\/systems\\/[^/]+$",
+      "readOnly": true,
+      "type": "string"
+    },
+    "desc": {
+      "description": "Description",
+      "title": "Description",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "hostname": {
+      "description": "Hostname",
+      "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+      "title": "Hostname",
+      "type": "string"
+    },
+    "hypervisor": {
+      "description": "Hypervisor name",
+      "title": "Hypervisor name",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "model": {
+      "description": "Model",
+      "title": "Model",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "modified": {
+      "additionalProperties": false,
+      "description": "Last modified",
+      "properties": {
+        "$date": {
+          "type": "integer"
+        }
+      },
+      "readOnly": true,
+      "title": "Last modified",
+      "type": "object"
+    },
+    "modifier": {
+      "description": "Modified by",
+      "readOnly": true,
+      "title": "Modified by",
+      "type": "string"
+    },
+    "name": {
+      "description": "Name",
+      "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+      "title": "Name",
+      "type": "string"
+    },
+    "owner": {
+      "description": "Owner",
+      "title": "Owner",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "project": {
+      "description": "Project",
+      "title": "Project",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "state": {
+      "description": "Current state",
+      "title": "Current state",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "type": {
+      "description": "Type",
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "title": "System",
+  "type": "object"
+}

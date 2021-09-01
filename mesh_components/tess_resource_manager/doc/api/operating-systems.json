@@ -1,0 +1,1031 @@
+{
+  "description": "A supported operating system",
+  "links": [
+    {
+      "href": "/operating-systems",
+      "method": "POST",
+      "rel": "create",
+      "schema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/operating-systems/{id}",
+      "method": "DELETE",
+      "rel": "destroy"
+    },
+    {
+      "href": "/operating-systems",
+      "method": "GET",
+      "rel": "instances",
+      "schema": {
+        "additionalProperties": true,
+        "properties": {
+          "page": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "per_page": {
+            "default": 75,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "sort": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "description": "Sort by $uri in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "major": {
+                "description": "Sort by major in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "minor": {
+                "description": "Sort by minor in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "name": {
+                "description": "Sort by name in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "pretty_name": {
+                "description": "Sort by pretty_name in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "template": {
+                "description": "Sort by template in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "type": {
+                "description": "Sort by type in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "where": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\/operating\\-systems\\/[^/]+$",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "pattern": "^\\/operating\\-systems\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "pattern": "^\\/operating\\-systems\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "pattern": "^\\/operating\\-systems\\/[^/]+$",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "major": {
+                "anyOf": [
+                  {
+                    "description": "Major version",
+                    "title": "Major version",
+                    "type": "integer"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Major version",
+                        "title": "Major version",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Major version",
+                        "title": "Major version",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Major version",
+                          "title": "Major version",
+                          "type": "integer"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "minor": {
+                "anyOf": [
+                  {
+                    "description": "Minor version",
+                    "title": "Minor version",
+                    "type": "integer"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Minor version",
+                        "title": "Minor version",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Minor version",
+                        "title": "Minor version",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Minor version",
+                          "title": "Minor version",
+                          "type": "integer"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "description": "OS identifier",
+                    "title": "OS identifier",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "OS identifier",
+                        "title": "OS identifier",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "OS identifier",
+                        "title": "OS identifier",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "OS identifier",
+                          "title": "OS identifier",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "pretty_name": {
+                "anyOf": [
+                  {
+                    "description": "Pretty name",
+                    "title": "Pretty name",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Pretty name",
+                        "title": "Pretty name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Pretty name",
+                        "title": "Pretty name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Pretty name",
+                          "title": "Pretty name",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "template": {
+                "anyOf": [
+                  {
+                    "description": "Default install template",
+                    "title": "Default install template",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Default install template",
+                        "title": "Default install template",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Default install template",
+                        "title": "Default install template",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Default install template",
+                          "title": "Default install template",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "type": {
+                "anyOf": [
+                  {
+                    "description": "OS type",
+                    "enum": [
+                      "cms",
+                      "debian",
+                      "redhat",
+                      "suse"
+                    ],
+                    "title": "OS type",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "OS type",
+                        "enum": [
+                          "cms",
+                          "debian",
+                          "redhat",
+                          "suse"
+                        ],
+                        "title": "OS type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "OS type",
+                        "enum": [
+                          "cms",
+                          "debian",
+                          "redhat",
+                          "suse"
+                        ],
+                        "title": "OS type",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "OS type",
+                          "enum": [
+                            "cms",
+                            "debian",
+                            "redhat",
+                            "suse"
+                          ],
+                          "title": "OS type",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "targetSchema": {
+        "items": {
+          "$ref": "#"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "href": "/operating-systems/{id}",
+      "method": "GET",
+      "rel": "self",
+      "targetSchema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/operating-systems/{id}",
+      "method": "PATCH",
+      "rel": "update",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "major": {
+            "description": "Major version",
+            "title": "Major version",
+            "type": "integer"
+          },
+          "minor": {
+            "description": "Minor version",
+            "title": "Minor version",
+            "type": "integer"
+          },
+          "name": {
+            "description": "OS identifier",
+            "title": "OS identifier",
+            "type": "string"
+          },
+          "pretty_name": {
+            "description": "Pretty name",
+            "title": "Pretty name",
+            "type": "string"
+          },
+          "template": {
+            "description": "Default install template",
+            "title": "Default install template",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "type": {
+            "description": "OS type",
+            "enum": [
+              "cms",
+              "debian",
+              "redhat",
+              "suse"
+            ],
+            "title": "OS type",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  ],
+  "properties": {
+    "$uri": {
+      "pattern": "^\\/operating\\-systems\\/[^/]+$",
+      "readOnly": true,
+      "type": "string"
+    },
+    "major": {
+      "description": "Major version",
+      "title": "Major version",
+      "type": "integer"
+    },
+    "minor": {
+      "description": "Minor version",
+      "title": "Minor version",
+      "type": "integer"
+    },
+    "name": {
+      "description": "OS identifier",
+      "title": "OS identifier",
+      "type": "string"
+    },
+    "pretty_name": {
+      "description": "Pretty name",
+      "title": "Pretty name",
+      "type": "string"
+    },
+    "template": {
+      "description": "Default install template",
+      "title": "Default install template",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "type": {
+      "description": "OS type",
+      "enum": [
+        "cms",
+        "debian",
+        "redhat",
+        "suse"
+      ],
+      "title": "OS type",
+      "type": "string"
+    }
+  },
+  "title": "Operating system",
+  "type": "object"
+}

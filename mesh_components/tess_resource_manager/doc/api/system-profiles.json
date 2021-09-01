@@ -1,0 +1,1765 @@
+{
+  "description": "A system activation profile has volumes, network interfaces and parameters associated",
+  "links": [
+    {
+      "href": "/system-profiles",
+      "method": "POST",
+      "rel": "create",
+      "schema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/system-profiles/{id}",
+      "method": "DELETE",
+      "rel": "destroy"
+    },
+    {
+      "href": "/system-profiles/{id}/system_ifaces",
+      "method": "POST",
+      "rel": "iface_attach",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "targetSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "iface_id": {
+            "type": "integer"
+          },
+          "profile_id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "href": "/system-profiles/{id}/system_ifaces/{iface_id}",
+      "method": "DELETE",
+      "rel": "iface_detach",
+      "targetSchema": {
+        "type": "boolean"
+      }
+    },
+    {
+      "href": "/system-profiles",
+      "method": "GET",
+      "rel": "instances",
+      "schema": {
+        "additionalProperties": true,
+        "properties": {
+          "page": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "per_page": {
+            "default": 75,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "sort": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "description": "Sort by $uri in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "cpu": {
+                "description": "Sort by cpu in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "default": {
+                "description": "Sort by default in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "gateway": {
+                "description": "Sort by gateway in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "hypervisor_profile": {
+                "description": "Sort by hypervisor_profile in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "memory": {
+                "description": "Sort by memory in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "name": {
+                "description": "Sort by name in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "operating_system": {
+                "description": "Sort by operating_system in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "system": {
+                "description": "Sort by system in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "where": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\/system\\-profiles\\/[^/]+$",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "pattern": "^\\/system\\-profiles\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "pattern": "^\\/system\\-profiles\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "pattern": "^\\/system\\-profiles\\/[^/]+$",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "cpu": {
+                "anyOf": [
+                  {
+                    "description": "CPU(s)",
+                    "minimum": 0,
+                    "title": "CPU(s)",
+                    "type": "integer"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "CPU(s)",
+                        "minimum": 0,
+                        "title": "CPU(s)",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "CPU(s)",
+                        "minimum": 0,
+                        "title": "CPU(s)",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "CPU(s)",
+                          "minimum": 0,
+                          "title": "CPU(s)",
+                          "type": "integer"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "default": {
+                "anyOf": [
+                  {
+                    "description": "Default",
+                    "title": "Default",
+                    "type": "boolean"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Default",
+                        "title": "Default",
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Default",
+                        "title": "Default",
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Default",
+                          "title": "Default",
+                          "type": "boolean"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "gateway": {
+                "anyOf": [
+                  {
+                    "description": "Gateway interface",
+                    "title": "Gateway interface",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Gateway interface",
+                        "title": "Gateway interface",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Gateway interface",
+                        "title": "Gateway interface",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Gateway interface",
+                          "title": "Gateway interface",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "hypervisor_profile": {
+                "anyOf": [
+                  {
+                    "description": "Required hypervisor profile",
+                    "title": "Required hypervisor profile",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Required hypervisor profile",
+                        "title": "Required hypervisor profile",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Required hypervisor profile",
+                        "title": "Required hypervisor profile",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Required hypervisor profile",
+                          "title": "Required hypervisor profile",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "memory": {
+                "anyOf": [
+                  {
+                    "description": "Memory",
+                    "minimum": 0,
+                    "title": "Memory",
+                    "type": "integer"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Memory",
+                        "minimum": 0,
+                        "title": "Memory",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Memory",
+                        "minimum": 0,
+                        "title": "Memory",
+                        "type": "integer"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Memory",
+                          "minimum": 0,
+                          "title": "Memory",
+                          "type": "integer"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "description": "Profile name",
+                    "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                    "title": "Profile name",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Profile name",
+                        "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                        "title": "Profile name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Profile name",
+                        "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                        "title": "Profile name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Profile name",
+                          "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                          "title": "Profile name",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "operating_system": {
+                "anyOf": [
+                  {
+                    "description": "Operating system",
+                    "title": "Operating system",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Operating system",
+                        "title": "Operating system",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Operating system",
+                        "title": "Operating system",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Operating system",
+                          "title": "Operating system",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "storage_volumes": {
+                "additionalProperties": false,
+                "properties": {
+                  "$contains": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$uri": {
+                        "pattern": "^\\/storage\\-volumes\\/[^/]+$",
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "part_table": {
+                        "id": "file:///usr/local/lib/python3.6/dist-packages/tessia/server/db/schemas/storage_volumes/part_table.json",
+                        "properties": {
+                          "table": {
+                            "items": {
+                              "properties": {
+                                "fs": {
+                                  "enum": [
+                                    "ext2",
+                                    "ext3",
+                                    "ext4",
+                                    "btrfs",
+                                    "reiserfs",
+                                    "xfs",
+                                    "swap"
+                                  ],
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "mo": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "mp": {
+                                  "pattern": "^/[a-z0-9A-Z/\\-\\._]*$",
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                },
+                                "size": {
+                                  "type": "number"
+                                },
+                                "type": {
+                                  "enum": [
+                                    "primary",
+                                    "logical"
+                                  ],
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "mp",
+                                "size",
+                                "fs",
+                                "type",
+                                "mo"
+                              ],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "enum": [
+                              "dasd",
+                              "gpt",
+                              "msdos"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "table"
+                        ],
+                        "type": "object"
+                      },
+                      "server": {
+                        "type": "string"
+                      },
+                      "volume_id": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "$contains"
+                ],
+                "type": "object"
+              },
+              "system": {
+                "anyOf": [
+                  {
+                    "description": "System",
+                    "title": "System",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "System",
+                        "title": "System",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "System",
+                        "title": "System",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "System",
+                          "title": "System",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "system_ifaces": {
+                "additionalProperties": false,
+                "properties": {
+                  "$contains": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$uri": {
+                        "pattern": "^\\/system\\-ifaces\\/[^/]+$",
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "integer"
+                      },
+                      "ip_address": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "system": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "$contains"
+                ],
+                "type": "object"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "targetSchema": {
+        "items": {
+          "$ref": "#"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "href": "/system-profiles/{id}/clone",
+      "method": "POST",
+      "rel": "prof_clone",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "href": "/system-profiles/{id}",
+      "method": "GET",
+      "rel": "self",
+      "targetSchema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/system-profiles/{id}",
+      "method": "PATCH",
+      "rel": "update",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "cpu": {
+            "description": "CPU(s)",
+            "minimum": 0,
+            "title": "CPU(s)",
+            "type": "integer"
+          },
+          "credentials": {
+            "additionalProperties": false,
+            "description": "Credentials",
+            "id": "file:///usr/local/lib/python3.6/dist-packages/tessia/server/db/schemas/system_profiles/credentials.json",
+            "properties": {
+              "admin-password": {
+                "description": "OS admin password - required for create",
+                "type": "string"
+              },
+              "admin-user": {
+                "description": "OS admin username - required for create",
+                "type": "string"
+              },
+              "zvm-logonby": {
+                "description": "Logonby user to log on z/VM - use null to unset",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "zvm-password": {
+                "description": "Password to log on z/VM - required for zVM guests",
+                "type": "string"
+              }
+            },
+            "title": "Credentials",
+            "type": "object"
+          },
+          "default": {
+            "description": "Default",
+            "title": "Default",
+            "type": "boolean"
+          },
+          "gateway": {
+            "description": "Gateway interface",
+            "title": "Gateway interface",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "hypervisor_profile": {
+            "description": "Required hypervisor profile",
+            "title": "Required hypervisor profile",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "memory": {
+            "description": "Memory",
+            "minimum": 0,
+            "title": "Memory",
+            "type": "integer"
+          },
+          "name": {
+            "description": "Profile name",
+            "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+            "title": "Profile name",
+            "type": "string"
+          },
+          "operating_system": {
+            "description": "Operating system",
+            "title": "Operating system",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parameters": {
+            "definitions": {
+              "cpc": {
+                "additionalProperties": false,
+                "properties": {
+                  "liveimg-insfile-url": {
+                    "description": "URL of live image insfile for partition installations (DPM only)",
+                    "format": "uri",
+                    "type": "string"
+                  }
+                },
+                "title": "System profile specialized information for CPCs",
+                "type": "object"
+              },
+              "other": {
+                "additionalProperties": false,
+                "properties": {
+                  "linux-kargs-installer": {
+                    "description": "Custom kernel command line arguments to use in the Linux installer during installation time",
+                    "type": "string"
+                  },
+                  "linux-kargs-target": {
+                    "description": "Custom kernel command line arguments for the deployed (installed) system",
+                    "type": "string"
+                  }
+                },
+                "title": "Additional parameters for system activation or installation",
+                "type": "object"
+              }
+            },
+            "description": "Parameters",
+            "id": "file:///usr/local/lib/python3.6/dist-packages/tessia/server/db/schemas/system_profiles/parameters.json",
+            "oneOf": [
+              {
+                "$ref": "#/definitions/cpc"
+              },
+              {
+                "$ref": "#/definitions/other"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters",
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "system": {
+            "description": "System",
+            "title": "System",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "href": "/system-profiles/{id}/storage_volumes",
+      "method": "POST",
+      "rel": "vol_attach",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "unique_id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "targetSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "profile_id": {
+            "type": "integer"
+          },
+          "volume_id": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      }
+    },
+    {
+      "href": "/system-profiles/{id}/storage_volumes/{vol_unique_id}",
+      "method": "DELETE",
+      "rel": "vol_detach",
+      "targetSchema": {
+        "type": "boolean"
+      }
+    }
+  ],
+  "properties": {
+    "$uri": {
+      "pattern": "^\\/system\\-profiles\\/[^/]+$",
+      "readOnly": true,
+      "type": "string"
+    },
+    "cpu": {
+      "description": "CPU(s)",
+      "minimum": 0,
+      "title": "CPU(s)",
+      "type": "integer"
+    },
+    "credentials": {
+      "additionalProperties": false,
+      "description": "Credentials",
+      "id": "file:///usr/local/lib/python3.6/dist-packages/tessia/server/db/schemas/system_profiles/credentials.json",
+      "properties": {
+        "admin-password": {
+          "description": "OS admin password - required for create",
+          "type": "string"
+        },
+        "admin-user": {
+          "description": "OS admin username - required for create",
+          "type": "string"
+        },
+        "zvm-logonby": {
+          "description": "Logonby user to log on z/VM - use null to unset",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "zvm-password": {
+          "description": "Password to log on z/VM - required for zVM guests",
+          "type": "string"
+        }
+      },
+      "title": "Credentials",
+      "type": "object"
+    },
+    "default": {
+      "description": "Default",
+      "title": "Default",
+      "type": "boolean"
+    },
+    "gateway": {
+      "description": "Gateway interface",
+      "title": "Gateway interface",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "hypervisor_profile": {
+      "description": "Required hypervisor profile",
+      "title": "Required hypervisor profile",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "memory": {
+      "description": "Memory",
+      "minimum": 0,
+      "title": "Memory",
+      "type": "integer"
+    },
+    "name": {
+      "description": "Profile name",
+      "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+      "title": "Profile name",
+      "type": "string"
+    },
+    "operating_system": {
+      "description": "Operating system",
+      "title": "Operating system",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "parameters": {
+      "definitions": {
+        "cpc": {
+          "additionalProperties": false,
+          "properties": {
+            "liveimg-insfile-url": {
+              "description": "URL of live image insfile for partition installations (DPM only)",
+              "format": "uri",
+              "type": "string"
+            }
+          },
+          "title": "System profile specialized information for CPCs",
+          "type": "object"
+        },
+        "other": {
+          "additionalProperties": false,
+          "properties": {
+            "linux-kargs-installer": {
+              "description": "Custom kernel command line arguments to use in the Linux installer during installation time",
+              "type": "string"
+            },
+            "linux-kargs-target": {
+              "description": "Custom kernel command line arguments for the deployed (installed) system",
+              "type": "string"
+            }
+          },
+          "title": "Additional parameters for system activation or installation",
+          "type": "object"
+        }
+      },
+      "description": "Parameters",
+      "id": "file:///usr/local/lib/python3.6/dist-packages/tessia/server/db/schemas/system_profiles/parameters.json",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/cpc"
+        },
+        {
+          "$ref": "#/definitions/other"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Parameters",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "storage_volumes": {
+      "default": [],
+      "description": "Storage volumes",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "$uri": {
+            "pattern": "^\\/storage\\-volumes\\/[^/]+$",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "part_table": {
+            "id": "file:///usr/local/lib/python3.6/dist-packages/tessia/server/db/schemas/storage_volumes/part_table.json",
+            "properties": {
+              "table": {
+                "items": {
+                  "properties": {
+                    "fs": {
+                      "enum": [
+                        "ext2",
+                        "ext3",
+                        "ext4",
+                        "btrfs",
+                        "reiserfs",
+                        "xfs",
+                        "swap"
+                      ],
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "mo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "mp": {
+                      "pattern": "^/[a-z0-9A-Z/\\-\\._]*$",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "size": {
+                      "type": "number"
+                    },
+                    "type": {
+                      "enum": [
+                        "primary",
+                        "logical"
+                      ],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "mp",
+                    "size",
+                    "fs",
+                    "type",
+                    "mo"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "type": {
+                "enum": [
+                  "dasd",
+                  "gpt",
+                  "msdos"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "table"
+            ],
+            "type": "object"
+          },
+          "server": {
+            "type": "string"
+          },
+          "volume_id": {
+            "type": "string"
+          }
+        },
+        "readOnly": true,
+        "type": "object"
+      },
+      "readOnly": true,
+      "title": "Storage volumes",
+      "type": "array"
+    },
+    "system": {
+      "description": "System",
+      "title": "System",
+      "type": "string"
+    },
+    "system_ifaces": {
+      "default": [],
+      "description": "Network interfaces",
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "$uri": {
+            "pattern": "^\\/system\\-ifaces\\/[^/]+$",
+            "readOnly": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "ip_address": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "system": {
+            "type": "string"
+          }
+        },
+        "readOnly": true,
+        "type": "object"
+      },
+      "readOnly": true,
+      "title": "Network interfaces",
+      "type": "array"
+    }
+  },
+  "title": "System activation profile",
+  "type": "object"
+}

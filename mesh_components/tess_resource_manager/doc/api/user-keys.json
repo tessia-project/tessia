@@ -1,0 +1,1096 @@
+{
+  "description": "An authentication key allows an user to connect to the API",
+  "links": [
+    {
+      "href": "/user-keys",
+      "method": "POST",
+      "rel": "create",
+      "schema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/user-keys/{id}",
+      "method": "DELETE",
+      "rel": "destroy"
+    },
+    {
+      "href": "/user-keys",
+      "method": "GET",
+      "rel": "instances",
+      "schema": {
+        "additionalProperties": true,
+        "properties": {
+          "page": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "per_page": {
+            "default": 75,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "sort": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "description": "Sort by $uri in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "created": {
+                "description": "Sort by created in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "desc": {
+                "description": "Sort by desc in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "key_id": {
+                "description": "Sort by key_id in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "last_used": {
+                "description": "Sort by last_used in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "user": {
+                "description": "Sort by user in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "where": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\/user\\-keys\\/[^/]+$",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "pattern": "^\\/user\\-keys\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "pattern": "^\\/user\\-keys\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "pattern": "^\\/user\\-keys\\/[^/]+$",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "created": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Date created",
+                    "properties": {
+                      "$date": {
+                        "type": "integer"
+                      }
+                    },
+                    "title": "Date created",
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "additionalProperties": false,
+                        "description": "Date created",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Date created",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "additionalProperties": false,
+                        "description": "Date created",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Date created",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "additionalProperties": false,
+                        "description": "Date created",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Date created",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "additionalProperties": false,
+                        "description": "Date created",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Date created",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "additionalProperties": false,
+                        "description": "Date created",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Date created",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "additionalProperties": false,
+                        "description": "Date created",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Date created",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$between": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Date created",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Date created",
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "$between"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Date created",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Date created",
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "desc": {
+                "anyOf": [
+                  {
+                    "description": "Description",
+                    "title": "Description",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Description",
+                        "title": "Description",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Description",
+                        "title": "Description",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Description",
+                          "title": "Description",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "key_id": {
+                "anyOf": [
+                  {
+                    "description": "Key ID",
+                    "title": "Key ID",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Key ID",
+                        "title": "Key ID",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Key ID",
+                        "title": "Key ID",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Key ID",
+                          "title": "Key ID",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "last_used": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Last used",
+                    "properties": {
+                      "$date": {
+                        "type": "integer"
+                      }
+                    },
+                    "title": "Last used",
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "additionalProperties": false,
+                        "description": "Last used",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last used",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "additionalProperties": false,
+                        "description": "Last used",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last used",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "additionalProperties": false,
+                        "description": "Last used",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last used",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "additionalProperties": false,
+                        "description": "Last used",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last used",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "additionalProperties": false,
+                        "description": "Last used",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last used",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "additionalProperties": false,
+                        "description": "Last used",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last used",
+                        "type": [
+                          "object",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$between": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Last used",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Last used",
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "$between"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Last used",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Last used",
+                          "type": [
+                            "object",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "user": {
+                "anyOf": [
+                  {
+                    "description": "Key Owner",
+                    "title": "Key Owner",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Key Owner",
+                        "title": "Key Owner",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Key Owner",
+                        "title": "Key Owner",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Key Owner",
+                          "title": "Key Owner",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "targetSchema": {
+        "items": {
+          "$ref": "#"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "href": "/user-keys/{id}",
+      "method": "GET",
+      "rel": "self",
+      "targetSchema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/user-keys/{id}",
+      "method": "PATCH",
+      "rel": "update",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "desc": {
+            "description": "Description",
+            "title": "Description",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object"
+      }
+    }
+  ],
+  "properties": {
+    "$uri": {
+      "pattern": "^\\/user\\-keys\\/[^/]+$",
+      "readOnly": true,
+      "type": "string"
+    },
+    "created": {
+      "additionalProperties": false,
+      "description": "Date created",
+      "properties": {
+        "$date": {
+          "type": "integer"
+        }
+      },
+      "readOnly": true,
+      "title": "Date created",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "desc": {
+      "description": "Description",
+      "title": "Description",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "key_id": {
+      "description": "Key ID",
+      "readOnly": true,
+      "title": "Key ID",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "last_used": {
+      "additionalProperties": false,
+      "description": "Last used",
+      "properties": {
+        "$date": {
+          "type": "integer"
+        }
+      },
+      "readOnly": true,
+      "title": "Last used",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "user": {
+      "description": "Key Owner",
+      "readOnly": true,
+      "title": "Key Owner",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "title": "Authentication key",
+  "type": "object"
+}

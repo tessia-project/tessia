@@ -1,0 +1,1970 @@
+{
+  "description": "A repository is a collection of packages or files that can be installed on a system",
+  "links": [
+    {
+      "href": "/repositories",
+      "method": "POST",
+      "rel": "create",
+      "schema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/repositories/{id}",
+      "method": "DELETE",
+      "rel": "destroy"
+    },
+    {
+      "href": "/repositories",
+      "method": "GET",
+      "rel": "instances",
+      "schema": {
+        "additionalProperties": true,
+        "properties": {
+          "page": {
+            "default": 1,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "per_page": {
+            "default": 75,
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "sort": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "description": "Sort by $uri in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "desc": {
+                "description": "Sort by desc in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "initrd": {
+                "description": "Sort by initrd in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "install_image": {
+                "description": "Sort by install_image in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "kernel": {
+                "description": "Sort by kernel in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "modified": {
+                "description": "Sort by modified in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "modifier": {
+                "description": "Sort by modifier in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "name": {
+                "description": "Sort by name in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "operating_system": {
+                "description": "Sort by operating_system in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "owner": {
+                "description": "Sort by owner in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "project": {
+                "description": "Sort by project in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              },
+              "url": {
+                "description": "Sort by url in descending order if 'true', ascending order if 'false'.",
+                "type": "boolean"
+              }
+            },
+            "type": "object"
+          },
+          "where": {
+            "additionalProperties": false,
+            "properties": {
+              "$uri": {
+                "anyOf": [
+                  {
+                    "pattern": "^\\/repositories\\/[^/]+$",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "pattern": "^\\/repositories\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "pattern": "^\\/repositories\\/[^/]+$",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "pattern": "^\\/repositories\\/[^/]+$",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "desc": {
+                "anyOf": [
+                  {
+                    "description": "Description",
+                    "title": "Description",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Description",
+                        "title": "Description",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Description",
+                        "title": "Description",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Description",
+                          "title": "Description",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "initrd": {
+                "anyOf": [
+                  {
+                    "description": "Initrd path",
+                    "title": "Initrd path",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Initrd path",
+                        "title": "Initrd path",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Initrd path",
+                        "title": "Initrd path",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Initrd path",
+                          "title": "Initrd path",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "install_image": {
+                "anyOf": [
+                  {
+                    "description": "Install image URL",
+                    "title": "Install image URL",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Install image URL",
+                        "title": "Install image URL",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Install image URL",
+                        "title": "Install image URL",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Install image URL",
+                          "title": "Install image URL",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "kernel": {
+                "anyOf": [
+                  {
+                    "description": "Kernel path",
+                    "title": "Kernel path",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Kernel path",
+                        "title": "Kernel path",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Kernel path",
+                        "title": "Kernel path",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Kernel path",
+                          "title": "Kernel path",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "modified": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "description": "Last modified",
+                    "properties": {
+                      "$date": {
+                        "type": "integer"
+                      }
+                    },
+                    "title": "Last modified",
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lt": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$lt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$lte": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$lte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gt": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$gt"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$gte": {
+                        "additionalProperties": false,
+                        "description": "Last modified",
+                        "properties": {
+                          "$date": {
+                            "type": "integer"
+                          }
+                        },
+                        "title": "Last modified",
+                        "type": "object"
+                      }
+                    },
+                    "required": [
+                      "$gte"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$between": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Last modified",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Last modified",
+                          "type": "object"
+                        },
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "$between"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "additionalProperties": false,
+                          "description": "Last modified",
+                          "properties": {
+                            "$date": {
+                              "type": "integer"
+                            }
+                          },
+                          "title": "Last modified",
+                          "type": "object"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "modifier": {
+                "anyOf": [
+                  {
+                    "description": "Modified by",
+                    "title": "Modified by",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Modified by",
+                        "title": "Modified by",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Modified by",
+                        "title": "Modified by",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Modified by",
+                          "title": "Modified by",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "description": "Repository name",
+                    "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                    "title": "Repository name",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Repository name",
+                        "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                        "title": "Repository name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Repository name",
+                        "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                        "title": "Repository name",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Repository name",
+                          "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+                          "title": "Repository name",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "operating_system": {
+                "anyOf": [
+                  {
+                    "description": "Installable OS",
+                    "title": "Installable OS",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Installable OS",
+                        "title": "Installable OS",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Installable OS",
+                        "title": "Installable OS",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Installable OS",
+                          "title": "Installable OS",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "owner": {
+                "anyOf": [
+                  {
+                    "description": "Owner",
+                    "title": "Owner",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Owner",
+                        "title": "Owner",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Owner",
+                        "title": "Owner",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Owner",
+                          "title": "Owner",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "project": {
+                "anyOf": [
+                  {
+                    "description": "Project",
+                    "title": "Project",
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Project",
+                        "title": "Project",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Project",
+                        "title": "Project",
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Project",
+                          "title": "Project",
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "url": {
+                "anyOf": [
+                  {
+                    "description": "Network URL",
+                    "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                    "title": "Network URL",
+                    "type": "string"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$eq": {
+                        "description": "Network URL",
+                        "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                        "title": "Network URL",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$eq"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$ne": {
+                        "description": "Network URL",
+                        "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                        "title": "Network URL",
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$ne"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$contains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$contains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$icontains": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$icontains"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$startswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$startswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$istartswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$istartswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$endswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$endswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$iendswith": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "$iendswith"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "$in": {
+                        "default": [],
+                        "items": {
+                          "description": "Network URL",
+                          "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+                          "title": "Network URL",
+                          "type": "string"
+                        },
+                        "minItems": 0,
+                        "type": "array",
+                        "uniqueItems": true
+                      }
+                    },
+                    "required": [
+                      "$in"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "targetSchema": {
+        "items": {
+          "$ref": "#"
+        },
+        "type": "array"
+      }
+    },
+    {
+      "href": "/repositories/{id}",
+      "method": "GET",
+      "rel": "self",
+      "targetSchema": {
+        "$ref": "#"
+      }
+    },
+    {
+      "href": "/repositories/{id}",
+      "method": "PATCH",
+      "rel": "update",
+      "schema": {
+        "additionalProperties": false,
+        "properties": {
+          "desc": {
+            "description": "Description",
+            "title": "Description",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "initrd": {
+            "description": "Initrd path",
+            "title": "Initrd path",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "install_image": {
+            "description": "Install image URL",
+            "title": "Install image URL",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kernel": {
+            "description": "Kernel path",
+            "title": "Kernel path",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Repository name",
+            "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+            "title": "Repository name",
+            "type": "string"
+          },
+          "operating_system": {
+            "description": "Installable OS",
+            "title": "Installable OS",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "owner": {
+            "description": "Owner",
+            "title": "Owner",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "project": {
+            "description": "Project",
+            "title": "Project",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "url": {
+            "description": "Network URL",
+            "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+            "title": "Network URL",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    }
+  ],
+  "properties": {
+    "$uri": {
+      "pattern": "^\\/repositories\\/[^/]+$",
+      "readOnly": true,
+      "type": "string"
+    },
+    "desc": {
+      "description": "Description",
+      "title": "Description",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "initrd": {
+      "description": "Initrd path",
+      "title": "Initrd path",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "install_image": {
+      "description": "Install image URL",
+      "title": "Install image URL",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kernel": {
+      "description": "Kernel path",
+      "title": "Kernel path",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "modified": {
+      "additionalProperties": false,
+      "description": "Last modified",
+      "properties": {
+        "$date": {
+          "type": "integer"
+        }
+      },
+      "readOnly": true,
+      "title": "Last modified",
+      "type": "object"
+    },
+    "modifier": {
+      "description": "Modified by",
+      "readOnly": true,
+      "title": "Modified by",
+      "type": "string"
+    },
+    "name": {
+      "description": "Repository name",
+      "pattern": "^\\w+[\\w\\s\\.\\-]+$",
+      "title": "Repository name",
+      "type": "string"
+    },
+    "operating_system": {
+      "description": "Installable OS",
+      "title": "Installable OS",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "owner": {
+      "description": "Owner",
+      "title": "Owner",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "project": {
+      "description": "Project",
+      "title": "Project",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "url": {
+      "description": "Network URL",
+      "pattern": "^[a-zA-Z0-9_\\:\\@\\.\\/\\-]+$",
+      "title": "Network URL",
+      "type": "string"
+    }
+  },
+  "title": "Package pepository",
+  "type": "object"
+}

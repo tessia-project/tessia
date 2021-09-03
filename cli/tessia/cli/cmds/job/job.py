@@ -167,7 +167,7 @@ def output(job_id):
 @click.option('--startdate', type=DATE_TIME,
               help="date (UTC timezone) when the job should be started")
 @click.option('priority', '--prio', type=JOB_PRIO,
-              help="job priority, higher starts first")
+              help="job priority, higher starts first ('0' before '9')")
 @click.option('--bg', is_flag=True,
               help="do not wait for output after submitting")
 def submit(ctx, job_type, parmfile, **kwargs):

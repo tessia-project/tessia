@@ -25,6 +25,7 @@ from flask_potion.instances import Instances
 from flask_potion.resource import ModelResource
 from flask_potion.routes import Route
 from flask_potion.schema import FieldSet
+from itertools import islice
 from tessia.server.api.exceptions import BaseHttpError
 from tessia.server.config import CONF
 from tessia.server.db.models import SchedulerJob
@@ -161,11 +162,10 @@ class JobResource(ModelResource):
         # read the content of the file
         try:
             with open('{}/{}/output'.format(jobs_dir, id), 'r') as file:
-                lines = file.readlines()
                 # -1 means retrieve the complete content starting at the offset
                 if qty == -1:
-                    return ''.join(lines[offset:])
-                return ''.join(lines[offset:offset+qty])
+                    return ''.join(islice(file, offset, None))
+                return ''.join(islice(file, offset, offset+qty))
 
         # perhaps the file was not created yet, so retrieve job to determine
         # if this is the case or if job id was wrong

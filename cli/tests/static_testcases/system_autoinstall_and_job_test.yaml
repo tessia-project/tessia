@@ -260,6 +260,9 @@ tasks:
     - - job list --state=COMPLETED
       - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
         - '\| COMPLETED \|'
+    # dates accepted, but no results because of a disjoint interval
+    - - job list --start-before 2021-09-01 --start-after 2021-09-30
+      - 'No results were found.'
     # job output
     - - job output
       - Missing option '--id'.

@@ -53,10 +53,29 @@ JOB_FIELDS_DETAILED = (
     'job_id', 'job_type', 'submit_date', 'start_date', 'end_date', 'requester',
     'state', 'description', 'resources', 'time_slot', 'timeout', 'result'
 )
+DATE_FORMAT = click.DateTime(formats=['%Y-%m-%d'])
+
 
 #
 # CODE
 #
+def date_interval_to_potion_filter(date_start, date_end) -> dict:
+    """
+    Convert start and end dates to a half-open [start, end) date comparison
+    clause
+    """
+    if date_start and date_end:
+        # potion's $between includes end, so we have to offset the end slightly
+        return {'$between': [date_start,
+                             date_end - datetime.timedelta(microseconds=1)]}
+    if date_start:
+        return {'$gte': date_start}
+    if date_end:
+        return {'$lt': date_end}
+
+    return None
+
+
 @click.command(
     name='req-list',
     short_help='show the queue of requests or details of a request')
@@ -86,12 +105,15 @@ def req_list(request_id, **kwargs):
 
     # parse parameters to filters
     parsed_filter = dict_to_filter(kwargs)
+    # sort the result
+    parsed_filter['sort'] = {'request_id': True}
     # the result is paginated so we can iterate on it later
     entries = client.JobRequests.instances(**parsed_filter)
 
     print_ver_table(REQUEST_FIELDS_GENERIC, entries, REQUEST_FIELDS_GENERIC)
 
 # req_list()
+
 
 @click.command(short_help='send a request to the scheduler to cancel a job')
 @click.option('job_id', '--id', type=int, required=True,
@@ -104,6 +126,7 @@ def cancel(**kwargs):
 
     wait_scheduler(Client(), kwargs)
 # cancel()
+
 
 @click.command(name='output')
 @click.option('job_id', '--id', required=True, type=int, help="job id")
@@ -213,6 +236,7 @@ def submit(ctx, job_type, parmfile, **kwargs):
         ctx.invoke(cancel, job_id=job_id)
 # submit()
 
+
 @click.command(
     name='list',
     short_help='show the queue of jobs or details of a job')
@@ -224,6 +248,10 @@ def submit(ctx, job_type, parmfile, **kwargs):
               help='filter by execution machine type')
 @click.option('requester', '--owner', help='filter by owner login')
 @click.option('--state', type=JOB_STATE, help='filter by request state')
+@click.option('--start-after', type=DATE_FORMAT,
+              help='list jobs that started on or after given day (YYYY-MM-DD)')
+@click.option('--start-before', type=DATE_FORMAT,
+              help='list jobs that started before given day (YYYY-MM-DD)')
 def list_(job_id, params, **kwargs):
     """
     show the queue of jobs or details of a job
@@ -237,6 +265,13 @@ def list_(job_id, params, **kwargs):
     only_mine = kwargs.pop('my')
     if only_mine:
         kwargs.update({'requester': CONF.get_login()})
+
+    start_date_filter = date_interval_to_potion_filter(
+        kwargs.pop('start_after', None),
+        kwargs.pop('start_before', None)
+    )
+    if start_date_filter:
+        kwargs.update({'start_date': start_date_filter})
 
     # id specified: print specific information
     if job_id is not None:
@@ -260,5 +295,6 @@ def list_(job_id, params, **kwargs):
 
     print_ver_table(JOB_FIELDS_GENERIC, entries, JOB_FIELDS_GENERIC)
 # list_()
+
 
 CMDS = [cancel, list_, output, req_list, submit]

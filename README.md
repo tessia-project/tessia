@@ -15,10 +15,12 @@ limitations under the License.
 -->
 # Tessia - Task Execution Supporter and System Installation Assistant
 
-[![pipeline status](https://gitlab.com/tessia-project/tessia/badges/master/build.svg)](https://gitlab.com/tessia-project/tessia/commits/master)
-[![coverage report](https://gitlab.com/tessia-project/tessia/badges/master/coverage.svg?job=unittest)](https://gitlab.com/tessia-project/tessia/commits/master)
+[![license](https://img.shields.io/badge/license-Apache%202.0-blue)](https://gitlab.com/tessia-project/tessia/-/blob/master/LICENSE)
+[![pipeline status](https://img.shields.io/gitlab/pipeline/tessia-project/tessia)](https://gitlab.com/tessia-project/tessia/)
+[![language](https://img.shields.io/github/languages/top/tessia-project/tessia)](https://gitlab.com/tessia-project/tessia/)
+[![latest-release](https://img.shields.io/github/v/tag/tessia-project/tessia)](https://gitlab.com/tessia-project/tessia/)
 
-# What is it?
+## What is it?
 
 A tool to automate and simplify the installation/configuration/testing of Linux systems running on the IBM Z platform.
 
@@ -46,7 +48,7 @@ Linux distributions supported:
 
 A detailed list of supported installation combinations can be found [here](doc/users/supported_install_combinations.md).
 
-# Quickstart
+## Quickstart
 
 Deploy using docker containers, you will need docker 1.12.0+ and docker-compose 1.9.0+ installed on your system.
 
@@ -71,38 +73,37 @@ $ docker-compose ps
 $ docker exec -ti --user admin tessia_cli_1 tess conf show
 ```
 
-You can manage the service with the usual `docker-compose` commands. If you want to manage it from a different folder, simply copy the generated files
-`.env` and `.docker-compose.yaml` to the desired folder.
-
-The `admin` user in the client container is the entry point for creating additional users, resources, etc. Note that you need to adjust the server
-authentication configuration before newly created users are able to login. See the [Server configuration](doc/users/server_conf.md) page to learn how to set proper authentication
-and other configuration details.
+The tool is ready for use. To learn how to install your first system, visit [Getting started](doc/users/getting_started.md).
 
 **IMPORTANT**: In order to be able to install LPARs, one more step is needed.
 Refer to the section [Deployment of the auxiliar live-image](doc/users/server_install.md#deployment-of-the-auxiliar-live-image) for details.
 
-The tool is ready for use. To learn how to install your first system, visit [Getting started](doc/users/getting_started.md).
+Other deployment options are listed in [Server installation guide](doc/users/server_install.md).
 
-If you prefer a manual installation method (without docker), see [Manual method](doc/users/server_install.md#manual-method).
+[Server configuration](doc/users/server_conf.md) explains how to set proper authentication and other configuration details.
 
-# What's new
+## What's new
 
 Check the [Release notes](doc/releases.md).
 
-# Documentation
+## Documentation
 
 User documentation is available at the [Users section](doc/index.md#users). For an introduction about the tool concepts, see [Resources model](doc/users/resources_model.md).
 To learn how to use the command line client, see [Getting started](doc/users/getting_started.md).
 
-# Contributing
+## Contributing
 
 If you are interested in contributing to the project, read [How to contribute (development process)](doc/developers/contributing.md).
 Additional topics for developers are available at the [Developers section](doc/index.md#developers).
 
-# Contact
+## Bug reporting
 
-You can join us on IRC at the `#tessia` channel on [OFTC](http://www.oftc.net)
+Feel free to open issues and raise questions in [tessia issue tracker](https://gitlab.com/tessia-project/tessia/-/issues).
 
-# License
+## Contact
+
+You can join us on IRC at the `#tessia` channel on [OFTC](http://www.oftc.net) and our mailing list (tessia-user at lists.openmainframeproject.org)
+
+## License
 
 Tessia is licensed under the [Apache 2.0 license](LICENSE).

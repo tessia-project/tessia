@@ -15,7 +15,26 @@ limitations under the License.
 -->
 # Release notes
 
-## 2.0.2 (the latest)
+## 2.0.4 (2021-07-05)
+
+- Added HMC and CPC [monitoring](https://gitlab.com/tessia-project/tessia/-/commit/957eec644b3a5e06277f2167f9f2be66221195f6) (preview)
+- Support [querying](https://gitlab.com/tessia-project/tessia-baselib/-/commit/8f99699d1462efa4890b3173c955224796a934c8) DPM storage groups to avoid path specification for SCSI volumes
+- Usability improvements: system profile [cloning](https://gitlab.com/tessia-project/tessia/-/commit/ace9035f7de2984403f4536a1ba7f31100e588de), lifting [restriction](https://gitlab.com/tessia-project/tessia/-/commit/5c3909ae0027b30ed721ec43c01e5a11a80ae296) on unique repo urls, system info to [include](https://gitlab.com/tessia-project/tessia/-/commit/f66ba9f3a07abaa7cbe6af741e3543fe21b8f7b6) assigned IP addesses and more
+- Add SLES 15.3 [support](https://gitlab.com/tessia-project/tessia/-/commit/73990841c41f56f56a94aac05973af8d7497487f)
+- Deployment: allow [tweaking](https://gitlab.com/tessia-project/tessia/-/commit/6ae67e6d745e9031876216c0ec55bceede436216) user and group ID of tessia user in server container
+
+## 2.0.3 (2021-04-08)
+
+- Improve Ubuntu 21 installation [support](https://gitlab.com/tessia-project/tessia/-/commit/559bc86bfc6a75f93bc339a7ce43aefd6a6dddbf)
+- Updates to build process - [include](https://gitlab.com/tessia-project/tessia/-/commit/136829415f06e89d9b02618cee6cafc27eb4f7ce) Rust compiler for python builds
+- Internal [rewrite](https://gitlab.com/tessia-project/tessia/-/commit/369f4e588fb74b80620e0f1e0429649c89ccf3b6) of autoinstall machine
+
+tessia-baselib:
+- support [MDISK](https://gitlab.com/tessia-project/tessia-baselib/-/commit/346cb9e97012aca4fcbe3c5f14c273bfc1291532) and [Hipersockets](https://gitlab.com/tessia-project/tessia-baselib/-/commit/885579d74103f5937e39d35ba86fb7df6842cab7) attachments
+- puncher device is now [reset](https://gitlab.com/tessia-project/tessia-baselib/-/commit/d30bbf93e35e4836b983602a1c6cff4fc84d2b29) after z/VM installation
+- last used device is set for DPM machines [after boot](https://gitlab.com/tessia-project/tessia-baselib/-/commit/055642a10d0ea7e91709e71fea76f6e4e67805c0)
+
+## 2.0.2 (2021-01-21)
 
 - Add z/VM transfer buffer size option [link](https://gitlab.com/tessia-project/tessia/-/commit/64be44fdfd81241226c80831d6dc6cdf0e2b0f40)
 - Do not fail poweron job on verification error [link](https://gitlab.com/tessia-project/tessia/-/commit/067216fc6667b1288da6c36855f1ff131f6b27a4)

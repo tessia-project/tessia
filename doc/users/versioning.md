@@ -1,5 +1,5 @@
 <!--
-Copyright 2017 IBM Corp.
+Copyright 2017, 2021 IBM Corp.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,10 +15,7 @@ limitations under the License.
 -->
 # Versioning scheme
 
-The project uses a date based PEP440 compliant versioning scheme in the form `YY.MM[.MICRO]`, similar to the proposal from [Calendar Versioning](https://calver.org).
-For projects that are not libraries this scheme can provide more meaningful versions where one can tell solely based on the version number when it
- was released and have a good idea of how newer a version is compared to another, as opposed to the traditional arbitrary versions
- where each project has its own semantics (i.e. `v1.0` vs `v1.1` and `17.04` vs `18.01`).
+The project uses a PEP440 compliant versioning scheme in the form `major.minor.micro`.
 
 This is how the version is determined for a given commit:
 
@@ -34,6 +31,6 @@ Note that `{commit_qty}` is the number of commits since the tagged commit.
 
 Some examples:
 
-- commit matching release tag 17.05: `17.05`
-- two commits after the release tag: `17.05.post2.dev0+b38ff82d`
-- two commits after the release tag with local changes: `17.05.post2.dev0+b38ff82d.dirty`
+- commit matching release tag 2.0.4: `2.0.4`
+- two commits after the release tag: `2.0.4.post2.dev0+b38ff82d`
+- two commits after the release tag with local changes: `2.0.4.post2.dev0+b38ff82d.dirty`

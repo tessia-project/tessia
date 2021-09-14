@@ -96,9 +96,9 @@ To learn how to use the command line client, see [Getting started](doc/users/get
 If you are interested in contributing to the project, read [How to contribute (development process)](doc/developers/contributing.md).
 Additional topics for developers are available at the [Developers section](doc/index.md#developers).
 
-## Bug reporting
+## Reporting issues
 
-Feel free to open issues and raise questions in [tessia issue tracker](https://gitlab.com/tessia-project/tessia/-/issues).
+Feel free to open issues and raise questions in [tessia issue tracker](https://gitlab.com/tessia-project/tessia/-/issues). If you are not comfortable disclosing issue details or it is a security related issue, please send an email to (tessia-private at lists.openmainframeproject.org) instead.
 
 ## Contact
 

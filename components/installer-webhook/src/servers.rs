@@ -20,7 +20,7 @@ use warp::{multipart, Buf, Filter, Rejection, Reply};
 use log::info;
 use tokio::sync::{mpsc, oneshot};
 
-use crate::lib::{ControlMsg, ControlMsgResponse, Event, EventAuth, SessionId, SessionInit};
+use crate::control::{ControlMsg, ControlMsgResponse, Event, EventAuth, SessionId, SessionInit};
 
 pub type ControlChannel = mpsc::Sender<(ControlMsg, oneshot::Sender<ControlMsgResponse>)>;
 
@@ -39,9 +39,10 @@ async fn control_create_session(
     // create a response channel
     let (tx, rx) = oneshot::channel::<ControlMsgResponse>();
     // post a new session request
-    if let Err(_) = control_channel
+    if control_channel
         .send((ControlMsg::CreateSession(data), tx))
         .await
+        .is_err()
     {
         return Ok(warp::reply::with_status(
             warp::reply::json(&"Session could not be started (control unavailable)".to_owned()),
@@ -81,9 +82,10 @@ async fn control_remove_session(
     // create a response channel
     let (tx, rx) = oneshot::channel::<ControlMsgResponse>();
     // post a new session request
-    if let Err(_) = control_channel
+    if control_channel
         .send((ControlMsg::RemoveSession(data), tx))
         .await
+        .is_err()
     {
         return Ok(warp::reply::with_status(
             warp::reply::json(&"Session could not be removed (control unavailable)".to_owned()),
@@ -125,9 +127,10 @@ async fn control_add_event(
     // create a response channel
     let (tx, rx) = oneshot::channel::<ControlMsgResponse>();
     // post a new session request
-    if let Err(_) = control_channel
+    if control_channel
         .send((ControlMsg::AddEvent(event, auth), tx))
         .await
+        .is_err()
     {
         return Ok(warp::reply::with_status(
             warp::reply::json(&"Event could not be added (control unavailable)".to_owned()),
@@ -186,7 +189,7 @@ async fn control_get_logs(
     // create a response channel
     let (tx, rx) = oneshot::channel::<ControlMsgResponse>();
     // post a new session request
-    if let Err(_) = control_channel
+    if control_channel
         .send((
             ControlMsg::GetEvents {
                 session_id,
@@ -196,6 +199,7 @@ async fn control_get_logs(
             tx,
         ))
         .await
+        .is_err()
     {
         return Ok(warp::reply::with_status(
             warp::reply::json(
@@ -259,7 +263,7 @@ pub fn create_control_server(
     let get_logs = warp::get()
         .and(warp::path!("session" / SessionId / "logs"))
         .and(warp::query::<LogQueryArgs>())
-        .and(channel.clone())
+        .and(channel)
         .and_then(control_get_logs);
 
     let log = warp::log("requests");
@@ -336,11 +340,11 @@ fn webhook_auth() -> impl Filter<Extract = (EventAuth,), Error = Rejection> + Co
         let mut origin: &str = "";
         let mut secret: &str = "";
         for s in auth
-            .split(",")
+            .split(',')
             .map(|s| s.trim_start())
             .filter(|s| s.starts_with("oauth_"))
         {
-            for value in s.split("=").skip(1) {
+            for value in s.split('=').skip(1) {
                 if s.starts_with("oauth_consumer_key") {
                     origin = value.trim_matches('"');
                 } else if s.starts_with("oauth_token") {
@@ -370,9 +374,9 @@ fn multipart_filter_to_events() -> impl Filter<Extract = (Vec<Event>,), Error = 
                     Ok(vec)
                 })
                 .await
-                .and_then(|data| {
+                .map(|data| {
                     events.push(Event::Raw(name, data));
-                    Ok(events)
+                    events
                 })
         })
         .map_err(|e| {

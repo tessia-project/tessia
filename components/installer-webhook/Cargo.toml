@@ -1,6 +1,6 @@
 [package]
 name = "installer-webhook"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["Alexander Efremkin <aefr@de.ibm.com>"]
 edition = "2018"
 license = "Apache-2.0"

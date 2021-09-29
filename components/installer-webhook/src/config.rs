@@ -13,7 +13,6 @@
 // limitations under the License.
 
 use serde::Deserialize;
-use serde_yaml;
 
 use log::LevelFilter;
 use log4rs::append::console::ConsoleAppender;
@@ -93,7 +92,7 @@ impl Config {
     pub fn from_yaml_string(yaml_string: &str, section: &str) -> Self {
         match serde_yaml::from_str::<serde_yaml::Value>(yaml_string) {
             Ok(yaml_config) => {
-                if section == "" {
+                if section.is_empty() {
                     return serde_yaml::from_value(yaml_config).unwrap_or_else(|e| {
                         error!("Malformed YAML: {}", e);
                         info!("Using default configuration");
@@ -134,7 +133,7 @@ impl Config {
     pub fn get_logger_config(&self) -> log4rs::config::Config {
         // log file path and format
         let request_log_path = self.log_path.clone() + "/installer-webhook-requests.log";
-        const PATTERN: &'static str = "{d(%Y-%m-%d %H:%M:%S)} {l} {t}:{L} - {m}{n}";
+        const PATTERN: &str = "{d(%Y-%m-%d %H:%M:%S)} {l} {t}:{L} - {m}{n}";
 
         // create stdout configuration section
         let stdout = ConsoleAppender::builder()
@@ -167,7 +166,9 @@ impl Config {
                 &request_log_path,
                 Box::new(compound::CompoundPolicy::new(
                     // roll every this many bytes
-                    Box::new(compound::trigger::size::SizeTrigger::new(self.log_rotate_size)),
+                    Box::new(compound::trigger::size::SizeTrigger::new(
+                        self.log_rotate_size,
+                    )),
                     roller,
                 )),
             ) {
@@ -218,7 +219,7 @@ mod tests {
                 control_port: default_control_port(),
                 webhook_port: 80,
                 cleanup_interval: default_cleanup_interval(),
-                log_rotate_size: 20*1024,
+                log_rotate_size: 20 * 1024,
                 log_rotate_keep: default_log_rotate_keep()
             },
             Config::from_yaml_string(

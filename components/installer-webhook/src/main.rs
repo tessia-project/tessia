@@ -18,14 +18,14 @@ use tokio::signal::unix::{signal, Signal, SignalKind};
 use tokio::sync::{mpsc, oneshot};
 
 mod config;
-mod lib;
+mod control;
 mod servers;
-use crate::config::Config;
-use crate::lib::{Control, ControlMsg, ControlMsgResponse};
-use crate::servers::{create_control_server, create_webhook_server};
+use config::Config;
+use control::{Control, ControlMsg, ControlMsgResponse};
+use servers::{create_control_server, create_webhook_server};
 
 fn get_config_location() -> String {
-    std::env::var("TESSIA_CFG").unwrap_or("/etc/tessia/server.yaml".to_owned())
+    std::env::var("TESSIA_CFG").unwrap_or_else(|_| "/etc/tessia/server.yaml".to_owned())
 }
 
 #[tokio::main]

@@ -94,20 +94,19 @@ impl Session {
         // resolve a maybe situation
         if let TriState::Maybe = self.file_descriptor {
             self.file_descriptor = std::fs::File::create(self.log_path.clone() + "/events.log")
-                .map(|x| TriState::Yes(x))
+                .map(TriState::Yes)
                 .unwrap_or(TriState::Never);
         }
 
         // write the result
         if let Some(ev) = self.log.get(&key) {
             match ev {
-                Event::Text(text) => match self.file_descriptor {
-                    TriState::Yes(ref mut fd) => {
+                Event::Text(text) => {
+                    if let TriState::Yes(ref mut fd) = self.file_descriptor {
                         // consume any write errors, we're not safe if disk space ended anyway
                         writeln!(fd, "{}", text).ok();
                     }
-                    _ => {}
-                },
+                }
                 Event::Raw(ident, data) => {
                     let filename = safe_filename(ident);
                     if let Ok(mut fd) =
@@ -206,7 +205,7 @@ impl Control {
     /// Returns true on success
     fn add_session(&mut self, session: Session) -> bool {
         let id = session.id.clone();
-        if let None = self.sessions.insert(id.clone(), session) {
+        if self.sessions.insert(id.clone(), session).is_none() {
             info!("New session {}", id);
         } else {
             info!("Replacing session {}", id);
@@ -217,8 +216,8 @@ impl Control {
     /// Attempt to rmove a new session
     ///
     /// Returns true on success
-    fn remove_session(&mut self, session_id: &SessionId) -> bool {
-        self.sessions.remove(session_id).is_some() && {
+    fn remove_session(&mut self, session_id: SessionId) -> bool {
+        self.sessions.remove(&session_id).is_some() && {
             info!("Removed session {}", session_id);
             true
         }
@@ -281,7 +280,7 @@ impl Control {
                     false => Ok(ControlMsgResponse::Failure),
                 }
             }
-            ControlMsg::RemoveSession(id) => match self.remove_session(&id) {
+            ControlMsg::RemoveSession(id) => match self.remove_session(id) {
                 true => Ok(ControlMsgResponse::Success),
                 false => Ok(ControlMsgResponse::Failure),
             },
@@ -310,7 +309,7 @@ impl Control {
 /// Generate a filename that is safe to use in log directory
 fn safe_filename(ident: &str) -> String {
     if let Some(trail) = ident.rsplit('/').next() {
-        if trail != "" {
+        if !trail.is_empty() {
             return format!("file_{}", trail);
         }
     }

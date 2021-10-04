@@ -17,6 +17,7 @@ limitations under the License.
 
 [![license](https://img.shields.io/badge/license-Apache%202.0-blue)](https://gitlab.com/tessia-project/tessia/-/blob/master/LICENSE)
 [![pipeline status](https://img.shields.io/gitlab/pipeline/tessia-project/tessia)](https://gitlab.com/tessia-project/tessia/)
+[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/5285/badge)](https://bestpractices.coreinfrastructure.org/projects/5285)
 [![language](https://img.shields.io/github/languages/top/tessia-project/tessia)](https://gitlab.com/tessia-project/tessia/)
 [![latest-release](https://img.shields.io/github/v/tag/tessia-project/tessia)](https://gitlab.com/tessia-project/tessia/)
 

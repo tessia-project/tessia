@@ -103,6 +103,7 @@ unit mesh:
     - pip3 install -r requirements.txt -r dev-requirements.txt
     - cd mesh_components
     - python3 -m pytest scheduler
+    - python3 -m pytest permission_manager
 
 release:
   stage: release

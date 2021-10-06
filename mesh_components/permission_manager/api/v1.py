@@ -21,6 +21,8 @@ Permission Manager API v1
 #
 
 from flask import Blueprint
+from permission_manager.service_layer.entrypoints_handlers \
+    import action_permissible_handler
 
 #
 # CODE
@@ -54,3 +56,13 @@ def schema():
     return {
         '/': 'api root'
     }
+
+
+@api.route('/is-action-permissible')
+def is_action_permissible():
+    """
+    API: action permission validity
+
+    Checking the permission for the action
+    """
+    return action_permissible_handler()

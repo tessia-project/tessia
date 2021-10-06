@@ -41,3 +41,15 @@ def test_api_info_responses_are_valid(client):
     assert api_info['name'] == 'permission_manager'
     assert '/' in schema_info
 # test_api_info_responses_are_valid()
+
+
+def test_api_action_is_permissible(client):
+    """Checking the permission for the action"""
+    resp = client.get('/')
+    api_info = json.loads(resp.data)
+    resp = client.get('{}/is-action-permissible'.format(
+        api_info['apis'][0]['root']))
+    action_permission = json.loads(resp.data)
+
+    assert action_permission['action-allowed'] is True
+# test_api_action_is_permissible()

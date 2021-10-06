@@ -16,10 +16,22 @@
 Scheduler class unit tests
 """
 
+#
+# IMPORTS
+#
 import pytest
 
 from flask import json
 from scheduler.api import create_app
+
+#
+# CONSTANTS AND DEFINITIONS
+#
+
+
+#
+# CODE
+#
 
 
 @pytest.fixture
@@ -28,6 +40,7 @@ def client():
     app = create_app()
     with app.test_client() as test_client:
         yield test_client
+# client()
 
 
 def test_api_info_responses_are_valid(client):
@@ -39,3 +52,4 @@ def test_api_info_responses_are_valid(client):
 
     assert api_info['name'] == 'scheduler'
     assert '/' in schema_info
+# test_api_info_responses_are_valid()

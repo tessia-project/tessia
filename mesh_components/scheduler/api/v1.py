@@ -16,7 +16,20 @@
 Scheduler API v1
 """
 
+#
+# IMPORTS
+#
 from flask import current_app, Blueprint, jsonify
+
+#
+# CONSTANTS AND DEFINITIONS
+#
+
+
+#
+# CODE
+#
+
 
 api = Blueprint('v1', __name__, url_prefix='/v1')
 
@@ -38,6 +51,7 @@ def root():
     return {
         'success': True
     }
+# root()
 
 
 @api.route('/schema')
@@ -49,6 +63,7 @@ def schema():
         '/job/:id': 'get job id',
         '/queues': 'list queues'
     }
+# schema()
 
 
 @api.get('/queues')
@@ -57,3 +72,4 @@ def queues_list():
     scheduler = current_app.scheduler
     queues = scheduler.get_waiting_queues()
     return jsonify(queues)
+# queues_list()

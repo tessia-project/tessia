@@ -16,12 +16,20 @@
 REST interface for scheduler mesh component
 """
 
+#
+# IMPORTS
+#
 import os
 from logging.config import dictConfig as logDictConfig
 
 from flask import Flask
 from .v1 import api_v1
 from ..scheduler import Scheduler
+
+#
+# CONSTANTS AND DEFINITIONS
+#
+
 
 DEFAULT_API_CONFIGURATION = {
     'logging': {
@@ -44,11 +52,17 @@ DEFAULT_API_CONFIGURATION = {
 }
 
 
+#
+# CODE
+#
+
+
 def set_logging(log_config):
     """
     Setup logging facilities
     """
     logDictConfig(log_config)
+# set_logging()
 
 
 def create_app(config=None) -> Flask:
@@ -90,3 +104,4 @@ def create_app(config=None) -> Flask:
                 }
 
     return app
+# create_app()

@@ -21,6 +21,8 @@ Query external services
 #
 import requests
 
+from .errors import NotAuthorized
+
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -94,7 +96,7 @@ class PermissionManagerQuery(PermissionManagerQueryStub, ConnectedQuery):
             msg = ', '.join([obj['identifier'] for obj in objects[:5]])
             if len(objects) > 5:
                 msg += f' and {len(objects) - 5} more'
-            raise RuntimeError(f'No permission for {subject_fmt} to use {msg}')
+            raise NotAuthorized(f'No permission for {subject_fmt} to use {msg}')
     # assert_use_resources()
 # PermissionManagerQuery
 

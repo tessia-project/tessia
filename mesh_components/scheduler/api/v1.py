@@ -19,7 +19,9 @@ Scheduler API v1
 #
 # IMPORTS
 #
-from flask import current_app, Blueprint, jsonify
+from flask import current_app, Blueprint, jsonify, request
+
+from ..scheduler.errors import NotAuthorized
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -39,6 +41,18 @@ api_v1 = {
     'min_version': '0.0.0',
     'version': '0.0.1'
 }
+
+
+@api.errorhandler(ValueError)
+def err_invalid_value(exc):
+    """Handle value errors from service layer"""
+    return jsonify(error=str(exc)), 400
+
+
+@api.errorhandler(NotAuthorized)
+def err_not_authorized(exc):
+    """Handle value errors from service layer"""
+    return jsonify(error=str(exc)), 401
 
 
 @api.route('/')
@@ -64,6 +78,16 @@ def schema():
         '/queues': 'list queues'
     }
 # schema()
+
+
+@api.post('/jobs')
+def create_job():
+    """Create a scheduler job"""
+    scheduler = current_app.scheduler
+    task = request.get_json()
+    job_id = scheduler.add_job(task)
+    return {'job_id': job_id}, 201
+# create_job()
 
 
 @api.get('/queues')

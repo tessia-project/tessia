@@ -44,7 +44,7 @@ def client():
 
 
 def test_api_info_responses_are_valid(client):
-    """Queueing"""
+    """Query API version"""
     resp = client.get('/')
     api_info = json.loads(resp.data)
     resp = client.get('{}/schema'.format(api_info['apis'][0]['root']))
@@ -53,3 +53,31 @@ def test_api_info_responses_are_valid(client):
     assert api_info['name'] == 'scheduler'
     assert '/' in schema_info
 # test_api_info_responses_are_valid()
+
+
+class TestApiV1:
+    """Tests for API v1"""
+
+    def test_malformed_request_is_rejected(self, client):
+        """Malformed (unparseable) requests are rejected"""
+        resp = client.post('/v1/jobs', data=r"{not a valid json}")
+
+        assert resp.status_code == 400
+    # test_malformed_request_is_rejected()
+
+    def test_invalid_request_is_rejected(self, client):
+        """Invalid (wrong schema) requests are rejected"""
+        resp = client.post('/v1/jobs', json={'task': {'machine': 'invalid'}})
+
+        assert resp.status_code == 400
+    # test_invalid_request_is_rejected()
+
+    def test_shortest_request_is_accepted(self, client):
+        """Shortest possible request is accepted"""
+        resp = client.post('/v1/jobs', json={
+            'task': {'machine': 'echo', 'parameters': 'echo test message'}})
+        job_data = json.loads(resp.data)
+
+        assert resp.status_code == 201
+        assert 'job_id' in job_data
+    # test_shortest_request_is_accepted()

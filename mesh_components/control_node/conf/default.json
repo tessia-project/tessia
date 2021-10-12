@@ -1,0 +1,34 @@
+{
+    "mode": "detached",
+    "components": {
+        "control_node": {
+            "listen": "localhost",
+            "port": 7350,
+            "configuration": {}
+        },
+        "permission_manager": {
+            "listen": "localhost",
+            "port": 7351,
+            "configuration": {}
+        },
+        "resource_manager": {
+            "listen": "localhost",
+            "port": 7352,
+            "configuration": {}
+        },
+        "scheduler": {
+            "listen": "localhost",
+            "port": 7354,
+            "configuration": {
+                "scheduler": {
+                    "permission-manager": {
+                        "url": "http://localhost:7351"
+                    },
+                    "resource-manager": {
+                        "url": "http://localhost:7352"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -104,6 +104,7 @@ unit mesh:
     - cd mesh_components
     - python3 -m pytest scheduler
     - python3 -m pytest permission_manager
+    - python3 -m pytest control_node
 
 release:
   stage: release

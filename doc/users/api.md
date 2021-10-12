@@ -35,7 +35,7 @@ The following verbs are used in requests:
 
 JSON schema is provided for all resources; an overview is provided at `/schema` endpoint, 
 and schema for a resource type at `/<resource>/schema`.
-[Schema overview](../../mesh_components/tess_resource_manager/doc/index.md) is included into documentation for reference.
+[Schema overview](../../mesh_components/resource_manager/doc/index.md) is included into documentation for reference.
 
 Requests and responses are in general JSON-encoded.
 

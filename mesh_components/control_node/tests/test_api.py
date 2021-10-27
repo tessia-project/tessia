@@ -51,6 +51,8 @@ def test_api_info_responses_are_valid(client):
     schema_info = json.loads(resp.data)
 
     assert api_info['name'] == 'control_node'
+    assert 'version' in api_info['apis'][0]
+    assert 'min_version' in api_info['apis'][0]
     assert '/' in schema_info
 # test_api_info_responses_are_valid()
 

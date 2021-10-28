@@ -95,12 +95,13 @@ def create_app(config=None) -> Flask:
 
     @app.route('/')
     def status():
-        return {'name': 'control_node',
-                'apis': [
-                    {key: api[key]}
+        return {
+            'name': 'control_node',
+            'apis': [{
+                    key: api[key]
                     for key in ['root', 'version', 'min_version']
-                    for api in [api_v1]]
-                }
+            } for api in [api_v1]]
+        }
 
     return app
 # create_app()

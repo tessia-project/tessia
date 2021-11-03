@@ -51,10 +51,10 @@ INSTANCE_CONFIGURATION = {
             "configuration": {
                 "scheduler": {
                     "permission-manager": {
-                        "url": "http://localhost:8451"
+                        "url": "https://localhost:8451"
                     },
                     "resource-manager": {
-                        "url": "http://localhost:8452"
+                        "url": "https://localhost:8452"
                     }
                 }
             }
@@ -74,15 +74,25 @@ def instance():
         yield default_instance
 # instance()
 
-def test_instance_can_be_launched(instance):
+
+def test_instance_can_be_launched(instance, tmpdir):
     """Run an instance and verify responses from components"""
     instance.setup()
     instance.run()
 
-    req_control_node = requests.get('http://localhost:8450').json()
-    req_perman = requests.get('http://localhost:8451').json()
-    req_resman = requests.get('http://localhost:8452').json()
-    req_scheduler = requests.get('http://localhost:8454').json()
+    # we need own certificates for the probe
+    key_path, crt_path, ca_path = instance.ca_root.export_key_cert_to_directory(
+        tmpdir, *instance.ca_root.create_component_client_certificate('test'))
+
+    session = requests.Session()
+    session.cert = (crt_path, key_path)
+    session.verify = ca_path
+
+    # do requests
+    req_control_node = session.get('https://localhost:8450').json()
+    req_perman = session.get('https://localhost:8451').json()
+    req_resman = session.get('https://localhost:8452').json()
+    req_scheduler = session.get('https://localhost:8454').json()
 
     assert req_control_node['name'] == 'control_node'
     assert req_perman['name'] == 'permission_manager'

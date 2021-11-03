@@ -25,6 +25,7 @@ import logging
 import signal
 import time
 
+from .control_node.errors import StartInstanceError
 from .control_node.detached import DetachedInstance
 from .control_node.factory import InstanceFactory
 
@@ -62,6 +63,7 @@ def supervise(instance: DetachedInstance):
         instance.cleanup()
 # supervise()
 
+
 def main():
     """
     Command-line entrypoint
@@ -72,6 +74,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', default='./conf/default.json',
                         help="Path to configuration file")
+    parser.add_argument('--make-cli-cert', action='store_true',
+                        help="Generate additional client certificate "
+                             "to communicate with components")
 
     args = parser.parse_args()
     logging.info('Loading configuration from %s', args.config)
@@ -84,11 +89,24 @@ def main():
     instance = factory.create_instance(configuration)
     logging.info('Writing Tessia instance configuration')
     instance.setup()
+
+    if args.make_cli_cert:
+        # write additional client certificates
+        key, crt = instance.ca_root.create_component_client_certificate(
+            'external')
+        instance.ca_root.export_key_cert_to_directory('./', key, crt)
+
     logging.info('Starting Tessia instance')
-    instance.run()
+    try:
+        instance.run()
+    except StartInstanceError:
+        instance.cleanup()
+        raise
+
     if isinstance(instance, DetachedInstance):
         supervise(instance)
 # main()
+
 
 if __name__ == "__main__":
     main()

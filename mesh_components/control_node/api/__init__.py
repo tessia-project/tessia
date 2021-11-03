@@ -48,7 +48,8 @@ DEFAULT_API_CONFIGURATION = {
                 'handlers': ['console']
             }
         }
-    }
+    },
+    'request_authorization': None
 }
 
 

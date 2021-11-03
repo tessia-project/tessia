@@ -69,7 +69,8 @@ class TestApiV1:
 
     def test_invalid_request_is_rejected(self, client):
         """Invalid (wrong schema) requests are rejected"""
-        resp = client.post('/v1/instances', json={'task': {'machine': 'invalid'}})
+        resp = client.post(
+            '/v1/instances', json={'task': {'machine': 'invalid'}})
 
         assert resp.status_code == 400
     # test_invalid_request_is_rejected()
@@ -79,7 +80,7 @@ class TestApiV1:
         resp_create = client.post('/v1/instances', json={
             'mode': 'detached', 'components': {}})
         created = json.loads(resp_create.data)
-        
+
         resp_get = client.get(f'/v1/instances/{created["instance_id"]}')
         instance = json.loads(resp_get.data)
 

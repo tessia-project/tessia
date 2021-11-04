@@ -21,6 +21,10 @@ Resource Manager mesh component
 #
 import logging
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import sessionmaker
+
 #
 # CONSTANTS AND DEFINITIONS
 #
@@ -45,25 +49,39 @@ class ResourceManager:
     Provides resource management
     """
 
-    def __init__(self) -> None:
+    def __init__(self, db_uri: str) -> None:
         self.version = CURRENT_VERSION
-        self._config = dict(**DEFAULT_CONFIGURATION)
-        self._logger = logging.getLogger('mesh-resource-manager')
+        self._db_uri = db_uri
+        self._db = None
+        self._conn = None
+        self._logger = logging.getLogger("logger_common")
     # __init__()
 
-    def apply_config(self, configuration):
-        """
-        Apply and reapply component configuration
-        """
-        # Verify configuration
-        if not isinstance(configuration, dict):
-            self._logger.warning("Failed to apply configuration: "
-                                 "invalid format")
-            return
+    def _create_db(self):
+        """ Not implemented yet """
+    # _create_db()
 
-        # Apply configuration
-        self._config.update(configuration)
-        self._logger.info("Configuration applied: %s", configuration)
-    # apply_config()
+    def connect(self) -> tuple:
+        """
+       Create a SQLAlchemy engine and a session instances.
 
+        Args:
+            None
+
+        Returns:
+            tuple: (sqlalchemy.engine.Engine, sqlalchemy.orm.session.Session)
+
+        """
+        if self._conn is not None:
+            return self._conn
+
+        engine = create_engine(self._db_uri, echo=True)
+        self._logger.debug("SQLAlchemy engine was has been created: {}".format(
+            engine))
+
+        session = scoped_session(sessionmaker(bind=engine))
+
+        self._conn = (engine, session)
+        return self._conn
+    # connect()
 # ResourceManager

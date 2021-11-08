@@ -22,10 +22,10 @@
             "configuration": {
                 "scheduler": {
                     "permission-manager": {
-                        "url": "http://localhost:7351"
+                        "url": "https://localhost:7351"
                     },
                     "resource-manager": {
-                        "url": "http://localhost:7352"
+                        "url": "https://localhost:7352"
                     }
                 }
             }

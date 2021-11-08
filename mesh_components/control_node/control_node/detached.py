@@ -43,17 +43,23 @@ the processes will be left running, but can be stopped through ``.stop()`` and
 #
 # IMPORTS
 #
+import base64
 import json
 import logging
 import os
+import secrets
 import subprocess
+import tempfile
 import time
+
+from signal import SIGINT
 
 import requests
 
 # TODO: update to 2020 validator
 from jsonschema import Draft7Validator
 
+from .certificate_authority import CertificateAuthority, export_key_cert_bundle
 from .errors import StartInstanceError, ComponentProbeError, ValidationError
 
 #
@@ -106,7 +112,16 @@ _VALIDATOR = Draft7Validator(SCHEMA)
 class DetachedInstance:
     """Detached tessia instance"""
 
-    def __init__(self, configuration) -> None:
+    def __init__(self, configuration,
+                 ca_root: CertificateAuthority = None) -> None:
+        """
+        Initialize a Detached Instance runner with a specified configuration.
+
+        Args:
+            configuration (dict): configuration per schema
+            ca_root (CertificateAuthority): common CA for issuing server and
+                                            client TLS certificates
+        """
         # global configuration
         self._logger = logging.getLogger('mesh-control')
 
@@ -115,20 +130,42 @@ class DetachedInstance:
 
         self._conf = configuration
 
-        # configuration files created for components
-        self._conf_files = {}
+        # configuration directories created for components
+        self._conf_dirs = {}
 
         # spawned processes
         self._processes = {}
+
+        # CA for certificates
+        if not ca_root:
+            self._ca = CertificateAuthority.create_self_signed()
+        else:
+            self._ca = ca_root
+
+        # we need own certificates for the probe
+        key, crt = self._ca.create_component_client_certificate('probe')
+
+        # We want the temporary directory to be available
+        # for the whole duration of DetachedInstance
+        # pylint:disable=consider-using-with
+        self._tmp_dir = tempfile.TemporaryDirectory()
+        key_path, crt_path, ca_path = self._ca.export_key_cert_to_directory(
+            self._tmp_dir.name, key, crt)
+
+        self._session = requests.Session()
+        self._session.cert = (crt_path, key_path)
+        self._session.verify = ca_path
     # __init__()
 
     def __enter__(self):
         """Scope enter"""
         return self
+    # __enter__()
 
     def __exit__(self, exc_type, exc_value, traceback):
         """Scope exit"""
         self.cleanup()
+    # __exit__()
 
     def _get_component_url(self, component_name) -> str:
         """
@@ -138,10 +175,7 @@ class DetachedInstance:
             if 'listen' in self._conf[component_name]:
                 listen = (self._conf[component_name]['listen'],
                           self._conf[component_name]['port'])
-                return f"http://{listen[0]}:{listen[1]}"
-
-            if 'remote' in self._conf[component_name]:
-                return self._conf[component_name]['remote']
+                return f"https://{listen[0]}:{listen[1]}"
         return ''
     # _get_component_url()
 
@@ -158,21 +192,30 @@ class DetachedInstance:
             Popen: process object
         """
         env = os.environ.copy()
-        env['FLASK_APP'] = f'{component_name}.api'
-        if component_name in self._conf_files:
-            env[f"{component_name}_CONF".upper()] = \
-                self._conf_files[component_name]
+        conf_dir = self._conf_dirs[component_name].name
 
         listen = (self._conf[component_name]['listen'],
                   self._conf[component_name]['port'])
 
-        # use different log files for different instances
-        with open(f'.{component_name}.log',
-                  'w', encoding='utf-8') as logfile:
+        # create certificates for the server
+        key_crt_tuple = self._ca.create_component_server_certificate(
+            component_name, listen[0])
+
+        key_path, crt_path, ca_path = self._ca.export_key_cert_to_directory(
+            conf_dir, *key_crt_tuple)
+
+        uwsgi_fifo = os.path.join(conf_dir, 'fifo')
+
+        args = [
+            '--https',
+            f'{listen[0]}:{listen[1]},{crt_path},{key_path},HIGH,!{ca_path}',
+            '--mount', f'/={component_name}.api:create_app()',
+            '-M', '--master-fifo', uwsgi_fifo
+        ]
+        self._logger.info('Starting uwsgi with args %s', args)
+        with open(f'.{component_name}.log', 'w', encoding='utf-8') as logfile:
             return subprocess.Popen(
-                ['flask', 'run',
-                 '--host', str(listen[0]),
-                 '--port', str(listen[1])],
+                ['uwsgi', *args],
                 env=env, stdout=logfile, stderr=subprocess.STDOUT)
     # _start_local_component()
 
@@ -181,21 +224,22 @@ class DetachedInstance:
         Validate that component response is as expected
         """
         target = self._get_component_url(component_name)
+
         probe_start_time = time.monotonic()
         while True:
             try:
-                resp = requests.get(f"{target}/").json()
+                resp = self._session.get(f"{target}/").json()
                 if resp['name'] != component_name:
                     raise ComponentProbeError(
                         f'Probe failed: {str(resp)}')
                 break
-            except requests.ConnectionError:
+            except requests.ConnectionError as exc:
                 # component is not yet up
                 if time.monotonic() < probe_start_time + timeout:
                     time.sleep(0.5)
                 else:
                     raise ComponentProbeError("Probe failed: no connection") \
-                        from None
+                        from exc
             except requests.HTTPError as err:
                 raise ComponentProbeError(f"Probe failed: {err.response}") \
                     from err
@@ -204,20 +248,45 @@ class DetachedInstance:
                     f"Probe failed: wrong response {str(err)}") from None
     # _validate_component_response()
 
+    @property
+    def ca_root(self):
+        """Return our certificate authority"""
+        return self._ca
+    # ca_root()
+
     def setup(self) -> None:
         """
         Create configuration files for components, check prerequisites etc.
         """
-        work_dir = os.getcwd()
         for component in COMPONENT_LIST:
             if (component in self._conf
                     and 'configuration' in self._conf[component]):
+                # create client certificate
+                key, crt = self._ca.create_component_client_certificate(
+                    component)
+                export_phrase = secrets.token_urlsafe()
+                pkcs = export_key_cert_bundle(
+                    key, crt, self._ca.root, export_phrase)
+
+                component_configuration = self._conf[component].get(
+                    'configuration', {})
+                component_configuration['request_authorization'] = {
+                    'pkcs12-bundle': {
+                        'type': 'base85',
+                        'value': base64.b85encode(pkcs).decode('utf-8')
+                    },
+                    'import-key': {
+                        'type': 'raw',
+                        'value': export_phrase
+                    }
+                }
+
                 # component configuration defined, enable it
-                conf_name = os.path.join(work_dir, f'tessia_{component}.conf')
+                conf_dir = tempfile.TemporaryDirectory(prefix=f'{component}.')
+                self._conf_dirs[component] = conf_dir
+                conf_name = os.path.join(conf_dir.name, f'{component}.conf')
                 with open(conf_name, 'w', encoding='utf-8') as conf_file:
-                    json.dump(self._conf[component].get('configuration', {}),
-                              conf_file)
-                self._conf_files[component] = conf_name
+                    json.dump(component_configuration, conf_file)
     # setup()
 
     def run(self) -> None:
@@ -258,7 +327,7 @@ class DetachedInstance:
         Stop all local processes
         """
         for proc in self._processes.values():
-            proc.terminate()
+            proc.send_signal(SIGINT)
         self._processes = {}
     # stop()
 
@@ -268,12 +337,12 @@ class DetachedInstance:
         """
         self.stop()
 
-        for filename in self._conf_files.values():
+        for directory in self._conf_dirs.values():
             try:
-                os.remove(filename)
+                directory.cleanup()
             except FileNotFoundError:
                 pass
-        self._conf_files = {}
+        self._conf_dirs = {}
     # cleanup()
 
     def verify(self) -> dict:

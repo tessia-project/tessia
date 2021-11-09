@@ -19,7 +19,7 @@ Resource Manager class unit tests
 import pytest
 
 from flask import json
-from resource_manager.api import create_app
+from resource_manager.src.application.api.flask_app import create_app
 
 
 @pytest.fixture

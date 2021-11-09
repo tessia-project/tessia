@@ -100,6 +100,7 @@ SCHEMA = {
     'additionalProperties': True
 }
 
+
 #
 # CODE
 #
@@ -209,7 +210,7 @@ class DetachedInstance:
         args = [
             '--https',
             f'{listen[0]}:{listen[1]},{crt_path},{key_path},HIGH,!{ca_path}',
-            '--mount', f'/={component_name}.api:create_app()',
+            '--mount', f'/={self._conf[component_name]["api_app"]}',
             '-M', '--master-fifo', uwsgi_fifo
         ]
         self._logger.info('Starting uwsgi with args %s', args)

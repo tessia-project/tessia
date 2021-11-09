@@ -95,6 +95,8 @@ unit mesh:
   # override default image, services and before_script
   image: python:3.8
   services: []
+  variables:
+    TESSIA_RESOURCE_MANAGER_BD_PASSWORD: "pass4test"
   before_script:
     - pip install virtualenv
     - virtualenv venv
@@ -104,6 +106,7 @@ unit mesh:
     - cd mesh_components
     - python3 -m pytest scheduler
     - python3 -m pytest permission_manager
+    - python3 -m pytest resource_manager
     - python3 -m pytest control_node
 
 release:

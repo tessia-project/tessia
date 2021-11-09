@@ -33,21 +33,25 @@ INSTANCE_CONFIGURATION = {
         "control_node": {
             "listen": "localhost",
             "port": 8450,
+            "api_app": "control_node.api:create_app()",
             "configuration": {}
         },
         "permission_manager": {
             "listen": "localhost",
             "port": 8451,
+            "api_app": "permission_manager.api:create_app()",
             "configuration": {}
         },
         "resource_manager": {
             "listen": "localhost",
             "port": 8452,
+            "api_app": "resource_manager.src.application.api.flask_app:create_app()",
             "configuration": {}
         },
         "scheduler": {
             "listen": "localhost",
             "port": 8454,
+            "api_app": "scheduler.api:create_app()",
             "configuration": {
                 "scheduler": {
                     "permission-manager": {

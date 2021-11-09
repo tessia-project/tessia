@@ -16,39 +16,14 @@
 REST interface for Resource Manager mesh component
 """
 
+import logging
+import logging.config
 import os
-from logging.config import dictConfig as logDictConfig
 
-from flask import Flask
 from .v1 import api_v1
-from ..resource_manager import ResourceManager
-
-DEFAULT_API_CONFIGURATION = {
-    'logging': {
-        'version': 1,
-        'handlers': {
-            'console': {
-                'class': 'logging.StreamHandler',
-                'level': 'INFO',
-            }
-        },
-        'loggers': {
-            'mesh-resource-manager': {
-                'level': 'DEBUG',
-                'handlers': ['console']
-            }
-        }
-    },
-    'request_authorization': None,
-}
-
-
-def set_logging(log_config):
-    """
-    Setup logging facilities
-    """
-    logDictConfig(log_config)
-# set_logging()
+from .. import configuration
+from ..service_layer.resource_manager import ResourceManager
+from flask import Flask
 
 
 def create_app(config=None) -> Flask:
@@ -56,26 +31,29 @@ def create_app(config=None) -> Flask:
     Create flask application
     """
 
+    # specifying the path to the logging configuration:
+    # TODO: implement a custom path
+    log_conf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 '../log.conf')
+
     app = Flask(__name__, instance_relative_config=True)
 
-    if config:
-        app.config.from_json(config)
-    else:
-        app.config.from_mapping(DEFAULT_API_CONFIGURATION)
+    # setting up the logging configuration
+    logging.config.fileConfig(log_conf_path)
 
-    # ensure the instance folder exists
     try:
         os.makedirs(app.instance_path)
     except OSError:
         pass
 
-    set_logging(app.config.get(
-        'logging', DEFAULT_API_CONFIGURATION['logging']))
-
-    # Create common Resource Manager instance for this flask application
-    resource_manager = ResourceManager()
-    resource_manager.apply_config(app.config.get('resource_manager'))
+    # create common Resource Manager instance for this flask application
+    resource_manager = ResourceManager(
+        db_uri=configuration.TESSIA_RESOURCE_MANAGER_BD_URI
+    )
     app.resource_manager = resource_manager
+
+    # create connection to DB
+    app.resource_manager.connect()
 
     # register routes
     app.register_blueprint(api_v1['blueprint'])

@@ -15,7 +15,7 @@ limitations under the License.
 -->
 # tessia-control-node
 
-Last update: v0.0.1
+Last update: v0.0.2
 
 This component manages tessia mesh instance. It can be used to start a new mesh
 instance or as an agent to run additional instances.
@@ -47,28 +47,32 @@ also contain configuration for other components. For example:
         "control_node": {
             "listen": "localhost",
             "port": 7350,
+            "api_app": "control_node.api:create_app()",
             "configuration": {}
         },
         "permission_manager": {
             "listen": "localhost",
             "port": 7351,
+            "api_app": "permission_manager.api:create_app()",
             "configuration": {}
         },
         "resource_manager": {
             "listen": "localhost",
             "port": 7352,
+            "api_app": "resource_manager.src.application.api.flask_app:create_app()",
             "configuration": {}
         },
         "scheduler": {
             "listen": "localhost",
             "port": 7354,
+            "api_app": "scheduler.api:create_app()",
             "configuration": {
                 "scheduler": {
                     "permission-manager": {
-                        "url": "http://localhost:7351"
+                        "url": "https://localhost:7351"
                     },
                     "resource-manager": {
-                        "url": "http://localhost:7352"
+                        "url": "https://localhost:7352"
                     }
                 }
             }
@@ -87,25 +91,53 @@ managers) **and a new control node** that can start additional instances.
 
 A working example configuration is provided in `conf/default.json`.
 
+### Detached mode
+
+Each component has an API entry point (Flask application), indicated by `api_app`
+in configuration. Deployment in detached mode starts each component as a separate
+[uWSGI](https://uwsgi-docs.readthedocs.io/en/latest/index.html) server 
+with `listen` and `port` parameters.
+
+Control node also creates a self-signed CA authority to issue server and client 
+certificates for each component. This enables communication over TLS,
+at the same time limiting connections only to parties with a client certificate
+signed by same CA.
+
+In case an extra client certificate is needed (e.g. to run queries in the mesh
+during development), it can be created when starting control node 
+from command line with `--make-cli-cert` flag.
+
 ## Usage
 
-### CLI mode
+### Command-line interface
 
 Start a tessia mesh instance:
 ```
 python3 -m control_node --config control_node/conf/default.json
 ```
 
+Start a tessia mesh instance and create additional client certificate:
+```
+python3 -m control_node --config control_node/conf/default.json --make-cli-cert
+```
+
 ### Flask application
 
-Start control node server:
+Start control node server with flask:
 ```
 FLASK_APP=control_node.api flask run --port 7350
 ```
 
+Start control node server with uwsgi:
+```
+uwsgi --http 'localhost:7350' --mount '/=control_node.api:create_app()'
+```
+
+**Note: TLS is not enabled for control node in these cases. However, each mesh started by the control node will have TLS connectivity between the components**
+
 Refer to [API documentation](./api.md) for API usage.
 
-### As a library
+### Library
 
 Start instances via instance factory:
 ```python

@@ -20,6 +20,10 @@ Last update: v0.0.2
 This component manages tessia mesh instance. It can be used to start a new mesh
 instance or as an agent to run additional instances.
 
+## General functional diagram of tessia mesh components
+
+![Functional diagram of mesh components](./img/functional_diagram_of_components.png)
+
 ## Structure
 
 As is common with tessia mesh, components have an API module (Flask application)

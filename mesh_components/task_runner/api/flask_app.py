@@ -16,14 +16,23 @@
 REST interface for Task Runner mesh component
 """
 
+#
+# IMPORTS
+#
+
 import json
 import logging
 import logging.config
 import os
 
+from flask import Flask
 from .v1 import api_v1
 from ..service_layer import ServiceLayer
-from flask import Flask
+
+
+#
+# CONSTANTS AND DEFINITIONS
+#
 
 DEFAULT_CONFIGURATION = {
     'logging': {
@@ -42,6 +51,11 @@ DEFAULT_CONFIGURATION = {
         }
     }
 }
+
+
+#
+# CODE
+#
 
 
 def create_app(app_config=None) -> Flask:
@@ -69,7 +83,7 @@ def create_app(app_config=None) -> Flask:
         pass
 
     # create common service layer for this flask application
-    app.service = ServiceLayer()
+    app.service_layer = ServiceLayer()
 
     # register routes
     app.register_blueprint(api_v1['blueprint'])
@@ -77,7 +91,7 @@ def create_app(app_config=None) -> Flask:
     @app.route('/')
     def status():
         return {
-            'name': 'control_node',
+            'name': 'task_runner',
             'apis': [{
                     key: api[key]
                     for key in ['root', 'version', 'min_version']

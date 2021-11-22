@@ -20,7 +20,13 @@ Task Runner API v1
 # IMPORTS
 #
 
-from flask import Blueprint
+from flask import current_app, Blueprint, jsonify, request
+
+from ..service_layer import NotFound
+
+#
+# CONSTANTS AND DEFINITIONS
+#
 
 
 #
@@ -37,6 +43,20 @@ api_v1 = {
 }
 
 
+@api.errorhandler(ValueError)
+def err_invalid_value(exc):
+    """Handle value errors from service layer"""
+    return jsonify(error=str(exc)), 400
+# err_invalid_value()
+
+
+@api.errorhandler(NotFound)
+def err_not_found(exc):
+    """Handle value errors from service layer"""
+    return jsonify(error=str(exc)), 404
+# err_not_found()
+
+
 @api.route('/')
 def root():
     """
@@ -47,6 +67,7 @@ def root():
     return {
         'success': True
     }
+# root()
 
 
 @api.route('/schema')
@@ -55,3 +76,40 @@ def schema():
     return {
         '/': 'api root'
     }
+# schema()
+
+
+@api.post('/tasks')
+def create_task():
+    """Create a new task"""
+    service = current_app.service_layer
+    task = request.get_json()
+    add_result = service.add_task(task)
+    return jsonify({
+        'taskId': add_result['id']
+    }), 201
+# create_task()
+
+
+@api.get('/tasks/<task_id>')
+def get_task(task_id):
+    """Retrieve task status"""
+    service = current_app.service_layer
+    task_status = service.get_task_status(task_id)
+
+    return jsonify({
+        'taskId': task_status['id'],
+        'status': task_status['status']
+    })
+# get_task()
+
+
+@api.post('/tasks/<task_id>/stop')
+def stop_task(task_id):
+    """Stop task"""
+    service = current_app.service_layer
+    result = service.stop_task(task_id)
+    return jsonify({
+        'taskId': result['id'],
+    })
+# stop_task()

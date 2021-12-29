@@ -90,25 +90,6 @@ unit server:
     - python3 -m coverage run -a --source=tessia/server -m pytest -p no:cacheprovider tests_pytest
     - python3 -m coverage report -m
 
-unit mesh:
-  stage: unit test
-  # override default image, services and before_script
-  image: python:3.8
-  services: []
-  variables:
-    TESSIA_RESOURCE_MANAGER_BD_PASSWORD: "pass4test"
-  before_script:
-    - pip install virtualenv
-    - virtualenv venv
-    - source venv/bin/activate
-  script:
-    - pip3 install -r requirements.txt -r dev-requirements.txt
-    - cd mesh_components
-    - python3 -m pytest scheduler
-    - python3 -m pytest permission_manager
-    - python3 -m pytest resource_manager
-    - python3 -m pytest control_node
-
 release:
   stage: release
   script:

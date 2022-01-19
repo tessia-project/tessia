@@ -222,11 +222,11 @@ installation we create these auxiliary variables #}
         volume: {{ volid }}-part{{ loop.index }}
         id: {{ volid }}-part{{ loop.index }}-fs
         fstype: {{ part['fs'] }}
-{%-     if part['mp'] %}
+{%-     if part['mp'] or part['fs'] == 'swap' %}
       - type: mount
         device: {{ volid }}-part{{ loop.index }}-fs
         id: {{ volid }}-part{{ loop.index }}-fs-mount
-        path: {{ part['mp'] }}
+        path: {{ part['mp'] or 'none' }}
         options: {{ part['mo'] }}
 {%-     endif %}
 {%-   endfor %}{# part #}

@@ -42,7 +42,7 @@ import yaml
 #
 # CONSTANTS AND DEFINITIONS
 #
-LOAD_TIMEOUT = 90
+LOAD_TIMEOUT = 300
 POWERON = 'poweron'
 POWERON_EXC = 'poweron-exclusive'
 POWEROFF = 'poweroff'

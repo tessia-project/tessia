@@ -20,12 +20,12 @@
 
 # System authorization information, passwords are shadowed by default (auth has been deprecated by authselect)
 authselect current
-sshpw --username=root {{config["sha512rootpwd"]}} --iscrypted
+sshpw --username=root {{config["sha512installpwd"]}} --iscrypted
 # Use network installation
 url --url="{{config["repos"][0]['url']}}"
 # Use graphical install
 graphical
-vnc --password={{config["credentials"]["vnc-password"]}}
+vnc --password={{config["credentials"]["installation-password"]}}
 # Run the Setup Agent on first boot
 firstboot --enable
 

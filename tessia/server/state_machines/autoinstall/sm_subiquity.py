@@ -282,8 +282,8 @@ class SmSubiquityInstaller(SmBase):
         http_result = self._session.post(self._webhook_control + "/session",
                                          json=data)
         if http_result.status_code != 201:
-            RuntimeError('Installation could not be started:' +
-                         ' failed to open webhook session')
+            raise RuntimeError('Installation could not be started:' +
+                               ' failed to open webhook session')
 
     def _read_events(self):
         """

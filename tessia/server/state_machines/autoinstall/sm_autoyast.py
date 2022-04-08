@@ -86,7 +86,7 @@ class SmAutoyast(SmBase):
         """
         # autoyast performs the installation in two stages so we need to make
         # sure the second stage has finished before we perform the actual check
-        ssh_client, shell = self._get_ssh_conn()
+        ssh_client, shell = self._get_ssh_conn(connect_after_install=True)
 
         try:
             ret, _ = shell.run('systemctl status YaST2-Second-Stage')
@@ -109,16 +109,6 @@ class SmAutoyast(SmBase):
 
         super().check_installation()
     # check_installation()
-
-    def fill_template_vars(self):
-        """
-        See SmBase for docstring.
-        """
-        # collect repos, volumes, ifaces
-        super().fill_template_vars()
-        self._logger.info('auto-generated password for VNC is %s',
-                          self._info['credentials']['vnc-password'])
-    # fill_template_vars()
 
     def target_reboot(self):
         """

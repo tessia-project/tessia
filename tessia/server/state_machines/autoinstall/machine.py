@@ -19,8 +19,8 @@ State machine that performs the installation of Linux Distros.
 #
 # IMPORTS
 #
-from socket import gethostbyname
 from jsonschema import validate
+from socket import gethostbyname
 from tessia.server.db.connection import MANAGER
 from tessia.server.lib.post_install import PostInstallChecker
 from tessia.server.state_machines.base import BaseMachine
@@ -43,6 +43,8 @@ import ipaddress
 import json
 import logging
 import os
+import random
+import string
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -222,7 +224,7 @@ class AutoInstallMachine(BaseMachine):
         template_filename = '{}.cmdline.jinja'.format(os_entry.type)
 
         with open(CMDLINE_TEMPLATES_DIR + template_filename,
-                  "r") as template_file:
+                  "r", encoding='utf-8') as template_file:
             template_content = template_file.read()
 
         return AutoinstallMachineModel.Template(template_filename,
@@ -265,6 +267,9 @@ class AutoInstallMachine(BaseMachine):
             params.get('repos', []))
         install_opts = dbctrl.get_install_opts(params['system'],
                                                params.get("profile"))
+        # generate pseudo-random password for vnc and ssh installer sessions
+        install_opts['installation-password'] = ''.join(
+            random.sample(string.ascii_letters + string.digits, 8))
 
         model = AutoinstallMachineModel(os_entry, accessible_os_repos,
                                         template_entry, installer_template,

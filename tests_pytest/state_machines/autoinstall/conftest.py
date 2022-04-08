@@ -56,7 +56,7 @@ def creds():
     """
     Common credentials
     """
-    yield {'user': 'unit', 'password': 'test'}
+    yield {'user': 'unit', 'password': 'test', 'installation-password': 'temp'}
 
 
 @pytest.fixture

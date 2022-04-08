@@ -42,7 +42,7 @@ import yaml
 #
 # CONSTANTS AND DEFINITIONS
 #
-CREDS = {'user': 'unit', 'password': 'test'}
+
 
 #
 # CODE
@@ -142,7 +142,7 @@ class TestModelUpdate:
                             TestModelUpdate.UpdatingHypervisor)
 
     def test_model_update_adds_fcp_paths(
-            self, lpar_scsi_system, default_os_tuple, tmpdir,
+            self, lpar_scsi_system, default_os_tuple, creds, tmpdir,
             scsi_volume_without_paths):
         """
         Attempt to install "nothing" on an LPAR on SCSI disk
@@ -150,7 +150,7 @@ class TestModelUpdate:
         and post-install checker is run
         """
         model = AutoinstallMachineModel(*default_os_tuple,
-                                        lpar_scsi_system, CREDS)
+                                        lpar_scsi_system, creds)
         model.system_profile.add_volume(scsi_volume_without_paths)
         checker = NullPostInstallChecker()
         hyp = plat_lpar.PlatLpar.create_hypervisor(model)
@@ -209,14 +209,14 @@ def mock_ssh(monkeypatch):
 
 
 def test_boot_and_postinstall_check_on_lpar_dasd(
-        lpar_dasd_system, default_os_tuple, tmpdir):
+        lpar_dasd_system, default_os_tuple, creds, tmpdir):
     """
     Attempt to install "nothing" on an LPAR on DASD disk
     Verify that hypervisor is called with correct parameters
     and post-install checker is run
     """
     model = AutoinstallMachineModel(*default_os_tuple,
-                                    lpar_dasd_system, CREDS)
+                                    lpar_dasd_system, creds)
     checker = NullPostInstallChecker()
     hyp = plat_lpar.PlatLpar.create_hypervisor(model)
     platform = plat_lpar.PlatLpar(model, hyp)
@@ -241,14 +241,14 @@ def test_boot_and_postinstall_check_on_lpar_dasd(
 
 
 def test_boot_and_postinstall_check_on_lpar_scsi(
-        lpar_scsi_system, default_os_tuple, tmpdir):
+        lpar_scsi_system, default_os_tuple, creds, tmpdir):
     """
     Attempt to install "nothing" on an LPAR on SCSI disk
     Verify that hypervisor is called with correct parameters
     and post-install checker is run
     """
     model = AutoinstallMachineModel(*default_os_tuple,
-                                    lpar_scsi_system, CREDS)
+                                    lpar_scsi_system, creds)
     checker = NullPostInstallChecker()
     hyp = plat_lpar.PlatLpar.create_hypervisor(model)
     platform = plat_lpar.PlatLpar(model, hyp)
@@ -272,14 +272,14 @@ def test_boot_and_postinstall_check_on_lpar_scsi(
 
 
 def test_boot_and_postinstall_check_on_vm_dasd(
-        vm_dasd_system, default_os_tuple, tmpdir):
+        vm_dasd_system, default_os_tuple, creds, tmpdir):
     """
     Attempt to install "nothing" on a VM on DASD disk
     Verify that hypervisor is called with correct parameters
     and post-install checker is run
     """
     model = AutoinstallMachineModel(*default_os_tuple,
-                                    vm_dasd_system, CREDS)
+                                    vm_dasd_system, creds)
     checker = NullPostInstallChecker()
     hyp = plat_zvm.PlatZvm.create_hypervisor(model)
     platform = plat_zvm.PlatZvm(model, hyp)
@@ -300,14 +300,14 @@ def test_boot_and_postinstall_check_on_vm_dasd(
 
 
 def test_boot_and_postinstall_check_on_vm_scsi(
-        vm_scsi_system, default_os_tuple, tmpdir):
+        vm_scsi_system, default_os_tuple, creds, tmpdir):
     """
     Attempt to install "nothing" on a VM on SCSI disk
     Verify that hypervisor is called with correct parameters
     and post-install checker is run
     """
     model = AutoinstallMachineModel(*default_os_tuple,
-                                    vm_scsi_system, CREDS)
+                                    vm_scsi_system, creds)
     checker = NullPostInstallChecker()
     hyp = plat_zvm.PlatZvm.create_hypervisor(model)
     platform = plat_zvm.PlatZvm(model, hyp)
@@ -329,7 +329,7 @@ def test_boot_and_postinstall_check_on_vm_scsi(
 
 
 def testboot_and_postinstall_check_on_kvm_scsi(
-        kvm_scsi_system, default_os_tuple, tmpdir):
+        kvm_scsi_system, default_os_tuple, creds, tmpdir):
     """
     Attempt to install "nothing" on a KVM on SCSI disk
     Verify correct device paths
@@ -337,7 +337,7 @@ def testboot_and_postinstall_check_on_kvm_scsi(
     and post-install checker is run
     """
     model = AutoinstallMachineModel(*default_os_tuple,
-                                    kvm_scsi_system, CREDS)
+                                    kvm_scsi_system, creds)
     checker = NullPostInstallChecker()
     hyp = plat_kvm.PlatKvm.create_hypervisor(model)
     platform = plat_kvm.PlatKvm(model, hyp)
@@ -361,7 +361,7 @@ def testboot_and_postinstall_check_on_kvm_scsi(
 
 
 def test_network_boot_on_lpar_scsi(
-        scsi_volume, osa_iface, default_os_tuple, tmpdir):
+        scsi_volume, osa_iface, default_os_tuple, creds, tmpdir):
     """
     Attempt to install "nothing" on an LPAR on SCSI disk
     using network boot
@@ -384,7 +384,7 @@ def test_network_boot_on_lpar_scsi(
         volumes=[scsi_volume],
         interfaces=[(osa_iface, True)]
     )
-    model = AutoinstallMachineModel(*default_os_tuple, system, CREDS)
+    model = AutoinstallMachineModel(*default_os_tuple, system, creds)
     hyp = plat_lpar.PlatLpar.create_hypervisor(model)
     platform = plat_lpar.PlatLpar(model, hyp)
 
@@ -402,7 +402,7 @@ def test_network_boot_on_lpar_scsi(
     assert attrs['boot_params']['insfile'] == ins_file
 
 
-def test_template_lpar_dasd(lpar_dasd_system, default_os_tuple, tmpdir):
+def test_template_lpar_dasd(lpar_dasd_system, default_os_tuple, creds, tmpdir):
     """
     Test major template parameters
     """
@@ -411,7 +411,7 @@ def test_template_lpar_dasd(lpar_dasd_system, default_os_tuple, tmpdir):
         'aux', 'http://example.com/repo', 'package repo')
 
     model = AutoinstallMachineModel(
-        *os_tuple, [], [package_repo], lpar_dasd_system, CREDS)
+        *os_tuple, [], [package_repo], lpar_dasd_system, creds)
     hyp = plat_lpar.PlatLpar.create_hypervisor(model)
     platform = plat_lpar.PlatLpar(model, hyp)
 
@@ -436,12 +436,12 @@ def test_template_lpar_dasd(lpar_dasd_system, default_os_tuple, tmpdir):
     assert autofile['repos'][1]['name'] == 'aux'
 
 
-def test_template_kvm_scsi(kvm_scsi_system, default_os_tuple, tmpdir):
+def test_template_kvm_scsi(kvm_scsi_system, default_os_tuple, creds, tmpdir):
     """
     Test major template parameters
     """
     model = AutoinstallMachineModel(*default_os_tuple,
-                                    kvm_scsi_system, CREDS)
+                                    kvm_scsi_system, creds)
     hyp = plat_kvm.PlatKvm.create_hypervisor(model)
     platform = plat_kvm.PlatKvm(model, hyp)
 

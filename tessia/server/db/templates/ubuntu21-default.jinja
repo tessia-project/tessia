@@ -86,7 +86,7 @@ installation we create these auxiliary variables #}
   early-commands:
     - set -x
     {# set installer password #}
-    - "sed -i -e 's#installer:[^:]*#installer:{{config['sha512rootpwd']}}#' /etc/shadow"
+    - "sed -i -e 's#installer:[^:]*#installer:{{config['sha512installpwd']}}#' /etc/shadow"
     - sed -i -e '/^installer/ s#subiquity-shell#bash#' /etc/passwd
     - |
       echo > /var/local/watchdog.py \
@@ -231,7 +231,7 @@ installation we create these auxiliary variables #}
 {%-     endif %}
 {%-   endfor %}{# part #}
 {% endfor %}{# svol in svols #}
-{%- endif %}{# not KVM %}
+{%- endif %}{# not KVM #}
 
 {# Use networkd as default renderer, because MAC addresses and such #}
   network:

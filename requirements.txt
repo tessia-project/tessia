@@ -13,7 +13,8 @@ jsonschema>=2.5.1
 # support for ldap authentication
 ldap3>=1.3.3
 # rest-api
-flask>=0.10.1
+flask>=0.10.1,<2.1
+werkzeug<2.1
 # manage db session from flask (requirement from potion)
 Flask-SQLAlchemy>=2.2
 # help create the endpoints for the rest-api

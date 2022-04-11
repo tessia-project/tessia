@@ -415,7 +415,7 @@ class PlatKvm(PlatBase):
 
         hostname = self._model.system_profile.hostname
         user = self._model.os_credentials['user']
-        password = self._model.os_credentials['password']
+        password = self._model.os_credentials['installation-password']
 
         ssh_client = SshClient()
         ssh_client.login(hostname, user=user, passwd=password, timeout=10)

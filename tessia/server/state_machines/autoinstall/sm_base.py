@@ -38,8 +38,6 @@ import ipaddress
 import jinja2
 import logging
 import os
-import random
-import string
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -99,21 +97,36 @@ class SmBase(metaclass=abc.ABCMeta):
         self._info = None
     # __init__()
 
-    def _get_ssh_conn(self):
+    def _get_ssh_conn(self, connect_after_install: bool = False):
         """
         Auxiliary method to get a ssh connection and shell to the target system
         being installed.
+
+        Args:
+            connect_after_install (bool): connection is made after installation
+                stage
+
+        Returns:
+            SshClient: ssh connection to the target system
+            SshShell: ssh shell to the target system
+
+        Raises:
+            ConnectionError: connection could not be established
         """
+        # get the credentials to connect to the target system
+        user, password = (self._model.os_credentials['user'],
+                          self._model.os_credentials['installation-password'])
+        if connect_after_install:
+            password = self._model.os_credentials['password']
+
         conn_timeout = time() + CONNECTION_TIMEOUT
         self._logger.info('Waiting for connection to be available (%s secs)',
                           CONNECTION_TIMEOUT)
         while time() < conn_timeout:
             try:
                 ssh_client = SshClient()
-                ssh_client.login(
-                    self._profile.hostname,
-                    user=self._model.os_credentials['user'],
-                    passwd=self._model.os_credentials['password'])
+                ssh_client.login(self._profile.hostname,
+                                 user=user, passwd=password)
                 ssh_shell = ssh_client.open_shell()
                 return ssh_client, ssh_shell
             # different errors can happen depending on the state of the
@@ -342,6 +355,9 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         Performs the boot of the target system to initiate the installation
         """
+        self._logger.debug("Auto-generated installation password: %s",
+                           self._info['credentials']['installation-password'])
+
         kargs = self._render_installer_cmdline()
         if self._model.installer_cmdline:
             custom_kargs = self._model.installer_cmdline
@@ -377,7 +393,7 @@ class SmBase(metaclass=abc.ABCMeta):
             return
 
         # make sure a connection is possible before we use the checker
-        ssh_client, shell = self._get_ssh_conn()
+        ssh_client, shell = self._get_ssh_conn(connect_after_install=True)
 
         ret, _ = shell.run("echo 1")
         if ret != 0:
@@ -429,12 +445,12 @@ class SmBase(metaclass=abc.ABCMeta):
 
         # Write the autofile for usage during installation
         # by the distro installer.
-        with open(self._autofile_path, "w") as autofile:
+        with open(self._autofile_path, "w", encoding='utf-8') as autofile:
             autofile.write(autofile_content)
         # Write the autofile in the directory that the state machine
         # is executed.
         with open(os.path.join(self._work_dir, os.path.basename(
-                self._autofile_path)), "w") as autofile:
+                self._autofile_path)), "w", encoding='utf-8') as autofile:
             autofile.write(autofile_content)
     # create_autofile()
 
@@ -452,9 +468,13 @@ class SmBase(metaclass=abc.ABCMeta):
             'credentials': {
                 'admin-user': self._model.os_credentials['user'],
                 'admin-password': self._model.os_credentials['password'],
+                'installation-password': self._model.os_credentials[
+                    'installation-password']
             },
-            'sha512rootpwd': (
-                crypt.crypt(self._model.os_credentials["password"])),
+            'sha512rootpwd': (crypt.crypt(
+                self._model.os_credentials["password"])),
+            'sha512installpwd': (crypt.crypt(
+                self._model.os_credentials["installation-password"])),
             'hostname': self._profile.hostname,
             'autofile': self._autofile_url,
             'operating_system': {
@@ -488,10 +508,6 @@ class SmBase(metaclass=abc.ABCMeta):
                     'install_image': repo_obj.install_image,
                 })
             info['repos'].append(repo)
-
-        # generate pseudo-random password for vnc session
-        info['credentials']['vnc-password'] = ''.join(
-            random.sample(string.ascii_letters + string.digits, 8))
 
         # iterate over all available volumes and ifaces and filter data for
         # template processing later

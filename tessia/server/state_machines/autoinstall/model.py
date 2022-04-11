@@ -649,6 +649,8 @@ class AutoinstallMachineModel:
         self.os_credentials = {
             'user': installation_options.get('user'),
             'password': installation_options.get('password'),
+            'installation-password': installation_options.get(
+                'installation-password'),
         }
 
         # Custom repositories come first, but require more checks

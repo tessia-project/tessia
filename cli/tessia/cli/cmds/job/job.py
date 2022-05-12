@@ -144,7 +144,7 @@ def output(job_id):
     # retrieve the output from server in chunks of 100 lines so that we print
     # something to the user as soon as possible
     offset = 0
-    qty = 100
+    qty = 1000
     click.echo('Waiting for job output (Ctrl+C to stop waiting)')
     while True:
         output_buf = item.output({'offset': offset, 'qty': qty})

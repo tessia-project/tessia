@@ -1,5 +1,5 @@
 <!--
-Copyright 2021 IBM Corp.
+Copyright 2021, 2022 IBM Corp.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -153,3 +153,56 @@ GET /job-requests/45
 This response will contain `job_id` after scheduler has processed the request and queued the job for execution.
 Job state and output will be available at `/jobs/38` and `/jobs/38/output` endpoints.
 
+### Get job output
+
+There are two endpoints for job output: `/jobs/:id/output` and `/jobs/:id/download`.
+
+`/output` endpoint provides job output as a JSON-encoded string with optional offset and limit:
+```
+GET /jobs/38/output
+GET /jobs/38/output?qty=250
+GET /jobs/38/output?offset=1000&qty=250
+GET /jobs/38/output?offset=2000&qty=-1
+```
+
+`offset` and `qty` parameters represent number of output lines to skip and to return (`qty=-1` denotes all lines to the end).
+
+The examples above request, respectively:
+- complete output
+- the first 250 lines of output
+- 250 lines of output, starting from line 1000
+- and the rest of the output, starting from line 2000.
+
+Output is unconditionally provided with gzip compression, regardless of client request headers.
+
+`/download` endpoint provides a link to download the output as a gzip-compressed file.
+```
+
+`/download` endpoint does not perform JSON encoding; it provides job output as a single file, either output only or a tarball with all files created by job exectution.
+
+```
+GET /jobs/38/download
+GET /jobs/38/download?content=all
+GET /jobs/38/download?content=output&encoding=raw
+```
+
+`content=all` parameter prepares a tar-gz archive with all files created by job execution, `content=output` (default) returns only output.
+
+`encoding` indicates content encoding, used regardless of client request headers. `encoding=gzip` is default for `content=output` and has no effect for other options.
+If the client does not support gzip, they can use `encoding=raw` to get uncompresssed output.
+
+Examples above return respectively:
+
+- complete output as a file (transferred with gzip encoding)
+- gzipped tar archive with all job files, which include output, profile and runtime information
+- complete output as a file (transferred without gzip encoding)
+
+Browsers understand gzip encoding and automatically decompress received output. `curl` will download a compressed stream instead:
+```
+curl -s -u username:password https://server:5000/jobs/38/download | gzip -d > output.txt
+```
+
+To decompress output on the fly, add `--compressed` flag:
+```
+curl -s -u username:password --compressed https://server:5000/jobs/38/download > output.txt
+```

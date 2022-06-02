@@ -1154,6 +1154,12 @@ class PostInstallChecker:
                     actual_disk['partitions'][i])
     # _verify_storage()
 
+    @property
+    def permissive(self):
+        """Return True if the checker is in permissive mode."""
+        return self._permissive
+    # permissive()
+
     def verify(self, areas=None):
         """
         Compare and validate the existing configuration of a running system

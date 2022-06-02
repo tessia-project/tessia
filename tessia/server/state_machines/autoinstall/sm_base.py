@@ -29,7 +29,7 @@ from tessia.server.config import Config
 from tessia.server.state_machines.autoinstall.model import \
     AutoinstallMachineModel
 from tessia.server.state_machines.autoinstall.plat_kvm import PlatKvm
-from time import sleep, time
+from time import sleep, monotonic
 from urllib.parse import urlsplit
 
 import abc
@@ -43,7 +43,10 @@ import os
 # CONSTANTS AND DEFINITIONS
 #
 # timeout used for ssh connection attempts
-CONNECTION_TIMEOUT = 600
+CONNECTION_TIMEOUT = 1800
+
+# interval between ssh connection attempts
+CONNECTION_RETRY_INTERVAL = 20
 
 # directory containing the kernel cmdline templates
 TEMPLATES_DIR = os.path.dirname(os.path.abspath(__file__)) + "/templates/"
@@ -119,24 +122,22 @@ class SmBase(metaclass=abc.ABCMeta):
         if connect_after_install:
             password = self._model.os_credentials['password']
 
-        conn_timeout = time() + CONNECTION_TIMEOUT
+        def _get_shell_connection():
+            """Logon to shell"""
+            ssh_client = SshClient()
+            ssh_client.login(self._profile.hostname,
+                             user=user, passwd=password)
+            ssh_shell = ssh_client.open_shell()
+            return ssh_client, ssh_shell
+        # _get_shell_connection()
+
         self._logger.info('Waiting for connection to be available (%s secs)',
                           CONNECTION_TIMEOUT)
-        while time() < conn_timeout:
-            try:
-                ssh_client = SshClient()
-                ssh_client.login(self._profile.hostname,
-                                 user=user, passwd=password)
-                ssh_shell = ssh_client.open_shell()
-                return ssh_client, ssh_shell
-            # different errors can happen depending on the state of the
-            # target system, so we just catch them all and try again until
-            # system is stable
-            except Exception:
-                sleep(5)
-
-        raise ConnectionError(
-            "Timeout occurred while trying to connect to the target system.")
+        try:
+            return self._repeat_with_timeout(_get_shell_connection)
+        except TimeoutError as exc:
+            raise ConnectionError(
+                "Could not connect to the target system.") from exc
     # _get_ssh_conn()
 
     def _parse_iface(self, iface: AutoinstallMachineModel.NetworkInterface,
@@ -339,6 +340,46 @@ class SmBase(metaclass=abc.ABCMeta):
         """
         template_obj = jinja2.Template(self._model.installer_template.content)
         return template_obj.render(config=self._info).strip()
+    # _render_installer_cmdline()
+
+    def _repeat_with_timeout(self, conn_method):
+        """
+        Try several times to establish a connection
+
+        Args:
+            conn_method (callable): method that potentially makes a connection
+
+        Returns:
+            any: result of the connection method
+
+        Raises:
+            TimeoutError: connection method fails after several attempts
+        """
+        conn_timeout = monotonic() + CONNECTION_TIMEOUT
+        max_attempts = CONNECTION_TIMEOUT // CONNECTION_RETRY_INTERVAL
+        for attempt in range(1, 1 + max_attempts):
+            # there will likely be fewer attempts due to timing overhead
+            self._logger.info('Connection attempt %d', attempt)
+            attempt_start = monotonic()
+            try:
+                return conn_method()
+            # different errors can happen depending on the state of the
+            # target system, so we just catch them all and try again until
+            # system is stable
+            except Exception as exc:
+                attempt_end = monotonic()
+                if attempt_end >= conn_timeout:
+                    raise TimeoutError("No connection after"
+                                       f" {attempt} attempts") from exc
+
+                duration = attempt_end - attempt_start
+                # sleep through part of retry interval
+                # with some guaranteed sleep time
+                sleep(max(CONNECTION_RETRY_INTERVAL / 4,
+                          CONNECTION_RETRY_INTERVAL - duration))
+
+        raise TimeoutError(f"No connection after {max_attempts} attempts")
+    # _repeat_with_timeout()
 
     @property
     @classmethod
@@ -392,12 +433,29 @@ class SmBase(metaclass=abc.ABCMeta):
             self._logger.info("Skipping post-installation checks")
             return
 
+        def _fail_check(exception: Exception):
+            """
+            Inform about a failed check
+
+            Depending on post install checker settings, we may want to
+            continue with the installation process or raise an exception.
+            """
+            if self._post_install_checker.permissive:
+                self._logger.warning(
+                    "Post-installation check failed: %s", exception)
+            else:
+                raise exception
+        # _fail_check()
+
         # make sure a connection is possible before we use the checker
         ssh_client, shell = self._get_ssh_conn(connect_after_install=True)
 
         ret, _ = shell.run("echo 1")
         if ret != 0:
-            raise RuntimeError("Error while checking the installed system.")
+            _fail_check(
+                RuntimeError("Error while checking the installed system.")
+            )
+            return
 
         shell.close()
         ssh_client.logoff()
@@ -406,19 +464,11 @@ class SmBase(metaclass=abc.ABCMeta):
             "Verifying if installed system matches expected parameters")
         # with certain distros the connection comes up and down during the
         # boot process so we perform multiple tries until we get a connection
-        conn_timeout = time() + CONNECTION_TIMEOUT
-        while True:
-            try:
-                self._post_install_checker.verify()
-            except ConnectionError:
-                if time() > conn_timeout:
-                    raise ConnectionError('Timeout occurred while trying to '
-                                          'connect to target system')
-                self._logger.debug('post install did not connect to target:',
-                                   exc_info=True)
-                sleep(5)
-                continue
-            break
+        try:
+            self._repeat_with_timeout(self._post_install_checker.verify)
+        except TimeoutError as exc:
+            _fail_check(exc)
+
     # check_installation()
 
     def cleanup(self):

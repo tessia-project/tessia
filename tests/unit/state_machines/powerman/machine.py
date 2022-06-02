@@ -73,7 +73,7 @@ class TestPowerManagerMachine(TestCase):
         self.addCleanup(patcher.stop)
 
         # mock sleep
-        patcher = patch.object(machine.time, 'sleep', autospec=True)
+        patcher = patch.object(machine, 'sleep', autospec=True)
         patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -779,7 +779,7 @@ class TestPowerManagerMachine(TestCase):
                 # _is_system_up
                 start += machine.LOAD_TIMEOUT/2
                 yield start
-        patcher = patch.object(machine.time, 'time', autospec=True)
+        patcher = patch.object(machine, 'monotonic', autospec=True)
         mock_time = patcher.start()
         self.addCleanup(patcher.stop)
         get_time = time_generator()

@@ -23,6 +23,8 @@ from copy import deepcopy
 from datetime import datetime
 from itertools import chain
 from jsonschema import validate
+from time import sleep, monotonic
+
 from tessia.baselib.common.s3270.terminal import Terminal
 from tessia.baselib.guests import Guest
 from tessia.baselib.hypervisors.hmc import HypervisorHmc
@@ -36,13 +38,12 @@ from tessia.server.lib import post_install
 from tessia.server.state_machines.base import BaseMachine
 
 import logging
-import time
 import yaml
 
 #
 # CONSTANTS AND DEFINITIONS
 #
-LOAD_TIMEOUT = 300
+LOAD_TIMEOUT = 600
 POWERON = 'poweron'
 POWERON_EXC = 'poweron-exclusive'
 POWEROFF = 'poweroff'
@@ -563,6 +564,7 @@ class PowerManagerMachine(BaseMachine):
 
         Raises:
             ValueError: in case system_prof uses CMS but guest_prof is None
+            Exception: underlying exception from baselib
         """
         system_obj = system_prof.system_rel
 
@@ -579,24 +581,26 @@ class PowerManagerMachine(BaseMachine):
                 guest_obj.login(timeout=15)
                 guest_obj.logoff()
             except PermissionError:
+                # PermissionError is acceptable,
+                # because in this case the system is responsive
                 return True
-            except Exception:
-                return False
+
             return True
 
         # system is a z/VM hypervisor: need credentials from guest to login
         if not guest_prof:
             raise ValueError(
-                'Cannot login to CMS on {}: no z/VM guest defined with '
-                'credentials'.format(system_obj.name))
+                f'Cannot login to CMS on {system_obj.name}: '
+                'no z/VM guest defined with credentials')
         if 'zvm-password' not in guest_prof.credentials:
             raise ValueError(
-                'z/VM guest {} has no z/VM credentials '
-                'defined'.format(guest_prof.system_rel.name))
+                f'z/VM guest {guest_prof.system_rel.name} '
+                'has no z/VM credentials defined')
         if not guest_prof.credentials['zvm-password']:
-            raise ValueError('z/VM guest {} has empty z/VM password '
-                             'defined. Please set the correct password.'
-                             .format(guest_prof.system_rel.name))
+            raise ValueError(
+                f'z/VM guest {guest_prof.system_rel.name} '
+                'has empty z/VM password defined. '
+                'Please set the correct password.')
         term_obj = Terminal()
         guest_params = {'here': True, 'noipl': True}
         if guest_prof.credentials.get('zvm-logonby'):
@@ -610,9 +614,9 @@ class PowerManagerMachine(BaseMachine):
                 guest_params, timeout=15)
             term_obj.disconnect()
         except PermissionError:
+            # ignore PermissionError here, it will be raised somewhere else
             return True
-        except Exception:
-            return False
+
         return True
     # _is_system_up()
 
@@ -892,11 +896,13 @@ class PowerManagerMachine(BaseMachine):
                 self._logger.info('Checking if hypervisor %s is up',
                                   hyp_profile.system_rel.name)
                 # hypervisor not up: not possible to activate system
-                if not self._is_system_up(hyp_profile, guest_profile):
+                try:
+                    self._is_system_up(hyp_profile, guest_profile)
+                except Exception as exc:
                     raise RuntimeError(
-                        'Cannot poweron system {}, hypervisor {} is not up'
-                        .format(system_obj.name, hyp_profile.system_rel.name)
-                    )
+                        f'Cannot poweron system {system_obj.name}, '
+                        f'hypervisor {hyp_profile.system_rel.name} is not up'
+                    ) from exc
                 self._logger.info(
                     'Hypervisor %s is up', hyp_profile.system_rel.name)
                 # hypervisor is up but profile doesn't match: fatal error,
@@ -932,7 +938,14 @@ class PowerManagerMachine(BaseMachine):
             self._logger.info('Checking if target system %s is already up',
                               system_obj.name)
             # system is already up: additional verifications are needed
-            if self._is_system_up(profile_obj):
+            try:
+                system_is_up = self._is_system_up(profile_obj)
+            except Exception as exc:
+                system_is_up = False
+                self._logger.info('System %s is not up', system_obj.name)
+                self._logger.debug('is_system_up check raised %s', exc)
+
+            if system_is_up:
                 self._logger.info('System is already up')
                 # force enabled: we need to poweroff the system first
                 if system.get('force'):
@@ -971,14 +984,19 @@ class PowerManagerMachine(BaseMachine):
             # make sure system is already up
             self._logger.info('Waiting for system %s to come up (%s seconds)',
                               system_name, LOAD_TIMEOUT)
-            timeout_secs = time.time() + LOAD_TIMEOUT
-            while (not self._is_system_up(profile_obj) and
-                   time.time() < timeout_secs):
-                time.sleep(5)
-            if time.time() >= timeout_secs:
-                raise TimeoutError(
-                    'Could not establish a connection to system {} after {} '
-                    'seconds'.format(system_name, LOAD_TIMEOUT))
+            timeout_secs = monotonic() + LOAD_TIMEOUT
+            while True:
+                try:
+                    self._is_system_up(profile_obj)
+                    break
+                except Exception as exc:
+                    if monotonic() >= timeout_secs:
+                        raise TimeoutError(
+                            'Could not establish a connection to system '
+                            f'{system_name} after {LOAD_TIMEOUT} seconds') \
+                            from exc
+                    sleep(5)
+
             # do a state match always to log incinsitencies,
             # raise only if requested
             if (not self._state_match(profile_obj) and

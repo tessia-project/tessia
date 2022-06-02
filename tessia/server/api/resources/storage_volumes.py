@@ -553,6 +553,8 @@ class StorageVolumeResource(SecureResource):
         elif 'type' in properties:
             self._assert_type(vol_obj.server_rel, properties['type'])
 
+        self._assert_hpav(vol_obj, properties)
+
         # partition table changed: validate partitions' sizes
         if 'part_table' in properties:
             if 'size' in properties:
@@ -582,8 +584,6 @@ class StorageVolumeResource(SecureResource):
             dummy_item.project = properties['project']
             self._perman.can('UPDATE', flask_global.auth_user, dummy_item,
                              'project')
-
-        self._assert_hpav(vol_obj, properties)
 
         updated_item = self.manager.update(vol_obj, properties)
 

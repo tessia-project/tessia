@@ -616,6 +616,8 @@ tasks:
       - Partition table successfully initialized.
     - - storage part-init --id=1022400200000000 --label=msdos
       - Partition table successfully initialized.
+    - - storage part-init --id=ED52 --label=dasd
+      - HPAV type cannot have partition table
     # test conflicting ids
     - - storage part-init --id=3953 --label=dasd
       - 'Error: multiple volumes match the entered ID, specify the storage server with --server'

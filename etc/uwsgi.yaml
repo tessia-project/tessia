@@ -6,6 +6,8 @@ uwsgi:
   enable-threads: true
   manage-script-name: true
   mount: /=tessia.server.api.cmd:APP
+  # disable TLS 1.0 and 1.1 (see OpenSSL SSL_OP_NO_TLSv1_1 and similar)
+  ssl-option: 335544320
   https: 0.0.0.0:5000,/etc/tessia/ssl.crt,/etc/tessia/ssl.key
   # docker stops containers by issuing SIGTERM, but by default uwsgi uses
   # sigterm to reload the workers, we change this default here.

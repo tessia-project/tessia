@@ -15,6 +15,16 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.0.5 (2022-08-05)
+
+- New API [endpoint](https://gitlab.com/tessia-project/tessia/-/merge_requests/354) to download job logs
+- Usability improvements: better z/VM [IPL sequence](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/70),
+  new filter parameters for [jobs](https://gitlab.com/tessia-project/tessia/-/merge_requests/323) in command-line interface,
+  clarified messages for [partitioning](https://gitlab.com/tessia-project/tessia/-/merge_requests/357) and [poweron](https://gitlab.com/tessia-project/tessia/-/merge_requests/356) errors
+- [Disabled](https://gitlab.com/tessia-project/tessia/-/merge_requests/359) TLS 1.1 by default
+
+If you update an existing tessia instance, you should also update installation templates, because some [template variables](users/autoinstall_machine.md#autotemplate-variables) have changed.
+
 ## 2.0.4 (2021-07-05)
 
 - Added HMC and CPC [monitoring](https://gitlab.com/tessia-project/tessia/-/commit/957eec644b3a5e06277f2167f9f2be66221195f6) (preview)

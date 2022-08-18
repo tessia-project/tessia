@@ -119,7 +119,8 @@ The following variables/objects are available in the `config` and can be used in
 - [server_hostname](#server_hostname) - tessia server hostname   
 - [system_type](#system_type) - target system type   
 - [credentials](#credentials) - credentials used during installation except for ssh root password   
-- [sha512rootpwd](#sha512rootpwd) - ssh root password generated with sha512 algorithm   
+- [sha512installpwd](#sha512installpwd) - temporary installation password hashed with sha512 algorithm
+- [sha512rootpwd](#sha512rootpwd) - ssh root password hashed with sha512 algorithm   
 - [hostname](#hostname) - resolvable hostname of the target system or ip address   
 - [autofile](#autofile) - path to the autofile (i.e. kickstart/autoinst/preseed)  
 - [operating_system](#operating_system) - operating system which should be installed   
@@ -314,10 +315,14 @@ $ tess system types
 credentials {'admin-user': 'root', 
              'admin-password': 'mypasswd',
              'zvm-password': 'zvmpasswd' 
-             'vnc-password': '5Tizv6tj'}
+             'installation-password': '5Tizv6tj'}
 ```
 `zvm-password` - for ZVM system type only  
-`vnc-password` - generated pseudo-random password for VNC session
+`installation-password` - generated temporary password for VNC session and installation user
+### sha512installpwd
+```
+sha512installpwd $6$185KEj5/rA88MHRU$3K60NbHalaOopnikGUH21r8RxwCkA4pxciqICKxPwf3UCF5V0xfn35cBkkilwLb6OQYqSGgqxYkb3TGXFvdRf/
+```
 ### sha512rootpwd
 ```
 sha512rootpwd $6$wDDkH53WXF.WgV36$l.3o7Uv01NzJ/klvmjeNVcDMis/jSOeQKhP1aR/ZviC1Ef6vxJmWVfAwzLFJr/RapYTOtu5Kr7DKQqrvJjJW6/

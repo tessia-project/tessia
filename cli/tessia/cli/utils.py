@@ -34,7 +34,7 @@ REQUEST_TIMEOUT_MSG = (
     "Warning: the scheduler did not process our request in a reasonable time. "
     "This might or might not indicate a problem, depending on the scheduler "
     "load. You can still follow the progress of the request with the "
-    "'req-show' command."
+    "'job req-list' command."
 )
 
 #

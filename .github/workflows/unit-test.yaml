@@ -1,0 +1,50 @@
+name: unit test
+on: [push]
+jobs:
+  unit-test:
+    runs-on: ubuntu-18.04
+    env:
+      TESSIA_DB_TEST_URI: "postgresql://tessia:unittest@localhost/tessia_test"
+      TESSIA_MEDIATOR_URI: "redis://tessia:unittest@localhost:6379/0"
+      POSTGRES_DB: "tessia_test"
+      POSTGRES_USER: "tessia"
+      POSTGRES_PASSWORD: "unittest"
+      COVERAGE_FILE: ".tessia.server.coverage"
+      TESSIA_CFG: ".tessia.cfg"
+    services:
+      postgres:
+        image: postgres:10-alpine
+        env:
+          POSTGRES_USER: "tessia"
+          POSTGRES_PASSWORD: "unittest"
+        ports:
+          # Maps postgres port to the host
+          - 5432:5432
+      redis:
+        image: redis
+        options: --name tessia_mediator_1 --label mediator
+        ports:
+          # Maps redis port to the host
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.8
+      - name: Configure Redis
+        run: |
+          docker exec tessia_mediator_1 redis-cli acl setuser tessia on +@all allkeys \>unittest
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip3 install -r requirements.txt -r dev-requirements.txt
+          touch $TESSIA_CFG
+      - name: Run linter
+        run: |
+          tools/run_pylint.py
+      - name: Run unit tests
+        run: |
+          python3 -m coverage run --source=tessia/server -m unittest discover tests/unit -p '*.py'
+          python3 -m coverage run -a --source=tessia/server -m pytest -p no:cacheprovider tests_pytest
+          python3 -m coverage report -m

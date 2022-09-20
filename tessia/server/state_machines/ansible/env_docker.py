@@ -239,7 +239,7 @@ class EnvDocker(EnvBase):
                               ret['ExitCode'])
             if ret['ExitCode']:
                 raise RuntimeError(f"Error code '{ret['ExitCode']}' from"
-                                   f" preexec_script execution of '{preexec}'")
+                                   f" preexec_script execution of '{cmd[0]}'")
 
         if galaxy_req:
             # Start ansible-galaxy

@@ -237,6 +237,9 @@ class EnvDocker(EnvBase):
                     print(line.decode('utf-8'), end='')
             self._logger.info('preexec script finished with exit code %d',
                               ret['ExitCode'])
+            if ret['ExitCode']:
+                raise RuntimeError(f"Error code '{ret['ExitCode']}' from"
+                                   f" preexec_script execution of '{cmd[0]}'")
 
         if galaxy_req:
             # Start ansible-galaxy

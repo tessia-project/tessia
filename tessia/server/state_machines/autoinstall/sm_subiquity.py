@@ -203,6 +203,20 @@ class LogWatcherUbuntu2010(LogWatcher):
     # _is_success_trigger()
 
 
+class LogWatcherUbuntu2204(LogWatcher):
+    """
+    Installation state detector for Ubuntu 22.04
+    """
+
+    def _is_success_trigger(self, event):
+        """
+        Detect success from event. May be overridden
+        """
+        return (event._name == "subiquity/Shutdown/copy_logs_to_target"
+                and event._result == "SUCCESS"
+                and event._type == "finish")
+    # _is_success_trigger()
+
 class SmSubiquityInstaller(SmBase):
     """
     State machine for SubiquityInstaller installer
@@ -295,6 +309,9 @@ class SmSubiquityInstaller(SmBase):
         if self._model.operating_system.major == 2010:
             # Use different marker for Ubuntu 20.10
             watcher = LogWatcherUbuntu2010(timeout_installation)
+        elif self._model.operating_system.major == 2204:
+            # Use different marker for Ubuntu 22.04
+            watcher = LogWatcherUbuntu2204(timeout_installation)
         else:
             watcher = LogWatcher(timeout_installation)
 

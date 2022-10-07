@@ -298,5 +298,66 @@
             "level": "DEBUG",
             "result": "SUCCESS"
         }
+    ],
+    "ubuntu22.04": [
+
+
+         {
+            "name": "subiquity/Shutdown/load_autoinstall_data",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1663319482.1959937,
+            "level": "DEBUG"
+         },
+
+         {
+             "name": "subiquity/Shutdown/load_autoinstall_data",
+             "description": "",
+             "event_type": "finish",
+             "origin": "curtin",
+             "timestamp": 1663319482.1985664,
+             "level": "DEBUG",
+             "result": "SUCCESS"
+         },
+
+         {
+             "name": "subiquity/Shutdown/apply_autoinstall_config",
+             "description": "",
+             "event_type": "start",
+             "origin": "curtin",
+             "timestamp": 1663319483.1450534,
+             "level": "DEBUG"
+         },
+
+         {
+             "name": "subiquity/Shutdown/apply_autoinstall_config",
+             "description": "",
+             "event_type": "finish",
+             "origin": "curtin",
+             "timestamp": 1663319483.147612,
+             "level": "DEBUG",
+             "result": "SUCCESS"
+         },
+
+         {
+            "name": "subiquity/Shutdown/copy_logs_to_target",
+            "description": "",
+            "event_type": "start",
+            "origin": "curtin",
+            "timestamp": 1663319680.5973263,
+             "level": "DEBUG"
+         },
+
+         {
+           "name": "subiquity/Shutdown/copy_logs_to_target",
+           "description": "",
+           "event_type": "finish",
+           "origin": "curtin",
+           "timestamp": 1663319680.6318252,
+           "level": "DEBUG",
+           "result": "SUCCESS"
+         }
     ]
+
 }

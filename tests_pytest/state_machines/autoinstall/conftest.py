@@ -221,6 +221,15 @@ def os_ubuntu21():
 
 
 @pytest.fixture
+def os_ubuntu22():
+    """
+    Ubuntu 22 operating system
+    """
+    yield AutoinstallMachineModel.OperatingSystem(
+        'ubuntu22', 'debian', 2204, 0, 'Ubuntu 22.04', None)
+
+
+@pytest.fixture
 def os_rhel7_tuple(os_rhel7, redhat_cmdline_template):
     """
     Default operating system
@@ -381,6 +390,27 @@ def os_ubuntu21_subiquity_tuple(os_ubuntu21, subiquity_cmdline_template):
            AutoinstallMachineModel.Template(
                'ubuntu21-default', template_content),
            debian_cmdline_template, [], [])
+
+
+
+@pytest.fixture
+def os_ubuntu22_subiquity_tuple(os_ubuntu22, subiquity_cmdline_template):
+    """
+    Ubuntu 22 with subiquity installer complete definition
+    """
+    template_content = ''
+    # use template from ubuntu18 for legacy installer
+    with open(TEMPLATES_DIR + 'ubuntu22-default.jinja', "r") as template_file:
+        template_content = template_file.read()
+
+    yield (os_ubuntu22,
+           [AutoinstallMachineModel.OsRepository(
+               'ubuntu-repo', 'http://example.com/os', '/kernel', '/initrd',
+               'http://example.com/os.iso', 'ubuntu22', 'Ubuntu 22 repo')],
+           AutoinstallMachineModel.Template(
+               'ubuntu22-default', template_content),
+           debian_cmdline_template, [], [])
+
 
 
 @pytest.fixture

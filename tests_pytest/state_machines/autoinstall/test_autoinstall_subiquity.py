@@ -213,6 +213,14 @@ def os_ubuntu2104():
     yield AutoinstallMachineModel.OperatingSystem(
         'ubuntu21', 'debian', 2104, 0, 'Ubuntu 21.04 LTS', None)
 
+    
+@pytest.fixture
+def os_ubuntu2204():
+    """
+    Ubuntu 22.04 operating system
+    """
+    yield AutoinstallMachineModel.OperatingSystem(
+        'ubuntu22', 'debian', 2204, 0, 'Ubuntu 22.04 LTS', None)    
 
 @pytest.fixture
 def good_log(monkeypatch):
@@ -315,6 +323,21 @@ class TestSubiquityRebootTriggers:
         Test triggers for Ubuntu 21 using recorded event streams
         """
         _, *os_tuple_rest = os_ubuntu21_subiquity_tuple
+        os_tuple = (os, *os_tuple_rest)
+        self._set_log_stream(tag)
+        instmachine = self._make_machine(os_tuple)
+
+        instmachine.start()
+        # assert does nto throw
+
+    @pytest.mark.parametrize("tag,os", [
+        ("ubuntu22.04", pytest.lazy_fixture('os_ubuntu2204')),
+    ])
+    def test_ubuntu22(self, tag, os, os_ubuntu22_subiquity_tuple):
+        """
+        Test triggers for Ubuntu 22 using recorded event streams
+        """
+        _, *os_tuple_rest = os_ubuntu22_subiquity_tuple
         os_tuple = (os, *os_tuple_rest)
         self._set_log_stream(tag)
         instmachine = self._make_machine(os_tuple)

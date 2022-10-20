@@ -30,6 +30,8 @@ build cli:
     - docker push $REGISTRY_CLI_IMAGE_NAME
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: $CI_COMMIT_TAG
 
 build server:
   stage: build
@@ -40,6 +42,8 @@ build server:
     - docker push $REGISTRY_SERVER_IMAGE_NAME
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: $CI_COMMIT_TAG
 
 cli tests:
   stage: integration test
@@ -89,17 +93,20 @@ unit server:
     - python3 -m coverage run --source=tessia/server -m unittest discover tests/unit -p '*.py'
     - python3 -m coverage run -a --source=tessia/server -m pytest -p no:cacheprovider tests_pytest
     - python3 -m coverage report -m
+  rules:
+    - if: '$CI_COMMIT_BRANCH != $CI_DEFAULT_BRANCH'
 
 release:
   stage: release
+  needs: [ 'build server', 'build cli' ]
   script:
-    - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print(gen_version().replace("+", "-commit"))'`
+    - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print("release-" + gen_version().replace("+", "-commit"))'`
     - docker pull $REGISTRY_CLI_IMAGE_NAME
     - docker pull $REGISTRY_SERVER_IMAGE_NAME
     - docker tag $REGISTRY_CLI_IMAGE_NAME ${CI_REGISTRY_IMAGE}/tessia-cli:${TESSIA_IMAGE_TAG}
     - docker tag $REGISTRY_SERVER_IMAGE_NAME ${CI_REGISTRY_IMAGE}/tessia-server:${TESSIA_IMAGE_TAG}
     - docker push ${CI_REGISTRY_IMAGE}/tessia-cli:${TESSIA_IMAGE_TAG}
     - docker push ${CI_REGISTRY_IMAGE}/tessia-server:${TESSIA_IMAGE_TAG}
-  only:
-    - master
-    - tags
+  rules:
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: $CI_COMMIT_TAG

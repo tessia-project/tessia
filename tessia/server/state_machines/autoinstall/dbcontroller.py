@@ -342,12 +342,13 @@ class DbController:
         return result
     # get_system()
 
-    def get_os(self, os_name):
+    def get_os(self, system_name, os_name):
         """
         Return the OS version to be used for the installation
 
         Args:
             os_name (str): os identifier
+            system_name (str): system identifier
 
         Returns:
             Tuple[OperatingSystem, Repository]:
@@ -368,15 +369,28 @@ class DbController:
             pretty_name=os_entry.pretty_name,
             template_name=os_entry.template
         )
-        available_repos = [AutoinstallMachineModel.OsRepository(
-            name=repo.name,
-            url=repo.url,
-            kernel=repo.kernel,
-            initrd=repo.initrd,
-            install_image=repo.install_image,
-            installable_os=os_entry.name,
-            description=repo.desc
-        ) for repo in os_entry.repository_rel]
+
+        system = System.query.filter(
+            System.name == system_name
+        ).one_or_none()
+        if system is None:
+            raise ValueError('System {} not found'.format(system_name))
+
+        available_repos=[]
+        for repo in os_entry.repository_rel:
+            available_repos.append(AutoinstallMachineModel.OsRepository(
+                name=repo.name,
+                url=repo.url,
+                kernel=repo.kernel,
+                initrd=repo.initrd,
+                install_image=repo.install_image,
+                installable_os=os_entry.name,
+                description=repo.desc
+            ))
+            if system.project_id == repo.project_id :
+                temp=available_repos[-1]
+                available_repos[-1]=available_repos[0]
+                available_repos[0]=temp
         return (operating_system, available_repos)
     # get_os()
 

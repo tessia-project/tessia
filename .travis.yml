@@ -15,3 +15,6 @@ script: |
   tools/ci/orc build  --image=tessia-server &&
   tools/ci/orc unittest &&
   tools/ci/orc clitest
+
+os: linux
+group: bionic

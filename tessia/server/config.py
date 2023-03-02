@@ -171,12 +171,13 @@ class Config:
         Raises:
             ValueError: if log configuration is missing or invalid
         """
-        if not conf:
+        server_config=cls.get_config().get('log')
+        if server_config:
             try:
-                conf = cls.get_config()['log']
+                conf = server_config
             except (TypeError, KeyError) as exc:
                 raise ValueError(
-                    'Missing or corrupt log configuration section')
+                     'Missing or corrupt log configuration section')
 
         if not isinstance(conf, dict):
             raise ValueError('Invalid format for log configuration section')

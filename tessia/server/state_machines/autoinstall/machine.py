@@ -238,7 +238,8 @@ class AutoInstallMachine(BaseMachine):
         # we can use static class, not an instance,
         # because instance only makes sure database is connected
         dbctrl = DbController(MANAGER)
-        os_entry, os_repos = dbctrl.get_os(params['os'])
+        os_entry, os_repos = dbctrl.get_os(params['system'],
+                                           params['os'])
 
         if 'template' in params:
             template_entry = dbctrl.get_template(params['template'])
@@ -317,7 +318,8 @@ class AutoInstallMachine(BaseMachine):
         dbctrl = DbController(MANAGER)
         # check which format the profile parameter is using
         system, _ = dbctrl._get_sysprof_entries(params['system'], None)
-        os_entry, _ = dbctrl.get_os(params['os'])
+        os_entry, _ = dbctrl.get_os(params['system'],
+                                    params['os'])
         result = {
             'resources': {'shared': [], 'exclusive': []},
             'description': MACHINE_DESCRIPTION.format(

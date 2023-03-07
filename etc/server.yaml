@@ -70,7 +70,7 @@ log:
     console:
       class: logging.StreamHandler
       formatter: default
-      level: INFO
+      level: DEBUG
       stream: ext://sys.stdout
   loggers:
     # uncomment this logger if you need to debug db related issues
@@ -79,7 +79,7 @@ log:
     #  level: DEBUG
     tessia:
       handlers: [console]
-      level: INFO
+      level: DEBUG
 
 scheduler:
   jobs_dir: var/tessia/jobs

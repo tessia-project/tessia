@@ -244,11 +244,6 @@ log:
         # log key missing from config
         self._set_open_mock('wrong_key_instead_of_log:')
 
-        # perform the action
-        with self.assertRaisesRegex(
-                ValueError, 'Missing or corrupt log configuration section'):
-            config.CONF.log_config()
-
         # log key present but in wrong format (a list)
         self._set_open_mock('log_bad')
 

@@ -220,7 +220,23 @@ def os_ubuntu2204():
     Ubuntu 22.04 operating system
     """
     yield AutoinstallMachineModel.OperatingSystem(
-        'ubuntu22', 'debian', 2204, 0, 'Ubuntu 22.04 LTS', None)    
+        'ubuntu22', 'debian', 2204, 0, 'Ubuntu 22.04 LTS', None)
+
+@pytest.fixture
+def os_ubuntu2210():
+    """
+    Ubuntu 22.10 operating system
+    """
+    yield AutoinstallMachineModel.OperatingSystem(
+        'ubuntu22', 'debian', 2210, 0, 'Ubuntu 22.10', None)
+
+@pytest.fixture
+def os_ubuntu2304():
+    """
+    Ubuntu 23.04 operating system
+    """
+    yield AutoinstallMachineModel.OperatingSystem(
+        'ubuntu23', 'debian', 2304, 0, 'Ubuntu 23.04', None)
 
 @pytest.fixture
 def good_log(monkeypatch):
@@ -313,7 +329,7 @@ class TestSubiquityRebootTriggers:
         instmachine = self._make_machine(os_tuple)
 
         instmachine.start()
-        # assert does nto throw
+        # assert does not throw
 
     @pytest.mark.parametrize("tag,os", [
         ("ubuntu21.04", pytest.lazy_fixture('os_ubuntu2104')),
@@ -328,10 +344,11 @@ class TestSubiquityRebootTriggers:
         instmachine = self._make_machine(os_tuple)
 
         instmachine.start()
-        # assert does nto throw
+        # assert does not throw
 
     @pytest.mark.parametrize("tag,os", [
         ("ubuntu22.04", pytest.lazy_fixture('os_ubuntu2204')),
+        ("ubuntu22.10", pytest.lazy_fixture('os_ubuntu2210')),
     ])
     def test_ubuntu22(self, tag, os, os_ubuntu22_subiquity_tuple):
         """
@@ -343,8 +360,22 @@ class TestSubiquityRebootTriggers:
         instmachine = self._make_machine(os_tuple)
 
         instmachine.start()
-        # assert does nto throw
+        # assert does not throw
 
+    @pytest.mark.parametrize("tag,os", [
+        ("ubuntu23.04", pytest.lazy_fixture('os_ubuntu2304')),
+    ])
+    def test_ubuntu23(self, tag, os, os_ubuntu23_subiquity_tuple):
+        """
+        Test triggers for Ubuntu 23 using recorded event streams
+        """
+        _, *os_tuple_rest = os_ubuntu23_subiquity_tuple
+        os_tuple = (os, *os_tuple_rest)
+        self._set_log_stream(tag)
+        instmachine = self._make_machine(os_tuple)
+
+        instmachine.start()
+        # assert does not throw
 
 def test_successful_installation_on_kvm_complex(
         kvm_hypervisor,

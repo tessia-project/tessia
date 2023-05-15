@@ -95,6 +95,7 @@ OPERATING_SYSTEMS = [
     'ubuntu20.04,debian,2004,0,Ubuntu 20.04,ubuntu20-subiquity',
     'ubuntu21.04,debian,2104,0,Ubuntu 21.04,ubuntu21-default',
     'ubuntu22.04,debian,2204,0,Ubuntu 22.04 LTS,ubuntu22-default',
+    'ubuntu23.04,debain,2304,0,Ubuntu 23.04,ubuntu23-default',
 ]
 
 USERS = [
@@ -128,6 +129,8 @@ TEMPLATES = [
     ",admin,Admins",
     "ubuntu22-default,Default template for Ubuntu22 installations"
     ",admin,Admins",
+    "ubuntu23-default,Default template for Ubuntu23 installations"
+    ",admin,Admins"
 ]
 
 ROLES = [

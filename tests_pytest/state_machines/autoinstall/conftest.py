@@ -228,6 +228,13 @@ def os_ubuntu22():
     yield AutoinstallMachineModel.OperatingSystem(
         'ubuntu22', 'debian', 2204, 0, 'Ubuntu 22.04', None)
 
+@pytest.fixture
+def os_ubuntu23():
+    """
+    Ubuntu 23 operating system
+    """
+    yield AutoinstallMachineModel.OperatingSystem(
+        'ubuntu23', 'debian', 2304, 0, 'Ubuntu 23.04', None)
 
 @pytest.fixture
 def os_rhel7_tuple(os_rhel7, redhat_cmdline_template):
@@ -411,6 +418,24 @@ def os_ubuntu22_subiquity_tuple(os_ubuntu22, subiquity_cmdline_template):
                'ubuntu22-default', template_content),
            debian_cmdline_template, [], [])
 
+
+@pytest.fixture
+def os_ubuntu23_subiquity_tuple(os_ubuntu23, subiquity_cmdline_template):
+    """
+    Ubuntu 23 with subiquity installer complete definition
+    """
+    template_content = ''
+    # use template from ubuntu18 for legacy installer
+    with open(TEMPLATES_DIR + 'ubuntu23-default.jinja', "r") as template_file:
+        template_content = template_file.read()
+
+    yield (os_ubuntu23,
+           [AutoinstallMachineModel.OsRepository(
+               'ubuntu-repo', 'http://example.com/os', '/kernel', '/initrd',
+               'http://example.com/os.iso', 'ubuntu23', 'Ubuntu 23 repo')],
+           AutoinstallMachineModel.Template(
+               'ubuntu23-default', template_content),
+           debian_cmdline_template, [], [])
 
 
 @pytest.fixture

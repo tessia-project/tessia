@@ -203,9 +203,9 @@ class LogWatcherUbuntu2010(LogWatcher):
     # _is_success_trigger()
 
 
-class LogWatcherUbuntu2204(LogWatcher):
+class LogWatcherUbuntu2204andHigher(LogWatcher):
     """
-    Installation state detector for Ubuntu 22.04
+    Installation state detector for Ubuntu 22.04 and higher
     """
 
     def _is_success_trigger(self, event):
@@ -309,9 +309,9 @@ class SmSubiquityInstaller(SmBase):
         if self._model.operating_system.major == 2010:
             # Use different marker for Ubuntu 20.10
             watcher = LogWatcherUbuntu2010(timeout_installation)
-        elif self._model.operating_system.major == 2204:
+        elif self._model.operating_system.major >= 2204:
             # Use different marker for Ubuntu 22.04
-            watcher = LogWatcherUbuntu2204(timeout_installation)
+            watcher = LogWatcherUbuntu2204andHigher(timeout_installation)
         else:
             watcher = LogWatcher(timeout_installation)
 

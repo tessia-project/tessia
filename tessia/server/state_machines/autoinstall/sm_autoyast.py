@@ -85,25 +85,29 @@ class SmAutoyast(SmBase):
         Make sure that the installation was successfully completed.
         """
         # autoyast performs the installation in two stages so we need to make
-        # sure the second stage has finished before we perform the actual check
+        # sure the second stage has finished and the system has started running
+        # before we perform the actual check
         ssh_client, shell = self._get_ssh_conn(connect_after_install=True)
+        expected_output = {'running', 'starting', 'initializing'}
 
-        try:
-            ret, _ = shell.run('systemctl status YaST2-Second-Stage')
-        except Exception:
-            ret = 1
-        if ret == 0:
-            self._logger.info('Waiting for AutoYast stage 2 to finish')
-            while True:
-                sleep(0.5)
-                try:
-                    shell.run('true', timeout=5)
-                # connection lost - so system already rebooted to the final
-                # state
-                except Exception:
-                    break
+        while True:
+            try:
+                ret,proc = shell.run('systemctl is-system-running')
+            except Exception:
+                ssh_client, shell = self._get_ssh_conn(
+                        connect_after_install=True)
+            sleep(1)
+            state = proc.rstrip("\n")
+            if ret  == 0 :
+                break
+            if state not in expected_output:
+                self._logger.warning('The system is in %s state.'
+                        'Please check the details on this state from'
+                        'the is-system-running output documentation.',state)
+                break
 
-        self._logger.info('AutoYast stage 2 finished')
+        self._logger.info('AutoYast stage 2 finished and'
+                          ' System started running')
         shell.close()
         ssh_client.logoff()
 

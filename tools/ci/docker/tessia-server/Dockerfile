@@ -18,6 +18,8 @@ RUN apt-get -q update > /dev/null && \
     apt-get -yq install --no-install-recommends \
     # to manage the system locale
     locales \
+    # required to build cryptography package
+    pkg-config \
     # used by baselib to check if hosts are up
     iputils-ping \
     # used by baselib for zvm communication

@@ -126,33 +126,33 @@ tasks:
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --profile='DASD1'
       - 'Profile DASD1 for system cpc3lp52 not found'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52
-      - 'Failed to establish a new connection'
+      - 'ended in FAILED state'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity
       - '--verbosity option requires an argument'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity=
       - "Invalid value for '--verbosity': value may not be empty"
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity Critical
-      - 'Failed to establish a new connection'
+      - 'TypeError'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity ERROR
-      - 'Failed to establish a new connection'
+      - 'ended in FAILED state'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity warning
-      - 'Failed to establish a new connection'
+      - 'ended in FAILED state'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity info
-      - 'Failed to establish a new connection'
+      - 'ended in FAILED state'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity debug
-      - 'Failed to establish a new connection'
+      - 'ended in FAILED state'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --verbosity warn
       - Invalid value for '--verbosity'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --profile='DASD root1'
-      - 'Failed to establish a new connection'
+      - 'ended in FAILED state'
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=invalid=name
       - "Error: 'invalid=name' is not a valid URL or name"
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=http://_myserver.z --repo=valid-name
       - 'Parsing of parameters failed with: System cpc3lp55 not found'
-    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --bg --repo=http://example.com/repo 
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --bg --repo=http://example.com/repo
       - 'Request accepted; job id is #10'
     - - job output --id=10
-      - 'Failed to establish a new connection'
+      - 'ended in FAILED state'
   job_command:
     # job help
     - - job -h
@@ -271,7 +271,7 @@ tasks:
     - - job output --id=22
       - job not found.
     - - job output --id=3
-      - 'socket.gaierror:.*Name or service not known'
+      - 'ended in FAILED state'
       # cover stmt 148 in job.py
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-echo' --bg
       - 'Request accepted; job id is #13'

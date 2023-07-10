@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 as base
+FROM ubuntu:18.04 as base
 
 # by default we expect the git repos to be placed by the ci process under /assets
 # but it is also possible to use this dockerfile directly and override the variables

@@ -17,7 +17,6 @@ limitations under the License.
 
 ## 2.0.6 (2023-06-22)
 
-- Update [CLI](https://gitlab.com/tessia-project/tessia/-/merge_requests/372) and [server](https://gitlab.com/tessia-project/tessia/-/merge_requests/373) containers in tessia
 - Fix baselib for SSL/TLS connection [hostname](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/74) check
 - Fix reduce z/VM installation [time](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/73)
 - Fix for Ubuntu 22.04 and later [installation](https://gitlab.com/tessia-project/tessia/-/merge_requests/371)

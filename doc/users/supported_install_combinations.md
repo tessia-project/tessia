@@ -24,6 +24,7 @@ This page contains a detailed view of the current supported combinations and usa
 - [Partitioning on z/VM](#partitioning-on-zvm)
 - [Partitioning on KVM](#partitioning-on-kvm)
 - [Distro as KVM hypervisor](#distro-as-kvm-hypervisor)
+- [ROCE cards on LPAR](#roce-cards-on-lpar)
 
 # Network and volumes on LPAR
 
@@ -121,3 +122,19 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 [\*] - latest supported version (Fedora33)  
 [\*\*] - except RHEL7.\*   
 [\*\*\*] - except Ubuntu20.\*   
+
+# ROCE cards on LPAR
+
+| Distro/interface_name  | enp#s# | ens# |
+| ------                 | ------ | ---- |
+| RHEL7.9                |   Y    |  Y   |
+| RHEL8.1                |   Y    |  Y   |
+| RHEL9.1                |   Y    |  Y   |
+| SLES12.5               |   Y    |  N   |
+| SLES15.2               |   Y    |  N   |
+| SLES15.5               |   N    |  Y   |
+| UBUNTU18.04.5          |   Y    |  Y   |
+| UBUNTU20.04.1          |   Y    |  N   |
+| UBUNTU22.04.1          |   N    |  Y   |
+| UBUNTU23.04            |   Y    |  Y   |
+

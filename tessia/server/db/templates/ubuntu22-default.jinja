@@ -36,8 +36,10 @@ autoinstall:
 {%- endmacro -%}
 
 {%- macro add_netplan_eth_iface(iface) %}
+{%-   if iface['type'] == 'OSA' %}
       {{ iface['systemd_osname'] }}:
-{%-   if iface['type'] != 'OSA' %}
+{%-   elif iface['type'] != 'OSA' %}
+      {{ iface['osname'] }}:
         set-name: {{iface['osname']}}
         match:
           macaddress: {{iface['mac_addr']}}

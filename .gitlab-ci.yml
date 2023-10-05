@@ -49,7 +49,6 @@ cli tests:
   stage: integration test
   needs: ['build server', 'build cli']
   script:
-    - pip3 install docker-compose
     - docker pull $REGISTRY_SERVER_IMAGE_NAME
     - docker tag $REGISTRY_SERVER_IMAGE_NAME $SERVER_IMAGE_NAME
     - docker pull $REGISTRY_CLI_IMAGE_NAME

@@ -143,27 +143,3 @@ def test_sles_success_installation_on_text_trigger(
 
     instmachine.start()
     # assert does not throw
-
-
-def test_sles_fail_unsupported_roce(
-        hmc_hypervisor, roce_iface,
-        scsi_volume, os_any_sles, creds,
-        tmpdir, good_log):
-    """Autoyast should fail when a RoCE card is used as gateway interface"""
-    system = AutoinstallMachineModel.SystemProfile(
-        'lp10', 'default',
-        hypervisor=hmc_hypervisor,
-        hostname='lp10.local',
-        cpus=2, memory=1024,
-        volumes=[scsi_volume],
-        interfaces=[(roce_iface, True)]
-    )
-    model = AutoinstallMachineModel(*os_any_sles, system, creds)
-    hyp = plat_lpar.PlatLpar.create_hypervisor(model)
-    platform = plat_lpar.PlatLpar(model, hyp)
-
-    with tmpdir.as_cwd():
-        with pytest.raises(ValueError,
-                           match='using a ROCE card as the gateway'):
-            instmachine = SmAutoyast(model, platform)
-            instmachine.start()

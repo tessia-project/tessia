@@ -62,6 +62,19 @@
             "project": "Admins",
             "type": "DASD-FCP",
             "username": null
+        },
+        {
+            "desc": "Storage beloging to Admins",
+            "fw_level": null,
+            "hostname": null,
+            "model": "NVME Device",
+            "modifier": "admin",
+            "name": "NVME Device",
+            "owner": "admin",
+            "password": null,
+            "project": "Admins",
+            "type": "NVME",
+            "username": null
         }
     ],
     "StorageVolume": [
@@ -176,6 +189,41 @@
             "volume_id": "1022400000000000"
         },
         {
+            "desc": null,
+            "modifier": "admin",
+            "owner": "admin",
+            "part_table": {
+              "table": [
+                {
+                  "fs": "ext4",
+                  "mo": null,
+                  "mp": "/",
+                  "size": 10000,
+                  "type": "primary"
+                },
+                {
+                  "fs": "swap",
+                  "mo": null,
+                  "mp": null,
+                  "size": 10000,
+                  "type": "primary"
+                }
+              ],
+              "type": "msdos"
+            },
+            "pool": null,
+            "project": "Admins",
+            "server": "NVME Device",
+            "size": 953869,
+            "specs": {
+              "wwn": "111nvme111"
+            },
+            "system": "cpc3lp52",
+            "system_attributes": {},
+            "type": "NVME",
+            "volume_id": "0001"
+        },
+        {
             "desc": "Root disk for zvm033",
             "modifier": "admin",
             "owner": "admin",
@@ -267,6 +315,10 @@
         {
             "profile": "cpc3lp52/dasd1",
             "volume": "ds8k16/3956"
+        },
+        {
+            "profile": "cpc3lp52/nvme1",
+            "volume": "NVME Device/0001"
         },
         {
             "profile": "kvm054/default",
@@ -427,6 +479,10 @@
             "profile": "cpc3lp52/dasd1"
         },
         {
+            "iface": "cpc3lp52/gb-extern",
+            "profile": "cpc3lp52/nvme1"
+        },
+        {
             "iface": "kvm054/external macvtap",
             "profile": "kvm054/default"
         },
@@ -482,6 +538,21 @@
             "memory": 4096,
             "name": "dasd1",
             "operating_system": "rhel7.2",
+            "parameters": null,
+            "system": "cpc3lp52"
+        },
+        {
+            "cpu": 2,
+            "credentials": {
+              "admin-password": "mypasswd",
+              "admin-user": "root"
+            },
+            "default": false,
+            "gateway": null,
+            "hypervisor_profile": "cpc3/default",
+            "memory": 4096,
+            "name": "nvme1",
+            "operating_system": "ubuntu16.04.1",
             "parameters": null,
             "system": "cpc3lp52"
         },

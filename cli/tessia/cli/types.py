@@ -664,6 +664,27 @@ class RoceFunctionId(click.ParamType):
 
 ROCE_FID = RoceFunctionId()
 
+class NvmeWwn(click.ParamType):
+    """
+    Represents a NVME's World Wide Name
+    """
+    name = 'nvme_wwn'
+
+    def convert(self, value, param, ctx):
+        """
+        Make sure it follows the pattern accepted by the server
+        """
+        orig_value = value
+        value = value.lower()
+        ret = re.match(r"^[a-z0-9]+$", value)
+        if ret is None:
+            self.fail('{} is not a valid wwn'.format(orig_value), param, ctx)
+
+        return value
+    # convert()
+# NvmeWwn
+NVME_WWN = NvmeWwn()
+
 class ScsiWwid(click.ParamType):
     """
     Represents a SCSI's World Wide Identifier

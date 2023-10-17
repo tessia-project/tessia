@@ -256,7 +256,27 @@ svols [
         'specs': {}, 
         'size': 0, 
         'part_table': None, 
-        'is_root': False}
+        'is_root': False},
+
+        {'type': 'NVME',
+        'volume_id': '0001’,
+        'server': 'NVME Device',
+        'system_attributes': {'device': '/dev/disk/by-id/nvme-eui.111nvme111'},
+        'specs': {'wwn': '111nvme111'},
+        'size': 953869,
+        'part_table': {'type': 'msdos',
+                       'table': [{'fs': 'ext4',
+                                  'mo': None,
+                                  'mp': '/home/user3’,
+                                  'size': 10000,
+                                  'type': 'primary'},
+
+                                 {'fs': 'ext2',
+                                  'mo': None,
+                                  'mp': '/home/user4’,
+                                  'size': 10000,
+                                  'type': 'primary'}]},
+         'is_root': False}
 ]
 ```
 These volume types are supported:
@@ -268,6 +288,7 @@ $ tess storage vol-types
  DASD      | DASD disk type
  HPAV      | HPAV alias for DASD disks
  FCP       | FCP-SCSI disk type
+ NVME      | NVME disk type
 ```
 ### repos
 ```

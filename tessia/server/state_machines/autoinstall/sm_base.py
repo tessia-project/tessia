@@ -252,7 +252,8 @@ class SmBase(metaclass=abc.ABCMeta):
         result = {}
         result["type"] = storage_vol.volume_type
         if (isinstance(storage_vol, (AutoinstallMachineModel.DasdVolume,
-                                     AutoinstallMachineModel.HpavVolume))):
+                                     AutoinstallMachineModel.HpavVolume,
+                                     AutoinstallMachineModel.NvmeVolume))):
             result["volume_id"] = storage_vol.device_id
         elif isinstance(storage_vol, AutoinstallMachineModel.ZfcpVolume):
             result["volume_id"] = storage_vol.lun
@@ -276,6 +277,8 @@ class SmBase(metaclass=abc.ABCMeta):
                 'multipath': storage_vol.multipath,
                 'wwid': storage_vol.wwid
             }
+        if isinstance(storage_vol, AutoinstallMachineModel.NvmeVolume):
+            result["specs"] = {'wwn':storage_vol.wwn}
         if not isinstance(storage_vol, AutoinstallMachineModel.HpavVolume):
             result["size"] = storage_vol.size
         result["part_table"] = None

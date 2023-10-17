@@ -270,6 +270,36 @@ def test_boot_and_postinstall_check_on_lpar_scsi(
     assert attrs['boot_params']['devicenr'] == \
         lpar_scsi_system.hypervisor.boot_options['boot-device']
 
+def test_boot_and_postinstall_check_on_lpar_nvme(
+        lpar_nvme_system, default_os_tuple, creds, tmpdir):
+    """
+    Attempt to install "nothing" on an LPAR on NVME disk
+    Verify that hypervisor is called with correct parameters
+    and post-install checker is run
+    """
+    model = AutoinstallMachineModel(*default_os_tuple,
+                                    lpar_nvme_system, creds)
+    checker = NullPostInstallChecker()
+    hyp = plat_lpar.PlatLpar.create_hypervisor(model)
+    platform = plat_lpar.PlatLpar(model, hyp)
+
+    # autoinstall machines use their own working directory
+    # and have to be initialized in a temporary environment
+    with tmpdir.as_cwd():
+        smbase = NullMachine(model, platform, checker)
+
+    smbase.start()
+
+    assert checker.verify.called_once
+    sys, cpus, mem, attrs, *_ = hyp.start.calls[0]
+    assert sys == lpar_nvme_system.hypervisor.boot_options['partition-name']
+    assert cpus == lpar_nvme_system.cpus
+    assert mem == lpar_nvme_system.memory
+    # installation device does not show up in HmcHypervisor boot,
+    # it is only used later during installation
+    assert attrs['boot_params']['boot_method'] == 'dasd'
+    assert attrs['boot_params']['devicenr'] == \
+        lpar_nvme_system.hypervisor.boot_options['boot-device']
 
 def test_boot_and_postinstall_check_on_vm_dasd(
         vm_dasd_system, default_os_tuple, creds, tmpdir):

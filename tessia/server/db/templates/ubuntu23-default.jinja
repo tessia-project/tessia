@@ -209,6 +209,13 @@ installation we create these auxiliary variables #}
         ptable: vtoc
         wipe: superblock-recursive
         preserve: {{not svol['part_table']['table']}}
+{%-   elif svol['type'] == "NVME" %}
+      - id: {{ volid }}
+        ptable: gpt
+        type: disk
+        wwn: "eui.{{svol['specs']['wwn']}}"
+        wipe: superblock-recursive
+        preserve: {{not svol['part_table']['table']}}
 {%-   endif %}
 {%-   for part in svol['part_table']['table'] %}
       - type: partition

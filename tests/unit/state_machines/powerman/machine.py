@@ -228,6 +228,11 @@ class TestPowerManagerMachine(TestCase):
                     'boot_method': 'dasd',
                     'devicenr': '3956',
                 }
+            elif guest_prof_obj.name == 'nvme1':
+                params['boot_params'] = {
+                    'boot_method': 'nvme',
+                    'devicenr': '0001',
+                }
         elif hyp_type == 'kvm':
             params['parameters'] = {'boot_method': 'disk'}
             ifaces = []
@@ -1069,6 +1074,68 @@ class TestPowerManagerMachine(TestCase):
             self._mock_post_obj.verify.call_args_list[1], call())
 
     # test_poweron_already_up_profile_no_match()
+
+    def test_poweron_lpar_nvme(self):
+        """
+        Try a poweron operation with nvme disk, which occurs when
+        the system is up and profile doesnot match.
+        """
+        # collect necessary db objects
+        test_system = 'cpc3lp52'
+        system_obj = System.query.filter_by(name=test_system).one()
+        # remember last modified time before forced power action
+        pre_system_obj = System.query.filter_by(name=test_system).one()
+        system_last_modified = pre_system_obj.modified
+
+        prof_obj = self._get_profile(system_obj.name,'nvme1')
+        hyp_prof = self._get_profile(system_obj.hypervisor_rel.name)
+
+        # make post install verification fail on first try only
+        self._mock_post_obj.verify.side_effect = [
+            Exception('Invalid/incorrect password'),
+            None
+        ]
+
+        request = str({
+            'systems': [
+                {
+                    'action': 'poweron',
+                    'name': system_obj.name,
+                    'profile': 'nvme1'
+                },
+            ]
+        })
+        machine_obj = machine.PowerManagerMachine(request)
+        machine_obj.start()
+
+        # validate call to verify if hypervisor was up
+        self._assert_system_up_action(prof_obj, 0)
+        # validate call to verify if hypervisor matches profile
+        self.assertEqual(
+            self._mock_post_cls.call_args_list[0],
+            call(prof_obj, permissive=True))
+        self.assertEqual(
+            self._mock_post_obj.verify.call_args_list[0], call())
+
+        # system was up and a poweroff is needed because of state mismatch,
+        # validate that this occurred
+        self._assert_poweroff_action('hmc', hyp_prof, system_obj, 0, 0)
+
+        # validate call to poweron
+        self._assert_poweron_action('hmc', hyp_prof, prof_obj, 1)
+
+        # validate stage verify
+        self.assertEqual(
+            self._mock_post_cls.call_args_list[1],
+            call(prof_obj, permissive=True))
+        self.assertEqual(
+            self._mock_post_obj.verify.call_args_list[1], call())
+
+        # validate that system modified time is updated
+        updated_system_obj = System.query.filter_by(name=test_system).one()
+        self.assertGreater(updated_system_obj.modified, system_last_modified,
+                           'System modified time is updated')
+        # test_poweron_lpar_nvme()
 
     def test_poweron_hypervisor_not_up(self):
         """

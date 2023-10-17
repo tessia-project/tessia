@@ -856,6 +856,12 @@ class PostInstallChecker:
             else:
                 prefix = '/dev/disk/by-id/scsi-{}'
             devpath = prefix.format(svol_obj.specs['wwid'])
+        elif svol_obj.type == 'NVME':
+            vol_id = svol_obj.volume_id
+            if vol_id.find('.') < 0:
+                vol_id = '0.0.{}'.format(vol_id)
+            devpath = '/dev/disk/by-id/nvme-eui.{}'.format(
+                    svol_obj.specs['wwn'])
         else:
             vol_id = svol_obj.volume_id
             if vol_id.find('.') < 0:

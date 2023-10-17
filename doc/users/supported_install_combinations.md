@@ -25,6 +25,7 @@ This page contains a detailed view of the current supported combinations and usa
 - [Partitioning on KVM](#partitioning-on-kvm)
 - [Distro as KVM hypervisor](#distro-as-kvm-hypervisor)
 - [ROCE cards on LPAR](#roce-cards-on-lpar)
+- [NVME support on LPAR](#nvme-support-on-lpar)
 
 # Network and volumes on LPAR
 
@@ -138,3 +139,10 @@ The supported partitioning combinations for z/VM are the same as for LPAR.
 | UBUNTU22.04.1          |   N    |  Y   |
 | UBUNTU23.04            |   Y    |  Y   |
 
+# NVME support on LPAR
+
+Ubuntu >= 22.04 (except 22.10)
+
+RHEL >= 8.6
+
+SLES >= 15.3

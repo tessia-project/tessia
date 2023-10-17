@@ -95,7 +95,7 @@ OPERATING_SYSTEMS = [
     'ubuntu20.04,debian,2004,0,Ubuntu 20.04,ubuntu20-subiquity',
     'ubuntu21.04,debian,2104,0,Ubuntu 21.04,ubuntu21-default',
     'ubuntu22.04,debian,2204,0,Ubuntu 22.04 LTS,ubuntu22-default',
-    'ubuntu23.04,debain,2304,0,Ubuntu 23.04,ubuntu23-default',
+    'ubuntu23.04,debian,2304,0,Ubuntu 23.04,ubuntu23-default',
 ]
 
 USERS = [
@@ -220,6 +220,7 @@ STORAGE_SERVER_TYPES = [
     'DASD-FCP,Storage serving dasd/fcp disks',
     'ISCSI,iSCSI server',
     'NFS,NFS server',
+    'NVME, NVME storage server',
 ]
 
 SYSTEM_ARCHS = [
@@ -257,6 +258,7 @@ VOLUME_TYPES = [
     'RAW,RAW (loopback file)',
     'QCOW2,Compressed file format',
     'LVM,LVM Logical Volume',
+    'NVME,NVME disk type',
 ]
 
 

@@ -60,7 +60,7 @@ DESC = {
 
 FIELDS_CSV = (
     'SERVER', 'VOLUME_ID', 'TYPE', 'SIZE', 'SYSTEM', 'FCP_PATHS', 'WWID',
-    'OWNER', 'PROJECT', 'DESC'
+    'WWN', 'OWNER', 'PROJECT', 'DESC'
 )
 
 HPAV_PATTERN = re.compile(r"^[a-f0-9]{4}$")
@@ -90,7 +90,7 @@ MSG_INVALID_TYPE = (
     "type '{}'"
 )
 MSG_INVALID_PTABLE = (
-    "DASD is not applicable as Table type for an FCP-Volume"
+    "DASD is not applicable as Table type for an non DASD-Volume"
 )
 
 # when the volume is assigned to a system and the user has permission to update
@@ -103,6 +103,7 @@ SYS_DERIVED_PERMS = set(
 VOL_SERVER_MAP = {
     'DASD-FCP': ['DASD', 'FCP', 'HPAV'],
     'ISCSI': ['ISCSI'],
+    'NVME': ['NVME'],
 }
 
 #
@@ -403,9 +404,14 @@ class StorageVolumeResource(SecureResource):
             except PermissionError:
                 continue
 
-            if entry.type != 'FCP':
+            if entry.type != 'FCP' and entry.type != 'NVME':
                 entry.fcp_paths = None
                 entry.wwid = None
+                entry.wwn = None
+            elif entry.type == 'NVME':
+                entry.fcp_paths = None
+                entry.wwid = None
+                entry.wwn = entry.specs.get('wwn')
             else:
                 fcp_paths = []
                 for adapter in entry.specs.get('adapters', []):
@@ -416,6 +422,7 @@ class StorageVolumeResource(SecureResource):
                     fcp_paths.append(fcp_path)
                 entry.fcp_paths = ' '.join(fcp_paths)
                 entry.wwid = entry.specs.get('wwid')
+                entry.wwn = None
 
             csv_writer.writerow(
                 [getattr(entry, attr.lower()) for attr in FIELDS_CSV])

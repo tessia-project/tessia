@@ -480,6 +480,16 @@ class TestStorageVolume(TestSecureResource):
         self._assert_failed_req(
             resp, 400, MSG_INVALID_TYPE.format(data['type'], orig_server_type))
 
+        data = next(self._get_next_entry)
+        orig_server_type = models.StorageServer.query.filter_by(
+            name=data['server']).one().type
+        data['type'] = 'NVME'
+
+        resp = self._do_request(
+            'create', '{}:a'.format('user_hw_admin@domain.com'), data)
+        self._assert_failed_req(
+            resp, 400, MSG_INVALID_TYPE.format(data['type'], orig_server_type))
+
         # exercise update, create an item with good values first
         item = self._create_many_entries('user_hw_admin@domain.com', 1)[0][0]
 
@@ -492,7 +502,19 @@ class TestStorageVolume(TestSecureResource):
             project=self._db_entries['Project'][0]['name'],
         )
         iscsi_server_type = 'ISCSI'
+
+        nvme_server = models.StorageServer(
+            name='NVME Server',
+            type='NVME',
+            model='NVME_0',
+            owner='user_hw_admin@domain.com',
+            modifier='user_hw_admin@domain.com',
+            project=self._db_entries['Project'][0]['name'],
+        )
+        nvme_server_type = 'NVME'
+
         self.db.session.add(iscsi_server)
+        self.db.session.add(nvme_server)
         self.db.session.commit()
 
         # 1- only update type
@@ -515,6 +537,13 @@ class TestStorageVolume(TestSecureResource):
             resp, 400,
             MSG_INVALID_TYPE.format(update_fields['type'], iscsi_server_type))
 
+        update_fields['server'] = 'NVME Server'
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        self._assert_failed_req(
+            resp, 400,
+            MSG_INVALID_TYPE.format(update_fields['type'], nvme_server_type))
+
         # 3- only update the server
         update_fields.pop('type')
         update_fields['server'] = 'iSCSI Server'
@@ -524,8 +553,16 @@ class TestStorageVolume(TestSecureResource):
             resp, 400,
             MSG_INVALID_TYPE.format(item['type'], iscsi_server_type))
 
+        update_fields['server'] = 'NVME Server'
+        resp = self._do_request(
+            'update', '{}:a'.format('user_hw_admin@domain.com'), update_fields)
+        self._assert_failed_req(
+            resp, 400,
+            MSG_INVALID_TYPE.format(item['type'], nvme_server_type))
+
         # cleanup
         self.db.session.delete(iscsi_server)
+        self.db.session.delete(nvme_server)
         self.db.session.commit()
     # test_add_update_wrong_field()
 

@@ -471,6 +471,149 @@ BOOT_IMAGE=0 LANG=en_US.UTF-8 cio_ignore=all,!condev crashkernel=auto """\
             kernel_cmdline]
     # _set_mocks_lpar_dasd()
 
+    def _set_mocks_lpar_nvme(self, prof_obj):
+        """
+        Prepare mocks to return content of a lpar with nvme disks installation.
+
+        Args:
+            prof_obj (SystemProfile): profile entry
+        """
+        facts_file = '{}/files/facts_nvme.output'.format(
+            os.path.dirname(os.path.abspath(__file__)))
+        with open(facts_file, 'r') as facts_fd:
+            facts = facts_fd.read()
+
+        parted = (
+            """cpc3lp52.domain.com | SUCCESS => {
+    "changed": false,
+    "disk": {
+        "dev": "/dev/nvme0n1",
+        "logical_block": 512,
+        "model": "INTEL SSDPE2KX010T8",
+        "physical_block": 512,
+        "size": 1000204886016.0,
+        "table": "msdos",
+        "unit": "b"
+    },
+    "partitions": [
+        {
+            "begin": 1048576.0,
+            "end": 107374182399.0,
+            "flags": [],
+            "fstype": "ext4",
+            "name": "",
+            "num": 1,
+            "size": 107374182400.0,
+            "unit": "b"
+        },
+                {
+            "begin": 107375230976.0,
+            "end": 214749413375.0,
+            "flags": [
+                "swap"
+            ],
+            "fstype": "linux-swap(v1)",
+            "name": "",
+            "num": 2,
+            "size": 107374182400.0,
+            "unit": "b"
+        }
+    ],
+    "script": "unit 'B' print"
+}
+"""
+        )
+
+        # pylint: disable=trailing-whitespace
+        lsblk = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+
+ext4 /
+swap [SWAP]
+"""
+        )  # pylint: enable=trailing-whitespace
+
+        lszfcp = subprocess.CalledProcessError(returncode=1, cmd='lszfcp -D')
+        lszfcp_output = (
+            """cpc3lp52.domain.com | FAILED | rc=1 >>
+Error: No fcp devices found.
+"""
+        )
+        lszfcp.output = lszfcp_output
+
+        os_release = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+NAME=xxxx
+VERSION=xxxx
+PRETTY_NAME="{}"
+ID=xxxxx
+""".format(prof_obj.operating_system_rel.pretty_name)
+        )
+
+        lscpu_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Architecture:          s390x
+CPU op-mode(s):        32-bit, 64-bit
+Byte Order:            Big Endian
+CPU(s):                10
+On-line CPU(s) list:   0-9
+Thread(s) per core:    2
+Core(s) per socket:    10
+Socket(s) per book:    3
+NUMA node0 CPU(s):     0-255
+"""
+        )
+
+        # old format (lsmem's perl script)
+        lsmem_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Address Range                          Size (MB)  State    Removable  Device
+===============================================================================
+0x0000000000000000-0x00000000fffffffe       4096  online   no         0-4095
+
+Memory device size  : 1 MB
+Memory block size   : 256 MB
+Total online memory : 4096 MB
+Total offline memory: 0 MB
+"""
+        )
+
+        # systemd dns config
+        realp_output = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+/etc/resolv.conf
+""")
+
+        lsdasd = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+Bus-ID     Status      Name      Device  Type  BlkSz  Size      Blocks
+==============================================================================
+""")
+
+        kernel_cmdline = (
+            """cpc3lp52.domain.com | SUCCESS | rc=0 >>
+root=UUID=70d8d7c0-a573-4209-a355-a0968a230958 crashkernel=1G-4G:192M """\
+"""cio_ignore=all,!condev rd.znet=qeth,0.0.f500,0.0.f501,0.0.f502,layer2=1"""\
+"""portno=0
+""")
+
+        self._mock_check_output.side_effect = [
+            facts, parted, lsblk, lszfcp, os_release,
+            lscpu_output, RuntimeError(), lsmem_output, realp_output, lsdasd,
+            kernel_cmdline]
+    # _set_mocks_lpar_nvme()
+
+    def test_lpar_nvme(self):
+        """
+        Test verification of an LPAR with NVME based installation.
+        """
+        profile_entry = self._get_profile('cpc3lp52', 'nvme1')
+        self._set_mocks_lpar_nvme(profile_entry)
+
+        checker = post_install.PostInstallChecker(profile_entry)
+        checker.verify()
+    # test_lpar_nvme()
+
     def test_facts_fail(self):
         """
         Simulate possible errors when collecting facts

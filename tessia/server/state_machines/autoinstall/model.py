@@ -279,6 +279,43 @@ class AutoinstallMachineModel:
         def __str__(self):
             return "ZfcpVolume<{}>".format(self.lun)
 
+    class NvmeVolume(Volume):
+        """
+        NVMe volume
+        """
+
+        def __init__(self, device_id: str, size: int,
+                    wwn: str, **kwargs):
+            super().__init__(**kwargs)
+            self.device_id = device_id.lower()
+            self.size = size
+            self.wwn = wwn.lower()
+
+            if not self.device_path:
+                self.device_path = (
+                    '/dev/disk/by-id/nvme-eui.{}'.format(
+                        self.wwn))
+
+        @property
+        def uuid(self):
+            """
+            UUID from device_id
+            """
+            return self.device_id
+
+        @property
+        def volume_type(self):
+            """
+            Static volume type
+            """
+            return 'NVME'
+
+        def __repr__(self):
+            return "NVMEVolume<{}>".format(self.device_id)
+
+        def __str__(self):
+            return "NVMEVolume<{}>".format(self.device_id)
+
     class SubnetAffiliation:
         """
         IP address representation
@@ -726,7 +763,8 @@ class AutoinstallMachineModel:
         failing_volume_ids = []
         for volume in [volume for volume in self.system_profile.volumes
                        if isinstance(volume, (self.DasdVolume,
-                                              self.ZfcpVolume))]:
+                                              self.ZfcpVolume,
+                                              self.NvmeVolume))]:
             total_part_size = sum(
                 [partition.size for partition in volume.partitions])
             if total_part_size > volume.size:

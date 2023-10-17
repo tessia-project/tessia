@@ -301,6 +301,13 @@ class DbController:
                     profile_volume.size,
                     device_path=dev_path
                 )
+            elif profile_volume.type == 'NVME':
+                model_vol = AutoinstallMachineModel.NvmeVolume(
+                    profile_volume.volume_id,
+                    profile_volume.size,
+                    specs.get('wwn'),
+                    device_path=dev_path
+                )
             elif profile_volume.type == 'FCP':
                 model_vol = AutoinstallMachineModel.ZfcpVolume(
                     profile_volume.volume_id,

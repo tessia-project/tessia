@@ -26,14 +26,17 @@
   <dasd>
     <devices config:type="list">
       {% for volume in config["svols"] %}
+        {% if (volume['volume_id'].split('.') | length == 1) -%}
+          {% set _ = volume.update({'volume_id' : '0.0.' + volume['volume_id']}) -%}
+        {%- endif %}
         {% if volume["type"] == "DASD" and volume['part_table'] %}
           <listentry>
-            <channel>0.0.{{ volume["volume_id"] }}</channel>
+            <channel>{{ volume["volume_id"] }}</channel>
             <diag config:type="boolean">false</diag>
           </listentry>
         {% elif volume["type"] == "HPAV" -%}
           <listentry>
-            <channel>0.0.{{ volume["volume_id"] }}</channel>
+            <channel>{{ volume["volume_id"] }}</channel>
             <diag config:type="boolean">false</diag>
             <format config:type="boolean">false</format>
           </listentry>
@@ -70,7 +73,7 @@ parted -s {{volume['system_attributes']['device']}} mklabel {{volume['part_table
 echo "Activating DASDs without partition table defined..."
 {% for volume in config["svols"] -%}
   {% if volume["type"] == "DASD" and not volume['part_table'] -%}
-/sbin/dasd_configure '0.0.{{ volume["volume_id"] }}' 1 0
+/sbin/dasd_configure '{{ volume["volume_id"] }}' 1 0
   {% endif -%}
 {% endfor -%}
 ]]>

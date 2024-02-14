@@ -5,7 +5,11 @@
 {% set cio_ignore_devnos = [] -%}
 {% for svol in svols -%}
   {%if svol['type'] == 'DASD' -%}
-    {% set _ = cio_ignore_devnos.append('!0.0.' + svol['volume_id']) -%}
+    {%if (svol['volume_id'].split('.') | length >= 2) -%}
+      {% set _ = cio_ignore_devnos.append('!' + svol['volume_id']) -%}
+    {% else %}
+      {% set _ = cio_ignore_devnos.append('!0.0.' + svol['volume_id']) -%}
+    {%- endif %}
   {% elif svol['type'] == 'FCP' -%}
      {% for adapter in svol['specs']['adapters'] -%}
        {% set _ = cio_ignore_devnos.append('!' + adapter['devno']) -%}

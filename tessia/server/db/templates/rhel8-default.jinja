@@ -80,8 +80,11 @@ python2
   {% for volume in config["svols"] -%}
     {%- if volume['type'] == 'DASD' -%}
 chzdev -e dasd {{volume['volume_id']}}
+      {% if (volume['volume_id'].split('.') | length == 1) -%}
+        {% set _ = volume.update({'volume_id' : '0.0.' + volume['volume_id']}) -%}
+      {%- endif %}
       {% if volume["part_table"] -%}
-grep -q 'unformatted' /sys/bus/ccw/devices/0.0.{{volume['volume_id']}}/status && \
+grep -q 'unformatted' /sys/bus/ccw/devices/{{volume['volume_id']}}/status && \
 /sbin/dasdfmt -y -d cdl -b 4096 {{volume["system_attributes"]["device"]}}
       {% endif -%}
     {% elif volume['type'] == 'FCP' -%}

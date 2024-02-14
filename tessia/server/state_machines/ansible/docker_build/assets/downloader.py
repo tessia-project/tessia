@@ -105,6 +105,30 @@ class RepoDownloader:
         return 'unknown'
     # _get_url_type()
 
+    @staticmethod
+    def _find_defbranch(source_url):
+        """
+        Finds the default branch of the github repository
+
+        Args:
+            source_url (str): repository network url
+
+        Returns:
+            str: default branch of the repository or None
+        """
+        api_url=source_url.replace("github.ibm.com","api.github.ibm.com/repos")
+        api_url=api_url.replace("github.com","api.github.com/repos")
+        api_url=api_url[:-4]
+
+        response = requests.get(api_url)
+        if response.status_code == 200:
+            # Extract the default branch
+            repo_info = response.json()
+            return repo_info.get('default_branch', None)
+
+        return None
+    # _find_defbranch()
+
     @classmethod
     def _parse_source(cls, source_url):
         """
@@ -127,7 +151,7 @@ class RepoDownloader:
 
         repo = {
             'url': source_url,
-            'git_branch': 'master',
+            'git_branch': cls._find_defbranch(source_url),
             'git_commit': 'HEAD',
             'type': cls._get_url_type(parsed_url),
             'url_obs': cls._url_obfuscate(parsed_url),
@@ -146,17 +170,18 @@ class RepoDownloader:
                 # user did not specify additional git revision info,
                 # use default values
                 pass
+
+            if not repo['git_branch'] :
+                git_branch = ['main', 'master']
             else:
-                # user specified empty branch: set default value
-                if not repo['git_branch']:
-                    repo['git_branch'] = 'master'
+                git_branch = [repo['git_branch']]
 
             process_env = os.environ.copy()
             process_env['GIT_SSL_NO_VERIFY'] = 'true'
             try:
                 git_output = subprocess.run(
                     ['git', 'ls-remote', '--heads',
-                     repo['url'], repo['git_branch']],
+                     repo['url']] + git_branch,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     env=process_env,
@@ -183,6 +208,18 @@ class RepoDownloader:
             # Note that the same hash can be referred by multiple refs,
             # so reflist may contain several elements
             repo['git_refhead'] = reflist[0].split("\t")[0]
+
+            if not repo['git_branch'] and len(reflist) == 2:
+                raise ValueError('Repository has main and master branch!')
+            if not repo['git_branch'] and len(reflist) == 1:
+                ref_branch = reflist[0].split("\t")[1]
+                if 'master' in ref_branch:
+                    repo['git_branch'] = 'master'
+                else:
+                    repo['git_branch'] = 'main'
+                repo['git_refhead'] = reflist[0].split("\t")[0]
+            else:
+                repo['git_refhead'] = reflist[0].split("\t")[0]
 
         # http source: use the requests lib to verify it
         elif repo['type'] == 'web':

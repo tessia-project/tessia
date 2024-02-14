@@ -27,6 +27,7 @@ from unittest import mock
 from unittest import TestCase
 
 import os
+import itertools
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -102,6 +103,13 @@ class TestRepoDownloader(TestCase):
         self._mock_open.return_value = self._mock_open_fd
         self._mock_open_fd.__enter__.return_value = self._mock_open_fd
 
+        # patch for _find_defbranch function
+        patcher = mock.patch.object(
+            self.downloader.RepoDownloader,'_find_defbranch')
+        self._mock_defbranch = patcher.start()
+        self._mock_defbranch.side_effect = itertools.repeat('master')
+        self.addCleanup(patcher.stop)
+
         # mocks for subprocess
         patcher = mock.patch.object(
             self.downloader, 'subprocess', autospec=True)
@@ -116,6 +124,7 @@ class TestRepoDownloader(TestCase):
         # in other cases it should be non-empty
         self._mock_subproc.run.return_value.stdout.splitlines.side_effect = (
             chain([['mocked-commit-id\trefs/heads/master']],
+                  [['mocked-commit-id\trefs/heads/master']],
                   cycle(['unchecked'])))
 
         # prepare the playbook exec for the usual case (read two lines then
@@ -205,6 +214,16 @@ class TestRepoDownloader(TestCase):
         combos = (
             {
                 'source': (
+                    'https://example._com/dir/ansible-example.git@:mycommit'),
+                'url': 'https://example._com/dir/ansible-example.git',
+                'url_obs': ('https://example._com/dir/ansible-example.git@'
+                            ':mycommit'),
+                'type': 'git',
+                'git_branch': 'master',
+                'git_commit': 'mycommit',
+            },
+            {
+                'source': (
                     'https://user:pwd@example._com/dir/ansible-example.git'),
                 'url': 'https://user:pwd@example._com/dir/ansible-example.git',
                 'url_obs': 'https://****@example._com/dir/ansible-example.git',
@@ -232,16 +251,6 @@ class TestRepoDownloader(TestCase):
                             'mybranch:mycommit'),
                 'type': 'git',
                 'git_branch': 'mybranch',
-                'git_commit': 'mycommit',
-            },
-            {
-                'source': (
-                    'https://example._com/dir/ansible-example.git@:mycommit'),
-                'url': 'https://example._com/dir/ansible-example.git',
-                'url_obs': ('https://example._com/dir/ansible-example.git@'
-                            ':mycommit'),
-                'type': 'git',
-                'git_branch': 'master',
                 'git_commit': 'mycommit',
             },
             {

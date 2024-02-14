@@ -146,6 +146,25 @@ Modified by    : jstone@example.com
 Description    : Storage server 1
 
 ```
+A NVME storage server can be created with:
+
+```
+$ tess storage server-add --name=NVME DEVICE --model=NVME --type=NVME --project='devops' --desc='Storage server 2'
+
+$ tess storage server-list --long --name=NVME DEVICE
+
+Name           : NVME DEVICE
+Hostname       : 
+Model          : NVME
+Server type    : NVME
+Firmware level : 
+Owner          : jstone@example.com
+Project        : devops
+Last modified  : 2017-12-07 09:14:33
+Modified by    : jstone@example.com
+Description    : Storage server 2
+
+```
 
 ## Storage volume (disk)
 
@@ -208,7 +227,26 @@ Last modified              : 2017-12-07 09:59:02
 Modified by                : jstone@example.com
 Description                : to be used as live-image disk on cpc3
 ```
+NVME volumes can be added by the following:
+```
+$ tess storage vol-add --server=NVME DEVICE --type=NVME --id=0001 --size=1TB --project devops --wwn 111nvme111 --desc='for use by lpar cpc3lp25'
 
+Volume id                  : 0001
+Storage server             : NVME DEVICE
+Volume size                : 953674MiB
+Volume specifications      : {'wwn': '111nvme111'}
+Volume type                : NVME
+Attached to system         : 
+System related attributes  : {}
+Associated system profiles : 
+Attached to storage pool   : 
+Owner                      : jstone@example.com
+Project                    : devops
+Last modified              : 2017-12-07 09:59:20
+Modified by                : jstone@example.com
+Description                : for use by lpar cpc3lp25
+
+```
 **Note:** pay special attention when specifying the size of the disk as it's not possible to validate the value provided against the actual disk.
 An incorrect value (i.e. size entered is bigger than the actual disk) will cause installations to fail.
 

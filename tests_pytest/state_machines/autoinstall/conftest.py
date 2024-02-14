@@ -476,6 +476,22 @@ def scsi_volume():
 
 
 @pytest.fixture
+def nvme_volume():
+    """
+    A single-partition NVME volume
+    """
+    result = AutoinstallMachineModel.NvmeVolume('0001', 20_000_000,'111nvme111')
+    result.set_partitions('msdos', [{
+        'mount_point': '/',
+        'size': 1_000_000,
+        'filesystem': 'ext4',
+        'part_type': 'primary',
+        'mount_opts': None,
+    }])
+    yield result
+
+
+@pytest.fixture
 def osa_iface():
     """
     An OSA interface
@@ -580,6 +596,21 @@ def lpar_scsi_system(osa_iface, scsi_volume, hmc_hypervisor):
         hostname='lp10.local',
         cpus=2, memory=8192,
         volumes=[scsi_volume],
+        interfaces=[(osa_iface, True)]
+    )
+    yield result
+
+@pytest.fixture
+def lpar_nvme_system(osa_iface, nvme_volume, hmc_hypervisor):
+    """
+    An LPAR system on NVME with OSA interface
+    """
+    result = AutoinstallMachineModel.SystemProfile(
+        'lp10', 'default',
+        hypervisor=hmc_hypervisor,
+        hostname='lp10.local',
+        cpus=2, memory=8192,
+        volumes=[nvme_volume],
         interfaces=[(osa_iface, True)]
     )
     yield result

@@ -42,6 +42,19 @@
                 "wwid"
             ]
         },
+       {
+            "title": "NVME",
+            "type": "object",
+            "properties": {
+                  "wwn": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9]+$"
+                  }
+            },
+            "required": [
+                    "wwn"
+            ]
+        },
         {
             "title": "Others, at the moment not specified",
             "type": "object",

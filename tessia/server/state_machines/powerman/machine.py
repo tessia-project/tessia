@@ -402,6 +402,11 @@ class PowerManagerMachine(BaseMachine):
                     'lun': root_vol.volume_id,
                     'uuid': root_vol_uuid,
                 }
+        elif root_vol.type.lower() == 'nvme':
+            params['boot_params'] = {
+                'boot_method': 'nvme',
+                'devicenr': root_vol.volume_id
+            }
         else:
             params['boot_params'] = {
                 'boot_method': 'dasd',

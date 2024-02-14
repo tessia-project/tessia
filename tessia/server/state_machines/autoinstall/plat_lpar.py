@@ -137,6 +137,11 @@ class PlatLpar(PlatBase):
             # else entirely. There is no exact rule to figure out
             # one from the other, but otherwise we would have to have
             # very similar data (wwid and uuid) in device configuration.
+        elif isinstance(boot_device, AutoinstallMachineModel.NvmeVolume):
+            params = {
+                'boot_method': 'nvme',
+                'devicenr': boot_device.device_id
+            }
         else:
             params = {
                 'boot_method': 'dasd',

@@ -29,7 +29,7 @@ from tessia.cli.output import print_items
 from tessia.cli.output import print_ver_table
 from tessia.cli.output import PrintMode
 from tessia.cli.types import CustomIntRange, DEVNO, FCP_PATH, MIB_SIZE, NAME, \
-    SCSI_WWID, VERBOSITY_LEVEL, VOLUME_ID
+    SCSI_WWID, VERBOSITY_LEVEL, NVME_WWN, VOLUME_ID
 from tessia.cli.utils import fetch_and_delete
 from tessia.cli.utils import fetch_item
 from tessia.cli.utils import size_to_str
@@ -74,7 +74,9 @@ VOL_MULTI_MSG = ('multiple volumes match the entered ID, specify the storage '
 WRONG_USAGE_FCP_PARAM = (
     "FCP parameters can't be applied to a non FCP disk."
 )
-
+WRONG_USAGE_NVME_PARAM = (
+    "NVME parameters can't be applied to a non NVME disk."
+)
 #
 # CODE
 #
@@ -326,6 +328,8 @@ def part_list(server, volume_id):
               help='add a FCP path (FCP only)')
 @click.option('--wwid', type=SCSI_WWID,
               help='scsi world wide identifier (FCP only)')
+@click.option('--wwn', type=NVME_WWN,
+              help='NVME world wide name (NVMe only)')
 def vol_add(**kwargs):
     """
     create a new storage volume
@@ -366,6 +370,11 @@ def vol_add(**kwargs):
                 raise click.ClickException(WRONG_USAGE_FCP_PARAM)
             item['specs']['wwid'] = value
 
+        elif key == 'wwn':
+            if item['type'] != 'NVME':
+                raise click.ClickException(WRONG_USAGE_NVME_PARAM)
+            item['specs']['wwn'] = value
+
         else:
             setattr(item, key, value)
 
@@ -376,6 +385,12 @@ def vol_add(**kwargs):
         item['size'] = 0
     elif not 'size' in item:
         raise click.UsageError('Missing option "--size".')
+
+    # check the availability of required NVME parameters
+    if item['type'] == 'NVME':
+        # wwn not specified: report error
+        if 'wwn' not in item['specs']:
+            raise click.ClickException('--wwn must be specified')
 
     # check the availability of required FCP parameters
     if item['type'] == 'FCP':
@@ -439,6 +454,8 @@ def vol_del(server, volume_id):
 @click.option(
     '--wwid', type=SCSI_WWID,
     help='scsi world wide identifier (FCP only)')
+@click.option('--wwn', type=NVME_WWN,
+              help='NVME world wide name (NVMe only)')
 def vol_edit(server, cur_id, **kwargs):
     """
     change properties of an existing storage volume
@@ -523,6 +540,15 @@ def vol_edit(server, cur_id, **kwargs):
             # there yet
             update_dict.setdefault('specs', item.specs)
             update_dict['specs']['wwid'] = value
+
+        elif key == 'wwn':
+            if item['type'] != 'NVME':
+                raise click.ClickException(WRONG_USAGE_NVME_PARAM)
+
+            # add the necessary key to the update dict in case they are not
+            # there yet
+            update_dict.setdefault('specs', item.specs)
+            update_dict['specs']['wwn'] = value
 
         # system must be validated
         elif key == 'system':

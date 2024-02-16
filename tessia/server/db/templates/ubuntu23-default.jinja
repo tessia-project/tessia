@@ -132,8 +132,11 @@ installation we create these auxiliary variables #}
 {%- for svol in config['svols'] %}
   {%- if svol['type'] == 'DASD' %}
     - chzdev -e dasd {{svol['volume_id']}}
+    {% if (svol['volume_id'].split('.') | length == 1) -%}
+      {% set _ = svol.update({'volume_id' : '0.0.' + svol['volume_id']}) -%}
+    {%- endif %}
     {# delete partition information forcibly - and if dasd is not yet formatted, return 0 nevertheless #}
-    - dd if=/dev/zero of=/dev/disk/by-path/ccw-0.0.{{svol['volume_id']}} bs=4k count=512 || date
+    - dd if=/dev/zero of=/dev/disk/by-path/ccw-{{svol['volume_id']}} bs=4k count=512 || date
   {%- elif svol['type'] == 'HPAV' %}
     - chzdev -e dasd {{svol['volume_id']}}
   {%- elif svol['type'] == 'FCP' %}
@@ -197,15 +200,18 @@ installation we create these auxiliary variables #}
         wipe: superblock-recursive
         preserve: {{not svol['part_table']['table']}}
 {%-   elif svol['type'] == "DASD" %}
+        {% if (svol['volume_id'].split('.') | length == 1) -%}
+          {% set _ = svol.update({'volume_id' : '0.0.' + svol['volume_id']}) -%}
+        {%- endif %}
       - id: {{ volid }}-dasd
         type: dasd
-        device_id: 0.0.{{svol['volume_id']}}
+        device_id: {{svol['volume_id']}}
         blocksize: 4096
         disk_layout: cdl
         mode: full
       - id: {{ volid }}
         type: disk
-        device_id: 0.0.{{svol['volume_id']}}
+        device_id: {{svol['volume_id']}}
         ptable: vtoc
         wipe: superblock-recursive
         preserve: {{not svol['part_table']['table']}}

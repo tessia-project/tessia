@@ -130,7 +130,14 @@ installation we create these auxiliary variables #}
 
     {# enable used devices #}
 {%- for svol in config['svols'] %}
-  {%- if svol['type'] in ('DASD', 'HPAV') %}
+  {%- if svol['type'] == 'DASD' %}
+    - chzdev -e dasd {{svol['volume_id']}}
+    {% if (svol['volume_id'].split('.') | length == 1) -%}
+      {% set _ = svol.update({'volume_id' : '0.0.' + svol['volume_id']}) -%}
+    {%- endif %}
+    {# delete partition information forcibly - and if dasd is not yet formatted, return 0 nevertheless #}
+    - dd if=/dev/zero of=/dev/disk/by-path/ccw-{{svol['volume_id']}} bs=4k count=512 || date
+  {%- elif svol['type'] == 'HPAV' %}
     - chzdev -e dasd {{svol['volume_id']}}
   {%- elif svol['type'] == 'FCP' %}
      {% for adapter in svol['specs']['adapters'] %}
@@ -191,17 +198,20 @@ installation we create these auxiliary variables #}
         wipe: superblock-recursive
         preserve: {{not svol['part_table']['table']}}
 {%-   elif svol['type'] == "DASD" %}
+{% if (svol['volume_id'].split('.') | length == 1) -%}
+          {% set _ = svol.update({'volume_id' : '0.0.' + svol['volume_id']}) -%}
+        {%- endif %}
       - id: {{ volid }}-dasd
         type: dasd
-        device_id: 0.0.{{svol['volume_id']}}
+        device_id: {{svol['volume_id']}}
         blocksize: 4096
         disk_layout: cdl
         mode: full
       - id: {{ volid }}
         type: disk
-        wipe: superblock-recursive
-        device_id: 0.0.{{svol['volume_id']}}
+        device_id: {{svol['volume_id']}}
         ptable: vtoc
+        wipe: superblock-recursive
         preserve: {{not svol['part_table']['table']}}
 {%-   endif %}
 {%-   for part in svol['part_table']['table'] %}
@@ -228,11 +238,10 @@ installation we create these auxiliary variables #}
       - type: mount
         device: {{ volid }}-part{{ loop.index }}-fs
         id: {{ volid }}-part{{ loop.index }}-fs-mount
-        path: {{ part['mp'] or 'none' }}
-        options: {{ part['mo'] }}
+        path: {{ part['mp'] or none }}
 {%-     endif %}
 {%-   endfor %}{# part #}
-{% endfor %}{# svol in svols #}
+{%- endfor %}{# svol in svols #}
 {%- endif %}{# not KVM #}
 
 {# Use networkd as default renderer, because MAC addresses and such #}

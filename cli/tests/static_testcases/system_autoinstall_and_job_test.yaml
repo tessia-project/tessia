@@ -149,7 +149,7 @@ tasks:
       - "Error: 'invalid=name' is not a valid URL or name"
     - - system autoinstall --os=rhel7.2 --system=cpc3lp55 --repo=http://_myserver.z --repo=valid-name
       - 'Parsing of parameters failed with: System cpc3lp55 not found'
-    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --bg --repo=http://example.com/repo 
+    - - system autoinstall --os=rhel7.2 --system=cpc3lp52 --bg --repo=http://example.com/repo
       - 'Request accepted; job id is #10'
     - - job output --id=10
       - 'Failed to establish a new connection'
@@ -182,7 +182,7 @@ tasks:
     - - job submit --type=autoinstall --parmfile=
       - "Invalid value for '--parmfile': Could not open file: : No such file or directory"
     - - job submit --type=autoinst --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
-      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman, zvm_passwd"
+      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman, tela, zvm_passwd"
     - - job submit --type=echo --parmfile='files/system_autoinstall_and_job_test/test_parmfile-empty'
       - Waiting for job output
     - - job submit --type=autoinstall --parmfile='test'
@@ -225,7 +225,7 @@ tasks:
     - - job req-list --type=
       - "Invalid value for '--type': value may not be empty"
     - - job list --type=lpar
-      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman, zvm_passwd"
+      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman, tela, zvm_passwd"
     - - job list --type=autoinstall
       - - 'job_id \| *job_type *\| *submit_date *\| *start_date *\| *end_date *\| *requester *\| *state *\| *description'
         - '\| autoinstall \|'
@@ -306,7 +306,7 @@ tasks:
     - - job req-list --type
       - '--type option requires an argument'
     - - job req-list --type=lpar
-      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman, zvm_passwd"
+      - "Invalid value for '--type': job type must be one of: ansible, autoinstall, echo, powerman, tela, zvm_passwd"
     - - job req-list --type=autoinstall
       - - 'request_id \| *action_type *\| *job_type *\| *submit_date *\| *requester *\| *state'
         - '\| autoinstall \|'

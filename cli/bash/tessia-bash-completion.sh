@@ -292,7 +292,7 @@ __tess_get_job_states() {
 
 __tess_get_job_types() {
 	local types
-	types=("ansible" "autoinstall" "powerman")
+	types=("ansible" "autoinstall" "tela" "powerman")
 	echo "${types[*]}"
 	return 0
 }

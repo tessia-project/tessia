@@ -301,6 +301,7 @@ class JobType(click.ParamType):
         'autoinstall',
         'echo',
         'powerman',
+        'tela',
         'zvm_passwd')
 
     name = 'job_type'

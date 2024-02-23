@@ -15,6 +15,16 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.1.0 (2024-02-29)
+
+- Update baselib to new [version](https://gitlab.com/tessia-project/tessia-baselib/-/commits/1.4.0)
+- Add [tela](https://gitlab.com/tessia-project/tessia/-/merge_requests/386) state_machine
+- Add support for [NVMe](https://gitlab.com/tessia-project/tessia/-/merge_requests/384) load for LPARs
+- Check for git default branch in [ansible](https://gitlab.com/tessia-project/tessia/-/merge_requests/383) state_machne
+- Update to new container base [images](https://gitlab.com/tessia-project/tessia/-/merge_requests/380)
+- Support for RoCE only installations in [SLES](https://gitlab.com/tessia-project/tessia/-/merge_requests/379) and [Ubuntu](https://gitlab.com/tessia-project/tessia/-/merge_requests/377)
+- Update default OS templates to support [DASDs](https://gitlab.com/tessia-project/tessia/-/merge_requests/385) with subchannel>0
+
 ## 2.0.6 (2023-06-22)
 
 - Fix baselib for SSL/TLS connection [hostname](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/74) check

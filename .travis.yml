@@ -1,7 +1,7 @@
 language: python
 
 python:
-  - 3.6
+  - 3.8
 
 services:
   - docker
@@ -17,4 +17,4 @@ script: |
   tools/ci/orc clitest
 
 os: linux
-group: bionic
+dist: focal

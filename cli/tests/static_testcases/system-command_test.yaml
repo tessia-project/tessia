@@ -385,7 +385,7 @@ tasks:
       - 'Item added successfully.'
     - - system prof-list --name=login_int --system=vmguest01
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
-        - ' login_int *\| vmguest01 *\|'
+        - ' login_int\(\*\) *\| vmguest01 *\|'
     - - system prof-list --name=login_int --system=vmguest01 --long
       - "Credentials *: .*'zvm-password': '\\*\\*\\*\\*'"
         # ask zvm password to create profile
@@ -1056,7 +1056,7 @@ tasks:
       # expecting DASD11 as it was the last to be set as default
     - - system prof-list --system=cpc3lp52 --default
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
-        - ' *DASD11 *\|'
+        - ' *DASD11\(\*\) *\|'
     - - system prof-list --system=cpc3lp52 --default --long
       - 'Profile name                : DASD11'
     - - system prof-list --system=cpc3lp52 --hyp
@@ -1085,7 +1085,7 @@ tasks:
       - 'Profile name                : DASD root1'
     - - system prof-list --system=cpc3
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
-        - ' *default cpc3 *\|'
+        - ' *default cpc3\(\*\) *\|'
     - - system prof-list --system=cpc3 --long
       - 'Profile name                : default cpc3'
     # 'system prof-edit' subcommand
@@ -1455,7 +1455,7 @@ tasks:
       # delete default profile if it is the last one
     - - system prof-list --system=cpc3lp52
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
-        - ' *DASD4 *\|'
+        - ' *DASD4\(\*\) *\|'
     - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD4'
     - - system prof-del --system=cpc3lp52 --name=login_int
@@ -1470,7 +1470,7 @@ tasks:
       - Item successfully deleted.
     - - system prof-list --system=cpc3lp52
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
-        - ' *DASD4 *\|'
+        - ' *DASD4\(\*\) *\|'
     - - system prof-list --system=cpc3lp52 --long
       - 'Profile name                : DASD4'
     - - system prof-del --system=cpc3lp52 --name=DASD4

@@ -362,6 +362,11 @@ def prof_list(**kwargs):
         print_items(PROFILE_FIELDS, client.SystemProfiles, parser_map, entries,
                     PrintMode.LONG)
     else:
+        # Update the name entries for the default profile with (*)
+        for entry in entries:
+            if getattr(entry, 'default'):
+                setattr(entry, 'name', getattr(entry, 'name') + "(*)")
+
         print_items(PROFILE_FIELDS_TABLE, client.SystemProfiles, parser_map,
                     entries, PrintMode.TABLE)
 # prof_list()

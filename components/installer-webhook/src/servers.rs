@@ -34,7 +34,7 @@ struct LogQueryArgs {
 /// Handle CreateSession command
 async fn control_create_session(
     data: SessionInit,
-    mut control_channel: ControlChannel,
+    control_channel: ControlChannel,
 ) -> Result<impl Reply, Rejection> {
     // create a response channel
     let (tx, rx) = oneshot::channel::<ControlMsgResponse>();
@@ -77,7 +77,7 @@ async fn control_create_session(
 /// Handle RemoveSession command
 async fn control_remove_session(
     data: SessionId,
-    mut control_channel: ControlChannel,
+    control_channel: ControlChannel,
 ) -> Result<impl Reply, Rejection> {
     // create a response channel
     let (tx, rx) = oneshot::channel::<ControlMsgResponse>();
@@ -122,7 +122,7 @@ async fn control_remove_session(
 async fn control_add_event(
     auth: EventAuth,
     event: Event,
-    mut control_channel: ControlChannel,
+    control_channel: ControlChannel,
 ) -> Result<impl Reply, Rejection> {
     // create a response channel
     let (tx, rx) = oneshot::channel::<ControlMsgResponse>();
@@ -184,7 +184,7 @@ async fn control_add_events(
 async fn control_get_logs(
     session_id: SessionId,
     range: LogQueryArgs,
-    mut control_channel: ControlChannel,
+    control_channel: ControlChannel,
 ) -> Result<impl Reply, Rejection> {
     // create a response channel
     let (tx, rx) = oneshot::channel::<ControlMsgResponse>();
@@ -282,8 +282,8 @@ async fn handle_rejection(err: Rejection) -> Result<impl Reply, Rejection> {
 fn buf_to_string_event(mut body: impl Buf) -> Event {
     let mut result: String = "".to_owned();
     while body.has_remaining() {
-        let cnt = body.bytes().len();
-        result += &String::from_utf8_lossy(body.bytes());
+        let cnt = body.chunk().len();
+        result += &String::from_utf8_lossy(body.chunk());
         body.advance(cnt);
     }
     Event::Text(result)

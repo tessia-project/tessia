@@ -100,7 +100,7 @@ async fn main() {
 
     // Listen for SIGTERM from outside
     let circuit_breaker = {
-        let mut control_tx = control_tx.clone();
+        let control_tx = control_tx.clone();
         tokio::spawn(async move {
             let mut term_stream: Signal = signal(SignalKind::terminate()).unwrap();
             term_stream.recv().await;
@@ -112,7 +112,7 @@ async fn main() {
 
     // Periodically schedule cleanup tasks on control
     {
-        let mut control_tx = control_tx.clone();
+        let control_tx = control_tx.clone();
         let cleanup_interval = std::time::Duration::from_secs(cfg.cleanup_interval.into());
         info!(
             "Cleanup interval set for {} seconds",

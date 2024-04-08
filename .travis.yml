@@ -6,6 +6,12 @@ python:
 services:
   - docker
 
+# After updating to focal CI still uses docker-compose instead of 
+# docker-compose-v2, installing it manually now
+before_install:
+  - sudo apt-get update
+  - sudo apt-get -y install docker-compose-v2
+
 # Seems that travis doesn't stop running scripts after the first one
 # fails (see https://github.com/travis-ci/travis-ci/issues/1066) so
 # a chain with '&&' was used.

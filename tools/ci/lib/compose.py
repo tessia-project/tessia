@@ -124,7 +124,7 @@ class ComposeInstance():
         """
         Print the started containers
         """
-        self._session.run('docker-compose ps', stdout=True)
+        self._session.run('docker compose ps', stdout=True)
     # do_ps()
 
     def prepare(self, persistent=False):
@@ -266,7 +266,7 @@ class ComposeInstance():
             raise RuntimeError('You need to call prepare() before start()')
 
         ret_code, output = self._session.run(
-            'docker-compose down -v && docker-compose up -d',
+            'docker compose down -v && docker compose up -d',
             env=self._env_vars)
         if ret_code != 0:
             raise RuntimeError(
@@ -276,7 +276,7 @@ class ComposeInstance():
         for service in ['server', 'cli']:
             image_obj = self._images['tessia-{}'.format(service)]
             ret_code, output = self._session.run(
-                'docker-compose ps -q {}'.format(service), env=self._env_vars)
+                'docker compose ps -q {}'.format(service), env=self._env_vars)
             if ret_code != 0:
                 raise RuntimeError(
                     'failed to get container name for service {}: {}'.format(
@@ -369,13 +369,13 @@ class ComposeInstance():
 
     def run(self, service, entrypoint=None, cmd=None):
         """
-        Execute docker-compose run
+        Execute docker compose run
 
         Returns:
             tuple: (exit_code, output)
         """
         # -T avoids broken terminal output
-        run_cmd = 'docker-compose run -T --rm'
+        run_cmd = 'docker compose run -T --rm'
         if entrypoint:
             run_cmd += ' --entrypoint {}'.format(entrypoint)
         run_cmd += ' {}'.format(service)
@@ -396,12 +396,12 @@ class ComposeInstance():
                     'failed to clean compose services: no .env file found')
                 return
             ret_code, output = self._session.run(
-                'test -e .env && docker-compose down -v && '
+                'test -e .env && docker compose down -v && '
                 'rm -f .env .docker-compose.yaml')
         # non persistent mode: use env variables
         else:
             ret_code, output = self._session.run(
-                'docker-compose down -v && rm -f "{}"'
+                'docker compose down -v && rm -f "{}"'
                 .format(self._env_vars['COMPOSE_FILE']),
                 env=self._env_vars)
         if ret_code != 0:

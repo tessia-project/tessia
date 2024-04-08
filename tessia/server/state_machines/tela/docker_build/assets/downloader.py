@@ -189,7 +189,11 @@ class RepoDownloader:
             if not repo['git_branch'] and len(reflist) == 2:
                 raise ValueError('Repository has main and master branch!')
             if not repo['git_branch'] and len(reflist) == 1:
-                repo['git_branch'] = reflist[0].split("\t")[1]
+                ref_branch = reflist[0].split("\t")[1]
+                if 'master' in ref_branch:
+                    repo['git_branch'] = 'master'
+                else:
+                    repo['git_branch'] = 'main'
                 repo['git_refhead'] = reflist[0].split("\t")[0]
             else:
                 repo['git_refhead'] = reflist[0].split("\t")[0]

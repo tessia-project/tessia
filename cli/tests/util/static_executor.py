@@ -247,7 +247,8 @@ class StaticExecutor(object):
             testcase = yaml.safe_load(file_fd.read())
 
         try:
-            jsonschema.validate(testcase, STATIC_SCHEMA)
+            jsonschema.validate(testcase, STATIC_SCHEMA,
+                                cls=jsonschema.Draft7Validator)
         # in case of validation error print a nice error message to the user
         except jsonschema.exceptions.ValidationError as exc:
             print('file {}: {}'.format(test_path, exc.message),

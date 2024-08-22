@@ -32,7 +32,7 @@ Installer-webhook logs incoming requests and allows state machine to retrieve th
 
 ### Webhook configuration
 
-Webhook configuration is provided in `/etc/tessia/server.yaml` in section `installer-webhook` with the following sefaults:
+Webhook configuration is provided in `/etc/tessia/server.yaml` in section `installer-webhook` with the following defaults:
 ```yaml
 installer-webhook:
   cleanup_interval: 600

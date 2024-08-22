@@ -303,6 +303,8 @@ def prof_edit(system, cur_name, **kwargs):
 def prof_list(**kwargs):
     """
     list the activation profiles of a system
+
+    (*) denotes the default profile in the table format
     """
     # default not provided: remove from dict otherwise it will force listing
     # only non defaults

@@ -220,7 +220,7 @@ STORAGE_SERVER_TYPES = [
     'DASD-FCP,Storage serving dasd/fcp disks',
     'ISCSI,iSCSI server',
     'NFS,NFS server',
-    'NVME, NVME storage server',
+    'NVME,NVME storage server',
 ]
 
 SYSTEM_ARCHS = [

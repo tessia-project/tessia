@@ -101,6 +101,7 @@ release:
   stage: release
   needs: [ 'build server', 'build cli' ]
   script:
+    - pip3 install setuptools
     - export TESSIA_IMAGE_TAG=`python3 -c 'from setup import gen_version; print("release-" + gen_version().replace("+", "-commit"))'`
     - docker pull $REGISTRY_CLI_IMAGE_NAME
     - docker pull $REGISTRY_SERVER_IMAGE_NAME

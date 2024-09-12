@@ -31,6 +31,8 @@ RUN apt-get -q update > /dev/null && \
     # these are needed to build cryptography (dep chain is baselib -> paramiko ->
     # cryptography) and uwsgi
     build-essential libssl-dev libffi-dev python3-dev \
+    # packages for internal routing in uwsgi
+    libpcre3 libpcre3-dev \
     # build python postgres connector (psycopg2)
     libpq-dev \
     # to use python postgres connector (psycopg2)

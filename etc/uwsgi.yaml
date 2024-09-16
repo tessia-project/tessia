@@ -21,7 +21,10 @@ uwsgi:
   shared-socket: :80
   http: =0
   static-map: /static=/var/tessia/www
-  route: ^/static redirect-permanent:https://${HTTP_HOST}${REQUEST_URI}
+  route: ^/static goto:static_route
+  route-if-not: equal:${HTTPS};on redirect-permanent:https://${HTTP_HOST}:5000${REQUEST_URI}
+  route-if: equal:${HTTPS};on addheader:Strict-Transport-Security: max-age=31536000
+  route-label: static_route
   static-map: /web/=/var/tessia/web/
   static-index: index.html
   static-gzip-dir: /var/tessia/web/

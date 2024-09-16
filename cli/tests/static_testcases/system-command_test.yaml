@@ -1331,7 +1331,7 @@ tasks:
     - - system poweron --name=cpc3lp55
       - system cpc3lp55 not found.
     - - system poweron --name=cpc3lp52
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --profile
       - '--profile option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=
@@ -1349,7 +1349,7 @@ tasks:
     - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu=A
       - "Invalid value for '--cpu': A is not a valid integer"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --cpu=8
-      - "Failed to establish a new connection"
+      - "Failed to resolve.*Name or service not known"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory
       - '--memory option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=
@@ -1357,19 +1357,19 @@ tasks:
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2g
       - "Error: Invalid value for '--memory': 2g is not a valid size"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2gb
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity
       - '--verbosity option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity critical
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity error
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity WARNING
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity Info
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity debug
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity warn
       - Invalid value for '--verbosity'
     - - system poweron --name=cpc3lp52 --force=true
@@ -1377,13 +1377,13 @@ tasks:
     - - system poweron --name=cpc3lp52 --forc
       - 'no such option: --forc  Did you mean --force?'
     - - system poweron --name=cpc3lp52 --force
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --verify=true
       - '--verify option does not take a value'
     - - system poweron --name=cpc3lp52 --verif
       - 'no such option: --verif  Did you mean --verify?'
     - - system poweron --name=cpc3lp52 --verify
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --noverify
       - 'is now default and can be omitted'
     - - system poweron --name=cpc3lp52 --exclusive=true
@@ -1404,19 +1404,19 @@ tasks:
     - - system poweroff --name=cpc3lp55
       - system cpc3lp55 not found.
     - - system poweroff --name=cpc3lp52
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweroff --name=cpc3lp52 --verbosity
       - '--verbosity option requires an argument'
     - - system poweroff --name=cpc3lp52 --verbosity critical
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweroff --name=cpc3lp52 --verbosity error
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweroff --name=cpc3lp52 --verbosity warning
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweroff --name=cpc3lp52 --verbosity INFO
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweroff --name=cpc3lp52 --verbosity Debug
-      - 'Failed to establish a new connection'
+      - 'Failed to resolve.*Name or service not known'
     - - system poweroff --name=cpc3lp52 --verbosity warn
       - Invalid value for '--verbosity'
     - - system poweroff --name=cpc3lp52 --bg

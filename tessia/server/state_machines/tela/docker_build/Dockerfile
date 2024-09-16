@@ -20,13 +20,12 @@ RUN apt-get -q update > /dev/null && \
 	# Copy files to remote
 	rsync \
 	# python downloader dependencies
-	python3-pip python3-dev libssl-dev libffi-dev cargo rustc \
+	python3-pip python3-dev python3-setuptools python3-requests \
+    libssl-dev libffi-dev cargo rustc \
     # clone repositories
     git >/dev/null && \
     # clean the cache to free up space
     apt-get -q clean && \
-	# install python downloader dependencies
-	pip3 -q install -U setuptools pip requests >/dev/null && \
 	# add execution flags to downloader script
     chmod a+rx /assets/downloader.py && \
     # generate the locale/encoding and set it as default

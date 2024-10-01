@@ -15,6 +15,20 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.1.1 (2024-10-09)
+
+- Fix for [branch check](https://gitlab.com/tessia-project/tessia/-/merge_requests/388) in tela downloader script
+- Updates [prof-list](https://gitlab.com/tessia-project/tessia/-/merge_requests/391) to show default profile and its corresponding contests
+- Limits the [jsonschema](https://gitlab.com/tessia-project/tessia/-/merge_requests/392) version to 4.14
+- Adds new [alembic](https://gitlab.com/tessia-project/tessia/-/merge_requests/393) update for adding NVME storage, Updates authors list and adds default prof info in help section
+- Adds http to https redirection and [HSTS](https://gitlab.com/tessia-project/tessia/-/merge_requests/395) header 
+- Updates tessia-baselib package to [1.4.1](https://gitlab.com/tessia-project/tessia-baselib/-/tree/1.4.1?ref_type=tags) and requests to 2.31
+- Installs requests and setuptools using [apt](https://gitlab.com/tessia-project/tessia/-/merge_requests/396) in tela dockerfile
+
+tessia-baselib:
+- Updates [zhmcclient](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/78) to 1.14
+- Adds [login](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/81) string for ipl disk load check 
+
 ## 2.1.0 (2024-02-29)
 
 - Update baselib to new [version](https://gitlab.com/tessia-project/tessia-baselib/-/commits/1.4.0)

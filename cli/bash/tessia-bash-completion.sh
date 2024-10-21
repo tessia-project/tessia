@@ -187,7 +187,7 @@ __tess_get_system_profiles() {
 	update)
 		if mkdir "${lock}" &>/dev/null; then
 			trap '[[ -e "${lock}" ]] && rm -rf -- "${lock}"' RETURN EXIT SIGHUP SIGINT SIGTERM
-			tess system prof-list --system "${system}" 2>/dev/null | awk 'NR > 3 { print $1 }' |
+			tess system prof-list --system "${system}" 2>/dev/null | awk 'NR > 3 { gsub("\\(\\*\\)$","",$1); print $1 }' |
 				sort >"${tmp}"
 			if __tess_verify_pipestatus "${PIPESTATUS[@]}" && [[ -f "${tmp}" ]]; then
 				if mv -f "${tmp}" "${file}"; then

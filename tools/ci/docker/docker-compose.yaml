@@ -33,7 +33,7 @@ services:
       - db
       - mediator
   db:
-    image: postgres:alpine
+    image: public.ecr.aws/docker/library/postgres:alpine
     environment:
       POSTGRES_INITDB_ARGS: "-E UTF8 --lc-collate=en_US.utf8 --lc-ctype=en_US.utf8"
       # for production use one should create an override compose file
@@ -46,7 +46,7 @@ services:
       - db-data:/var/lib/postgresql/data
     restart: "always"
   mediator:
-    image: redis:alpine
+    image: public.ecr.aws/docker/library/redis:alpine
     environment:
       # for production use one should create an override compose file
       # and set these variables

@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM public.ecr.aws/ubuntu/ubuntu:20.04
 
 # by default we expect the git repo to be placed by the ci process under /assets
 # but it is also possible to use this dockerfile directly and override the variable

@@ -150,6 +150,8 @@ class SmAnaconda(SmBase):
         termination_string = "Thread Done: AnaConfigurationThread"
         termination_string_fedora_31 = "ui.gui.spokes.installation_progress:" \
                                        " The installation has finished."
+        termination_string_rhel_10 = "ui.tui.spokes.installation_progress:" \
+                                       " The installation has finished."
         # re to match errors with partitioning scheme
         part_error_regex = re.compile(
             r'^.* ERR anaconda: storage configuration failed: *(.*)$',
@@ -173,7 +175,8 @@ class SmAnaconda(SmBase):
             self._logger.info(out)
 
             if out.find(termination_string) != -1 or \
-                    out.find(termination_string_fedora_31) != -1:
+                    out.find(termination_string_fedora_31) != -1 or \
+                    out.find(termination_string_rhel_10) != -1:
                 success = True
                 break
 

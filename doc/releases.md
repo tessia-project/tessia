@@ -15,6 +15,15 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.1.2 (2024-12-2)
+
+- Fix [bash completion](https://gitlab.com/tessia-project/tessia/-/merge_requests/398) with default profiles (*) notation
+- Adds [termination string](https://gitlab.com/tessia-project/tessia/-/merge_requests/399) for rhel10 installation
+- Pull [images](https://gitlab.com/tessia-project/tessia/-/merge_requests/400) from amazon ECR public gallery instead of dockerhub
+
+tessia-baselib:
+- Aborts installation on [kexec](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/82) fails
+
 ## 2.1.1 (2024-10-09)
 
 - Fix for [branch check](https://gitlab.com/tessia-project/tessia/-/merge_requests/388) in tela downloader script

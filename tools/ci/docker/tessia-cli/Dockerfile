@@ -1,4 +1,4 @@
-FROM public.ecr.aws/ubuntu/ubuntu:20.04
+FROM public.ecr.aws/ubuntu/ubuntu:22.04
 
 # by default we expect the git repo to be placed by the ci process under /assets
 # but it is also possible to use this dockerfile directly and override the variable
@@ -61,6 +61,12 @@ RUN cd /assets && \
     cp ./bash/tessia-bash-completion.sh /etc/bash_completion.d/tessia-bash-completion.sh && \
     chmod 644 /etc/bash_completion.d/tessia-bash-completion.sh && \
     rm -rf /assets
+
+COPY wrapper/potion_client_patch.diff /tmp/potion_client_patch.diff
+
+RUN SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])") && \
+    patch -p1 -d "$SITE_PACKAGES" < /tmp/potion_client_patch.diff && \
+    rm /tmp/potion_client_patch.diff
 
 RUN mkdir -p /etc/tessia-cli && \
     chown -R ${user}:${group} /etc/tessia-cli

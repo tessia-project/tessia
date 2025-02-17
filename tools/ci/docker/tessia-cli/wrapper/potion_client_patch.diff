@@ -1,0 +1,85 @@
+diff --git a/potion_client/__init__.py b/potion_client/__init__.py
+index dd87b9f..fbe1213 100644
+--- a/potion_client/__init__.py
++++ b/potion_client/__init__.py
+@@ -2,7 +2,10 @@ from functools import partial
+ from operator import getitem, delitem, setitem
+ from six.moves.urllib.parse import urlparse, urljoin
+ from weakref import WeakValueDictionary
+-import collections
++try:
++    import collections.abc as collections_abc
++except ImportError:
++    import collections as collections_abc
+ import requests
+ 
+ from potion_client.converter import PotionJSONDecoder, PotionJSONSchemaDecoder
+@@ -85,7 +88,7 @@ class Client(object):
+         :param Resource resource_cls: a subclass of :class:`Resource` or None
+         :return: The new :class:`Resource`.
+         """
+-        cls = type(str(upper_camel_case(name)), (resource_cls or Resource, collections.MutableMapping), {
++        cls = type(str(upper_camel_case(name)), (resource_cls or Resource, collections_abc.MutableMapping), {
+             '__doc__': schema.get('description', '')
+         })
+ 
+diff --git a/potion_client/collection.py b/potion_client/collection.py
+index 79999e8..7804bce 100644
+--- a/potion_client/collection.py
++++ b/potion_client/collection.py
+@@ -1,10 +1,13 @@
+-import collections
++try:
++    import collections.abc as collections_abc
++except ImportError:
++    import collections as collections_abc
+ from pprint import pformat
+ 
+ from potion_client.utils import escape
+ 
+ 
+-class PaginatedList(collections.Sequence):
++class PaginatedList(collections_abc.Sequence):
+     def __init__(self, binding, params):
+         self._pages = {}
+         self._per_page = per_page = params.pop('per_page', 20)
+diff --git a/potion_client/resource.py b/potion_client/resource.py
+index 930e9ff..9a282b9 100644
+--- a/potion_client/resource.py
++++ b/potion_client/resource.py
+@@ -1,4 +1,7 @@
+-import collections
++try:
++    import collections.abc as collections_abc
++except ImportError:
++    import collections as collections_abc
+ from pprint import pformat
+ 
+ import six
+@@ -17,7 +20,7 @@ def uri_for(reference):
+     return reference._uri
+ 
+ 
+-class Reference(collections.Mapping):
++class Reference(collections_abc.Mapping):
+     """
+ 
+     This implementation makes the assumption that a {$ref} object always points to an object, never an array or
+diff --git a/potion_client/schema.py b/potion_client/schema.py
+index 7560d7a..f1dc0b0 100644
+--- a/potion_client/schema.py
++++ b/potion_client/schema.py
+@@ -1,8 +1,11 @@
+-import collections
++try:
++    import collections.abc as collections_abc
++except ImportError:
++    import collections as collections_abc
+ import re
+ 
+ 
+-class Schema(collections.Mapping):
++class Schema(collections_abc.Mapping):
+     def __init__(self, schema):
+         if isinstance(schema, Schema):
+             schema = schema._schema

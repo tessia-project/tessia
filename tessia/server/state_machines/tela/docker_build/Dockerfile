@@ -46,7 +46,10 @@ USER tela
 RUN --mount=type=secret,id=github-token,uid=1000,gid=1000 \
 	# Add github.ibm.com to known_hosts
 	mkdir -m 700 .ssh && ssh-keyscan -t ecdsa github.ibm.com 2>/dev/null > .ssh/known_hosts && \
-	echo "Host *\n\tPreferredAuthentications password" > ~/.ssh/config && \
+	echo -e "Host *" > ~/.ssh/config && \
+	echo -e "\tPreferredAuthentications password" >> ~/.ssh/config && \
+	echo -e "\tServerAliveInterval 360" >> ~/.ssh/config && \
+	echo -e "\tServerAliveCountMax 3" >> ~/.ssh/config && \
 	# Create folder for inventory and config files
 	mkdir -p test-workspace/.config
 

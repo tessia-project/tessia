@@ -8,6 +8,9 @@ services:
 
 before_install:
   - sudo apt-get update
+  - sudo apt remove libpq5
+  - sudo apt autoremove
+  - sudo apt install -y libpq-dev
 
 # Seems that travis doesn't stop running scripts after the first one
 # fails (see https://github.com/travis-ci/travis-ci/issues/1066) so

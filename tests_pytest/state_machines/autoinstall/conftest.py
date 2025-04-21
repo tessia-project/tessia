@@ -1,4 +1,4 @@
-# Copyright 2021 IBM Corp.
+# Copyright 2021, 2025 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -662,3 +662,38 @@ def kvm_scsi_system(macvtap_iface, scsi_volume, kvm_hypervisor):
         interfaces=[(macvtap_iface, True)]
     )
     yield result
+
+@pytest.fixture
+def os_sles16():
+    """
+    SLES 16 operating system for Agama testing
+    """
+    yield AutoinstallMachineModel.OperatingSystem(
+        'sles16', 'suse', 16, 0, 'SUSE Linux Enterprise Server 16', None)
+
+@pytest.fixture
+def agama_cmdline_template():
+    """
+    Installer command-line for Agama installer
+    """
+    with open(os.path.join(CMDLINE_TEMPLATES_DIR,
+                           'agama.cmdline.jinja'), "r") as f:
+        yield AutoinstallMachineModel.Template('agama.cmdline',  f.read())
+
+
+@pytest.fixture
+def os_sles16_tuple(os_sles16, agama_cmdline_template):
+    """
+    Default SLES16 OS tuple for Agama installation tests
+    """
+    template_content = ''
+    with open(TEMPLATES_DIR + 'sles16-agama-default.jinja', "r") as template_file:
+        template_content = template_file.read()
+
+    yield (os_sles16,
+           [AutoinstallMachineModel.OsRepository(
+               'sles-repo', 'http://example.com/os', '/linux', '/initrd',
+               None, 'sles16', 'SLES 16 repo')],
+           AutoinstallMachineModel.Template(
+               'sles16-agama-default', template_content),
+           agama_cmdline_template, [], [])

@@ -1,0 +1,77 @@
+bootloader:
+  stopOnBootMenu: false
+
+user:
+  fullName: "{{ config['credentials']['admin-user'] }}"
+  userName: "{{ config['credentials']['admin-user'] }}"
+  password: "{{ config['credentials']['admin-password'] }}"
+  hashedPassword: false
+
+root:
+    userName:  "{{ config['credentials']['admin-user'] }}"
+    password: "{{ config['credentials']['admin-password'] }}"
+    hashedPassword: false
+    autologin: false
+
+software:
+  patterns: ["cockpit"]
+
+product:
+  id: SLES
+
+storage:
+  boot:
+    configure: true
+  drives:
+    {% for volume in config['svols'] %}
+    - search:
+        condition:
+          name: {{ volume['system_attributes']['device'] }}
+        ifNotFound: error
+      partitions:
+        {% for partition in volume['part_table']['table'] %}
+        - filesystem:
+            reuseIfPossible: false
+            path: {% if partition['mp'] and partition['mp'] != 'null' %}{{ partition['mp'] }}{% else %}swap{% endif %}
+            mountOptions: []
+            mkfsOptions: []
+            type: {{ partition['fs'] }}
+            size:
+              min: 1
+              max: {{ partition['size'] * 1024 * 1024 }}
+        - search:
+            ifNotFound: skip
+          delete: true
+        {% endfor %}
+    {% endfor %}
+  volumeGroups: []
+
+network:
+  connections:
+    {% for iface in config['ifaces'] %}
+    - id: {{ iface['osname'] }}
+      method4: manual
+      gateway4: {{ iface['gateway'] }}
+      method6: disabled
+      addresses:
+        - {{ iface['ip'] }}/{{ iface['mask_bits'] }}
+      nameservers:
+        - {{ iface['gateway'] }}
+      ignoreAutoDns: false
+      interface: {{ iface['osname'] }}
+      status: up
+      autoconnect: true
+    {% endfor %}
+
+localization:
+  language: en_US.UTF-8
+  keyboard: us
+  timezone: Europe/Berlin
+
+scripts:
+  post:
+    - name: enable-root-login-via-ssh
+      chroot: true
+      content: |
+          zypper in -y openssh-server-config-rootlogin git wget rsync
+          systemctl enable --now sshd

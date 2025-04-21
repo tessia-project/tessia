@@ -79,6 +79,18 @@ class SshShell:
 
         return 0, cmd
 
+    def _write(self, data_content: str):
+        """
+        Write to a file
+        Always succeeds.
+        """
+
+    def _read(self):
+        """
+        Read to a file
+        Always succeeds.
+        """
+
 
 class SshClient:
     """

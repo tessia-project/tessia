@@ -132,7 +132,7 @@ class TestEnvDocker(TestCase):
 
         patcher = mock.patch.object(docker, 'from_env',
                                     return_value=self.docker_client_mock,
-                                    auto_spec=True)
+                                    autospec=True)
         self.patch_from_env = patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -180,7 +180,7 @@ class TestEnvDocker(TestCase):
         # tarfile.TarFile is mocked.
         patcher = mock.patch.object(tarfile, 'TarFile',
                                     return_value=self.tarfile_fd_mock,
-                                    auto_spec=True)
+                                    autospec=True)
         self._mock_tarfile = patcher.start()
         self.addCleanup(patcher.stop)
 

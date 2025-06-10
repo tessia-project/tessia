@@ -1,4 +1,4 @@
-# Copyright 2016, 2017 IBM Corp.
+# Copyright 2016, 2017, 2025 IBM Corp.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,6 +37,8 @@ from tessia.server.state_machines.autoinstall.sm_debian import \
     SmDebianInstaller
 from tessia.server.state_machines.autoinstall.sm_subiquity import \
     SmSubiquityInstaller
+from tessia.server.state_machines.autoinstall.sm_agama import \
+    SmAgama
 from urllib.parse import urlsplit
 
 import ipaddress
@@ -83,6 +85,7 @@ SUPPORTED_TYPES = {
     SmAutoyast.DISTRO_TYPE: SmAutoyast,
     SmDebianInstaller.DISTRO_TYPE: SmDebianInstaller,
     SmSubiquityInstaller.DISTRO_TYPE: SmSubiquityInstaller,
+    SmAgama.DISTRO_TYPE: SmAgama,
 }
 
 #
@@ -169,6 +172,8 @@ class AutoInstallMachine(BaseMachine):
                 sm_class = SUPPORTED_TYPES[os_entry.type]
             else:
                 sm_class = SmSubiquityInstaller
+        elif os_entry.type == 'suse' and os_entry.major >= 16:
+            sm_class = SmAgama
         else:
             sm_class = SUPPORTED_TYPES[os_entry.type]
 

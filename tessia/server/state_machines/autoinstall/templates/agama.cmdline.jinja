@@ -1,0 +1,61 @@
+{% macro iface_name(iface, with_vlan=True) -%}
+{% if iface['vlan'] and with_vlan %}{{ iface['osname'] }}.{{ iface['vlan'] }}{% elif iface["type"] != "OSA" %}{{ iface['osname'] }}{% else %}{{ iface['systemd_osname'] }}{% endif %}
+{%- endmacro %}
+
+{% macro cio_ignore(svols, ifaces) -%}
+{% set cio_ignore_devnos = ['cio_ignore=all,!condev'] -%}
+{% set dasd_devnos = [] -%}
+{% set fcp_devnos = [] -%}
+
+{# Collect DASD and FCP Devices from svols #}
+{% for svol in svols -%}
+  {% if svol['type'] == 'DASD' -%}
+    {% if svol['volume_id'].count('.') >= 2 -%}
+      {% set dev_id = svol['volume_id'] %}
+    {% else %}
+      {% set dev_id = '0.0.' + svol['volume_id'] %}
+    {% endif %}
+    {% set _ = dasd_devnos.append(dev_id) %}
+
+  {% elif svol['type'] == 'FCP' -%}
+    {% for adapter in svol['specs']['adapters'] -%}
+      {% if adapter['devno'].count('.') >= 2 -%}
+        {% set dev_id = adapter['devno'] %}
+      {% else %}
+        {% set dev_id = '0.0.' + adapter['devno'] %}
+      {% endif %}
+      {% set _ = fcp_devnos.append(dev_id) %}
+    {% endfor -%}
+  {% endif -%}
+{% endfor -%}
+
+{# Append DASD devices in rd.zdev #}
+{% set dasd_data = dasd_devnos %}
+{% for dasd in dasd_data %}
+  {% set _ = cio_ignore_devnos.append('rd.zdev=dasd,' + dasd) %}
+{% endfor %}
+
+{# Append FCP devices in rd.zfcp #}
+{% set fcp_data = (fcp_devnos | unique) %}
+{% for fcp in fcp_data %}
+  {% set _ = cio_ignore_devnos.append('rd.zfcp=' + fcp) %}
+{% endfor %}
+
+{# Process OSA network interfaces from ifaces #}
+{% for iface in ifaces -%}
+  {% if iface['type'] == 'OSA' -%}
+    {% set iface_devnos = iface['attributes']['ccwgroup'].split(',') -%}
+    {% set _ = cio_ignore_devnos.append('rd.zdev=qeth,' + iface_devnos[0] + ':' + iface_devnos[1] + ':' + iface_devnos[2] + ',layer2=' + ('1' if iface["attributes"].get("layer2", False) else '0')) -%}
+  {% endif -%}
+{% endfor -%}
+
+{{ cio_ignore_devnos | join(' ') }}
+{%- endmacro %}
+
+{# Start main template content #}
+
+{% set cio_ignore_output = cio_ignore(config['svols'], config['ifaces']) %}
+{% macro ip_format(ip_address) -%}
+{% if ':' in ip_address %}[{{ip_address}}]{% else %}{{ip_address}}{% endif %}
+{%- endmacro %}
+{{ cio_ignore_output }} ip={{ip_format(config["gw_iface"]['ip'])}}::{{ip_format(config["gw_iface"]['gateway'])}}:{{config["gw_iface"]['mask']}}:{{ip_format(config['hostname'])}}:{{iface_name(config["gw_iface"])}}:none {% if config["gw_iface"]['vlan'] %} vlan={{iface_name(config["gw_iface"])}}:{{iface_name(config["gw_iface"], False)}}{% endif %} nameserver={{ config["gw_iface"]["dns_1"] }} root=live:{{ config["repos"][0]["install_image"] }} agama.install_url={{ config["repos"][0]["url"] + 'install/' }} live.password={{ config["credentials"]["installation-password"] }}

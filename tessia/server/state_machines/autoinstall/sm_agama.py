@@ -160,18 +160,6 @@ class SmAgama(SmBase):
         ssh_shell._write("\x04")  # ctrl+D for EOF
         ssh_shell._read()
 
-    @staticmethod
-    def rc_check(shell):
-        """
-        rc check before performing agama install
-        """
-        _, out = shell.run("echo $?")
-        if out.strip() != "0":
-            raise ValueError(
-                "The return code check failed with a non-zero value "
-                "and hence terminating the Agama installation"
-            )
-
     def generate_answers_json(self):
         """
         Generate the answers.json content based on storage type and multipath.
@@ -220,16 +208,20 @@ class SmAgama(SmBase):
 
         # Fetch and log Agama config
         ret, agama_config = shell.run("agama config show")
-        if ret == 0:
+
+        if ret != 0:
+            self._logger.warning("Failed to fetch Agama config show.")
+        else:
             self._logger.info(
                 "After Updating Agama Configuration:\n%s", agama_config
             )
-        else:
-            self._logger.warning("Failed to fetch Agama config.")
 
-        self.rc_check(shell)
-
-        shell.run("agama install &")
+        ret, _ = shell.run("agama install &")
+        if ret != 0:
+            raise RuntimeError(
+                f"Agama install exited with status code {ret},"
+                "terminating the Agama installation"
+            )
 
         # Performs consecutive calls to tail to extract the end of the file
         max_wait_install = 3600
@@ -239,15 +231,21 @@ class SmAgama(SmBase):
 
         while time() <= timeout_installation:
             log_output = self._fetch_lines_until_end(shell, line_offset)
-            if install_done_phrase in log_output:
-                self._logger.info(
-                    "Agama installation completed successfully!"
-                )
-                success = True
-                break
+            if log_output:
+                if install_done_phrase in log_output:
+                    self._logger.info(
+                        "Agama installation completed successfully!"
+                    )
+                    success = True
+                    break
 
-            sleep(frequency_check)
-            line_offset += 100
+                sleep(frequency_check)
+                line_offset += 100
+            else:
+                raise RuntimeError(
+                    "Terminating installation: "
+                    "Could not fetch Agama Install Logs"
+                )
 
         shell.close()
         ssh_client.logoff()

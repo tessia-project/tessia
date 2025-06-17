@@ -15,6 +15,17 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.1.3 (2025-06-17)
+
+- Updated the Dockerfile to use Ubuntu 22.04 [images](https://gitlab.com/tessia-project/tessia/-/merge_requests/404)
+- Introduced Agama installation support for SLES16 [SLES](https://gitlab.com/tessia-project/tessia/-/merge_requests/405) on zVm and LPAR
+- Enhanced SLES16 installation process [SLES](https://gitlab.com/tessia-project/tessia/-/merge_requests/408)
+- Configure SSH-Client for early reboot/crash detection for [tela](https://gitlab.com/tessia-project/tessia/-/merge_requests/406)
+
+tessia-baselib:
+- Fix for working of 3270 terminal on rhel9.x [time](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/83)
+- Fix related to autoinstall file transfer [time](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/84)
+
 ## 2.1.2 (2024-12-2)
 
 - Fix [bash completion](https://gitlab.com/tessia-project/tessia/-/merge_requests/398) with default profiles (*) notation

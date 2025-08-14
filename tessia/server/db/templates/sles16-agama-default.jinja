@@ -4,17 +4,35 @@ bootloader:
 user:
   fullName: "{{ config['credentials']['admin-user'] }}"
   userName: "{{ config['credentials']['admin-user'] }}"
-  password: "{{ config['credentials']['admin-password'] }}"
-  hashedPassword: false
+  password: "{{ config['sha512rootpwd'] }}"
+  hashedPassword: true
 
 root:
     userName:  "{{ config['credentials']['admin-user'] }}"
-    password: "{{ config['credentials']['admin-password'] }}"
-    hashedPassword: false
+    password: "{{ config['sha512rootpwd'] }}"
+    hashedPassword: true
     autologin: false
 
 software:
   patterns: ["cockpit"]
+  packages: ["openssh-server-config-rootlogin", "kdump", "git", "wget", "rsync", "make", "gcc"]
+  extraRepositories: [
+      {
+        alias: "{{config["repos"][0]['os']}}-debuginfo",
+        url: "{{config["repos"][0]['url'].replace('/DVD/', '/DVD_debuginfo')}}",
+        name: "{{config["repos"][0]['url'].replace('/DVD/', '/DVD_debuginfo')}}",
+        enabled: true,
+        allowUnsigned: true
+      },
+      {
+        alias: "{{config["repos"][0]['os']}}-source",
+        url: "{{config["repos"][0]['url'].replace('/DVD/', '/DVD_SRC')}}",
+        name: "{{config["repos"][0]['url'].replace('/DVD/', '/DVD_SRC')}}",
+        enabled: false,
+        allowUnsigned: true
+      }
+
+    ]
 
 product:
   id: SLES
@@ -28,21 +46,26 @@ storage:
         condition:
           name: {{ volume['system_attributes']['device'] }}
         ifNotFound: error
+      {% set partitions = volume['part_table']['table'] %}
+      {% if partitions %}
       partitions:
-        {% for partition in volume['part_table']['table'] %}
+        {% for each_partition in partitions %}
         - filesystem:
             reuseIfPossible: false
-            path: {% if partition['mp'] and partition['mp'] != 'null' %}{{ partition['mp'] }}{% else %}swap{% endif %}
+            path: {% if each_partition['mp'] and each_partition['mp'] != 'null' %}{{ each_partition['mp'] }}{% else %}swap{% endif %}
             mountOptions: []
             mkfsOptions: []
-            type: {{ partition['fs'] }}
-            size:
-              min: 1
-              max: {{ partition['size'] * 1024 * 1024 }}
+            type: {{ each_partition['fs'] }}
+          size:
+            min: 1
+            max: {{ each_partition['size'] * 1024 * 1024 }}
         - search:
             ifNotFound: skip
           delete: true
         {% endfor %}
+      {% else %}
+      partitions: []
+      {% endif %}
     {% endfor %}
   volumeGroups: []
 
@@ -56,11 +79,12 @@ network:
       addresses:
         - {{ iface['ip'] }}/{{ iface['mask_bits'] }}
       nameservers:
-        - {{ iface['gateway'] }}
+        - {{ iface['dns_1'] }}
       ignoreAutoDns: false
       interface: {{ iface['osname'] }}
       status: up
       autoconnect: true
+      persistent: true
     {% endfor %}
 
 localization:
@@ -69,9 +93,16 @@ localization:
   timezone: Europe/Berlin
 
 scripts:
+  pre:
+    - name: activate-multipath
+      content: |
+        #!/usr/bin/bash
+        systemctl start multipathd.socket multipathd.service
   post:
-    - name: enable-root-login-via-ssh
+    - name: enable-sshd-kdump
       chroot: true
       content: |
-          zypper in -y openssh-server-config-rootlogin git wget rsync
-          systemctl enable --now sshd
+        systemctl enable --now sshd
+        systemctl enable kdump-commandline.service
+        systemctl enable kdump
+        kdumptool commandline -u

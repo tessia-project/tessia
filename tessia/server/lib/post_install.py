@@ -266,7 +266,9 @@ class PostInstallChecker:
 
             try:
                 parted_output = self._exec_ansible(
-                    'parted', 'device={} unit=B state=info'.format(devpath))
+                    'community.general.parted',
+                    'device={} unit=B state=info'.format(devpath)
+                    )
             except RuntimeError:
                 self._logger.debug('Failed to fetch info for disk %s:',
                                    devpath, exc_info=True)
@@ -898,7 +900,11 @@ class PostInstallChecker:
         """
         expected_cpu = (self._expected_params['cpu'] *
                         self._facts['ansible_processor_threads_per_core'])
-        actual_cpu = self._facts['ansible_processor_cores']
+        if 'ansible_processor_vcpus' in self._facts:
+            actual_cpu = self._facts['ansible_processor_vcpus']
+        else:
+            # fallback for older Ansible < 2.14
+            actual_cpu = self._facts['ansible_processor_cores']
         self._pass_or_report('cpu quantity', expected_cpu, actual_cpu)
     # _verify_cpu()
 

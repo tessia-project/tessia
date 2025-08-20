@@ -94,6 +94,8 @@ RUN cd /assets/repo-tessia && \
     pip3 -q install -U uwsgi && \
     # server installation
     pip3 install -U -r requirements.txt -r dev-requirements.txt . && \
+    # Ansible >= 2.10 needs the community.general collection for the parted module
+    ansible-galaxy collection install community.general --collections-path /usr/share/ansible/collections && \
     ./setup.py -q install_data && \
     # files settings
     install -m 700 -g ${group} -o ${user} -d /etc/tessia && \

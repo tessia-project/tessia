@@ -92,7 +92,7 @@ class SmAgama(SmBase):
         if ret == 0 and out:
             self._logger.debug("Agama Logs = %s", out)
             return out
-        return False
+        return ""
 
     def create_autofile(self):
         """
@@ -149,62 +149,14 @@ class SmAgama(SmBase):
         )
         self._platform.set_boot_device(self._profile.get_boot_device())
 
-    @staticmethod
-    def execute_agama_config(ssh_shell, json_config):
-        """
-        Sends the 'agama config load' command to the remote SSH shell,
-        followed by the JSON configuration.
-        """
-        ssh_shell._write("agama config load\n")
-        ssh_shell._write(json_config + "\n")
-        ssh_shell._write("\x04")  # ctrl+D for EOF
-        ssh_shell._read()
-
-    def generate_answers_json(self):
-        """
-        Generate the answers.json content based on storage type and multipath.
-        """
-        answer_value = "no"
-
-        for svol in self._info.get("svols", []):
-            if (
-                svol.get("type") == "FCP"
-                and svol.get("is_root")
-                and svol.get("specs", {}).get("multipath")
-            ):
-                answer_value = "yes"
-                break
-
-        answers = {
-            "answers": [
-                {"answer": answer_value, "class": "storage.activate_multipath"}
-            ]
-        }
-        self._logger.info("Generated answers.json: %s", answers)
-        return json.dumps(answers, indent=4)
-
     def wait_install(self):
         frequency_check = 10
         install_done_phrase = "Install phase done"
         ssh_client, shell = self._get_ssh_conn()
 
         self._logger.info(
-            "Creating answers.json file before configuration load"
-        )
-
-        answers_path = "/root/answers.json"
-        answers_json = self.generate_answers_json()
-        shell._write(f"cat > {answers_path}\n")
-        shell._write(answers_json + "\n")
-        shell._write("\x04")
-        shell._read()
-        shell.run(f"agama questions answers {answers_path}")
-
-        self._logger.info(
             "Performing agama config load with the required json"
         )
-
-        self.execute_agama_config(shell, self._json_data)
 
         # Fetch and log Agama config
         ret, agama_config = shell.run("agama config show")
@@ -216,39 +168,40 @@ class SmAgama(SmBase):
                 "After Updating Agama Configuration:\n%s", agama_config
             )
 
-        ret, _ = shell.run("agama install &")
-        if ret != 0:
-            raise RuntimeError(
-                f"Agama install exited with status code {ret},"
-                "terminating the Agama installation"
-            )
-
         # Performs consecutive calls to tail to extract the end of the file
         max_wait_install = 3600
         timeout_installation = time() + max_wait_install
         success = False
         line_offset = 1
 
+        max_empty_reads = 10
+        empty_read_count = 0
+
         while time() <= timeout_installation:
             log_output = self._fetch_lines_until_end(shell, line_offset)
+
             if log_output:
+                empty_read_count = 0
                 if install_done_phrase in log_output:
                     self._logger.info(
                         "Agama installation completed successfully!"
                     )
                     success = True
                     break
-
-                sleep(frequency_check)
-                line_offset += 100
             else:
-                raise RuntimeError(
+                empty_read_count += 1
+                if empty_read_count >= max_empty_reads:
+                    raise RuntimeError(
                     "Terminating installation: "
                     "Could not fetch Agama Install Logs"
                 )
 
+            sleep(frequency_check)
+            line_offset += len(log_output.splitlines())
+
         shell.close()
         ssh_client.logoff()
+
         if not success:
             raise TimeoutError(
                 "Installation Timeout: The installation process is taking long"

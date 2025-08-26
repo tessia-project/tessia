@@ -15,6 +15,11 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.1.4 (2025-08-25)
+
+- Provide the profile directly using the kernel command-line [SLES](https://github.ibm.com/tessia-project/tessia/pull/1377) for Agama installer
+- Fix configuration mismatch in CPU and disk for post installation [check](https://github.ibm.com/tessia-project/tessia/pull/1378)
+
 ## 2.1.3 (2025-06-17)
 
 - Updated the Dockerfile to use Ubuntu 22.04 [images](https://gitlab.com/tessia-project/tessia/-/merge_requests/404)

@@ -29,4 +29,4 @@ redis>=3.5.0
 # uwsgi server
 uwsgi>=2.0
 # tessia-baselib and its dependencies
-git+https://gitlab.com/tessia-project/tessia-baselib.git@1.4.1#egg=tessia-baselib
+git+https://gitlab.com/tessia-project/tessia-baselib.git@1.4.2#egg=tessia-baselib

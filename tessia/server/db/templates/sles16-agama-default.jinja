@@ -1,6 +1,30 @@
 bootloader:
   stopOnBootMenu: false
 
+{% if config['svols'] | selectattr("type", "equalto", "DASD") | list | length > 0 %}
+dasd:
+  devices:
+    {% for volume in config['svols'] if volume['type'] == 'DASD' %}
+    - channel: "0.0.{{ volume['volume_id'] }}"
+      format: true
+      state: "active"
+    {% endfor %}
+{% endif %}
+
+{% if config['svols'] | selectattr("type", "equalto", "FCP") | list | length > 0 %}
+zfcp:
+  devices:
+    {% for volume in config['svols'] if volume['type'] == 'FCP' %}
+      {% for adapter in volume['specs']['adapters'] %}
+        {% for wwpn in adapter['wwpns'] %}
+    - channel: "{{ adapter['devno'] }}"
+      wwpn: "0x{{ wwpn }}"
+      lun: "0x{{ volume['volume_id'] }}"
+        {% endfor %}
+      {% endfor %}
+    {% endfor %}
+{% endif %}
+
 user:
   fullName: "{{ config['credentials']['admin-user'] }}"
   userName: "{{ config['credentials']['admin-user'] }}"

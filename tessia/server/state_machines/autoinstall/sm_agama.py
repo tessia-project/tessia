@@ -174,7 +174,7 @@ class SmAgama(SmBase):
         success = False
         line_offset = 1
 
-        max_empty_reads = 10
+        max_empty_reads = 60    #Wait for max 10 minutes due to empty logs
         empty_read_count = 0
 
         while time() <= timeout_installation:

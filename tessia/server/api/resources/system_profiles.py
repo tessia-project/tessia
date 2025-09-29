@@ -286,6 +286,13 @@ class SystemProfileResource(SecureResource):
             raise BaseHttpError(
                 422, msg='Credentials must contain OS admin password')
 
+        if target_system.type == 'CPC':
+            if 'private-key' in cred_dict and cred_dict['private-key'] is None:
+                cred_dict.pop('private-key')
+        elif target_system.type != 'CPC' and 'private-key' in cred_dict:
+            msg = 'Private key should be provided for CPC only'
+            raise BaseHttpError(422, msg=msg)
+
         if target_system.type == 'ZVM':
             # zvm guest missing hypervisor password: report as required
             if 'zvm-password' not in cred_dict:

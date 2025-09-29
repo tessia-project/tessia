@@ -82,6 +82,8 @@ ZVM_PROMPT = 'z/VM password'
               help="prompt for the zvm password (zVM guests only)")
 @click.option('--zvm-by', 'zvm_by', type=TEXT,
               help="byuser for access to zvm hypervisor (zVM guests only)")
+@click.option('--pkey', type=click.File('r'),
+              help="file path containing the private key for HMC login(zAuth WebApp)(CPC only)")
 def prof_add(**kwargs):
     """
     create a new system activation profile
@@ -125,6 +127,15 @@ def prof_add(**kwargs):
     elif zvm_pass or zvm_by or kwargs.pop('ask_zvm_pass'):
         raise click.ClickException(
             'zVM credentials should be provided for zVM guests only')
+
+    pkey_file = kwargs.pop('pkey')
+    if pkey_file:
+        if system.type.lower() == 'cpc':
+            pkey = pkey_file.read()
+            kwargs['credentials']['private-key'] = pkey
+        else :
+            raise click.ClickException(
+                'A private-key file can only be provided for CPCs')
 
     param_fields = {}
     liveimg_url = kwargs.pop('liveimg_url')
@@ -197,6 +208,8 @@ def prof_del(**kwargs):
               help="prompt for the zvm password (zVM guests only)")
 @click.option('--zvm-by', 'zvm_by',
               help="byuser for access to zvm hypervisor (zVM guests only)")
+@click.option('--pkey', type=click.File('r'),
+              help="file path containing the private key for HMC login(zAuth WebApp)(CPC only)")
 def prof_edit(system, cur_name, **kwargs):
     """
     change properties of an existing system activation profile
@@ -227,11 +240,21 @@ def prof_edit(system, cur_name, **kwargs):
                                 confirmation_prompt=True, type=TEXT)
     zvm_by = kwargs.pop('zvm_by')
 
+    pkey_file = kwargs.pop('pkey')
     creds = {}
     # handle admin credentials
     if login:
         creds['admin-user'] = login[0]
         creds['admin-password'] = login[1]
+
+    # handle private key
+    if pkey_file:
+        pkey = pkey_file.read()
+        if pkey:
+            creds['private-key'] = pkey
+        else:
+            creds['private-key'] = None
+
     # handle zvm password
     if zvm_pass:
         creds['zvm-password'] = zvm_pass

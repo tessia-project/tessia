@@ -353,10 +353,16 @@ class PowerManagerMachine(BaseMachine):
                 .format(guest_prof.name))
         root_vol = guest_prof.root_vol
 
+        parameters = None
+        if hyp_prof.credentials.get('private-key'):
+            parameters = {
+                    'private-key': hyp_prof.credentials['private-key']
+                    }
+
         baselib_hyp = HypervisorHmc(
             hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             hyp_prof.credentials['admin-user'],
-            hyp_prof.credentials['admin-password'], None)
+            hyp_prof.credentials['admin-password'], parameters)
         # login to hypervisor, but do not start machine
         baselib_hyp.login()
 

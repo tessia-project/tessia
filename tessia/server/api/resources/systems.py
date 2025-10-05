@@ -64,6 +64,12 @@ FIELDS_CSV = (
     'PORTNO', 'OWNER', 'PROJECT', 'STATE', 'DESC'
 )
 
+FIELDS_CSV_KVM = (
+        'HYPERVISOR', 'NAME', 'TYPE', 'HOSTNAME', 'IP',
+        'HOSTIFACE', 'MAC', 'LIBVIRT', 'OWNER', 'PROJECT',
+        'STATE', 'DESC'
+    )
+
 #
 # CODE
 #
@@ -194,18 +200,26 @@ class SystemResource(SecureResource):
     @Route.GET('/bulk', rel='bulk')
     def bulk(self, **kwargs):
         """
-        Bulk export operation
+        Bulk export operation with dynamic KVM/ZVM header support
         """
         result = io.StringIO()
         csv_writer = csv.writer(result, quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow(FIELDS_CSV)
+
+        # Fetch all instances first
+        instances = list(self.manager.instances(kwargs.get('where'),
+                                                kwargs.get('sort')))
+        if not instances:
+            return ''
+
+        # Choose header based on the first system's type
+        first_type = instances[0].type.upper()
+        header = FIELDS_CSV_KVM if first_type == 'KVM' else FIELDS_CSV
+        csv_writer.writerow(header)
 
         # we need to include information about network interfaces
-        for entry in self.manager.instances(kwargs.get('where'),
-                                            kwargs.get('sort')):
+        for entry in instances:
             try:
-                self._perman.can(
-                    'READ', flask_global.auth_user, entry)
+                self._perman.can('READ', flask_global.auth_user, entry)
             except PermissionError:
                 continue
 
@@ -213,6 +227,9 @@ class SystemResource(SecureResource):
             entry.iface = None
             entry.layer2 = None
             entry.portno = None
+            entry.hostiface = None
+            entry.mac = None
+            entry.libvirt = None
 
             # retrieve main network interface and ip
             try:
@@ -243,11 +260,32 @@ class SystemResource(SecureResource):
                 if not gw_iface:
                     gw_iface = ifaces[0]
 
+            # KVM Support
+            hostiface = gw_iface.attributes.get('hostiface', '')
+            if entry.type.upper() == 'KVM':
+                entry.hostiface = hostiface
+                entry.mac = gw_iface.mac_address
+                entry.libvirt = gw_iface.attributes.get('libvirt', '')
+
+                if gw_iface.ip_address:
+                    entry.ip = gw_iface.ip_address.split('/', 1)[-1]
+
+                csv_writer.writerow(
+                    [getattr(entry, attr.lower()) for attr in FIELDS_CSV_KVM]
+                )
+                continue
+
+            # ZVM/LPAR Support
             if gw_iface.type.lower() == 'osa':
-                entry.iface = gw_iface.attributes.get(
-                    'ccwgroup', '').replace('0.0.', '')
-                entry.layer2 = {False: '0', True: '1'}[
-                    gw_iface.attributes.get('layer2', False)]
+                entry.iface = (
+                    gw_iface.attributes.get('ccwgroup', '')
+                    .replace('0.0.', '')
+                )
+                entry.layer2 = (
+                    {False: '0', True: '1'}[
+                        gw_iface.attributes.get('layer2', False)
+                    ]
+                )
                 entry.portno = gw_iface.attributes.get('portno', 0)
             else:
                 entry.iface = gw_iface.mac_address

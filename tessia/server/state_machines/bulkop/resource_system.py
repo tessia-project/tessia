@@ -38,6 +38,12 @@ FIELDS_CSV = (
     'PORTNO', 'OWNER', 'PROJECT', 'STATE', 'DESC'
 )
 
+FIELDS_CSV_KVM = (
+    'HYPERVISOR', 'NAME', 'TYPE', 'HOSTNAME', 'IP',
+    'HOSTIFACE', 'MAC', 'LIBVIRT',
+    'OWNER', 'PROJECT', 'STATE', 'DESC'
+)
+
 GUEST_HYP_MATCHES = {
     'KVM': ['LPAR', 'KVM'],
     'ZVM': ['LPAR', 'ZVM'],
@@ -259,10 +265,94 @@ class ResourceHandlerSystem(ResourceHandlerBase):
         """
         Prepare an iface db object for creation or update
         """
-        # TODO: support kvm guest interfaces
+        # KVM support
         if sys_obj.type.upper() == 'KVM':
-            raise ValueError('KVM guest network interfaces are not supported')
+            hostiface = iface_attrs.get('hostiface', '')
+            entry = {
+            'ip_address': iface_attrs.get('ip'),
+            'attributes': {
+                'hostiface': hostiface,
+                'libvirt': iface_attrs.get('libvirt', '')
+                }
+            }
+            new_mac = iface_attrs.get('mac')
 
+            # new system: interface does not exist yet
+            if not sys_obj.id:
+                iface_obj = None
+            # system already exist: see if interface already exists
+            else:
+                iface_obj = SystemIface.query.filter_by(
+                system_id=sys_obj.id
+                ).filter(
+                    SystemIface.attributes['hostiface'].astext == hostiface,
+                ).one_or_none()
+
+            # Update existing KVM iface fields
+            if iface_obj:
+                changes_diff = {}
+                # Compare IP
+                if not iface_obj.ip_address_rel or (
+                        iface_obj.ip_address_rel and
+                        entry['ip_address']!=iface_obj.ip_address_rel.address):
+                    changes_diff['ip_address'] = entry['ip_address']
+
+                # Compare attributes
+                if iface_obj.attributes != entry['attributes']:
+                    changes_diff['attributes'] = entry['attributes']
+
+                # Compare MAC address
+                if str(iface_obj.mac_address) != str(new_mac):
+                    changes_diff['mac_address'] = new_mac
+
+                # no changes to item: nothing to do
+                if not changes_diff:
+                    self._logger.info('skipping KVM iface %s/%s (no changes)',
+                                    sys_obj.name, iface_obj.name)
+                    return
+
+                # validate action
+                self._assert_iface_update(iface_obj, changes_diff)
+
+                desc = ''
+                for key, value in changes_diff.items():
+                    desc += ' {}={}(previous <{}>)'.format(
+                        key.upper(), value,
+                        getattr(iface_obj, key.lower()))
+                    setattr(iface_obj, key.lower(), value)
+
+                desc = 'updating KVM iface {}/{}:{}'.format(
+                    sys_obj.name, iface_obj.name, desc)
+                self._logger.info(desc)
+
+
+            # create new KVM iface
+            else:
+                # validate action
+                existing_count = SystemIface.query.filter_by(
+                    system_id=sys_obj.id, type='MACVTAP'
+                ).count()
+                self._assert_iface_create(sys_obj, entry)
+
+                iface_obj = SystemIface()
+                iface_obj.system = sys_obj.name
+                iface_obj.type = 'MACVTAP'
+                iface_obj.name = f'KVM-macvtap-{existing_count}'
+                iface_obj.osname = f'enc{existing_count}'
+                iface_obj.ip_address = entry['ip_address']
+                iface_obj.attributes = {
+                'hostiface': iface_attrs.get('hostiface', ''),
+                'libvirt': iface_attrs.get('libvirt', '')
+                }
+                iface_obj.mac_address = iface_attrs.get('mac')
+                self._logger.info(
+                    'creating KVM iface %s/%s',
+                    sys_obj.name, iface_obj.name)
+
+            MANAGER.session.add(iface_obj)
+            return
+
+        # ZVM/LPAR support
         ccw_group = []
         for devno in iface_attrs['iface'].lower().split(','):
             if '.' not in devno:
@@ -371,16 +461,28 @@ class ResourceHandlerSystem(ResourceHandlerBase):
         if not entry['ip']:
             raise ValueError('A system must have an IP address assigned')
         # sanitize by removing any invalid keys
+        if entry['type'].upper() == 'KVM':
+            allowed_fields = FIELDS_CSV_KVM
+        else:
+            allowed_fields = FIELDS_CSV
+
         entry = {
             key: value for key, value in entry.items()
-            if key.upper() in FIELDS_CSV
+            if key.upper() in allowed_fields
         }
 
-        compare_fields = [field.lower() for field in FIELDS_CSV]
+        compare_fields = [field.lower() for field in allowed_fields]
         iface_attrs = {}
-        for field in ('ip', 'iface', 'layer2', 'portno'):
-            compare_fields.remove(field)
-            iface_attrs[field] = entry.pop(field)
+        if entry['type'].upper() == 'KVM':
+            for field in ('ip', 'hostiface', 'mac', 'libvirt'):
+                if field in entry:
+                    iface_attrs[field] = entry.pop(field)
+                    if field in compare_fields:
+                        compare_fields.remove(field)
+        else:
+            for field in ('ip', 'iface', 'layer2', 'portno'):
+                compare_fields.remove(field)
+                iface_attrs[field] = entry.pop(field)
 
         # update system: evaluate changes
         if sys_obj:
@@ -454,7 +556,7 @@ class ResourceHandlerSystem(ResourceHandlerBase):
         """
         Return True if the provided headers match the resource type
         """
-        return tuple(headers) == tuple(FIELDS_CSV)
+        return tuple(headers) in (tuple(FIELDS_CSV), tuple(FIELDS_CSV_KVM))
     # headers_match()
 
     def render_item(self, entry):

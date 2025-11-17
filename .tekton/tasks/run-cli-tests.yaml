@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: run-cli-tests
+spec:
+  params:
+    - name: IMAGE_TAG
+      type: string
+  workspaces:
+    - name: source
+  steps:
+    - name: run-clitests
+      image: 'image-registry.openshift-image-registry.svc:5000/tessia/tessia-cli:$(params.IMAGE_TAG)'
+      script: |
+        #!/bin/bash
+        set -x
+        set +e
+
+        cd $(workspaces.source.path)/cli
+
+        cd tests
+        ./runner list
+
+        echo "Listing all clitests"
+        TESTS=$(./runner list --terse)
+
+        echo "Erasing the coverage data"
+        ./runner erase
+
+        SERVER_POD=$(oc get pods -l app=tessia-server-$(params.IMAGE_TAG) -o jsonpath='{.items[0].metadata.name}')
+
+        for TEST in $TESTS; do
+          echo "Running clitest: $TEST"
+          ./runner exec --cov-erase=no --cov-report=no --name "$TEST" --api-url=http://tessia-server-$(params.IMAGE_TAG):5000
+          TEST_EXIT=$?
+
+          if [[ $TEST_EXIT -ne 0 ]]; then
+            echo "WARNING: Test $TEST failed but continuing..."
+          fi
+
+          echo "Resetting DB after $TEST"
+          oc exec "$SERVER_POD" -- bash -c "supervisorctl stop all && tess-dbmanage reset -y && tess-dbmanage init && supervisorctl start all"
+        done
+
+        echo "Showing cli coverage report"
+        ./runner report

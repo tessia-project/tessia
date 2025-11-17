@@ -1,0 +1,89 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: change-params
+spec:
+  params:
+    - name: IMAGE_TAG
+      value: $(params.IMAGE_TAG)
+  workspaces:
+    - name: output
+      description: Git repo workspace
+  steps:
+    - name: 'change-image-tag'
+      image: registry.redhat.io/ubi8/ubi-minimal
+      script: |
+        #!/bin/bash
+        set -e 
+        echo "Changing PVCs tag"
+
+        REDIS_PVC_YAML="$(workspaces.output.path)/.tekton/pvc/redis-pvc.yaml"
+        sed -i "s/redis-pvc/redis-pvc-$(params.IMAGE_TAG)/g" "$REDIS_PVC_YAML"
+
+        DB_PVC_YAML="$(workspaces.output.path)/.tekton/pvc/tessia-db-pvc.yaml"
+        sed -i "s/tessia-db-pvc/tessia-db-pvc-$(params.IMAGE_TAG)/g" "$DB_PVC_YAML"
+
+        SERVER_ETC_PVC_YAML="$(workspaces.output.path)/.tekton/pvc/tessia-server-etc.yaml"
+        sed -i "s/tessia-server-etc/tessia-server-etc-$(params.IMAGE_TAG)/g" "$SERVER_ETC_PVC_YAML"
+
+        SERVER_JOBS_PVC_YAML="$(workspaces.output.path)/.tekton/pvc/tessia-server-jobs.yaml"
+        sed -i "s/tessia-server-jobs/tessia-server-jobs-$(params.IMAGE_TAG)/g" "$SERVER_JOBS_PVC_YAML"
+
+        SERVER_STATIC_PVC_YAML="$(workspaces.output.path)/.tekton/pvc/tessia-server-static.yaml"
+        sed -i "s/tessia-server-static/tessia-server-static-$(params.IMAGE_TAG)/g" "$SERVER_STATIC_PVC_YAML"
+
+        echo "Updating image tags in services..."
+
+        DB_SVC_YAML="$(workspaces.output.path)/.tekton/services/db.yaml"
+        sed -i "s/db/db-$(params.IMAGE_TAG)/g" "$DB_SVC_YAML"
+        cat "$DB_SVC_YAML"
+
+        MEDIATOR_SVC_YAML="$(workspaces.output.path)/.tekton/services/mediator.yaml"
+        sed -i "s/mediator/mediator-$(params.IMAGE_TAG)/g" "$MEDIATOR_SVC_YAML"
+        cat "$MEDIATOR_SVC_YAML"
+
+        SERVER_SVC_YAML="$(workspaces.output.path)/.tekton/services/tessia-server.yaml"
+        sed -i "s/tessia-server/tessia-server-$(params.IMAGE_TAG)/g" "$SERVER_SVC_YAML"
+
+        echo "Updating image tag in tessia-supervisor-config ConfigMap..."
+
+        SUPERVISOR_CFG_YAML="$(workspaces.output.path)/.tekton/configmap/tessia-supervisor-config.yaml"
+        sed -i "s/tessia-supervisor-config/tessia-supervisor-config-$(params.IMAGE_TAG)/g" "$SUPERVISOR_CFG_YAML"
+
+        SERVER_CFG_YAML="$(workspaces.output.path)/.tekton/configmap/tessia-server-config.yaml"
+        sed -i "s/tessia-server-config/tessia-server-config-$(params.IMAGE_TAG)/g" "$SERVER_CFG_YAML"
+        sed -i "s/db.tessia.svc.cluster.local/db-$(params.IMAGE_TAG).tessia.svc.cluster.local/g" "$SERVER_CFG_YAML"
+        sed -i "s/mediator.tessia.svc.cluster.local/mediator-$(params.IMAGE_TAG).tessia.svc.cluster.local/g" "$SERVER_CFG_YAML"
+        sed -i "s/tessia-server.tessia.svc.cluster.local/tessia-server-$(params.IMAGE_TAG).tessia.svc.cluster.local/g" "$SERVER_CFG_YAML"
+
+        echo "Updating image tags in statefulsets..."
+        DB_STATEFULSET_YAML="$(workspaces.output.path)/.tekton/statefulsets/tessia-db.yaml"
+        sed -i "s/tessia-db-pvc/tessia-db-pvc-$(params.IMAGE_TAG)/g" "$DB_STATEFULSET_YAML"
+        sed -i "s/name: tessia-db/name: tessia-db-$(params.IMAGE_TAG)/g" "$DB_STATEFULSET_YAML"
+        sed -i "s/app: tessia-db/app: tessia-db-$(params.IMAGE_TAG)/g" "$DB_STATEFULSET_YAML"
+
+        cat "$DB_STATEFULSET_YAML"
+
+        echo "Updating image tags in deployments..."
+        SERVER_YAML="$(workspaces.output.path)/.tekton/deployments/tessia-server.yaml"
+        sed -i "s/app: tessia-server/app: tessia-server-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
+        sed -i "s/name:  tessia-server/name:  tessia-server-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
+        sed -i "s|image: .*|image: image-registry.openshift-image-registry.svc:5000/tessia/tessia-server:$(params.IMAGE_TAG)|g" "$SERVER_YAML"
+        sed -i "s/tessia-server-config/tessia-server-config-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
+        sed -i "s/tessia-supervisor-config/tessia-supervisor-config-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
+        sed -i "s/tessia-server-etc/tessia-server-etc-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
+        sed -i "s/tessia-server-jobs/tessia-server-jobs-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
+        sed -i "s/tessia-server-static/tessia-server-static-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
+        sed -i "s|db.tessia.svc.cluster.local|db-$(params.IMAGE_TAG).tessia.svc.cluster.local|g" "$SERVER_YAML"
+        sed -i "s|mediator.tessia.svc.cluster.local|mediator-$(params.IMAGE_TAG).tessia.svc.cluster.local|g" "$SERVER_YAML"
+        cat "$SERVER_YAML"
+
+        MEDIATOR_YAML="$(workspaces.output.path)/.tekton/deployments/tessia-mediator.yaml"
+        sed -i "s/name: tessia-mediator/name: tessia-mediator-$(params.IMAGE_TAG)/g" "$MEDIATOR_YAML"
+        sed -i "s/app: tessia-mediator/app: tessia-mediator-$(params.IMAGE_TAG)/g" "$MEDIATOR_YAML"
+        sed -i "s/redis-pvc/redis-pvc-$(params.IMAGE_TAG)/g" "$MEDIATOR_YAML"
+
+        echo "Image tag update completed."
+
+
+

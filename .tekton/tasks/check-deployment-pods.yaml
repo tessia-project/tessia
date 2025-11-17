@@ -1,0 +1,86 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: check-deployment-pods
+spec:
+  params:
+    - name: IMAGE_TAG
+      type: string
+      description: Image tag to deploy
+  description: Check whether all the deployment pods are up and reachable
+  steps:
+    - computeResources: {}
+      image: image-registry.openshift-image-registry.svc:5000/openshift/cli:latest
+      name: check-resources
+      script: |
+        #!/usr/bin/bash
+        set -e
+
+        NS="tessia"
+
+        SERVER_DEPLOY="tessia-server-$(params.IMAGE_TAG)"
+        MEDIATOR_DEPLOY="tessia-mediator-$(params.IMAGE_TAG)"
+        DB_STS="tessia-db-$(params.IMAGE_TAG)"
+
+        # -------------------------------------------------------------------
+        # Wait for tessia-server Deployment to have available replicas
+        # -------------------------------------------------------------------
+        TIMEOUT=300   # 5 minutes
+        INTERVAL=5
+        ELAPSED=0
+
+        echo " Waiting for tessia-server deployment to become available..."
+
+        while true; do
+          AVAILABLE=$(oc get deployment $SERVER_DEPLOY -n $NS \
+            -o jsonpath='{.status.availableReplicas}' 2>/dev/null || echo "0")
+
+          if [ -n "$AVAILABLE" ] && [ "$AVAILABLE" -ge 1 ]; then
+            break
+          fi
+
+          if [ $ELAPSED -ge $TIMEOUT ]; then
+            echo "ERROR: tessia-server deployment did NOT get available replicas within $TIMEOUT seconds."
+            oc describe deployment -n $NS $SERVER_DEPLOY
+            exit 1
+          fi
+
+          echo " Waiting for tessia-server deployment... ($ELAPSED / $TIMEOUT seconds)"
+          sleep $INTERVAL
+          ELAPSED=$((ELAPSED + INTERVAL))
+        done
+
+        SERVER_AVAILABLE=$(oc get deployment $SERVER_DEPLOY -n $NS \
+          -o jsonpath='{.status.availableReplicas}')
+
+        echo "tessia-server available replicas: ${SERVER_AVAILABLE:-0}"
+
+        if [ "${SERVER_AVAILABLE:-0}" -lt 1 ]; then
+          echo "ERROR: tessia-server is not up"
+          exit 1
+        fi
+
+        MEDIATOR_AVAILABLE=$(oc get deployment $MEDIATOR_DEPLOY -n $NS \
+          -o jsonpath='{.status.availableReplicas}')
+
+        echo "tessia-mediator available replicas: ${MEDIATOR_AVAILABLE:-0}"
+
+        if [ "${MEDIATOR_AVAILABLE:-0}" -lt 1 ]; then
+          echo "ERROR: tessia-mediator is not up"
+          exit 1
+        fi
+
+        DB_AVAILABLE=$(oc get statefulset $DB_STS -n $NS \
+          -o jsonpath='{.status.readyReplicas}')
+
+        echo "tessia-db ready replicas: ${DB_AVAILABLE:-0}"
+
+        if [ "${DB_AVAILABLE:-0}" -lt 1 ]; then
+          echo "ERROR: tessia-db is not up"
+          exit 1
+        fi
+
+        echo " All deployments are available."
+
+  workspaces:
+    - name: source

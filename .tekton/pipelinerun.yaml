@@ -1,0 +1,43 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: tessia
+  annotations:
+    # The event we are targeting as seen from the webhook payload
+    # this can be an array too, i.e: [pull_request, push]
+    pipelinesascode.tekton.dev/on-event: "[pull_request, push]"
+
+    # The branch or tag we are targeting (ie: main, refs/tags/*)
+    pipelinesascode.tekton.dev/on-target-branch: "[master]"
+
+    # Fetch the git-clone task from hub, we are able to reference later on it
+    # with taskRef and it will automatically be embedded into our pipeline.
+    pipelinesascode.tekton.dev/pipeline: "[.tekton/pipeline.yaml]"
+
+    pipelinesascode.tekton.dev/task: "[.tekton/tasks/apply-resources.yaml, .tekton/tasks/cleanup.yaml, .tekton/tasks/check-deployment-pods.yaml, .tekton/tasks/copy-repo.yaml, .tekton/tasks/verify-and-init-db.yaml, .tekton/tasks/change-params.yaml, .tekton/tasks/run-cli-tests.yaml, .tekton/tasks/run-unit-tests.yaml, .tekton/tasks/change-spawner.yaml, .tekton/tasks/git-clone-pr.yaml]"
+
+spec:
+  params:
+    - name: IMAGE_TAG
+      value: "$(context.pipelineRun.name)"  
+    - name: revision
+      value: "{{source_branch}}"
+    - name: label
+      value: "{{sender}}" 
+    - name: pr-number
+      value: "{{pull_request_number}}"
+    - name: event
+      value: "{{event_type}}"            
+  pipelineRef:
+    name: tessia-pipeline
+  timeouts:
+    pipeline: "1h30m"
+  workspaces:  
+    - name: tessia-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi

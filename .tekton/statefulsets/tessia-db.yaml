@@ -1,0 +1,53 @@
+kind: StatefulSet
+apiVersion: apps/v1
+metadata:
+  name: tessia-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tessia-db
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: tessia-db
+    spec:
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: tessia-db-pvc
+      containers:
+        - resources: {}
+          terminationMessagePath: /dev/termination-log
+          name: postgres
+          env:
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: POSTGRESQL_USER
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: POSTGRESQL_PASSWORD
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: POSTGRESQL_DATABASE
+            - name: POSTGRESQL_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secret
+                  key: POSTGRESQL_ADMIN_PASSWORD
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/pgsql/data
+          terminationMessagePolicy: File
+          image: registry.redhat.io/rhel8/postgresql-13

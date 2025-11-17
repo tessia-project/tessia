@@ -1,0 +1,90 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tessia-server-config
+data:
+  server.yaml: |
+
+    db:
+      # use the internal service name for PostgreSQL
+      url: postgresql://tessia:pass4tessia@db.tessia.svc.cluster.local:5432/tessia
+
+    mediator:
+      # Redis (mediator) internal service
+      url: redis://tessia:pass4tessia@mediator.tessia.svc.cluster.local:6379/0
+
+    auto_install:
+      # the url must be accessible from systems being installed
+      url: http://tessia-server.tessia.svc.cluster.local/static
+      dir: /var/tessia/www
+      live_img_passwd: somepwd
+
+    auth:
+      realm: authentication realm
+      case_sensitive: false
+      login_method: free
+      allow_user_auto_create: false
+      ldap:
+        host: _ldap_server
+        port: 636
+        ssl: true
+        user_base: ou=people,o=company.com
+        user_filter: (objectclass=inetOrgPerson)
+        user_attributes:
+          fullname: cn
+          login: mail
+          title: title
+        group_filter: (&(cn=tessia-users)(objectclass=groupOfUniqueNames))
+        group_base: ou=group,o=company.com
+        group_membership_attr: uniquemember
+
+    log:
+      version: 1
+      formatters:
+        default:
+          format: '%(asctime)s | %(levelname)s | %(message)s'
+          datefmt: '%Y-%m-%d %H:%M:%S'
+      handlers:
+        console:
+          class: logging.StreamHandler
+          formatter: default
+          level: DEBUG
+          stream: ext://sys.stdout
+      loggers:
+        tessia:
+          handlers: [console]
+          level: DEBUG
+
+    scheduler:
+      jobs_dir: /var/tessia/jobs
+
+    installer-webhook:
+      webhook_port: 7223
+      control_port: 7224
+
+    canary:
+      check_on: True
+      waiting_time: 60
+      insecure_warnings: False
+  uwsgi.yaml: |+
+    uwsgi:
+      master: true
+      buffer-size: 12288
+      processes: 4
+      enable-threads: true
+      manage-script-name: true
+      mount: /=tessia.server.api.cmd:APP
+
+      die-on-term: true
+      stats: 127.0.0.1:9191
+      http: 0.0.0.0:5000
+
+      static-map: /static=/var/tessia/www
+      route: ^/static goto:static_route
+      route-label: static_route
+      static-map: /web/=/var/tessia/web/
+      static-index: index.html
+      static-gzip-dir: /var/tessia/web/
+
+      http-keepalive: 1
+

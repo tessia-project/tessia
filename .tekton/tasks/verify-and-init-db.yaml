@@ -1,0 +1,75 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: verify-and-init-db
+spec:
+  params:
+    - name: DB_HOST
+      type: string
+      default: db.tessia.svc.cluster.local
+    - name: SERVER_LABEL
+      type: string
+      default: app=tessia-server
+    - name: DB_LABEL
+      type: string
+      default: app=tessia-db
+    - name: IMAGE_TAG
+      type: string
+      description: Image tag to deploy 
+  stepTemplate:
+    env:
+      - name: DB_USER
+        valueFrom:
+          secretKeyRef:
+            name: db-secret
+            key: POSTGRESQL_USER
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: db-secret
+            key: POSTGRESQL_PASSWORD
+      - name: MAIN_DB
+        valueFrom:
+          secretKeyRef:
+            name: db-secret
+            key: POSTGRESQL_DATABASE
+      - name: TEST_DB
+        valueFrom:
+          secretKeyRef:
+            name: db-secret
+            key: POSTGRESQL_TEST_DATABASE
+  steps:
+    - name: ensure-main-db-initialized
+      image: 'image-registry.openshift-image-registry.svc:5000/openshift/cli:latest'
+      env:
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: POSTGRESQL_PASSWORD
+      script: |
+        #!/bin/bash
+        set -e
+
+        echo "$(params.DB_HOST)"
+        echo "Finding DB pod..."
+        DB_POD=$(oc get pods -l $(params.DB_LABEL) -o jsonpath='{.items[0].metadata.name}')
+        echo "DB pod: $DB_POD"
+
+        echo "Ensuring tessia user has CREATEDB privilege..."
+        # Run ALTER ROLE as postgres superuser inside DB pod
+        oc exec "$DB_POD" -c postgres -- bash -c "PGPASSWORD=${DB_PASSWORD} psql -U postgres -tAc \"ALTER ROLE tessia CREATEDB;\""
+        echo "CREATEDB privilege ensured for user 'tessia'."
+
+        echo "Checking if main DB $MAIN_DB has tables..."
+        TABLE_COUNT=$(oc exec "$DB_POD" -- bash -c "psql -U $DB_USER -d $MAIN_DB -tAc \"SELECT count(*) FROM information_schema.tables WHERE table_schema='public';\"")
+        echo "Table count: $TABLE_COUNT"
+
+        if [ "$TABLE_COUNT" = "0" ]; then
+          echo "Main DB is empty, initializing via server pod..."
+          sleep 100  # Wait before accessing server pod
+          SERVER_POD=$(oc get pods -l $(params.SERVER_LABEL) -o jsonpath='{.items[0].metadata.name}')
+          oc exec "$SERVER_POD" -- bash -c "supervisorctl stop all && tess-dbmanage reset -y && tess-dbmanage init && supervisorctl start all"
+        else
+          echo "Main DB already initialized."
+        fi

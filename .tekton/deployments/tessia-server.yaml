@@ -1,0 +1,124 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name:  tessia-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tessia-server
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: tessia-server
+    spec:
+      volumes:
+        - name: tessia-server-etc
+          persistentVolumeClaim:
+            claimName: tessia-server-etc
+        - name: tessia-server-jobs
+          persistentVolumeClaim:
+            claimName: tessia-server-jobs
+        - name: tessia-server-static
+          persistentVolumeClaim:
+            claimName: tessia-server-static
+        - name: tessia-server-config
+          configMap:
+            name: tessia-server-config
+            defaultMode: 420
+        - name: supervisor-config
+          configMap:
+            name: tessia-supervisor-config
+            defaultMode: 420
+        - name: tessia-tls
+          secret:
+            secretName: tessia-server-tls
+            defaultMode: 420
+      initContainers:
+        - resources: {}
+          terminationMessagePath: /dev/termination-log
+          name: copy-config
+          command:
+            - /bin/sh
+            - '-c'
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: tessia-server-etc
+              mountPath: /etc/tessia
+            - name: tessia-server-config
+              mountPath: /config
+            - name: tessia-server-jobs
+              mountPath: /tmp/tessia
+              subPath: tmp-tessia
+            - name: tessia-server-jobs
+              mountPath: /tmp/supervisor
+              subPath: tmp-supervisor
+            - name: tessia-server-jobs
+              mountPath: /tmp/tessia-logs
+              subPath: tessia-logs
+          terminationMessagePolicy: File
+          image: registry.access.redhat.com/ubi9/ubi-minimal
+          args:
+            - |
+              echo "Initializing Tessia config directory...";
+              mkdir -p /etc/tessia /tmp/tessia /tmp/supervisor /tmp/tessia-logs;
+              mkdir -p /etc/tessia/tls
+              echo "Copying config files...";
+              cp /config/server.yaml /etc/tessia/server.yaml && chmod 644 /etc/tessia/server.yaml;
+              cp /config/uwsgi.yaml /etc/tessia/uwsgi.yaml && chmod 644 /etc/tessia/uwsgi.yaml;
+      containers:
+        - resources: {}
+          terminationMessagePath: /dev/termination-log
+          name: tessia-server
+          command:
+            - /bin/sh
+            - '-c'
+            - |
+              exec /entrypoint
+              # echo "Starting supervisor..."
+              # exec /usr/bin/supervisord -c /etc/supervisord.conf
+          env:
+            - name: TESSIA_CFG
+              value: /etc/tessia/server.yaml
+            - name: TESSIA_DB_URI
+              value: 'postgresql://tessia:pass4tessia@db.tessia.svc.cluster.local:5432/tessia'
+            - name: TESSIA_MEDIATOR_URI
+              value: 'redis://mediator.tessia.svc.cluster.local:6379/0'
+            - name: TESSIA_DB_AUTOMANAGE
+              value: "true"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: tessia-server-etc
+              mountPath: /etc/tessia
+            - name: tessia-server-jobs
+              mountPath: /tmp/tessia
+              subPath: tmp-tessia
+            - name: tessia-server-jobs
+              mountPath: /tmp/supervisor
+              subPath: tmp-supervisor
+            - name: tessia-server-jobs
+              mountPath: /tmp/tessia-logs
+              subPath: tessia-logs
+            - name: tessia-server-static
+              mountPath: /var/tessia/web
+            - name: supervisor-config
+              mountPath: /etc/supervisord.conf
+              subPath: supervisord.conf
+            - name: tessia-tls
+              readOnly: true
+              mountPath: /etc/tessia/tls
+          terminationMessagePolicy: File
+          image: 'image-registry.openshift-image-registry.svc:5000/tessia/tessia-server:latest'
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      securityContext: {}
+      schedulerName: default-scheduler
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+  revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600

@@ -1,0 +1,53 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: cleanup
+spec:
+  params:
+    - name: IMAGE_TAG
+      type: string
+      description: Image tag to deploy
+  description: 'Delete deployments, services, routes'
+  steps:
+    - computeResources: {}
+      image: 'image-registry.openshift-image-registry.svc:5000/openshift/cli:latest'
+      name: delete-deployments
+      script: |
+        #!/usr/bin/bash
+
+        # Deleting the deployments
+        oc delete deployments tessia-server-$(params.IMAGE_TAG)
+        oc delete deployments tessia-mediator-$(params.IMAGE_TAG)
+
+        #Delete statefulsets
+        oc delete statefulset tessia-db-$(params.IMAGE_TAG)
+
+        # Deleting Services
+        oc delete services db-$(params.IMAGE_TAG)
+        oc delete services mediator-$(params.IMAGE_TAG)
+        oc delete services tessia-server-$(params.IMAGE_TAG)
+
+        # Deleting imagestreams 
+        oc delete imagestreamtag tessia-cli:$(params.IMAGE_TAG)
+        oc delete imagestreamtag tessia-server:$(params.IMAGE_TAG)
+
+        #Delete configmap
+        oc delete configmap tessia-server-config-$(params.IMAGE_TAG)
+        oc delete configmap tessia-supervisor-config-$(params.IMAGE_TAG)
+
+        # Deletes PVC 
+        oc delete pvc redis-pvc-$(params.IMAGE_TAG)
+        oc delete pvc tessia-db-pvc-$(params.IMAGE_TAG)
+        oc delete pvc tessia-server-etc-$(params.IMAGE_TAG)
+        oc delete pvc tessia-server-jobs-$(params.IMAGE_TAG)
+        oc delete pvc tessia-server-static-$(params.IMAGE_TAG)
+
+        # Deleting repos
+        cd $(workspaces.source.path)/
+        ls -a
+        shopt -s dotglob
+        rm -rf -- *
+        echo "Cleanup completed."
+        ls -a
+  workspaces:
+    - name: source

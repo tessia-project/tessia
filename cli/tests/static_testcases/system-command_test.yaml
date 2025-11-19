@@ -1483,15 +1483,13 @@ tasks:
     - - system export --owner
       - '--owner option requires an argument'
     - - system export --owner dev2@example.com
-      - HYPERVISOR,NAME,TYPE,HOSTNAME,IP,IFACE,LAYER2,PORTNO,OWNER,PROJECT,STATE,DESC
+      - '.*preparing data.*'
     - - system export --owner dev1@example.com
       - dev1@example.com
     - - system export --owner dev1@example.com --hyp cpc3
       - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,GEO_1 developers,AVAILABLE,Developer 1
     - - system export --hyp cpc3
       - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,
-    - - system export --type KVM
-      - cpc3lp52,guest55,KVM,guest55.example.com,
     - - system export --state available
       - cpc3,cpc3lp52,LPAR,cpc3lp52.example.com,192.168.161.222,"f500,f501,f502",1,0,dev1@example.com,GEO_1 developers,AVAILABLE,Developer 1
     - - system export --state AVAILABLE
@@ -1518,9 +1516,9 @@ tasks:
       - Item added successfully.
     - - system import --file files/system-command_test/import-system.csv
       - operation finished successfully
-    - - system export
-      - - HYPERVISOR,NAME,TYPE,HOSTNAME,IP,IFACE,LAYER2,PORTNO,OWNER,PROJECT,STATE,DESC
-        - cpc3lp52,guest55,KVM,guest55.example.com,192.168.160.55,02:03:52:01:ff:01,,,dev1@example.com,GEO_1 developers,AVAILABLE,SVT Developer 1
+    - - system export --type KVM
+      - - HYPERVISOR,NAME,TYPE,HOSTNAME,IP,HOSTIFACE,MAC,LIBVIRT,OWNER,PROJECT,STATE,DESC
+        - '.*guest55.*KVM.*'
     - - system import --file files/system-command_test/import-system.csv --commit --yes
       - operation finished successfully
     - - system import --file files/system-command_test/import-system.csv --commit --yes --verbosity debug

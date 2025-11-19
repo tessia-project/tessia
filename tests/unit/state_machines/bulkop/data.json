@@ -355,7 +355,7 @@
             "owner": "admin",
             "project": "bulkop project",
             "state": "AVAILABLE",
-            "type": "kvm"
+            "type": "KVM"
         },
         {
             "desc": "zVM hypervisor of zvm033",
@@ -398,7 +398,8 @@
         },
         {
             "attributes": {
-                "hostiface": "enccw0.0.f500"
+                "hostiface": "enccw0.0.f500",
+                "libvirt": ""
             },
             "ip_address": "lab1-1801-cpc3/192.168.161.223",
             "mac_address": "02:57:52:01:ff:01",

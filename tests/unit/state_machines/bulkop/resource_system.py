@@ -38,6 +38,11 @@ SYS_HEADERS = (
     [field.lower() for field in resource_system.FIELDS_CSV
      if field.lower() not in ['ip', 'iface', 'layer2', 'portno']])
 
+SYS_HEADERS_KVM = [
+    field.lower() for field in resource_system.FIELDS_CSV_KVM
+    if field.lower() not in ['ip', 'hostiface', 'mac', 'libvirt']
+]
+
 #
 # CODE
 #
@@ -80,16 +85,31 @@ class TestResourceSystem(TestCase):
         sys_obj = models.System.query.filter_by(name=entry['name']).one()
 
         # check system values
-        for field in SYS_HEADERS:
-            # ip field: must add subnet name to it
-            if field == 'ip':
-                entry_value = '{}/{}'.format(self._subnet_name, entry[field])
-            else:
-                entry_value = entry[field]
-            self.assertEqual(
-                entry_value, getattr(sys_obj, field),
-                'Comparison of field "{}" failed for login "{}"'
-                .format(field, login))
+        if entry["type"] == "KVM":
+            for field in SYS_HEADERS_KVM:
+                # ip field: must add subnet name to it
+                if field == 'ip':
+                    entry_value = '{}/{}'.format(
+                        self._subnet_name, entry[field])
+                else:
+                    entry_value = entry[field]
+                self.assertEqual(
+                    entry_value, getattr(sys_obj, field),
+                    'Comparison of field "{}" ' \
+                    'failed for KVM login "{}"'
+                    .format(field, login))
+        else:
+            for field in SYS_HEADERS:
+                # ip field: must add subnet name to it
+                if field == 'ip':
+                    entry_value = '{}/{}'.format(
+                        self._subnet_name, entry[field])
+                else:
+                    entry_value = entry[field]
+                self.assertEqual(
+                    entry_value, getattr(sys_obj, field),
+                    'Comparison of field "{}" failed for login "{}"'
+                    .format(field, login))
 
         # check system iface values
         iface_obj = models.SystemIface.query.filter_by(
@@ -139,19 +159,36 @@ class TestResourceSystem(TestCase):
         self.db.session.refresh(sys_obj)
 
         # check that system values were changed
-        for field in SYS_HEADERS:
-            # ip field: must add subnet name to it
-            if field == 'ip':
-                entry_value = '{}/{}'.format(self._subnet_name, entry[field])
-            # normalize empty to None
-            elif field == 'desc' and not entry[field]:
-                entry_value = None
-            else:
-                entry_value = entry[field]
-            self.assertEqual(
-                entry_value, getattr(sys_obj, field),
-                'Comparison of field "{}" failed for login "{}"'
-                .format(field, login))
+        if entry["type"] == "KVM":
+            for field in SYS_HEADERS_KVM:
+                # ip field: must add subnet name to it
+                if field == 'ip':
+                    entry_value = '{}/{}'.format(
+                        self._subnet_name, entry[field])
+                # normalize empty to None
+                elif field == 'desc' and not entry[field]:
+                    entry_value = None
+                else:
+                    entry_value = entry[field]
+                self.assertEqual(
+                    entry_value, getattr(sys_obj, field),
+                    'Comparison of field "{}" failed for login "{}"'
+                    .format(field, login))
+        else:
+            for field in SYS_HEADERS:
+                # ip field: must add subnet name to it
+                if field == 'ip':
+                    entry_value = '{}/{}'.format(
+                        self._subnet_name, entry[field])
+                # normalize empty to None
+                elif field == 'desc' and not entry[field]:
+                    entry_value = None
+                else:
+                    entry_value = entry[field]
+                self.assertEqual(
+                    entry_value, getattr(sys_obj, field),
+                    'Comparison of field "{}" failed for login "{}"'
+                    .format(field, login))
 
         # check that system iface values were changed
         iface_obj = models.SystemIface.query.filter_by(
@@ -194,11 +231,19 @@ class TestResourceSystem(TestCase):
         # check rollback to original values
         self.db.session.rollback()
         sys_obj = models.System.query.filter_by(name=entry['name']).one()
-        for field in SYS_HEADERS:
-            self.assertEqual(
-                orig_dict['sys'][field], getattr(sys_obj, field),
-                'Comparison of field "{}" failed for login "{}"'
-                .format(field, login))
+        if entry["type"] == "KVM":
+            for field in SYS_HEADERS_KVM:
+                self.assertEqual(
+                    orig_dict['sys'][field], getattr(sys_obj, field),
+                    'Comparison of field "{}" failed for KVM login "{}"'
+                    .format(field, login))
+        else:
+            for field in SYS_HEADERS:
+                self.assertEqual(
+                    orig_dict['sys'][field], getattr(sys_obj, field),
+                    'Comparison of field "{}" failed for login "{}"'
+                    .format(field, login))
+
         iface_obj = models.SystemIface.query.filter_by(
             id=orig_dict['iface']['id']).one()
         for field in ['ip_address', 'attributes']:
@@ -232,7 +277,12 @@ class TestResourceSystem(TestCase):
         """
         # fetch system's original values for later comparison
         sys_obj = models.System.query.filter_by(name=ref_entry['name']).one()
-        sys_orig = {field: getattr(sys_obj, field) for field in SYS_HEADERS}
+        if ref_entry["type"] == "KVM":
+            sys_orig = {field: getattr(sys_obj, field)
+                        for field in SYS_HEADERS_KVM}
+        else:
+            sys_orig = {field: getattr(sys_obj, field)
+                        for field in SYS_HEADERS}
 
         # fetch iface's original values for later comparison
         iface_obj = models.SystemIface.query.filter_by(
@@ -605,8 +655,8 @@ class TestResourceSystem(TestCase):
              {'hypervisor': 'cpc3lp53'}),
             ('Value for layer2 must be 1 or 0', {'layer2': 'true'}),
             ('Value for portno must be 1 or 0', {'portno': '2'}),
-            ('Tried to change system type from LPAR to KVM',
-             {'type': 'KVM'}),
+            ('Tried to change system type from LPAR to ZVM',
+             {'type': 'ZVM'}),
         ]
 
         user_obj = models.User.query.filter_by(
@@ -967,4 +1017,110 @@ class TestResourceSystem(TestCase):
         self._mock_logger.info.assert_any_call(
             'skipping system %s (no changes)', ref_entry['name'])
     # test_update_no_change()
+
+    def test_kvm_invalid_ip(self):
+        """
+        Test invalid IP raises ValueError for KVM.
+        """
+        kvm_entry = {
+            'hypervisor': 'cpc3lp52',
+            'name': 'kvm054',
+            'type': 'KVM',
+            'hostname': 'kvm054.domain._com',
+            'ip': '',
+            'hostiface': 'enccw0.0.f500',
+            'mac': '02:57:52:01:ff:01',
+            'libvirt': '',
+            'owner': 'user_user@domain.com',
+            'project': 'bulkop project',
+            'state': 'AVAILABLE',
+            "desc": "KVM Guest"
+        }
+        combos = [
+            # make sure ip is mandatory
+            ('A system must have an IP address assigned', ''),
+            # invalid ips
+            ("Invalid IP address 'wrong_ip'", 'wrong_ip'),
+            ("Invalid IP address 'wrong/wrong_ip'", 'wrong/wrong_ip'),
+            # ip not found
+            ("IP address specified not found", 'subnet/10.100.10.10'),
+            ("IP address specified not found", '10.100.10.10'),
+        ]
+
+        user_obj = models.User.query.filter_by(
+            login='user_hw_admin@domain.com').one()
+        res_obj = resource_system.ResourceHandlerSystem(user_obj)
+        for msg, value in combos:
+            kvm_entry['ip'] = value
+            with self.assertRaisesRegex(ValueError, msg):
+                res_obj.render_item(kvm_entry)
+            self.db.session.rollback()
+    # test_kvm_invalid_ip
+
+    def test_kvm_create_iface(self):
+        """
+        Test adding a new KVM iface when hostiface changes.
+        """
+        # prepare system
+        new_entry = {
+            'hypervisor': 'cpc3lp52',
+            'name': 'kvm054',
+            'type': 'KVM',
+            'hostname': 'kvm054.domain._com',
+            'ip': '192.168.161.223',
+            'hostiface': 'encbd10', # New hostiface entry
+            'mac': '02:57:52:01:ff:01',
+            'libvirt': '',
+            'owner': 'user_user@domain.com',
+            'project': 'bulkop project',
+            'state': 'AVAILABLE',
+            'desc': 'Adding KVM iface',
+        }
+
+        user_obj = models.User.query.filter_by(
+            login='user_hw_admin@domain.com').one()
+        res_obj = resource_system.ResourceHandlerSystem(user_obj)
+        res_obj.render_item(new_entry)
+
+        sys_obj = models.System.query.filter_by(
+            name='kvm054').one()
+        # Now should have two ifaces
+        ifaces = models.SystemIface.query.filter_by(
+            system_id=sys_obj.id).all()
+        self.assertEqual(len(ifaces), 2)
+    # test_kvm_create_iface
+
+    def test_kvm_update_iface(self):
+        """
+        Test creating a KVM system with a MACVTAP interface.
+        """
+        kvm_entry = {
+            'hypervisor': 'cpc3lp52',
+            'name': 'kvm054',
+            'type': 'KVM',
+            'hostname': 'kvm054.domain._com',
+            'ip': '192.168.161.223',
+            'hostiface': 'enccw0.0.f500',
+            'mac': '02:83:66:01:a6:09',
+            'libvirt': '',
+            'owner': 'user_user@domain.com',
+            'project': 'bulkop project',
+            'state': 'AVAILABLE',
+            'desc': 'Updating KVM iface',
+        }
+
+        user_obj = models.User.query.filter_by(
+            login='user_hw_admin@domain.com').one()
+        res_obj = resource_system.ResourceHandlerSystem(user_obj)
+        res_obj.render_item(kvm_entry)
+
+        sys_obj = models.System.query.filter_by(
+            name='kvm054').one()
+        iface_obj = models.SystemIface.query.filter_by(
+            system_id=sys_obj.id).one()
+
+        self.assertEqual(iface_obj.mac_address,
+                         '02:83:66:01:a6:09')
+    # test_kvm_update_iface
+
 # TestResourceSystem

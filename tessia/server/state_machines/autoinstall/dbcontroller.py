@@ -195,7 +195,9 @@ class DbController:
                 hyp_system.hostname,
                 {
                     'user': hyp_profile.credentials.get('admin-user'),
-                    'password': hyp_profile.credentials.get('admin-password')
+                    'password': hyp_profile.credentials.get('admin-password'),
+                    'private-key':
+                        hyp_profile.credentials.get('private-key', None)
                 },
                 boot_method
             )

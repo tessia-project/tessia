@@ -301,12 +301,19 @@ class PlatLpar(PlatBase):
         knowledge about parameters so _create_hyp can be re-implemented
         by children classes
         """
+        parameters = None
+        if model.system_profile.hypervisor.credentials.get('private-key'):
+            parameters = {
+                'private-key':
+                    model.system_profile.hypervisor.credentials['private-key']
+                    }
+
         return HypervisorHmc(
             model.system_profile.hypervisor.name,
             model.system_profile.hypervisor.hmc_address,
             model.system_profile.hypervisor.credentials['user'],
             model.system_profile.hypervisor.credentials['password'],
-            None)
+            parameters)
     # create_hypervisor()
 
     def prepare_guest(self):

@@ -15,6 +15,16 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.1.5 (2025-11-25)
+
+- Support [KVM] import/export guest network interface (https://github.ibm.com/tessia-project/tessia/pull/1393)
+- Add Z Auth [WebApp](https://github.ibm.com/tessia-project/tessia/pull/1392) login support.
+- Add dasd and zfcp section to [SLES](https://github.ibm.com/tessia-project/tessia/pull/1382) profile in sles16-default template.
+
+tessia-baselib:
+- Use a valid CCW device (0x0000–0xFFFF) under [KVM](https://github.ibm.com/tessia-project/tessia-baselib/pull/176)
+- Z Auth [WebApp](https://github.ibm.com/tessia-project/tessia-baselib/pull/175) login support.
+
 ## 2.1.4 (2025-08-25)
 
 - Provide the profile directly using the kernel command-line [SLES](https://github.ibm.com/tessia-project/tessia/pull/1377) for Agama installer

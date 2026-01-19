@@ -1,0 +1,44 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: copy-repo
+spec:
+  workspaces:
+    - name: output
+      description: Git repo workspace
+  steps:
+    - name: copy-and-move
+      image: registry.redhat.io/ubi8/ubi-minimal
+      script: |
+        #!/bin/bash
+        set -euo pipefail
+
+        SRC=/workspace/output
+        TMP=/tmp/tessia.git
+
+        CLI_DST=/workspace/output/tools/ci/docker/tessia-cli/assets/tessia.git
+        SRV_DST=/workspace/output/tools/ci/docker/tessia-server/assets/tessia.git
+
+        echo "Creating temporary copy..."
+        rm -rf "$TMP"
+        cp -r "$SRC" "$TMP"
+
+        echo "Checking CLI destination..."
+        if [ ! -d "$CLI_DST" ]; then
+          echo "tessia.git not found in CLI assets. Copying..."
+          mkdir -p "$(dirname "$CLI_DST")"
+          cp -r "$TMP" "$CLI_DST"
+        else
+          echo "CLI assets already contain tessia.git. Skipping copy."
+        fi
+
+        echo "Checking Server destination..."
+        if [ ! -d "$SRV_DST" ]; then
+          echo "tessia.git not found in Server assets. Moving..."
+          mkdir -p "$(dirname "$SRV_DST")"
+          mv "$TMP" "$SRV_DST"
+        else
+          echo "Server assets already contain tessia.git. Skipping move."
+          # cleanup tmp if server folder already exists
+          rm -rf "$TMP"
+        fi

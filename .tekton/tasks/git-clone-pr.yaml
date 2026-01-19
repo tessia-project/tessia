@@ -1,0 +1,38 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone-pr
+spec:
+  params:
+    - name: url
+      type: string
+    - name: pr-number
+      type: string
+    - name: deleteExisting
+      type: string
+  steps:
+    - image: 'image-registry.openshift-image-registry.svc:5000/tessia/ubuntu:latest'
+      name: test
+      script: |
+        #!/usr/bin/bash
+
+        apt-get update && apt install -y git
+
+        cd $(workspaces.output.path)
+
+        if [ "$(params.deleteExisting)" = "true" ]; then
+          rm -rf -- {*,.[!.]*,..?*}
+        fi
+
+        # Clone repository
+        git clone $(params.url) .
+
+        # Fetch the PR merge ref
+        git fetch origin +refs/pull/$(params.pr-number)/merge
+
+        # Checkout FETCH_HEAD safely
+        git checkout -qf FETCH_HEAD
+
+  workspaces:
+    - name: output
+      description: 'Git repo workspace'

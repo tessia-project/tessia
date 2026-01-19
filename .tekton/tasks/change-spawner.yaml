@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: change-spawner
+spec:
+  workspaces:
+    - name: source
+  steps:
+    - name: patch
+      image: registry.access.redhat.com/ubi8/ubi-minimal
+      script: |
+        #!/bin/bash
+        set -xe
+
+        DOCKERFILE="$(workspaces.source.path)/tools/ci/docker/tessia-server/Dockerfile"
+
+        echo "Adding ForkSpawner patch before supervisor setup..."
+        sed -i '/# used to manage startup of the api and scheduler daemons/i \    #changing forkspawner\n    sed -i "s/self._spawner = spawner.ContainerSpawner()/self._spawner = spawner.ForkSpawner()/" /usr/local/lib/python3.10/dist-packages/tessia/server/scheduler/looper.py && \\' "$DOCKERFILE"
+
+        echo "Final Dockerfile content:"
+        cat "$DOCKERFILE"

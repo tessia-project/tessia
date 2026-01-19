@@ -1,0 +1,56 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: run-unit-tests
+spec:
+  params:
+    - name: IMAGE_TAG
+      type: string
+  workspaces:
+    - name: source
+  stepTemplate:
+    env:
+      - name: DB_USER
+        valueFrom:
+          secretKeyRef:
+            name: db-secret
+            key: POSTGRESQL_USER
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: db-secret
+            key: POSTGRESQL_PASSWORD
+      - name: TEST_DB
+        valueFrom:
+          secretKeyRef:
+            name: db-secret
+            key: POSTGRESQL_TEST_DATABASE  
+      - name: TESSIA_DB_TEST_URI
+        value: >- 
+          postgresql://$(DB_USER):$(DB_PASSWORD)@db-$(params.IMAGE_TAG).tessia.svc.cluster.local:5432/$(TEST_DB)
+      - name: TESSIA_MEDIATOR_URI
+        value: redis://mediator-$(params.IMAGE_TAG).tessia.svc.cluster.local:6379              
+  steps:
+    - name: unittest
+      image: "image-registry.openshift-image-registry.svc:5000/tessia/tessia-server:$(params.IMAGE_TAG)"
+      script: |
+        #!/bin/bash
+        set -e
+        cd $(workspaces.source.path)
+
+        echo "Setting up environment inside Tessia Server container..."
+
+        echo "Cleaning Python caches..."
+        find . -type d -name "__pycache__" -exec rm -rf {} + || true
+        find . -type f -name "*.pyc" -delete || true
+
+        echo "Running pylint checks..."
+        python3 tools/run_pylint.py
+
+        echo "Running pytest suite..."
+        python3 tools/run_pytest_tests.py 
+
+        echo "Running unittest suite..."
+        python3 tools/run_tests.py
+
+        echo "All lint and test suites passed successfully!"

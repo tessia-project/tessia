@@ -1,0 +1,52 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tessia-supervisor-config
+data:
+  supervisord.conf: |
+    [unix_http_server]
+    file=/tmp/supervisor.sock 
+    chmod=0700
+
+    [supervisorctl]
+    serverurl=unix:///tmp/supervisor.sock
+
+    [rpcinterface:supervisor]
+    supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+    [supervisord]
+    nodaemon=true
+    logfile=/tmp/supervisor/supervisord.log
+    logfile_maxbytes=20MB
+    logfile_backups=3
+    pidfile=/tmp/supervisor/supervisord.pid
+
+    [program:tessia-api]
+    command=uwsgi --yaml /etc/tessia/uwsgi.yaml
+    redirect_stderr=true
+    stdout_logfile=/tmp/supervisor/uwsgi.log
+    stdout_logfile_maxbytes=20MB
+    stdout_logfile_backups=3
+
+    [program:tessia-scheduler]
+    command=tess-scheduler
+    redirect_stderr=true
+    stdout_logfile=/tmp/supervisor/scheduler.log
+    stdout_logfile_maxbytes=50MB
+    stdout_logfile_backups=3
+
+    [program:installer-webhook]
+    command=installer-webhook
+    redirect_stderr=true
+    stdout_logfile=/tmp/supervisor/installer-webhook.log
+    stdout_logfile_maxbytes=50MB
+    stdout_logfile_backups=3
+    stopsignal=TERM
+    stopwaitsecs=3
+
+    [program:tessia-canary]
+    command=tess-canary
+    redirect_stderr=true
+    stdout_logfile=/tmp/supervisor/canary.log
+    stdout_logfile_maxbytes=50MB
+    stdout_logfile_backups=3

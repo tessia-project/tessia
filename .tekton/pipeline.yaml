@@ -1,0 +1,220 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: tessia-pipeline
+spec:
+  finally:
+    - name: delete-deployments
+      params:
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
+      taskRef:
+        kind: Task
+        name: cleanup
+      workspaces:
+        - name: source
+          workspace: tessia-workspace
+  params:
+    - name: IMAGE_TAG
+      type: string  
+      default: 'latest'
+    - default: master
+      description: The branch to check out in tessia-mesh
+      name: revision
+      type: string 
+    - default: ""
+      description: pull-request number
+      name: pr-number
+      type: string
+    - default: push
+      description: tells which event the pipelinerun for
+      name: event
+      type: string        
+  tasks:
+    - name: fetch-source
+      params:
+        - name: url
+          value: 'https://github.ibm.com/tessia-project/tessia.git'
+        - name: revision
+          value: $(params.revision)
+        - name: depth
+          value: '1'
+        - name: submodules
+          value: 'true'
+        - name: deleteExisting
+          value: "true"  
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      when:
+        - input: $(params.event)
+          operator: notin
+          values:
+            - pull_request  
+      workspaces:
+        - name: output
+          workspace: tessia-workspace
+    - name: fetch-source-pr
+      params:
+        - name: url
+          value: 'https://github.ibm.com/tessia-project/tessia.git'
+        - name: pr-number
+          value: $(params.pr-number)
+        - name: deleteExisting
+          value: "true"
+      taskRef:
+        kind: Task
+        name: git-clone-pr
+      when:
+        - input: $(params.event)
+          operator: in
+          values:
+            - pull_request
+      workspaces:
+        - name: output
+          workspace: tessia-workspace  
+    - name: copy-repo
+      runAfter:
+        - fetch-source
+        - fetch-source-pr
+      taskRef:
+        kind: Task
+        name: copy-repo
+      workspaces:
+        - name: output
+          workspace: tessia-workspace
+    - name: build-cli
+      params:
+        - name: IMAGE
+          value: 'image-registry.openshift-image-registry.svc:5000/tessia/tessia-cli:$(params.IMAGE_TAG)'
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: ./tools/ci/docker/tessia-cli/Dockerfile
+        - name: CONTEXT
+          value: ./tools/ci/docker/tessia-cli
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: docker
+        - name: SKIP_PUSH
+          value: 'false'
+      runAfter:
+        - copy-repo
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: tessia-workspace
+    - name: change-spawner
+      runAfter:
+        - copy-repo
+      taskRef:
+        kind: Task
+        name: change-spawner
+      workspaces:
+        - name: source
+          workspace: tessia-workspace
+    - name: build-server
+      params:
+        - name: IMAGE
+          value: 'image-registry.openshift-image-registry.svc:5000/tessia/tessia-server:$(params.IMAGE_TAG)'
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: ./tools/ci/docker/tessia-server/Dockerfile
+        - name: CONTEXT
+          value: ./tools/ci/docker/tessia-server/
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: docker
+        - name: SKIP_PUSH
+          value: 'false'
+      runAfter:
+        - change-spawner
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: tessia-workspace
+    - name: change-params
+      params:
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
+      runAfter:
+        - build-server
+        - build-cli
+      taskRef:
+        kind: Task
+        name: change-params
+      workspaces:
+        - name: output
+          workspace: tessia-workspace           
+    - name: apply-resources
+      params:
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
+      runAfter:
+        - change-params
+      taskRef:
+        kind: Task
+        name: apply-resources
+      workspaces:
+        - name: source
+          workspace: tessia-workspace
+    - name: check-deployment-pods
+      params:
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
+      runAfter:
+        - apply-resources
+      taskRef:
+        kind: Task
+        name: check-deployment-pods
+      workspaces:
+        - name: source
+          workspace: tessia-workspace
+    - name: verify-and-init-db
+      params:
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
+        - name: DB_HOST
+          value: db-$(params.IMAGE_TAG).tessia.svc.cluster.local
+        - name:  SERVER_LABEL
+          value: app=tessia-server-$(params.IMAGE_TAG)
+        - name: DB_LABEL
+          value: app=tessia-db-$(params.IMAGE_TAG)
+      runAfter:
+        - check-deployment-pods
+      taskRef:
+        kind: Task
+        name: verify-and-init-db
+    - name: run-unit-tests
+      params:
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
+      runAfter:
+        - verify-and-init-db
+      taskRef:
+        kind: Task
+        name: run-unit-tests
+      workspaces:
+        - name: source
+          workspace: tessia-workspace
+    - name: run-cli-tests
+      params:
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
+      runAfter:
+        - run-unit-tests
+      taskRef:
+        kind: Task
+        name: run-cli-tests
+      workspaces:
+        - name: source
+          workspace: tessia-workspace
+  workspaces:
+    - name: tessia-workspace

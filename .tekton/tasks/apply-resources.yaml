@@ -1,0 +1,42 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: apply-resources
+spec:
+  params:
+    - name: IMAGE_TAG
+      value: $(params.IMAGE_TAG)
+  description: check whether all the deployment pods are up
+  steps:
+    - computeResources: {}
+      image: 'image-registry.openshift-image-registry.svc:5000/openshift/cli:latest'
+      name: check-pods
+      script: |
+        #!/usr/bin/bash
+
+        # Apply the PVCs
+        cd $(workspaces.source.path)/.tekton/pvc/
+        oc apply -f redis-pvc.yaml
+        oc apply -f tessia-db-pvc.yaml
+        oc apply -f tessia-server-etc.yaml
+        oc apply -f tessia-server-jobs.yaml
+        oc apply -f tessia-server-static.yaml
+
+        cd ../configmap
+        oc apply -f tessia-server-config.yaml
+        oc apply -f tessia-supervisor-config.yaml
+
+        #setup db
+        cd ../statefulsets/
+        oc apply -f tessia-db.yaml
+
+        cd ../deployments/ 
+        oc apply -f tessia-server.yaml
+        oc apply -f tessia-mediator.yaml
+
+        cd ../services
+        oc apply -f db.yaml
+        oc apply -f mediator.yaml
+        oc apply -f tessia-server.yaml
+  workspaces:
+    - name: source

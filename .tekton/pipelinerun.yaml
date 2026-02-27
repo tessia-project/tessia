@@ -14,7 +14,7 @@ metadata:
     # with taskRef and it will automatically be embedded into our pipeline.
     pipelinesascode.tekton.dev/pipeline: "[.tekton/pipeline.yaml]"
 
-    pipelinesascode.tekton.dev/task: "[.tekton/tasks/apply-resources.yaml, .tekton/tasks/cleanup.yaml, .tekton/tasks/check-deployment-pods.yaml, .tekton/tasks/copy-repo.yaml, .tekton/tasks/verify-and-init-db.yaml, .tekton/tasks/change-params.yaml, .tekton/tasks/run-cli-tests.yaml, .tekton/tasks/run-unit-tests.yaml, .tekton/tasks/change-spawner.yaml, .tekton/tasks/git-clone-pr.yaml]"
+    pipelinesascode.tekton.dev/task: "[.tekton/tasks/apply-resources.yaml, .tekton/tasks/cleanup.yaml, .tekton/tasks/check-deployment-pods.yaml, .tekton/tasks/copy-repo.yaml, .tekton/tasks/verify-and-init-db.yaml, .tekton/tasks/change-params.yaml, .tekton/tasks/run-cli-tests.yaml, .tekton/tasks/run-unit-tests.yaml, .tekton/tasks/change-spawner.yaml, .tekton/tasks/git-clone-pr.yaml, .tekton/tasks/git-clone, .tekton/tasks/buildah ]"
 
 spec:
   params:

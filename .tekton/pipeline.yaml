@@ -42,9 +42,9 @@ spec:
         - name: submodules
           value: 'true'
         - name: deleteExisting
-          value: "true"  
+          value: "true"
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: git-clone
       when:
         - input: $(params.event)
@@ -102,7 +102,7 @@ spec:
       runAfter:
         - copy-repo
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: buildah
       workspaces:
         - name: source
@@ -135,7 +135,7 @@ spec:
       runAfter:
         - change-spawner
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: buildah
       workspaces:
         - name: source

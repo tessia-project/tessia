@@ -17,6 +17,7 @@
     {% endif %}
     {% set _ = dasd_devnos.append(dev_id) %}
 
+
   {% elif svol['type'] == 'FCP' -%}
     {% for adapter in svol['specs']['adapters'] -%}
       {% if adapter['devno'].count('.') >= 2 -%}
@@ -32,7 +33,7 @@
 {# Append DASD devices in rd.zdev #}
 {% set dasd_data = dasd_devnos %}
 {% for dasd in dasd_data %}
-  {% set _ = cio_ignore_devnos.append('rd.zdev=dasd,' + dasd) %}
+  {% set _ = cio_ignore_devnos.append('rd.dasd=' + dasd) %}
 {% endfor %}
 
 {# Append FCP devices in rd.zfcp #}
@@ -52,10 +53,19 @@
 {{ cio_ignore_devnos | join(' ') }}
 {%- endmacro %}
 
+{# Process install_url #}
+{% macro install_url(repo_url) -%}
+{% if "SLES16.0" in repo_url %}
+agama.install_url={{ repo_url }}/install/
+{% else %}
+inst.install_url={{ repo_url }}/install/
+{% endif %}
+{%- endmacro %}
+
 {# Start main template content #}
 
 {% set cio_ignore_output = cio_ignore(config['svols'], config['ifaces']) %}
 {% macro ip_format(ip_address) -%}
 {% if ':' in ip_address %}[{{ip_address}}]{% else %}{{ip_address}}{% endif %}
 {%- endmacro %}
-{{ cio_ignore_output }} ip={{ip_format(config["gw_iface"]['ip'])}}::{{ip_format(config["gw_iface"]['gateway'])}}:{{config["gw_iface"]['mask']}}:{{ip_format(config['hostname'])}}:{{iface_name(config["gw_iface"])}}:none {% if config["gw_iface"]['vlan'] %} vlan={{iface_name(config["gw_iface"])}}:{{iface_name(config["gw_iface"], False)}}{% endif %} nameserver={{ config["gw_iface"]["dns_1"] }} root=live:{{ config["repos"][0]["install_image"] }} agama.install_url={{ config["repos"][0]["url"] + '/' + 'install/' }} inst.auto={{ config["autofile"] }} inst.finish=stop live.password={{ config["credentials"]["installation-password"] }}
+{{ cio_ignore_output }} ip={{ip_format(config["gw_iface"]['ip'])}}::{{ip_format(config["gw_iface"]['gateway'])}}:{{config["gw_iface"]['mask']}}:{{ip_format(config['hostname'])}}:{{iface_name(config["gw_iface"])}}:none {% if config["gw_iface"]['vlan'] %} vlan={{iface_name(config["gw_iface"])}}:{{iface_name(config["gw_iface"], False)}}{% endif %} nameserver={{ config["gw_iface"]["dns_1"] }} root=live:{{ config["repos"][0]["install_image"] }} {{ install_url(config["repos"][0]["url"]) }} inst.auto={{ config["autofile"] }} inst.finish=stop live.password={{ config["credentials"]["installation-password"] }}

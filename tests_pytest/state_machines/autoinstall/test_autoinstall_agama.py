@@ -54,7 +54,10 @@ class GoodLogSsh(SshClient):
         Set return values for commands
         """
         responses = {
-            "journalctl -u agama --no-pager | tail -n +1 | head -n 100":
+            (
+                "journalctl -u agama -u agama-web-server --no-pager | "
+                "tail -n +1 | head -n 100"
+            ):
             "Install phase done",
             "echo $?": (0, "0"),
             "agama config show": (0, {}),

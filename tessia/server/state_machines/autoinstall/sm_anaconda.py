@@ -160,7 +160,7 @@ class SmAnaconda(SmBase):
 
         # Performs consecutive calls to tail to extract the end of the file
         # from a previous start point.
-        max_wait_install = 3600
+        max_wait_install = self._model.install_timeout
         timeout_installation = time() + max_wait_install
         line_offset = 1
         success = False

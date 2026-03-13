@@ -26,7 +26,7 @@ from tessia.baselib.hypervisors.kvm import HypervisorKvm
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from urllib.parse import urljoin
 from xml.etree import ElementTree
-
+from tessia.server.state_machines.autoinstall.model import AARCH64, S390X
 import logging
 
 #
@@ -41,8 +41,16 @@ DISK_TEMPLATE = """
       {boot_tag}
     </disk> 
 """
+DISK_AARCH64_TEMPLATE = """
+        <disk type='{disk_type}' device='disk'>
+          <driver name='qemu' type='{driver}'/>
+          <source {src_type}='{src_dev}'/>
+          <target dev='{target_dev}' bus='virtio'/>
+        </disk>
+    """
 RHEL_ID = 'Red Hat Enterprise Linux'
 UBUNTU_ID = 'Ubuntu '
+QCOW_IMAGE_PATH = "/var/lib/libvirt/images/"
 
 #
 # CODE
@@ -96,7 +104,9 @@ class PlatKvm(PlatBase):
             model.system_profile.hypervisor.kvm_host,
             model.system_profile.hypervisor.credentials['user'],
             model.system_profile.hypervisor.credentials['password'],
-            None)
+            {
+               "system_type": model.system_profile.system_type.name
+            })
     # create_hypervisor()
 
     @staticmethod
@@ -138,43 +148,54 @@ class PlatKvm(PlatBase):
     # _kvm_jsonify_iface()
 
     @staticmethod
-    def _kvm_jsonify_vol(storage_vol):
+    def _kvm_jsonify_vol(storage_vol, guest_name, arch=S390X):
         """
         Format a volume object to a json format expected by baselib.
         """
-        if isinstance(storage_vol, AutoinstallMachineModel.ZfcpVolume):
-            result = {
-                "type": storage_vol.volume_type,
-                "volume_id": storage_vol.lun,
-                "system_attributes": {
-                    'libvirt': storage_vol.libvirt_definition
-                },
-                "specs": {},
-            }
-            # compatibility layer to baselib:
-            # provide paths grouped by adapters
-            adapters = {}
-            for adapter, wwpn in storage_vol.paths:
-                if not adapter in adapters:
-                    adapters[adapter] = [wwpn]
-                else:
-                    adapters[adapter].append(wwpn)
+        if arch == S390X:
+            if isinstance(storage_vol, AutoinstallMachineModel.ZfcpVolume):
+                result = {
+                    "type": storage_vol.volume_type,
+                    "volume_id": storage_vol.lun,
+                    "system_attributes": {
+                        'libvirt': storage_vol.libvirt_definition
+                    },
+                    "specs": {},
+                }
+                # compatibility layer to baselib:
+                # provide paths grouped by adapters
+                adapters = {}
+                for adapter, wwpn in storage_vol.paths:
+                    if not adapter in adapters:
+                        adapters[adapter] = [wwpn]
+                    else:
+                        adapters[adapter].append(wwpn)
 
-            result["specs"] = {
-                'adapters': [{'devno': adapter, 'wwpns': wwpns}
-                             for adapter, wwpns in adapters.items()],
-                'multipath': storage_vol.multipath,
-                'wwid': storage_vol.wwid
-            }
-        else:
+                result["specs"] = {
+                    'adapters': [{'devno': adapter, 'wwpns': wwpns}
+                                for adapter, wwpns in adapters.items()],
+                    'multipath': storage_vol.multipath,
+                    'wwid': storage_vol.wwid
+                }
+            else:
+                result = {
+                    "type": storage_vol.volume_type,
+                    "volume_id": storage_vol.device_id,
+                    "system_attributes": {
+                        'libvirt': storage_vol.libvirt_definition
+                    },
+                    "specs": {},
+                }
+        else:   #to do - fetching it from DB
             result = {
-                "type": storage_vol.volume_type,
-                "volume_id": storage_vol.device_id,
-                "system_attributes": {
-                    'libvirt': storage_vol.libvirt_definition
-                },
-                "specs": {},
-            }
+                    "type": "QCOW2",
+                    "volume_id": "",
+                    "system_attributes": {
+                        'path': f'{QCOW_IMAGE_PATH}{guest_name}.qcow2',
+                        'libvirt': storage_vol.libvirt_definition
+                    },
+                    "specs": {},
+                }
         return result
     # _kvm_jsonify_vol()
 
@@ -191,6 +212,28 @@ class PlatKvm(PlatBase):
         Returns:
             str: libvirt xml definition
         """
+        arch = getattr(self._model.system_profile.hypervisor, "arch", S390X)
+        if arch == AARCH64:
+            # ARM KVM disks qcow2
+            disk_type = "file"
+            src_type = "file"
+            driver = "qcow2"
+            qcow_path = (
+                f"{QCOW_IMAGE_PATH}"
+                f"{self._guest_prof.system_name}.qcow2"
+            )
+            vol_aarch64_libvirt = DISK_AARCH64_TEMPLATE.format(
+                disk_type=disk_type,
+                driver=driver,
+                src_type=src_type,
+                src_dev=qcow_path,
+                target_dev=target_dev,
+            )
+            result = {
+                'devpath': qcow_path,
+                'libvirt': vol_aarch64_libvirt
+            }
+            return result
         if isinstance(vol_obj, (AutoinstallMachineModel.DasdVolume,
                                 AutoinstallMachineModel.ZfcpVolume)):
             disk_type = 'block'
@@ -440,11 +483,13 @@ class PlatKvm(PlatBase):
         cpu = self._guest_prof.cpus
         memory = self._guest_prof.memory
         guest_name = self._guest_prof.system_name
+        system_type = self._model.system_profile.system_type.name
+        arch = AARCH64 if system_type == "KVMA" else S390X
 
         # prepare entries in the format expected by baselib
         svols = []
         for svol in self._guest_prof.volumes:
-            svols.append(self._kvm_jsonify_vol(svol))
+            svols.append(self._kvm_jsonify_vol(svol, guest_name, arch))
         ifaces = []
         for iface in self._guest_prof.ifaces:
             ifaces.append(self._kvm_jsonify_iface(iface))
@@ -456,6 +501,7 @@ class PlatKvm(PlatBase):
 
         # parameters argument, see baselib schema for details
         params = {
+            'arch': arch,
             'ifaces': ifaces,
             'storage_volumes': svols,
             'parameters': {

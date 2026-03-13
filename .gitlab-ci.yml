@@ -53,8 +53,6 @@ cli tests:
   stage: integration test
   needs: ['build server', 'build cli']
   script:
-    - pwd
-    - ls
     - sed -i
       's|public.ecr.aws/docker/library/postgres:alpine|'"$POSTGRES_IMAGE"'|g'
       tools/ci/docker/docker-compose.yaml

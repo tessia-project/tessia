@@ -213,14 +213,16 @@ class DbController:
                     'logon-by': profile.credentials.get('zvm-logonby')
                 }
             )
-        elif system.type == 'KVM':
+        elif system.type == 'KVM' or system.type == 'KVMA':
+            arch = system.type_rel.arch_rel.name
             hypervisor = AutoinstallMachineModel.KvmHypervisor(
                 hyp_system.name,
                 hyp_system.hostname,
                 {
                     'user': hyp_profile.credentials.get('admin-user'),
                     'password': hyp_profile.credentials.get('admin-password')
-                }
+                },
+                arch=arch
             )
 
         if not hypervisor:

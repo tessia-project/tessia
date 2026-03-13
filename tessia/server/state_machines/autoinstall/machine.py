@@ -40,6 +40,7 @@ from tessia.server.state_machines.autoinstall.sm_subiquity import \
 from tessia.server.state_machines.autoinstall.sm_agama import \
     SmAgama
 from urllib.parse import urlsplit
+from tessia.server.state_machines.autoinstall.model import AARCH64
 
 import ipaddress
 import json
@@ -276,6 +277,17 @@ class AutoInstallMachine(BaseMachine):
         # generate pseudo-random password for vnc and ssh installer sessions
         install_opts['installation-password'] = ''.join(
             random.sample(string.ascii_letters + string.digits, 8))
+
+        # set installation timeout based on architecture
+        hypervisor = system_model.hypervisor
+        arch = getattr(hypervisor, "arch", "")
+
+        # Modifying the timeout for aarch64 as it requires
+        # more time and it can be reduced later.
+        if arch == AARCH64:
+            install_opts["install-timeout"] = 10800
+        else:
+            install_opts["install-timeout"] = 3600
 
         model = AutoinstallMachineModel(os_entry, accessible_os_repos,
                                         template_entry, installer_template,

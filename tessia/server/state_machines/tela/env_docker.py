@@ -90,7 +90,7 @@ class EnvDocker(EnvBase):
 
         output = ""
         for line in lines:
-            line_json = json.loads(line.decode('utf-8'))
+            line_json = json.loads(line.decode('utf-8', errors='replace'))
             # WARNING: be careful when parsing the json output as it
             # can also contain a key named 'aux'.
             if 'stream' in line_json:
@@ -215,7 +215,7 @@ class EnvDocker(EnvBase):
         while ret['Running']:
             ret = self._client.api.exec_inspect(exec_id['Id'])
             for line in lines:
-                print(line.decode('utf-8'), end='')
+                print(line.decode('utf-8', errors='replace'), end='')
         if ret['ExitCode'] != 0:
             raise RuntimeError('Failed to create repo directory')
 
@@ -242,7 +242,7 @@ class EnvDocker(EnvBase):
             while ret['Running']:
                 ret = self._client.api.exec_inspect(exec_id['Id'])
                 for line in lines:
-                    print(line.decode('utf-8'), end='')
+                    print(line.decode('utf-8', errors='replace'), end='')
             if ret['ExitCode'] != 0:
                 raise RuntimeError(
                     'Failed to download repository to {}'.format(
@@ -274,7 +274,7 @@ class EnvDocker(EnvBase):
             while ret['Running']:
                 ret = self._client.api.exec_inspect(exec_id['Id'])
                 for line in lines:
-                    print(line.decode('utf-8'), end='')
+                    print(line.decode('utf-8', errors='replace'), end='')
             self._logger.info('preexec script finished with exit code %d',
                               ret['ExitCode'])
             if ret['ExitCode']:
@@ -300,7 +300,7 @@ class EnvDocker(EnvBase):
         while ret['Running']:
             ret = self._client.api.exec_inspect(exec_id['Id'])
             for line in lines:
-                print(line.decode('utf-8'), end='')
+                print(line.decode('utf-8', errors='replace'), end='')
 
         if ret['ExitCode']:
             self._logger.info('Container exited abnormally, exit code %d',
@@ -329,7 +329,7 @@ class EnvDocker(EnvBase):
             while ret['Running']:
                 ret = self._client.api.exec_inspect(exec_id['Id'])
                 for line in lines:
-                    print(line.decode('utf-8'), end='')
+                    print(line.decode('utf-8', errors='replace'), end='')
             self._logger.info('postexec script finished with exit code %d',
                               ret['ExitCode'])
             if ret['ExitCode']:

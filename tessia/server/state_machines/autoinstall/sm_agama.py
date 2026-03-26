@@ -22,8 +22,9 @@ Machine for auto installation of Agama installer based operating systems
 from tessia.server.state_machines.autoinstall.plat_base import PlatBase
 from tessia.server.state_machines.autoinstall.sm_base import SmBase
 from tessia.server.state_machines.autoinstall.sm_base import TEMPLATES_DIR
-from tessia.server.state_machines.autoinstall.model import \
-    AutoinstallMachineModel
+from tessia.server.state_machines.autoinstall.model import (
+    AutoinstallMachineModel,
+)
 
 import json
 import logging
@@ -36,6 +37,7 @@ import yaml
 #
 # CONSTANTS AND DEFINITIONS
 #
+
 
 #
 # CODE
@@ -69,13 +71,15 @@ class SmAgama(SmBase):
         Returns installer kernel command line from the template
         """
         # try to find a template specific to this OS version
-        template_filename = 'agama.cmdline.jinja'
+        template_filename = "agama.cmdline.jinja"
         with open(TEMPLATES_DIR + template_filename, "r") as template_file:
             template_content = template_file.read()
 
         self._logger.debug(
-            "Using agama installer cmdline template for "
-            "OS %s of type '%s'", self._os.name, self._os.type)
+            "Using agama installer cmdline template for OS %s of type '%s'",
+            self._os.name,
+            self._os.type,
+        )
 
         template_obj = jinja2.Template(template_content)
         return template_obj.render(config=self._info).strip()
@@ -84,8 +88,10 @@ class SmAgama(SmBase):
         """
         Fetch logs from journalctl for the Agama service.
         """
+        # Read logs from both 'agama' and 'agama-web-server' since SLES 16.1
+        # splits relevant log output across these two services.
         cmd_read_log = (
-            "journalctl -u agama --no-pager | "
+            "journalctl -u agama -u agama-web-server --no-pager | "
             "tail -n +{line_offset} | head -n 100"
         )
         ret, out = shell.run(cmd_read_log.format(line_offset=line_offset))
@@ -151,7 +157,9 @@ class SmAgama(SmBase):
 
     def wait_install(self):
         frequency_check = 10
-        install_done_phrase = "Install phase done"
+        # Second string is specifically for sles16.1
+        install_done_phrases = ["Install phase done", "Installation finished"]
+
         ssh_client, shell = self._get_ssh_conn()
 
         self._logger.info(
@@ -174,7 +182,7 @@ class SmAgama(SmBase):
         success = False
         line_offset = 1
 
-        max_empty_reads = 60    #Wait for max 10 minutes due to empty logs
+        max_empty_reads = 60  # Wait for max 10 minutes due to empty logs
         empty_read_count = 0
 
         while time() <= timeout_installation:
@@ -182,19 +190,23 @@ class SmAgama(SmBase):
 
             if log_output:
                 empty_read_count = 0
-                if install_done_phrase in log_output:
+                if any(
+                    phrase in log_output
+                    for phrase in install_done_phrases
+                ):
                     self._logger.info(
                         "Agama installation completed successfully!"
                     )
                     success = True
                     break
+
             else:
                 empty_read_count += 1
                 if empty_read_count >= max_empty_reads:
                     raise RuntimeError(
-                    "Terminating installation: "
-                    "Could not fetch Agama Install Logs"
-                )
+                        "Terminating installation: "
+                        "Could not fetch Agama Install Logs"
+                    )
 
             sleep(frequency_check)
             line_offset += len(log_output.splitlines())

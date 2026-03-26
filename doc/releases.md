@@ -17,18 +17,18 @@ limitations under the License.
 
 ## 2.1.5 (2025-11-25)
 
-- Support [KVM] import/export guest network interface (https://github.ibm.com/tessia-project/tessia/pull/1393)
-- Add Z Auth [WebApp](https://github.ibm.com/tessia-project/tessia/pull/1392) login support.
-- Add dasd and zfcp section to [SLES](https://github.ibm.com/tessia-project/tessia/pull/1382) profile in sles16-default template.
+- Support [KVM] import/export guest network interface (https://gitlab.com/tessia-project/tessia/-/merge_requests/416)
+- Add Z Auth [WebApp](https://gitlab.com/tessia-project/tessia/-/merge_requests/417) login support.
+- Add dasd and zfcp section to [SLES](https://gitlab.com/tessia-project/tessia/-/merge_requests/413) profile in sles16-default template.
 
 tessia-baselib:
-- Use a valid CCW device (0x0000–0xFFFF) under [KVM](https://github.ibm.com/tessia-project/tessia-baselib/pull/176)
-- Z Auth [WebApp](https://github.ibm.com/tessia-project/tessia-baselib/pull/175) login support.
+- Use a valid CCW device (0x0000–0xFFFF) under [KVM](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/86)
+- Z Auth [WebApp](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/87) login support.
 
 ## 2.1.4 (2025-08-25)
 
-- Provide the profile directly using the kernel command-line [SLES](https://github.ibm.com/tessia-project/tessia/pull/1377) for Agama installer
-- Fix configuration mismatch in CPU and disk for post installation [check](https://github.ibm.com/tessia-project/tessia/pull/1378)
+- Provide the profile directly using the kernel command-line [SLES](https://gitlab.com/tessia-project/tessia/-/merge_requests/411) for Agama installer
+- Fix configuration mismatch in CPU and disk for post installation [check](https://gitlab.com/tessia-project/tessia/-/merge_requests/410)
 
 ## 2.1.3 (2025-06-17)
 

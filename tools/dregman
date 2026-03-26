@@ -25,7 +25,6 @@ from pkg_resources import parse_version
 from urllib.parse import urlsplit
 import click
 import datetime
-import re
 import requests
 
 #
@@ -253,7 +252,7 @@ def clean(cacert, keep, registry_url, repo_name):
         raise click.ClickException('Invalid keep value')
 
     # default to ssl connection
-    if not urlsplit(registry_url).scheme:
+    if "://" not in registry_url:
         registry_url = 'https://' + registry_url
     kwargs = _prepare_headers(registry_url, cacert)
 
@@ -335,7 +334,7 @@ def del_(cacert, registry_url, image_name):
         raise click.ClickException('invalid image name format')
 
     # default to ssl connection
-    if not urlsplit(registry_url).scheme:
+    if "://" not in registry_url:
         registry_url = 'https://' + registry_url
     kwargs = _prepare_headers(registry_url, cacert)
 
@@ -369,7 +368,7 @@ def list_(cacert, repo, registry_url):
     list available repositories and image tags.
     """
     # default to ssl connection
-    if not urlsplit(registry_url).scheme:
+    if "://" not in registry_url:
         registry_url = 'https://' + registry_url
     kwargs = _prepare_headers(registry_url, cacert)
 
@@ -432,15 +431,9 @@ def list_(cacert, repo, registry_url):
                 raise click.ClickException(
                     "Unexpected image blob format: {}".format(str(exc)))
 
-            # remove the fractional seconds and utc timezone indication
-            timestamp_match = re.match(r'^(.*)\.[0-9]+[zZ]$', timestamp)
-            if timestamp_match is None:
-                raise click.ClickException(
-                    "Unexpected creation date format '{}'".format(
-                        timestamp))
             # create a datetime object from the string
             date_obj = datetime.datetime.strptime(
-                timestamp_match.group(1).replace('-', ''), "%Y%m%dT%H:%M:%S")
+                timestamp.split('.')[0], "%Y-%m-%dT%H:%M:%S")
             # convert to operating system's timezone
             date_obj = date_obj.replace(
                 tzinfo=datetime.timezone.utc).astimezone(tz=None)

@@ -14,10 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 # Release notes
+## 2.1.6 (2026-04-01)
+
+- Integrated [Tekton](https://gitlab.com/tessia-project/tessia/-/merge_requests/419) Pipeline for CI testing
+- Fix utf-8 decode errors in [tela](https://gitlab.com/tessia-project/tessia/-/merge_requests/421)
+- Fix timestamp and url split in [dregman](https://gitlab.com/tessia-project/tessia/-/merge_requests/422)
+- Add termination string and minor fixes for [SLES16.1](https://gitlab.com/tessia-project/tessia/-/merge_requests/424)
 
 ## 2.1.5 (2025-11-25)
 
-- Support [KVM] import/export guest network interface (https://gitlab.com/tessia-project/tessia/-/merge_requests/416)
+- Support [KVM](https://gitlab.com/tessia-project/tessia/-/merge_requests/416) import/export guest network interface 
 - Add Z Auth [WebApp](https://gitlab.com/tessia-project/tessia/-/merge_requests/417) login support.
 - Add dasd and zfcp section to [SLES](https://gitlab.com/tessia-project/tessia/-/merge_requests/413) profile in sles16-default template.
 

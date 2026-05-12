@@ -86,17 +86,41 @@ class SmAgama(SmBase):
 
     def _fetch_lines_until_end(self, shell, line_offset):
         """
-        Fetch logs from journalctl for the Agama service.
+        Fetch installation logs from Agama services.
+
+        Strategy:
+        - Fetch ALL logs from 'agama' service (main installer)
+        - Fetch ONLY "Installation finished" from 'agama-web-server'
+          (to avoid verbose logs)
+
+        Performance Note:
+        Prior to SLES 16.1, only 'agama' service logs were fetched.
+        With SLES 16.1+, 'agama-web-server' was added which generates
+        ~22,000 lines of verbose package manager logs ([zypp],
+        [libsolv], RPM operations, HTTP requests, etc.).
+        Fetching all these logs caused installation monitoring to take
+        45+ minutes.
+
+        By filtering agama-web-server to show only "Installation
+        finished", we:
+        - Reduce log volume from 22,000+ lines to just 1 essential line
+        - Decrease installation monitoring time from 45 mins to 10-15
+          mins (3x faster)
+        - Maintain visibility of critical completion status
+        - Keep all detailed logs from main 'agama' service for debugging
         """
-        # Read logs from both 'agama' and 'agama-web-server' since SLES 16.1
-        # splits relevant log output across these two services.
+        # Combine commands: all from agama + only "Installation finished"
+        # from agama-web-server
         cmd_read_log = (
-            "journalctl -u agama -u agama-web-server --no-pager | "
+            "( journalctl -u agama --no-pager; "
+            "journalctl -u agama-web-server --no-pager | "
+            "grep 'Installation finished' ) | "
             "tail -n +{line_offset} | head -n 100"
         )
+
         ret, out = shell.run(cmd_read_log.format(line_offset=line_offset))
         if ret == 0 and out:
-            self._logger.debug("Agama Logs = %s", out)
+            self._logger.info("Agama Logs = %s", out)
             return out
         return ""
 

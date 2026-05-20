@@ -3,7 +3,11 @@
 {%- endmacro %}
 
 {% macro cio_ignore(svols, ifaces) -%}
+{% if config["system_type"] in ["KVM", "KVMA"] -%}
+{% set cio_ignore_devnos = ['cio_ignore=all,!condev,!0x0,!0x1,!0x2,!0xffba'] -%}
+{% else -%}
 {% set cio_ignore_devnos = ['cio_ignore=all,!condev'] -%}
+{% endif %}
 {% set dasd_devnos = [] -%}
 {% set fcp_devnos = [] -%}
 
@@ -55,11 +59,11 @@
 
 {# Process install_url #}
 {% macro install_url(repo_url) -%}
-{% if "SLES16.0" in repo_url %}
+{%- if config["operating_system"]["major"] == 16 and config["operating_system"]["minor"] < 1 -%}
 agama.install_url={{ repo_url }}/install/
-{% else %}
+{%- else -%}
 inst.install_url={{ repo_url }}/install/
-{% endif %}
+{%- endif -%}
 {%- endmacro %}
 
 {# Start main template content #}

@@ -120,8 +120,9 @@ def _set_libvirt_mac_address(libvirt_xml, new_mac):
 @click.option('--type', required=True, type=CONSTANT,
               help="interface type (see iface-types)")
 @click.option('osname', '--devname', required=True, type=IFACE_NAME,
-              help="network device name in operating system (i.e. net0)")
-@click.option('mac_address', '--mac', type=MACADDRESS, help="mac address")
+              help="network device name in operating system (i.e. net0 and for KVMA guests enp<bus>s<slot>)")
+@click.option('mac_address', '--mac', type=MACADDRESS, 
+              help="mac address (For KVM and KVMA guests use 52:54:00:xx:xx:xx)")
 @click.option('--subnet', type=SUBNET,
               help="subnet of ip address to be assigned")
 @click.option('--ip', type=IPADDRESS,
@@ -305,8 +306,9 @@ def iface_detach(system, profile, iface):
               help="interface name")
 @click.option('name', '--newname', type=NAME, help="new interface name")
 @click.option('osname', '--devname', type=IFACE_NAME,
-              help="network device name in operating system (i.e. net0)")
-@click.option('mac_address', '--mac', help="mac address")
+              help="network device name in operating system (i.e. net0 and for KVMA guests enp<bus>s<slot>)")
+@click.option('mac_address', '--mac', 
+              help="mac address (For KVM and KVMA guests use 52:54:00:xx:xx:xx)")
 @click.option('--subnet', type=SUBNET,
               help="subnet of ip address to be assigned")
 @click.option('--ip', help="ip address to be assigned to interface, "

@@ -39,6 +39,8 @@ import ipaddress
 # CONSTANTS AND DEFINITIONS
 #
 
+S390X = "s390x"
+AARCH64 = "aarch64"
 
 #
 # CODE
@@ -543,16 +545,17 @@ class AutoinstallMachineModel:
         """
 
         def __init__(self, name: str,
-                     kvm_host: str, credentials: dict):
+                     kvm_host: str, credentials: dict, arch: str = S390X):
             super().__init__(name)
             self.kvm_host = kvm_host
             self.credentials = credentials
+            self.arch = arch
 
     class SystemProfile:
         """
         System profile representation
         """
-        SystemTypes = Enum('SystemTypes', 'LPAR ZVM KVM GENERIC')
+        SystemTypes = Enum('SystemTypes', 'LPAR ZVM KVM KVMA GENERIC')
 
         def __init__(self, system_name: str, profile_name: str,
                      hypervisor: 'SystemHypervisor',
@@ -605,6 +608,8 @@ class AutoinstallMachineModel:
                 return self.SystemTypes.ZVM
             if isinstance(self.hypervisor,
                           AutoinstallMachineModel.KvmHypervisor):
+                if self.hypervisor.arch == AARCH64:
+                    return self.SystemTypes.KVMA
                 return self.SystemTypes.KVM
 
             return self.SystemTypes.GENERIC
@@ -689,7 +694,11 @@ class AutoinstallMachineModel:
             'installation-password': installation_options.get(
                 'installation-password'),
         }
-
+        # installation timeout used by installers
+        self.install_timeout = installation_options.get(
+            "install-timeout",
+            3600,
+        )
         # Custom repositories come first, but require more checks
 
         # Some of the os repos may provide to a different OS,

@@ -16,6 +16,7 @@ RUN apt-get -q update > /dev/null && \
     # Install the distro dependencies.
     # ATTENTION: make sure to keep a comment for each explaining why is it needed.
     apt-get -yq install --no-install-recommends \
+    curl \
     # to manage the system locale
     locales \
     # required to build cryptography package
@@ -39,8 +40,6 @@ RUN apt-get -q update > /dev/null && \
     libpq5 \
     # useful for administration tasks
     vim \
-    # rust compiler for python cryptography
-    cargo rustc \
     # required by ansible when using ssh connection plugin
     sshpass openssh-client \
     # init-like daemon to manage our services' processes
@@ -54,6 +53,14 @@ RUN apt-get -q update > /dev/null && \
     # generate the locale/encoding and set it as default
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+
+ENV PATH="/root/.cargo/bin:${PATH}"
+ENV CARGO_HOME="/root/.cargo"
+ENV RUSTUP_HOME="/root/.rustup"
+
+RUN cargo --version && rustc --version
 
 # set the locale/encoding for the session
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8

@@ -224,7 +224,8 @@ STORAGE_SERVER_TYPES = [
 ]
 
 SYSTEM_ARCHS = [
-    's390x,IBM System z'
+    's390x,IBM System z',
+    'aarch64,ARM 64-bit',
 ]
 
 SYSTEM_MODELS = [
@@ -241,6 +242,7 @@ SYSTEM_TYPES = [
     'LPAR,s390x,System z LPAR',
     'ZVM,s390x,zVM guest',
     'KVM,s390x,System z KVM guest',
+    'KVMA,aarch64,arm64 KVM guest',
 ]
 
 SYSTEM_STATES = [

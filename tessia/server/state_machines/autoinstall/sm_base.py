@@ -43,7 +43,7 @@ import os
 # CONSTANTS AND DEFINITIONS
 #
 # timeout used for ssh connection attempts
-CONNECTION_TIMEOUT = 1800
+CONNECTION_TIMEOUT = 5400
 
 # interval between ssh connection attempts
 CONNECTION_RETRY_INTERVAL = 20

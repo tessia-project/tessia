@@ -3,6 +3,8 @@ variables:
   SERVER_IMAGE_NAME: tessia-server:${CI_COMMIT_REF_SLUG}
   REGISTRY_CLI_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/tessia-cli:${CI_COMMIT_REF_SLUG}
   REGISTRY_SERVER_IMAGE_NAME: ${CI_REGISTRY_IMAGE}/tessia-server:${CI_COMMIT_REF_SLUG}
+  POSTGRES_IMAGE: ${CI_REGISTRY_IMAGE}/postgres:alpine
+  REDIS_IMAGE: ${CI_REGISTRY_IMAGE}/redis:alpine
 
 stages:
   - unit test
@@ -51,6 +53,14 @@ cli tests:
   stage: integration test
   needs: ['build server', 'build cli']
   script:
+    - pwd
+    - ls
+    - sed -i
+      's|public.ecr.aws/docker/library/postgres:alpine|'"$POSTGRES_IMAGE"'|g'
+      tools/ci/docker/docker-compose.yaml
+    - sed -i 's|public.ecr.aws/docker/library/redis:alpine|'"$REDIS_IMAGE"'|g'
+      tools/ci/docker/docker-compose.yaml
+    - cat tools/ci/docker/docker-compose.yaml
     - docker pull $REGISTRY_SERVER_IMAGE_NAME
     - docker tag $REGISTRY_SERVER_IMAGE_NAME $SERVER_IMAGE_NAME
     - docker pull $REGISTRY_CLI_IMAGE_NAME

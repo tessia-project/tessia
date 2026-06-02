@@ -14,6 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 # Release notes
+
+## 2.2.0 (2026-06-2)
+
+- Enabling [Canton](https://gitlab.com/tessia-project/tessia/-/merge_requests/426) feature autoinstall support on RHEL and Fedora
+- Support [Canton](https://gitlab.com/tessia-project/tessia/-/merge_requests/428) feature autoinstall for SLES
+- Enhance [SLES16](https://gitlab.com/tessia-project/tessia/-/merge_requests/429) installer observability and performance
+
+tessia-baselib:
+- Enabling [Canton](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/90) feature autoinstall
+- Removed logging of private keys to enhance security [check](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/89)
+
 ## 2.1.6 (2026-04-01)
 
 - Integrated [Tekton](https://gitlab.com/tessia-project/tessia/-/merge_requests/419) Pipeline for CI testing

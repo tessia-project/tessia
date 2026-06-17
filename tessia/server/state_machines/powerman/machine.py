@@ -778,10 +778,16 @@ class PowerManagerMachine(BaseMachine):
             raise ValueError("Unknown type '{}' for system {}".format(
                 hyp_type, hyp_prof.system_rel.name))
 
+        parameters = None
+        if hyp_prof.credentials.get('private-key'):
+            parameters = {
+                    'private-key': hyp_prof.credentials['private-key']
+                    }
+
         baselib_hyp = hyp_class(
             hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             hyp_prof.credentials['admin-user'],
-            hyp_prof.credentials['admin-password'], None)
+            hyp_prof.credentials['admin-password'], parameters)
         baselib_hyp.login()
         for guest_prof in guests:
             system_name = guest_prof.system_rel.name

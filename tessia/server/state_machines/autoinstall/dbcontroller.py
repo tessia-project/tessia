@@ -37,6 +37,7 @@ from tessia.server.db.models import System, SystemProfile
 from tessia.server.state_machines.autoinstall.model import \
     AutoinstallMachineModel
 from urllib.parse import urlsplit
+from tessia.server.state_machines.autoinstall.model import AARCH64, S390X
 
 import re
 
@@ -387,8 +388,20 @@ class DbController:
         if system is None:
             raise ValueError('System {} not found'.format(system_name))
 
+        arch = system.type_rel.arch_rel.name
+        if arch == AARCH64:
+            repo_list = [
+                repo for repo in os_entry.repository_rel
+                if AARCH64 in repo.url
+            ]
+        else:
+            repo_list = [
+                repo for repo in os_entry.repository_rel
+                if S390X in repo.url
+            ]
+
         available_repos=[]
-        for repo in os_entry.repository_rel:
+        for repo in repo_list:
             available_repos.append(AutoinstallMachineModel.OsRepository(
                 name=repo.name,
                 url=repo.url,

@@ -36,6 +36,7 @@ from tessia.server.db.connection import MANAGER
 from tessia.server.db.models import System, SystemProfile
 from tessia.server.lib import post_install
 from tessia.server.state_machines.base import BaseMachine
+from tessia.server.state_machines.autoinstall.model import AARCH64
 
 import logging
 import yaml
@@ -476,6 +477,9 @@ class PowerManagerMachine(BaseMachine):
                 'boot_method': 'disk'
             }
         }
+        if guest_prof.system_rel.type.lower() == "kvma":
+            params["arch"] = AARCH64
+
         baselib_hyp = HypervisorKvm(
             hyp_prof.system_rel.name, hyp_prof.system_rel.hostname,
             hyp_prof.credentials['admin-user'],
@@ -846,7 +850,7 @@ class PowerManagerMachine(BaseMachine):
         system_type = guest_prof.system_rel.type.lower()
         if system_type == 'lpar':
             self._start_hypervisor_lpar(hyp_prof, guest_prof)
-        elif system_type == 'kvm':
+        elif system_type in ('kvm', 'kvma'):
             self._start_hypervisor_kvm(hyp_prof, guest_prof)
         elif system_type == 'zvm':
             self._start_hypervisor_zvm(hyp_prof, guest_prof)

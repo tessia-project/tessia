@@ -184,7 +184,7 @@ class SmAutoyast(SmBase):
 
         # performs successive calls to extract the installation log
         # and check installation stage
-        max_wait_install = 3600
+        max_wait_install = self._model.install_timeout
         line_offset = 1
         timeout_installation = time() + max_wait_install
         success = False

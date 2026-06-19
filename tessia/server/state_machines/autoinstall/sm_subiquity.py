@@ -290,7 +290,7 @@ class SmSubiquityInstaller(SmBase):
             # is somewhat large. At the same time, installer keeps an eye on
             # crashes, so larger values should not present an issue
             # of a failed installation hanging for too long.
-            "timeout": 1200,
+            "timeout": 2400,
             "secret": self._session_secret
         }
         http_result = self._session.post(self._webhook_control + "/session",
@@ -303,7 +303,7 @@ class SmSubiquityInstaller(SmBase):
         """
         Query events stream from webhook
         """
-        max_wait_install = 3600
+        max_wait_install = self._model.install_timeout
         timeout_installation = monotonic() + max_wait_install
 
         if self._model.operating_system.major == 2010:
@@ -578,6 +578,14 @@ class SmSubiquityInstaller(SmBase):
         """
         self._logger.info("waiting for system to reboot")
         self._platform.set_boot_device(self._profile.get_boot_device())
+        # KVMA installations use 'shutdown: poweroff'
+        # in the autoinstall template because Subiquity's
+        # automatic reboot can occur before Tessia regains
+        # control of the guest. The guest is powered off
+        # instead and restarted explicitly through the hypervisor.
+        if self._model.system_profile.system_type.name == "KVMA":
+            self._platform.reboot()
+
     # target_reboot()
 
     def wait_install(self):

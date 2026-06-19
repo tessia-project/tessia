@@ -450,24 +450,42 @@ class PlatKvm(PlatBase):
         """
     # prepare_guest()
 
+    def should_skip_sync_login(self):
+        """
+        Determine whether SSH login and sync should be skipped before reboot
+        """
+        system_type = self._model.system_profile.system_type.name
+
+        return (
+            system_type == "KVMA"
+            and self._os.type == "debian"
+        )
+
     def reboot(self):
         """
         Restart the guest after installation is finished.
         """
         self._logger.info('rebooting the system now')
+        # For Ubuntu aarch64 (KVMA), the autoinstall template uses
+        # 'poweroff: shutdown' to prevent Subiquity from
+        # automatically rebooting.
+        # Reboot is handled later through the hypervisor,
+        # so the SSH login and sync step is skipped.
+        if not self.should_skip_sync_login():
+            hostname = self._model.system_profile.hostname
+            user = self._model.os_credentials['user']
+            password = self._model.os_credentials['installation-password']
 
-        hostname = self._model.system_profile.hostname
-        user = self._model.os_credentials['user']
-        password = self._model.os_credentials['installation-password']
-
-        ssh_client = SshClient()
-        ssh_client.login(hostname, user=user, passwd=password, timeout=10)
-        shell = ssh_client.open_shell()
-        # in certain installations files created by post-install scripts don't
-        # get written to disk if we don't call sync before rebooting
-        shell.run('sync')
-        shell.close()
-        ssh_client.logoff()
+            ssh_client = SshClient()
+            ssh_client.login(hostname, user=user, passwd=password, timeout=10)
+            shell = ssh_client.open_shell()
+            # in certain installations files created
+            # by post-install scripts don't
+            # get written to disk if we don't call
+            # sync before rebooting
+            shell.run('sync')
+            shell.close()
+            ssh_client.logoff()
 
         self._hyp_obj.reboot(self._model.system_profile.system_name, None)
     # reboot()

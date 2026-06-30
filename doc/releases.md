@@ -15,6 +15,13 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.2.1 (2026-06-30)
+
+- Fix [Canton](https://gitlab.com/tessia-project/tessia/-/merge_requests/432) sles15.7 repo fix
+- Support [Canton](https://gitlab.com/tessia-project/tessia/-/merge_requests/433) feature autoinstall for Ubuntu
+- Fix [Canton](https://gitlab.com/tessia-project/tessia/-/merge_requests/434) kvma poweron/poweroff feature
+- Fix poweroff failure when using z_auth [WebApp](https://gitlab.com/tessia-project/tessia/-/merge_requests/435)
+
 ## 2.2.0 (2026-06-2)
 
 - Enabling [Canton](https://gitlab.com/tessia-project/tessia/-/merge_requests/426) feature autoinstall support on RHEL and Fedora

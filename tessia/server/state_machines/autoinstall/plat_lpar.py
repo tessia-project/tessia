@@ -327,6 +327,14 @@ class PlatLpar(PlatBase):
         # basic information
         cpu = self._guest_prof.cpus
         memory = self._guest_prof.memory
+
+        # check if noprofilemodify flag is set
+        if self._model.noprofilemodify:
+            self._logger.info('noprofilemodify flag set, '
+                'skipping cpu and memory profile modification')
+            cpu = None
+            memory = None
+
         guest_name = self._hyp_system.boot_options['partition-name']
 
         # parameters argument, see baselib schema for details

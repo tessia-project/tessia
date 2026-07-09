@@ -699,6 +699,9 @@ class AutoinstallMachineModel:
             "install-timeout",
             3600,
         )
+        # flag to skip profile modification during activation
+        self.noprofilemodify = installation_options.get(
+            'noprofilemodify', False)
         # Custom repositories come first, but require more checks
 
         # Some of the os repos may provide to a different OS,

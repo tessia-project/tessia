@@ -1350,6 +1350,31 @@ tasks:
       - "Invalid value for '--cpu': A is not a valid integer"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --cpu=8
       - "Failed to resolve.*Name or service not known"
+    # --noprofilemodify negative scenarios
+    # boolean flag pair does not take a value — any argument is an error
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --noprofilemodify 0
+      - "Got unexpected extra argument"
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --noprofilemodify 1
+      - "Got unexpected extra argument"
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --noprofilemodify 33
+      - "Got unexpected extra argument"
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --noprofilemodify true
+      - "Got unexpected extra argument"
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --noprofilemodify false
+      - "Got unexpected extra argument"
+    # --cpu and --noprofilemodify conflict
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --cpu=8 --noprofilemodify
+      - '--noprofilemodify cannot be used together with --cpu or --memory.'
+    # --memory and --noprofilemodify conflict
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2GiB --noprofilemodify
+      - '--noprofilemodify cannot be used together with --cpu or --memory.'
+    # --cpu --memory --noprofilemodify all together conflict
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --cpu=8 --memory=2GiB --noprofilemodify
+      - '--noprofilemodify cannot be used together with --cpu or --memory.'
+    # --noprofilemodify positive scenarios
+    # bare --noprofilemodify sets true
+    - - system poweron --name=cpc3lp52 --profile=DASD4 --noprofilemodify
+      - 'Failed to resolve.*Name or service not known'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory
       - '--memory option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=

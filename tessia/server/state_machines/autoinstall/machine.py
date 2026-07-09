@@ -72,7 +72,8 @@ INSTALL_REQ_PARAMS_SCHEMA = {
             },
         },
         "system": {"type": "string"},
-        "verbosity": {"type": "string", "enum": list(BaseMachine._LOG_LEVELS)}
+        "verbosity": {"type": "string", "enum": list(BaseMachine._LOG_LEVELS)},
+        "noprofilemodify": {"type": "boolean"}
     },
     "required": [
         "os",
@@ -288,6 +289,10 @@ class AutoInstallMachine(BaseMachine):
             install_opts["install-timeout"] = 10800
         else:
             install_opts["install-timeout"] = 3600
+
+        # add noprofilemodify flag if specified
+        if params.get('noprofilemodify'):
+            install_opts['noprofilemodify'] = True
 
         model = AutoinstallMachineModel(os_entry, accessible_os_repos,
                                         template_entry, installer_template,

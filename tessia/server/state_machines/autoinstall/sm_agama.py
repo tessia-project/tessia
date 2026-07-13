@@ -90,7 +90,7 @@ class SmAgama(SmBase):
 
         Strategy:
         - Fetch ALL logs from 'agama' service (main installer)
-        - Fetch ONLY "Installation finished" from 'agama-web-server'
+        - Fetch ONLY completion messages from 'agama-web-server'
           (to avoid verbose logs)
 
         Performance Note:
@@ -101,20 +101,22 @@ class SmAgama(SmBase):
         Fetching all these logs caused installation monitoring to take
         45+ minutes.
 
-        By filtering agama-web-server to show only "Installation
-        finished", we:
+        By filtering agama-web-server to show only
+        completion messages ("Installation finished"
+        or "Finishing the installation process"), we:
         - Reduce log volume from 22,000+ lines to just 1 essential line
         - Decrease installation monitoring time from 45 mins to 10-15
           mins (3x faster)
         - Maintain visibility of critical completion status
         - Keep all detailed logs from main 'agama' service for debugging
         """
-        # Combine commands: all from agama + only "Installation finished"
-        # from agama-web-server
+        # Combine commands: all from agama +
+        # only completion messages from agama-web-server
         cmd_read_log = (
             "( journalctl -u agama --no-pager; "
             "journalctl -u agama-web-server --no-pager | "
-            "grep 'Installation finished' ) | "
+            "grep -E 'Installation finished | "
+            "Finishing the installation process' ) | "
             "tail -n +{line_offset} | head -n 100"
         )
 
@@ -181,8 +183,13 @@ class SmAgama(SmBase):
 
     def wait_install(self):
         frequency_check = 10
-        # Second string is specifically for sles16.1
-        install_done_phrases = ["Install phase done", "Installation finished"]
+        # Multiple completion phrases for
+        # different SLES versions
+        install_done_phrases = [
+            "Install phase done",
+            "Installation finished",
+            "Finishing the installation process"
+        ]
 
         ssh_client, shell = self._get_ssh_conn()
 

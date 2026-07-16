@@ -22,6 +22,10 @@ Unit test for system_profiles resource module
 from base64 import b64encode
 from flask import g as flask_global
 from tessia.server.api.resources.system_profiles import CPU_MEM_ERROR_MSG
+from tessia.server.api.resources.system_profiles import CPU_MODE_ERROR_MSG
+from tessia.server.api.resources.system_profiles import CPU_TYPE_ERROR_MSG
+from tessia.server.api.resources.system_profiles import CPU_TYPE_LPAR_ERROR_MSG
+from tessia.server.api.resources.system_profiles import CPU_MODE_LPAR_ERROR_MSG
 from tessia.server.api.resources.system_profiles import MARKER_STRIPPED_SECRET
 from tessia.server.api.resources.system_profiles import SystemProfileResource
 from tessia.server.db import models
@@ -1628,6 +1632,181 @@ class TestSystemProfile(TestSecureResource):
         models.System.query.filter_by(id=system_id).delete()
         self.db.session.commit()
     # test_kvm_create_update_cpu_memory()
+
+    def test_lpar_cpu_type_mode(self):
+        """
+        Test validation of cpu_type and cpu_mode fields on system profiles.
+
+        Each field is independently optional; both may be set on LPAR systems.
+        """
+        user_login = 'user_user@domain.com'
+        user_cred = '{}:a'.format(user_login)
+
+        # create a fresh LPAR system to avoid side-effects with shared state
+        system_obj = models.System(
+            name="lpar_cpu_type_test",
+            state="AVAILABLE",
+            modifier=user_login,
+            type="lpar",
+            hostname="lpar-cpu-type-test.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner=user_login,
+        )
+        self.db.session.add(system_obj)
+        self.db.session.commit()
+        system_id = system_obj.id
+        system_name = system_obj.name
+
+        # create a CPC system to verify non-LPAR restriction
+        cpc_obj = models.System(
+            name="cpc_cpu_type_test",
+            state="AVAILABLE",
+            modifier=user_login,
+            type="cpc",
+            hostname="cpc-cpu-type-test.domain.com",
+            project=self._project_name,
+            model="ZEC12_H20",
+            owner=user_login,
+        )
+        self.db.session.add(cpc_obj)
+        self.db.session.commit()
+        cpc_id = cpc_obj.id
+        cpc_name = cpc_obj.name
+
+        # --- creation: invalid combinations ---
+
+        base_data = next(self._get_next_entry)
+        base_data['system'] = system_name
+        base_data['default'] = True
+
+        # cpu_type without cpu_mode: valid (cpu_mode stays None)
+        data = dict(base_data)
+        data['cpu_type'] = 'IFL'
+        only_type_id = self._request_and_assert('create', user_cred, data)
+        entry = self.RESOURCE_MODEL.query.filter_by(id=only_type_id).one()
+        self.assertEqual(entry.cpu_type, 'IFL')
+        self.assertIsNone(entry.cpu_mode)
+        self.RESOURCE_MODEL.query.filter_by(id=only_type_id).delete()
+        self.db.session.commit()
+
+        # cpu_mode without cpu_type: valid (cpu_type stays None)
+        data = dict(base_data)
+        data['cpu_mode'] = 'shared'
+        only_mode_id = self._request_and_assert('create', user_cred, data)
+        entry = self.RESOURCE_MODEL.query.filter_by(id=only_mode_id).one()
+        self.assertIsNone(entry.cpu_type)
+        self.assertEqual(entry.cpu_mode, 'shared')
+        self.RESOURCE_MODEL.query.filter_by(id=only_mode_id).delete()
+        self.db.session.commit()
+
+        # invalid cpu_type value
+        data = dict(base_data)
+        data['cpu_type'] = 'INVALID'
+        data['cpu_mode'] = 'shared'
+        resp = self._do_request('create', user_cred, data)
+        self._validate_resp(resp, CPU_TYPE_ERROR_MSG, 422)
+
+        # invalid cpu_mode value
+        data = dict(base_data)
+        data['cpu_type'] = 'IFL'
+        data['cpu_mode'] = 'INVALID'
+        resp = self._do_request('create', user_cred, data)
+        self._validate_resp(resp, CPU_MODE_ERROR_MSG, 422)
+
+        # cpu_type on a non-LPAR system: error
+        cpc_data = next(self._get_next_entry)
+        cpc_data['system'] = cpc_name
+        cpc_data['default'] = True
+        cpc_data['cpu_type'] = 'IFL'
+        resp = self._do_request('create', user_cred, cpc_data)
+        self._validate_resp(resp, CPU_TYPE_LPAR_ERROR_MSG, 422)
+
+        # cpu_mode on a non-LPAR system: error
+        cpc_data2 = next(self._get_next_entry)
+        cpc_data2['system'] = cpc_name
+        cpc_data2['cpu_mode'] = 'shared'
+        resp = self._do_request('create', user_cred, cpc_data2)
+        self._validate_resp(resp, CPU_MODE_LPAR_ERROR_MSG, 422)
+
+        # --- creation: valid combinations ---
+
+        # IFL / shared
+        data = dict(base_data)
+        data['cpu_type'] = 'IFL'
+        data['cpu_mode'] = 'shared'
+        prof_id = self._request_and_assert('create', user_cred, data)
+
+        entry = self.RESOURCE_MODEL.query.filter_by(id=prof_id).one()
+        self.assertEqual(entry.cpu_type, 'IFL')
+        self.assertEqual(entry.cpu_mode, 'shared')
+
+        # --- update: invalid combinations ---
+
+        # provide only cpu_type on a profile that has no existing cpu_mode
+        # (item.cpu_mode is not None here since we just set it, so clear first)
+        update_data = {'id': prof_id, 'cpu_type': None, 'cpu_mode': None}
+        self._request_and_assert('update', user_cred, update_data)
+
+        # now item has cpu_type=None, cpu_mode=None
+        # sending only cpu_type: valid (cpu_mode stays None)
+        update_data = {'id': prof_id, 'cpu_type': 'CP'}
+        self._request_and_assert('update', user_cred, update_data)
+        entry = self.RESOURCE_MODEL.query.filter_by(id=prof_id).one()
+        self.assertEqual(entry.cpu_type, 'CP')
+        self.assertIsNone(entry.cpu_mode)
+
+        # clear again, then sending only cpu_mode: valid (cpu_type stays None)
+        update_data = {'id': prof_id, 'cpu_type': None}
+        self._request_and_assert('update', user_cred, update_data)
+        update_data = {'id': prof_id, 'cpu_mode': 'dedicated'}
+        self._request_and_assert('update', user_cred, update_data)
+        entry = self.RESOURCE_MODEL.query.filter_by(id=prof_id).one()
+        self.assertIsNone(entry.cpu_type)
+        self.assertEqual(entry.cpu_mode, 'dedicated')
+
+        # clear both before the "valid combinations" block
+        update_data = {'id': prof_id, 'cpu_type': None, 'cpu_mode': None}
+        self._request_and_assert('update', user_cred, update_data)
+
+        # --- update: valid combinations ---
+
+        # set both at once via update (CP / dedicated)
+        update_data = {
+            'id': prof_id, 'cpu_type': 'CP', 'cpu_mode': 'dedicated'}
+        self._request_and_assert('update', user_cred, update_data)
+        entry = self.RESOURCE_MODEL.query.filter_by(id=prof_id).one()
+        self.assertEqual(entry.cpu_type, 'CP')
+        self.assertEqual(entry.cpu_mode, 'dedicated')
+
+        # partial update: when both are already set, updating only cpu_type is
+        # allowed (the existing cpu_mode remains and the merged pair is valid)
+        update_data = {'id': prof_id, 'cpu_type': 'IFL'}
+        self._request_and_assert('update', user_cred, update_data)
+        entry = self.RESOURCE_MODEL.query.filter_by(id=prof_id).one()
+        self.assertEqual(entry.cpu_type, 'IFL')
+        self.assertEqual(entry.cpu_mode, 'dedicated')
+
+        # partial update: updating only cpu_mode when both already set
+        update_data = {'id': prof_id, 'cpu_mode': 'shared'}
+        self._request_and_assert('update', user_cred, update_data)
+        entry = self.RESOURCE_MODEL.query.filter_by(id=prof_id).one()
+        self.assertEqual(entry.cpu_type, 'IFL')
+        self.assertEqual(entry.cpu_mode, 'shared')
+
+        # clear both fields (set back to None)
+        update_data = {'id': prof_id, 'cpu_type': None, 'cpu_mode': None}
+        self._request_and_assert('update', user_cred, update_data)
+        entry = self.RESOURCE_MODEL.query.filter_by(id=prof_id).one()
+        self.assertIsNone(entry.cpu_type)
+        self.assertIsNone(entry.cpu_mode)
+
+        # clean up
+        self.RESOURCE_MODEL.query.filter_by(id=prof_id).delete()
+        models.System.query.filter_by(id=system_id).delete()
+        models.System.query.filter_by(id=cpc_id).delete()
+        self.db.session.commit()
+    # test_lpar_cpu_type_mode()
 
     # TODO: add tests with gateway parameter (cannot be tested for creation as
     # a netiface must be attached first)

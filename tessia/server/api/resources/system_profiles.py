@@ -56,6 +56,8 @@ DESC = {
     'default': 'Default',
     'cpu': 'CPU(s)',
     'memory': 'Memory',
+    'cpu_type': 'CPU type (IFL or CP)',
+    'cpu_mode': 'CPU mode (shared or dedicated)',
     'parameters': 'Parameters',
     'credentials': 'Credentials',
     'storage_volumes': 'Storage volumes',
@@ -65,6 +67,17 @@ DESC = {
 
 CPU_MEM_ERROR_MSG = (
     'For KVM guests the number of CPUs and memory size must be greater than 0')
+
+VALID_CPU_TYPES = {'IFL', 'CP'}
+VALID_CPU_MODES = {'shared', 'dedicated'}
+CPU_TYPE_LPAR_ERROR_MSG = (
+    'cpu_type can only be set on LPAR system profiles')
+CPU_MODE_LPAR_ERROR_MSG = (
+    'cpu_mode can only be set on LPAR system profiles')
+CPU_TYPE_ERROR_MSG = (
+    'cpu_type must be one of: {}'.format(', '.join(sorted(VALID_CPU_TYPES))))
+CPU_MODE_ERROR_MSG = (
+    'cpu_mode must be one of: {}'.format(', '.join(sorted(VALID_CPU_MODES))))
 
 MARKER_STRIPPED_SECRET = '****'
 
@@ -112,6 +125,12 @@ class SystemProfileResource(SecureResource):
             title=DESC['cpu'], description=DESC['cpu'], minimum=0)
         memory = fields.Integer(
             title=DESC['memory'], description=DESC['memory'], minimum=0)
+        cpu_type = fields.String(
+            title=DESC['cpu_type'], description=DESC['cpu_type'],
+            nullable=True)
+        cpu_mode = fields.String(
+            title=DESC['cpu_mode'], description=DESC['cpu_mode'],
+            nullable=True)
         parameters = fields.Custom(
             schema=SystemProfile.get_schema('parameters'),
             title=DESC['parameters'], description=DESC['parameters'],
@@ -335,6 +354,34 @@ class SystemProfileResource(SecureResource):
                 400, msg='Field "parameters" is not in valid format')
     # _verify_params()
 
+    @staticmethod
+    def _verify_cpu_type_mode(target_system, cpu_type, cpu_mode):
+        """
+        Validate cpu_type and cpu_mode values.
+
+        Args:
+            target_system (System): db object
+            cpu_type (str or None): requested cpu type
+            cpu_mode (str or None): requested cpu mode
+
+        Raises:
+            BaseHttpError: if values are invalid
+        """
+        is_lpar = target_system.type.upper() == 'LPAR'
+
+        if cpu_type is not None:
+            if not is_lpar:
+                raise BaseHttpError(422, msg=CPU_TYPE_LPAR_ERROR_MSG)
+            if cpu_type not in VALID_CPU_TYPES:
+                raise BaseHttpError(422, msg=CPU_TYPE_ERROR_MSG)
+
+        if cpu_mode is not None:
+            if not is_lpar:
+                raise BaseHttpError(422, msg=CPU_MODE_LPAR_ERROR_MSG)
+            if cpu_mode not in VALID_CPU_MODES:
+                raise BaseHttpError(422, msg=CPU_MODE_ERROR_MSG)
+    # _verify_cpu_type_mode()
+
     def do_create(self, properties):
         """
         Custom implementation of creation. Perform some sanity checks and
@@ -375,6 +422,10 @@ class SystemProfileResource(SecureResource):
 
         self._verify_cred(target_system, properties['credentials'])
         self._verify_params(target_system, properties['parameters'])
+        self._verify_cpu_type_mode(
+            target_system,
+            properties.get('cpu_type'),
+            properties.get('cpu_mode'))
 
         hyp_prof_name = properties.get('hypervisor_profile')
         if hyp_prof_name is not None:
@@ -525,6 +576,20 @@ class SystemProfileResource(SecureResource):
             raise BaseHttpError(
                 422, msg='Profiles cannot change their associated system')
 
+        # For partial updates, merge the incoming values with the existing ones
+        # so that changing only cpu_type or only cpu_mode is allowed as long as
+        # the resulting combination is valid.
+        effective_cpu_type = (properties['cpu_type']
+                              if 'cpu_type' in properties
+                              else item.cpu_type)
+        effective_cpu_mode = (properties['cpu_mode']
+                              if 'cpu_mode' in properties
+                              else item.cpu_mode)
+        self._verify_cpu_type_mode(
+            item.system_rel,
+            effective_cpu_type,
+            effective_cpu_mode)
+
         if 'credentials' in properties:
             update_creds = deepcopy(item.credentials)
             update_creds.update(properties['credentials'])
@@ -601,6 +666,8 @@ class SystemProfileResource(SecureResource):
         new_prof['cpu'] = item.cpu
         new_prof['system'] = item.system
         new_prof['memory'] = item.memory
+        new_prof['cpu_type'] = item.cpu_type
+        new_prof['cpu_mode'] = item.cpu_mode
         new_prof['parameters'] = item.parameters
         new_prof['credentials'] = item.credentials
 

@@ -1028,6 +1028,8 @@ class SystemProfile(CommonMixin, SchemaMixin, BASE):
     default = Column(Boolean, nullable=False)
     cpu = Column(Integer)
     memory = Column(BigInteger)
+    cpu_type = Column(String)
+    cpu_mode = Column(String)
     parameters = Column(postgresql.JSONB)
     credentials = Column(postgresql.JSONB)
 

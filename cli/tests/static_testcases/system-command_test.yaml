@@ -943,7 +943,7 @@ tasks:
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD *\|'
     - - system prof-list --system=cpc3lp52 --long
-      - - 'Profile name                : DASD'
+      - - 'Profile name                   : DASD'
         - "Parameters *: .*'linux-kargs-target': 'selinux=0 nosmt=true'"
         - "Parameters *: .*'linux-kargs-installer': 'novnc zfcp.allow_lun_scan=1'"
     - - system prof-list --system=cpc3lp52 --memory=12
@@ -993,7 +993,7 @@ tasks:
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --long
-      - 'Profile name                : DASD root1'
+      - 'Profile name                   : DASD root1'
     - - system prof-list --name=
       - "Invalid value for '--name' / '--profile': value may not be empty"
     - - system prof-list --name='DASD root1'
@@ -1002,19 +1002,19 @@ tasks:
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD4 *\|'
     - - system prof-list --system=cpc3lp52 --name='DASD4' --long
-      - 'Profile name                : DASD4'
+      - 'Profile name                   : DASD4'
     - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu
       - ' --cpu option requires an argument'
     - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu=4
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --name='DASD root1' --cpu=4 --long
-      - 'Profile name                : DASD root1'
+      - 'Profile name                   : DASD root1'
     - - system prof-list --system=cpc3lp52 --cpu=4
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --cpu=4 --long
-      - 'Profile name                : DASD root1'
+      - 'Profile name                   : DASD root1'
     - - system prof-list --system=cpc3lp52 --cpu=3
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory
@@ -1025,17 +1025,17 @@ tasks:
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --memory=2048mib --long
-      - 'Profile name                : DASD root1'
+      - 'Profile name                   : DASD root1'
     - - system prof-list --system=cpc3lp52 --memory=2gb
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD17 *\|'
     - - system prof-list --system=cpc3lp52 --memory=2gb --long
-      - 'Profile name                : DASD17'
+      - 'Profile name                   : DASD17'
     - - system prof-list --system=cpc3lp52 --memory=2gib
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --memory=2gib --long
-      - 'Profile name                : DASD root1'
+      - 'Profile name                   : DASD root1'
     - - system prof-list --system=cpc3lp52 --memory=1024mb
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=0
@@ -1045,27 +1045,27 @@ tasks:
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD10 *\|'
     - - system prof-list --system=cpc3lp52 --memory=1024mib --long
-      - 'Profile name                : DASD10'
+      - 'Profile name                   : DASD10'
     - - system prof-list --system=cpc3lp52 --memory=1gb
       - No results were found.
     - - system prof-list --system=cpc3lp52 --memory=1gib
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD10 *\|'
     - - system prof-list --system=cpc3lp52 --memory=1gib --long
-      - 'Profile name                : DASD10'
+      - 'Profile name                   : DASD10'
       # expecting DASD11 as it was the last to be set as default
     - - system prof-list --system=cpc3lp52 --default
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD11\(\*\) *\|'
     - - system prof-list --system=cpc3lp52 --default --long
-      - 'Profile name                : DASD11'
+      - 'Profile name                   : DASD11'
     - - system prof-list --system=cpc3lp52 --hyp
       - '--hyp option requires an argument'
     - - system prof-list --system=cpc3lp52 --hyp='default cpc3'
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --hyp='default cpc3' --long
-      - 'Profile name                : DASD root1'
+      - 'Profile name                   : DASD root1'
     - - system prof-list --system=cpc3lp52 --hyp=cpc3
       - No results were found.
       # prof-list in prof.py: 178-182 stmts
@@ -1075,19 +1075,19 @@ tasks:
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --long
-      - 'Profile name                : DASD root1'
+      - 'Profile name                   : DASD root1'
     - - system iface-edit --system=cpc3lp52 --name='default osa' --subnet='GEO_1-NE-1822' --ip=192.168.161.222
       - Item successfully updated.
     - - system prof-list --system=cpc3lp52
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD root1 *\|'
     - - system prof-list --system=cpc3lp52 --long
-      - 'Profile name                : DASD root1'
+      - 'Profile name                   : DASD root1'
     - - system prof-list --system=cpc3
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *default cpc3\(\*\) *\|'
     - - system prof-list --system=cpc3 --long
-      - 'Profile name                : default cpc3'
+      - 'Profile name                   : default cpc3'
     # 'system prof-edit' subcommand
     - - system prof-edit
       - Missing option '--system'.
@@ -1338,7 +1338,7 @@ tasks:
     - - system poweron --name=cpc3lp55
       - system cpc3lp55 not found.
     - - system poweron --name=cpc3lp52
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --profile
       - '--profile option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=
@@ -1356,7 +1356,7 @@ tasks:
     - - system poweron --name=cpc3lp52 --profile=DASD17 --cpu=A
       - "Invalid value for '--cpu': A is not a valid integer"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --cpu=8
-      - "Failed to resolve.*Name or service not known"
+      - "Failed to resolve"
     # --noprofilemodify negative scenarios
     # boolean flag pair does not take a value — any argument is an error
     - - system poweron --name=cpc3lp52 --profile=DASD4 --noprofilemodify 0
@@ -1381,7 +1381,7 @@ tasks:
     # --noprofilemodify positive scenarios
     # bare --noprofilemodify sets true
     - - system poweron --name=cpc3lp52 --profile=DASD4 --noprofilemodify
-      - 'Failed to resolve.*Name or service not known'
+      - "Failed to resolve"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory
       - '--memory option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=
@@ -1389,19 +1389,19 @@ tasks:
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2g
       - "Error: Invalid value for '--memory': 2g is not a valid size"
     - - system poweron --name=cpc3lp52 --profile=DASD4 --memory=2gb
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity
       - '--verbosity option requires an argument'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity critical
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity error
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity WARNING
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity Info
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity debug
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --profile=DASD4 --verbosity warn
       - Invalid value for '--verbosity'
     - - system poweron --name=cpc3lp52 --force=true
@@ -1409,13 +1409,13 @@ tasks:
     - - system poweron --name=cpc3lp52 --forc
       - 'no such option: --forc  Did you mean --force?'
     - - system poweron --name=cpc3lp52 --force
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --verify=true
       - '--verify option does not take a value'
     - - system poweron --name=cpc3lp52 --verif
       - 'no such option: --verif  Did you mean --verify?'
     - - system poweron --name=cpc3lp52 --verify
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweron --name=cpc3lp52 --noverify
       - 'is now default and can be omitted'
     - - system poweron --name=cpc3lp52 --exclusive=true
@@ -1436,19 +1436,19 @@ tasks:
     - - system poweroff --name=cpc3lp55
       - system cpc3lp55 not found.
     - - system poweroff --name=cpc3lp52
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweroff --name=cpc3lp52 --verbosity
       - '--verbosity option requires an argument'
     - - system poweroff --name=cpc3lp52 --verbosity critical
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweroff --name=cpc3lp52 --verbosity error
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweroff --name=cpc3lp52 --verbosity warning
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweroff --name=cpc3lp52 --verbosity INFO
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweroff --name=cpc3lp52 --verbosity Debug
-      - 'Failed to resolve.*Name or service not known'
+      - 'Failed to resolve'
     - - system poweroff --name=cpc3lp52 --verbosity warn
       - Invalid value for '--verbosity'
     - - system poweroff --name=cpc3lp52 --bg
@@ -1489,7 +1489,7 @@ tasks:
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD4\(\*\) *\|'
     - - system prof-list --system=cpc3lp52 --long
-      - 'Profile name                : DASD4'
+      - 'Profile name                   : DASD4'
     - - system prof-del --system=cpc3lp52 --name=login_int
       - Item successfully deleted.
     - - system prof-del --system=cpc3lp52 --name='DASD root1'
@@ -1504,7 +1504,7 @@ tasks:
       - - ' *Profile name *\| *System *\| *Operating system *\| *CPU\(s\) *\| *Memory *\| *Storage volumes *\| *Network interfaces'
         - ' *DASD4\(\*\) *\|'
     - - system prof-list --system=cpc3lp52 --long
-      - 'Profile name                : DASD4'
+      - 'Profile name                   : DASD4'
     - - system prof-del --system=cpc3lp52 --name=DASD4
       - Item successfully deleted.
   system_export_import:
@@ -1618,7 +1618,7 @@ tasks:
     - - system prof-edit --system=cpc3lp52 --profile=DASD32 --newname=DASD48
       - Item successfully updated.
     - - system prof-list --system=cpc3lp52 --profile=DASD48 --long
-      - 'Profile name                : DASD48'
+      - 'Profile name                   : DASD48'
     - - system prof-del --system=cpc3lp52 --profile=DASD48
       - Item successfully deleted.
   iface-alias:

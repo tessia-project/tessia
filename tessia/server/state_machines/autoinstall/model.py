@@ -557,11 +557,13 @@ class AutoinstallMachineModel:
         """
         SystemTypes = Enum('SystemTypes', 'LPAR ZVM KVM KVMA GENERIC')
 
-        def __init__(self, system_name: str, profile_name: str,
-                     hypervisor: 'SystemHypervisor',
-                     hostname: str, cpus: int, memory: int,
-                     volumes: 'list[Volume]' = None,
-                     interfaces: 'list[tuple[NetworkInterface, bool]]' = None):
+        def __init__(  # pylint: disable=too-many-arguments
+                self, system_name: str, profile_name: str,
+                hypervisor: 'SystemHypervisor',
+                hostname: str, cpus: int, memory: int,
+                cpu_type: str = None, cpu_mode: str = None,
+                volumes: 'list[Volume]' = None,
+                interfaces: 'list[tuple[NetworkInterface, bool]]' = None):
             """
             System profile data
 
@@ -575,6 +577,8 @@ class AutoinstallMachineModel:
             self.hostname = hostname
             self.cpus = cpus
             self.memory = memory
+            self.cpu_type = cpu_type
+            self.cpu_mode = cpu_mode
             self.ifaces = []
             self.volumes = []
 

@@ -345,6 +345,18 @@ class PlatLpar(PlatBase):
         if err:
             raise RuntimeError(err)
 
+        # pass processor type/mode when configured in the profile
+        # cpu_type maps to the baselib static fields cpus_cp / cpus_ifl;
+        # when static assignment is used the generic cpu arg must be 0
+        if self._guest_prof.cpu_type is not None:
+            if self._guest_prof.cpu_type.upper() == 'IFL':
+                params['cpus_ifl'] = cpu
+            else:
+                params['cpus_cp'] = cpu
+            cpu = 0
+        if self._guest_prof.cpu_mode is not None:
+            params['cpu_mode'] = self._guest_prof.cpu_mode
+
         # call baselib to bring up the guest system
         self._hyp_obj.start(guest_name, cpu, memory, params)
 

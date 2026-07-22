@@ -17,70 +17,92 @@ spec:
         set -e
 
         NS="tessia"
-
         SERVER_DEPLOY="tessia-server-$(params.IMAGE_TAG)"
         MEDIATOR_DEPLOY="tessia-mediator-$(params.IMAGE_TAG)"
         DB_STS="tessia-db-$(params.IMAGE_TAG)"
 
         # -------------------------------------------------------------------
-        # Wait for tessia-server Deployment to have available replicas
+        # dump_pod_logs: current + previous container logs and pod describe
+        #   Usage: dump_pod_logs <label>
         # -------------------------------------------------------------------
-        TIMEOUT=300   # 5 minutes
-        INTERVAL=5
-        ELAPSED=0
+        dump_pod_logs() {
+          local label="$1"
+          local pod
+          pod=$(oc get pods -n "$NS" -l "$label" \
+            -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+          [ -z "$pod" ] && return
+          echo "--- current logs: $pod ---"
+          oc logs -n "$NS" "$pod" -c tessia-server 2>/dev/null || true
+          echo "--- previous logs: $pod ---"
+          oc logs -n "$NS" "$pod" -c tessia-server --previous 2>/dev/null || true
+          echo "--- describe pod: $pod ---"
+          oc describe pod -n "$NS" "$pod" || true
+        }
 
-        echo " Waiting for tessia-server deployment to become available..."
+        # -------------------------------------------------------------------
+        # debug_pods: describe all matching pods + recent namespace events
+        #   Usage: debug_pods <label>
+        # -------------------------------------------------------------------
+        debug_pods() {
+          local label="$1"
+          echo "--- pods for label $label ---"
+          oc get pods -n "$NS" -l "$label" -o wide || true
+          echo "--- describe pods for label $label ---"
+          oc describe pods -n "$NS" -l "$label" || true
+          echo "--- recent events in namespace $NS ---"
+          oc get events -n "$NS" --sort-by='.lastTimestamp' | tail -40 || true
+        }
 
-        while true; do
-          AVAILABLE=$(oc get deployment $SERVER_DEPLOY -n $NS \
-            -o jsonpath='{.status.availableReplicas}' 2>/dev/null || echo "0")
+        # -------------------------------------------------------------------
+        # wait_for_available: poll a Deployment/StatefulSet until ready
+        #   Usage: wait_for_available <kind> <name> <label> [timeout_seconds]
+        # -------------------------------------------------------------------
+        wait_for_available() {
+          local kind="$1"   # deployment | statefulset
+          local name="$2"
+          local label="$3"
+          local timeout="${4:-180}"
+          local interval=10
+          local elapsed=0
+          local available
 
-          if [ -n "$AVAILABLE" ] && [ "$AVAILABLE" -ge 1 ]; then
-            break
-          fi
+          echo "Waiting for $kind/$name to become available (timeout: ${timeout}s)..."
 
-          if [ $ELAPSED -ge $TIMEOUT ]; then
-            echo "ERROR: tessia-server deployment did NOT get available replicas within $TIMEOUT seconds."
-            oc describe deployment -n $NS $SERVER_DEPLOY
-            exit 1
-          fi
+          while true; do
+            if [ "$kind" = "statefulset" ]; then
+              available=$(oc get statefulset "$name" -n "$NS" \
+                -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+            else
+              available=$(oc get deployment "$name" -n "$NS" \
+                -o jsonpath='{.status.availableReplicas}' 2>/dev/null || echo "0")
+            fi
 
-          echo " Waiting for tessia-server deployment... ($ELAPSED / $TIMEOUT seconds)"
-          sleep $INTERVAL
-          ELAPSED=$((ELAPSED + INTERVAL))
-        done
+            echo "[${elapsed}s] $name availableReplicas=${available:-0}"
 
-        SERVER_AVAILABLE=$(oc get deployment $SERVER_DEPLOY -n $NS \
-          -o jsonpath='{.status.availableReplicas}')
+            [ "${available:-0}" -ge 1 ] && return 0
 
-        echo "tessia-server available replicas: ${SERVER_AVAILABLE:-0}"
+            if [ "$elapsed" -ge "$timeout" ]; then
+              echo "ERROR: $name did not become available within ${timeout}s."
+              dump_pod_logs "$label"
+              debug_pods "$label"
+              return 1
+            fi
 
-        if [ "${SERVER_AVAILABLE:-0}" -lt 1 ]; then
-          echo "ERROR: tessia-server is not up"
-          exit 1
-        fi
+            sleep "$interval"
+            elapsed=$((elapsed + interval))
+          done
+        }
 
-        MEDIATOR_AVAILABLE=$(oc get deployment $MEDIATOR_DEPLOY -n $NS \
-          -o jsonpath='{.status.availableReplicas}')
+        # -------------------------------------------------------------------
+        # Check each component in dependency order:
+        #   DB must be ready before server can run migrations,
+        #   server must be ready before mediator work is meaningful.
+        # -------------------------------------------------------------------
+        wait_for_available statefulset "$DB_STS"       "app=${DB_STS}"       180
+        wait_for_available deployment  "$SERVER_DEPLOY" "app=${SERVER_DEPLOY}" 480
+        wait_for_available deployment  "$MEDIATOR_DEPLOY" "app=${MEDIATOR_DEPLOY}" 180
 
-        echo "tessia-mediator available replicas: ${MEDIATOR_AVAILABLE:-0}"
-
-        if [ "${MEDIATOR_AVAILABLE:-0}" -lt 1 ]; then
-          echo "ERROR: tessia-mediator is not up"
-          exit 1
-        fi
-
-        DB_AVAILABLE=$(oc get statefulset $DB_STS -n $NS \
-          -o jsonpath='{.status.readyReplicas}')
-
-        echo "tessia-db ready replicas: ${DB_AVAILABLE:-0}"
-
-        if [ "${DB_AVAILABLE:-0}" -lt 1 ]; then
-          echo "ERROR: tessia-db is not up"
-          exit 1
-        fi
-
-        echo " All deployments are available."
+        echo "All deployments are available."
 
   workspaces:
     - name: source

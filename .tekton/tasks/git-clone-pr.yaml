@@ -8,6 +8,9 @@ spec:
       type: string
     - name: pr-number
       type: string
+    - name: revision
+      type: string
+      description: The PR source branch name (e.g. tekton_pipeline_fix).
     - name: deleteExisting
       type: string
   steps:
@@ -15,6 +18,7 @@ spec:
       name: test
       script: |
         #!/usr/bin/bash
+        set -xe
 
         apt-get update && apt install -y git
 
@@ -29,7 +33,7 @@ spec:
 
         # Fetch the PR merge ref
         git fetch origin +refs/pull/$(params.pr-number)/merge
-
+        
         # Checkout FETCH_HEAD safely
         git checkout -qf FETCH_HEAD
 

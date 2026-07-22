@@ -16,12 +16,12 @@ spec:
           workspace: tessia-workspace
   params:
     - name: IMAGE_TAG
-      type: string  
+      type: string
       default: 'latest'
     - default: master
       description: The branch to check out in tessia-mesh
       name: revision
-      type: string 
+      type: string
     - default: ""
       description: pull-request number
       name: pr-number
@@ -29,7 +29,7 @@ spec:
     - default: push
       description: tells which event the pipelinerun for
       name: event
-      type: string        
+      type: string
   tasks:
     - name: fetch-source
       params:
@@ -60,6 +60,8 @@ spec:
           value: 'https://github.ibm.com/tessia-project/tessia.git'
         - name: pr-number
           value: $(params.pr-number)
+        - name: revision
+          value: $(params.revision)
         - name: deleteExisting
           value: "true"
       taskRef:
@@ -73,13 +75,26 @@ spec:
       workspaces:
         - name: output
           workspace: tessia-workspace  
-    - name: copy-repo
+    - name: change-server-dockerfile
       runAfter:
         - fetch-source
         - fetch-source-pr
       taskRef:
         kind: Task
-        name: copy-repo
+        name: change-server-dockerfile
+      workspaces:
+        - name: output
+          workspace: tessia-workspace
+    - name: change-cli-dockerfile
+      params:
+        - name: OC_IMAGE
+          value: 'image-registry.openshift-image-registry.svc:5000/openshift/cli:latest'
+      runAfter:
+        - fetch-source
+        - fetch-source-pr
+      taskRef:
+        kind: Task
+        name: change-cli-dockerfile
       workspaces:
         - name: output
           workspace: tessia-workspace
@@ -100,19 +115,10 @@ spec:
         - name: SKIP_PUSH
           value: 'false'
       runAfter:
-        - copy-repo
+        - change-cli-dockerfile
       taskRef:
         kind: Task
         name: buildah
-      workspaces:
-        - name: source
-          workspace: tessia-workspace
-    - name: change-spawner
-      runAfter:
-        - copy-repo
-      taskRef:
-        kind: Task
-        name: change-spawner
       workspaces:
         - name: source
           workspace: tessia-workspace
@@ -132,8 +138,10 @@ spec:
           value: docker
         - name: SKIP_PUSH
           value: 'false'
+        - name: BUILD_EXTRA_ARGS
+          value: '--no-cache'
       runAfter:
-        - change-spawner
+        - change-server-dockerfile
       taskRef:
         kind: Task
         name: buildah
@@ -152,7 +160,7 @@ spec:
         name: change-params
       workspaces:
         - name: output
-          workspace: tessia-workspace           
+          workspace: tessia-workspace
     - name: apply-resources
       params:
         - name: IMAGE_TAG
@@ -209,7 +217,7 @@ spec:
         - name: IMAGE_TAG
           value: $(params.IMAGE_TAG)
       runAfter:
-        - run-unit-tests
+        - verify-and-init-db
       taskRef:
         kind: Task
         name: run-cli-tests

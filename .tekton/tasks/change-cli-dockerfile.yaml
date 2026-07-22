@@ -1,0 +1,61 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: change-cli-dockerfile
+spec:
+  params:
+    - name: OC_IMAGE
+      type: string
+      default: 'image-registry.openshift-image-registry.svc:5000/openshift/cli:latest'
+      description: |
+        Full image reference for the OpenShift CLI image from which the oc
+        binary is copied into the tessia-cli image.
+  workspaces:
+    - name: output
+      description: Workspace containing the cloned tessia repository.
+  steps:
+    - name: patch-dockerfile
+      image: registry.redhat.io/ubi8/ubi-minimal
+      env:
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: token
+              key: username
+        - name: GIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: token
+              key: password
+      script: |
+        #!/bin/bash
+        set -e
+
+        DOCKERFILE="$(workspaces.output.path)/tools/ci/docker/tessia-cli/Dockerfile"
+
+        # Step 1: replace the ARG git_repo default with an authenticated URL so that
+        # the RUN git clone inside the Docker build succeeds without network
+        # credentials being baked into the image layer.
+        sed -i "s|ARG git_repo=/assets/tessia.git|ARG git_repo=https://${GIT_USERNAME}:${GIT_PASSWORD}@github.ibm.com/tessia-project/tessia.git|" \
+            "$DOCKERFILE"
+
+        echo "CLI Dockerfile git_repo ARG updated with token."
+
+        OC_IMAGE='$(params.OC_IMAGE)'
+
+        # Step 2: prepend an oc-source stage so the oc binary can be copied
+        # from the OpenShift CLI image without pulling it at test runtime.
+        # Insert before the first FROM line so it becomes the leading stage.
+        sed -i "1i # Stage 0: source of the oc binary\nFROM ${OC_IMAGE} AS oc-source\n" \
+            "$DOCKERFILE"
+
+        # Step 3: copy oc from the oc-source stage into /usr/local/bin just
+        # before the final USER directive so it is available to all users.
+        # The USER line is the last privilege-drop before ENTRYPOINT.
+        sed -i '/^USER /i # Install oc from the OpenShift CLI image so CI tests can exec into pods.\nCOPY --from=oc-source /usr/bin/oc /usr/local/bin/oc\nRUN chmod +x /usr/local/bin/oc\n' \
+            "$DOCKERFILE"
+
+        echo "CLI Dockerfile oc patches applied."
+
+        # Print with the password masked so credentials are not exposed in logs.
+        sed 's|\(https://[^:]*:\)[^@]*@|\1***@|g' "$DOCKERFILE"

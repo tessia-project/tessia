@@ -40,6 +40,8 @@ import requests
 # CONSTANTS AND DEFINITIONS
 #
 EventMarker = Enum('EventMarker', 'NONE SUCCESS FAIL')
+BOOT_EFI_SIZE = 2048
+BOOT_SIZE = 2048
 
 #
 # CODE
@@ -290,7 +292,7 @@ class SmSubiquityInstaller(SmBase):
             # is somewhat large. At the same time, installer keeps an eye on
             # crashes, so larger values should not present an issue
             # of a failed installation hanging for too long.
-            "timeout": 2400,
+            "timeout": 5000,
             "secret": self._session_secret
         }
         http_result = self._session.post(self._webhook_control + "/session",
@@ -415,6 +417,42 @@ class SmSubiquityInstaller(SmBase):
         super().cleanup()
     # cleanup()
 
+    @staticmethod
+    def _add_kvma_boot_partitions(svol):
+        """
+        Add /boot/efi and /boot partitions for Ubuntu KVMA.
+        """
+        parts = svol["part_table"]["table"]
+
+        for index, part in enumerate(parts):
+            if part.get("mp") != "/":
+                continue
+
+            required_size = BOOT_EFI_SIZE + BOOT_SIZE
+
+            if part["size"] <= required_size:
+                raise ValueError(
+                    "Root partition size must be greater than "
+                    f"{required_size} MiB"
+                )
+            part["size"] -= required_size
+
+            parts.insert(index, {
+                "size": BOOT_EFI_SIZE,
+                "fs": "fat32",
+                "mp": "/boot/efi",
+            })
+
+            parts.insert(index + 1, {
+                "size": BOOT_SIZE,
+                "fs": "ext4",
+                "mp": "/boot",
+            })
+
+            return
+
+        raise ValueError("Root partition not found")
+
     def fill_template_vars(self):
         """
         See SmBase for docstring.
@@ -429,6 +467,10 @@ class SmSubiquityInstaller(SmBase):
                 svol["part_table"]["type"]
             except (TypeError, KeyError):
                 continue
+
+            if (self._info["system_type"] == "KVMA"
+                and svol["is_root"]):
+                self._add_kvma_boot_partitions(svol)
 
             part_table = svol['part_table']
 

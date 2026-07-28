@@ -1321,6 +1321,13 @@ tasks:
       - 'Error: multiple volumes match the entered ID, specify the storage server with --server'
     - - system vol-detach --system=cpc3 --profile='default cpc3' --server=DS8K16 --vol=3950
       - Volume detached successfully.
+    # 'system vol-attach' subcommand - test root partition validation
+    # Volume 3956 has a root partition (mp="/"), volume 3957 has only swap (no root)
+    - - system vol-attach --system=cpc3lp52 --profile='DASD4_clone' --vol=3957
+      - Volume attached successfully.
+    # Try to attach another volume with root partition - should fail
+    - - system vol-attach --system=cpc3lp52 --profile='DASD4_clone' --vol=3956
+      - "request failed. Server answered: Cannot attach volume: the profile already has a volume with a root partition"
     # 'system poweron' subcommand
     - - system poweron
       - Missing option '--name' / '--system'.

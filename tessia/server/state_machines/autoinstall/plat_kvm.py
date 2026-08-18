@@ -547,4 +547,12 @@ class PlatKvm(PlatBase):
         self._logger.debug("set_boot_device on KVM is a no-op")
 
     # set_boot_device()
+
+    def cleanup(self):
+        """
+        Release platform-specific resources.
+
+        Currently no cleanup is required for KVM.
+        """
+        return
 # PlatKvm

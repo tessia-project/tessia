@@ -479,9 +479,13 @@ class SmBase(metaclass=abc.ABCMeta):
         Called upon job cancellation or end. Deletes the autofile if it exists.
 
         Do not call this method directly but indirectly from machine.py to make
-        sure that the cleaning_up variable is set.
+        sure that the cleaning_up variable is set
+        and cleanup platform resources.
         """
-        self._remove_autofile()
+        try:
+            self._remove_autofile()
+        finally:
+            self._platform.cleanup()
     # cleanup()
 
     def create_autofile(self):

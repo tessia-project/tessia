@@ -374,17 +374,17 @@ class AutoInstallMachine(BaseMachine):
         """
         try:
             self._machine.start()
+            # if we got here, machine executed successfully
+            # update OS field on the target system
+            DbController(MANAGER).set_target_os_field(self._model)
+            return 0
         except:
             DbController(MANAGER).clear_target_os_field(self._model)
             raise
 
-        # if we got here, machine executed successfully
-        # update OS field on the target system
-        DbController(MANAGER).set_target_os_field(self._model)
-
         # To make sure the cleaning_up variable is set correctly,
         # run the cleanup here.
-        self.cleanup()
-        return 0
+        finally:
+            self.cleanup()
     # start()
 # AutoInstallMachine

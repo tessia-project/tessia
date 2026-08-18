@@ -138,4 +138,16 @@ class PlatBase(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
     # start_installer()
+
+    @abc.abstractmethod
+    def cleanup(self):
+        """
+        Release platform-specific resources.
+
+        Child classes should override this method if
+        they maintain persistent connections or sessions
+        that must be explicitly released.
+        """
+        raise NotImplementedError()
+    #cleanup()
 # PlatBase

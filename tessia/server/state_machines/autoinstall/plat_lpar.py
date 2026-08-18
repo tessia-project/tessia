@@ -424,4 +424,21 @@ class PlatLpar(PlatBase):
         if boot_notification.is_set():
             self._logger.debug("Received initial boot complete notification")
     # start_installer()
+
+    def cleanup(self):
+        """
+        Cleanup platform resources.
+        """
+        if not self._hyp_obj:
+            return
+
+        self._logger.info("Cleaning up HMC session")
+
+        try:
+            self._hyp_obj.logoff()
+        except Exception:
+            self._logger.exception("Failed to log off HMC session")
+        finally:
+            self._hyp_obj = None
+    #cleanup()
 # PlatLpar

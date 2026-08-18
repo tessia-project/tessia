@@ -237,4 +237,12 @@ class PlatZvm(PlatBase):
         self._hyp_obj.logoff()
     # start_installer()
 
+    def cleanup(self):
+        """
+        Release platform-specific resources.
+
+        Currently no cleanup is required for ZVM.
+        """
+        return
+
 # PlatZvm

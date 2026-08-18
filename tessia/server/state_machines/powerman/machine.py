@@ -77,6 +77,9 @@ REQUEST_SCHEMA = {
                     'profile': {
                         'type': 'string'
                     },
+                    'noprofilemodify': {
+                        'type': 'boolean'
+                    },
                     'profile_override': {
                         'type': 'object',
                         'properties': {
@@ -341,6 +344,10 @@ class PowerManagerMachine(BaseMachine):
         Args:
             hyp_prof (SystemProfile): hypervisor profile db object
             guest_prof (SystemProfile): guest profile db object
+            cpu (int or None): CPU count to set HMC activation profile,
+            None to not change the current count
+            memory (int or None): Memory in MiB to set HMC activation
+            profile, None to not change the current
 
         Raises:
             ValueError: in case no root volume is defined
@@ -823,19 +830,21 @@ class PowerManagerMachine(BaseMachine):
         baselib_hyp.stop(guest_name, {})
     # _poweroff_zvm()
 
-    def _poweron(self, hyp_prof, guest_prof, overrides=None):
+    def _poweron(self, hyp_prof, guest_prof, system):
         """
         Perform the actual poweron operation on a system
 
         Args:
             hyp_prof (SystemProfile): hypervisor of the guest
             guest_prof (SystemProfile): guest to be powered on
-            overrides (dict): overrides for profile
+            system (dict): System power-on request parameters.
 
         Raises:
             ValueError: in case guest type is unsupported
         """
         system_name = guest_prof.system_rel.name
+        overrides = system.get('profile_override')
+        noprofilemodify = system.get('noprofilemodify', False)
         self._logger.info('Executing poweron of system %s', system_name)
 
         # custom values specified: apply them
@@ -855,6 +864,11 @@ class PowerManagerMachine(BaseMachine):
 
         system_type = guest_prof.system_rel.type.lower()
         if system_type == 'lpar':
+            if noprofilemodify:
+                guest_prof.cpu = None
+                guest_prof.memory = None
+                self._logger.info('noprofilemodify flag set, '
+                'skipping profile cpu and memory modification')
             self._start_hypervisor_lpar(hyp_prof, guest_prof)
         elif system_type in ('kvm', 'kvma'):
             self._start_hypervisor_kvm(hyp_prof, guest_prof)
@@ -991,8 +1005,7 @@ class PowerManagerMachine(BaseMachine):
                     continue
 
             # proceed with the poweron action itself
-            self._poweron(hyp_profile_obj, profile_obj,
-                          system.get('profile_override'))
+            self._poweron(hyp_profile_obj, profile_obj, system)
 
     # _stage_exec()
 

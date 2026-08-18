@@ -122,6 +122,8 @@ def del_(name):
               help='output verbosity level')
 @click.option('--bg', is_flag=True,
               help="do not wait for output after submitting")
+@click.option('--noprofilemodify', is_flag=True,
+              help="prevent CPU and memory profile modifications")
 def autoinstall(ctx, **kwargs):
     """
     install a system using an autofile template
@@ -355,6 +357,8 @@ def poweroff(ctx, name, verbosity, bg_flag):
               help='output verbosity level')
 @click.option('--bg', is_flag=True,
               help="do not wait for output after submitting")
+@click.option('--noprofilemodify', is_flag=True,
+              help="prevent CPU and memory profile modifications")
 def poweron(ctx, name, **kwargs):
     """
     poweron (activate) a system
@@ -385,11 +389,25 @@ def poweron(ctx, name, **kwargs):
         req_params['systems'][0]['action'] = 'poweron-exclusive'
     if kwargs['force']:
         req_params['systems'][0]['force'] = True
-    if kwargs['cpu']:
-        req_params['systems'][0]['profile_override']['cpu'] = kwargs['cpu']
-    if kwargs['memory']:
-        req_params['systems'][0]['profile_override']['memory'] = (
-            kwargs['memory'])
+
+    # Handle profile modifications
+    if kwargs.get('noprofilemodify'):
+        # Reject conflicting flags before proceeding
+        if kwargs.get('cpu') or kwargs.get('memory'):
+            raise click.UsageError(
+                "--noprofilemodify cannot be used together with "
+                "--cpu or --memory."
+            )
+        # Set flag to tell server not to modify the activation profile
+        req_params['systems'][0]['noprofilemodify'] = True
+    else:
+        # Only apply CPU/memory overrides if noprofilemodify is not set
+        if kwargs['cpu']:
+            req_params['systems'][0]['profile_override']['cpu'] = kwargs['cpu']
+        if kwargs['memory']:
+            req_params['systems'][0]['profile_override']['memory'] = (
+                kwargs['memory'])
+
     if kwargs['verbosity']:
         req_params['verbosity'] = kwargs['verbosity']
 

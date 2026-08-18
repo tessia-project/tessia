@@ -692,6 +692,34 @@ class SystemProfileResource(SecureResource):
                 msg = 'A CPC profile can have only one volume associated'
                 raise BaseHttpError(422, msg=msg)
 
+        # validate that the new volume does not introduce a second root
+        # partition (mp == "/") into the profile.
+        # A root partition is identified by an entry with mp=="/" in the
+        # volume's part_table.
+        def _has_root_partition(vol):
+            part_table = vol.part_table
+            if not part_table or not part_table.get('table'):
+                return False
+            return any(
+                entry.get('mp') == '/' for entry in part_table['table'])
+
+        if _has_root_partition(svol):
+            # the incoming volume has a root partition — reject immediately if
+            # any already-attached volume also carries one.
+            root_conflict = StorageVolume.query.join(
+                StorageVolumeProfileAssociation,
+                StorageVolume.id == StorageVolumeProfileAssociation.volume_id
+            ).filter(
+                StorageVolumeProfileAssociation.profile_id == id
+            ).all()
+            if any(_has_root_partition(v) for v in root_conflict):
+                raise BaseHttpError(
+                    422,
+                    msg='Cannot attach volume: the profile already has a '
+                        'volume with a root partition (mp="/"). Only one '
+                        'root partition is allowed per profile.'
+                )
+
         # volume not associated to the system yet: do it
         if svol.system_id is None:
             svol.system_id = system.id

@@ -233,7 +233,9 @@ class DbController:
         # Combine information about hypervisor and system profile into model
         result = AutoinstallMachineModel.SystemProfile(
             system.name, profile.name, hypervisor, system.hostname,
-            profile.cpu, profile.memory)
+            profile.cpu, profile.memory,
+            cpu_type=profile.cpu_type,
+            cpu_mode=profile.cpu_mode)
 
         # add network interfaces
         for profile_iface in profile.system_ifaces_rel:

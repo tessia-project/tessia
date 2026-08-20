@@ -40,8 +40,8 @@ MEM_HELP = ("memory size as an integer followed by one of the units KB, MB, "
 
 PROFILE_FIELDS = (
     'name', 'system', 'hypervisor_profile', 'operating_system', 'default',
-    'cpu', 'memory', 'parameters', 'credentials', 'storage_volumes',
-    'system_ifaces', 'gateway'
+    'cpu', 'memory', 'cpu_type', 'cpu_mode', 'parameters', 'credentials',
+    'storage_volumes', 'system_ifaces', 'gateway'
 )
 
 PROFILE_FIELDS_TABLE = (
@@ -62,6 +62,12 @@ ZVM_PROMPT = 'z/VM password'
 @click.option('--name', '--profile', required=True, type=NAME, help="profile name")
 @click.option('--cpu', default=0, type=CustomIntRange(min=0),
               help="number of cpus")
+@click.option('--cpu-type', 'cpu_type',
+              type=click.Choice(['IFL', 'CP']),
+              help="processor type (LPAR only)")
+@click.option('--cpu-mode', 'cpu_mode',
+              type=click.Choice(['shared', 'dedicated']),
+              help="processor sharing mode (LPAR only)")
 @click.option('--kargs-installer', 'kargs_installer',
               help=("custom kernel cmdline for the Linux installer"))
 @click.option('--kargs-target', 'kargs_target',
@@ -185,6 +191,12 @@ def prof_del(**kwargs):
 @click.option('name', '--newname', type=NAME,
               help="new name (i.e. new-profile-name)")
 @click.option('--cpu', type=CustomIntRange(min=0), help="number of cpus")
+@click.option('--cpu-type', 'cpu_type',
+              type=click.Choice(['IFL', 'CP']), default=None,
+              help="processor type (LPAR only)")
+@click.option('--cpu-mode', 'cpu_mode',
+              type=click.Choice(['shared', 'dedicated']), default=None,
+              help="processor sharing mode (LPAR only)")
 @click.option('--kargs-installer', 'kargs_installer',
               help=("custom kernel cmdline for the Linux installer"))
 @click.option('--kargs-target', 'kargs_target',
@@ -225,6 +237,13 @@ def prof_edit(system, cur_name, **kwargs):
         kwargs['default'] = None
 
     client = Client()
+
+    cpu_type = kwargs.pop('cpu_type')
+    if cpu_type is not None:
+        kwargs['cpu_type'] = cpu_type
+    cpu_mode = kwargs.pop('cpu_mode')
+    if cpu_mode is not None:
+        kwargs['cpu_mode'] = cpu_mode
 
     login = kwargs.pop('login')
     if kwargs.pop('ask_login'):

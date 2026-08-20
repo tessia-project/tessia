@@ -427,7 +427,19 @@ class PowerManagerMachine(BaseMachine):
                 'devicenr': root_vol.volume_id
             }
 
-        baselib_hyp.start(guest_prof.system_rel.name, guest_prof.cpu,
+        # pass processor type/mode when configured in the profile
+        cpu = guest_prof.cpu
+        if guest_prof.cpu_type is not None:
+            if guest_prof.cpu_type.upper() == 'IFL':
+                params['cpus_ifl'] = cpu
+            else:
+                params['cpus_cp'] = cpu
+            cpu = 0
+
+        if guest_prof.cpu_mode is not None:
+            params['cpu_mode'] = guest_prof.cpu_mode
+
+        baselib_hyp.start(guest_prof.system_rel.name, cpu,
                           guest_prof.memory, params)
 
         baselib_hyp.logoff()

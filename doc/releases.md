@@ -15,6 +15,20 @@ limitations under the License.
 -->
 # Release notes
 
+## 2.2.2 (2026-09-01)
+
+- Fix [SLES16](https://gitlab.com/tessia-project/tessia/-/merge_requests/437) Agama web server installation to complete successfully.
+- Support [Noprofilemodify](https://gitlab.com/tessia-project/tessia/-/merge_requests/438) option without modifying the LPAR’s HMC CPU or memory configuration.
+- Fix validation for configurations with multiple root partitions [check](https://gitlab.com/tessia-project/tessia/-/merge_requests/439)
+- Move Ubuntu [Canton](https://gitlab.com/tessia-project/tessia/-/merge_requests/440) partition creation from the template into the code.
+- Fix handling of expired HMC sessions [check](https://gitlab.com/tessia-project/tessia/-/merge_requests/441)
+- Support [profiles](https://gitlab.com/tessia-project/tessia/-/merge_requests/442) can be CP or IFL processors in shared or dedicated modes
+
+tessia-baselib:
+- Fix [ipl_cms](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/91) to recognise Z/CMS banner on z/VM 7.5
+- Support CPU type and mode parameters when starting an LPAR through the [HMC](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/92)
+- Add [ipl_cms](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/93) unit tests for z/VM 7.4 and z/VM 7.5 banners
+
 ## 2.2.1 (2026-06-30)
 
 - Fix [Canton](https://gitlab.com/tessia-project/tessia/-/merge_requests/432) sles15.7 repo fix

@@ -67,9 +67,12 @@ spec:
 
         if [ "$TABLE_COUNT" = "0" ]; then
           echo "Main DB is empty, initializing via server pod..."
-          sleep 100  # Wait before accessing server pod
-          SERVER_POD=$(oc get pods -l $(params.SERVER_LABEL) -o jsonpath='{.items[0].metadata.name}')
-          oc exec "$SERVER_POD" -- bash -c "supervisorctl stop all && tess-dbmanage reset -y && tess-dbmanage init && supervisorctl start all"
+          SERVER_POD=$(oc get pods -n tessia -l $(params.SERVER_LABEL) -o jsonpath='{.items[0].metadata.name}')
+          oc exec -n tessia "$SERVER_POD" -c tessia-server -- bash -c \
+            "supervisorctl --serverurl unix:///tmp/supervisor.sock stop all && \
+             tess-dbmanage reset -y && \
+             tess-dbmanage init && \
+             supervisorctl --serverurl unix:///tmp/supervisor.sock start all"
         else
           echo "Main DB already initialized."
         fi

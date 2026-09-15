@@ -5,7 +5,7 @@ metadata:
 spec:
   params:
     - name: IMAGE_TAG
-      value: $(params.IMAGE_TAG)
+      default: ''
   description: check whether all the deployment pods are up
   steps:
     - computeResources: {}
@@ -30,7 +30,7 @@ spec:
         cd ../statefulsets/
         oc apply -f tessia-db.yaml
 
-        cd ../deployments/ 
+        cd ../deployments/
         oc apply -f tessia-server.yaml
         oc apply -f tessia-mediator.yaml
 

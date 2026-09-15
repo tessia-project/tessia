@@ -1,0 +1,41 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: change-server-dockerfile
+spec:
+  workspaces:
+    - name: output
+      description: Workspace containing the cloned tessia repository.
+  steps:
+    - name: patch-dockerfile
+      image: registry.redhat.io/ubi8/ubi-minimal
+      env:
+        - name: GIT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: token
+              key: username
+        - name: GIT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: token
+              key: password
+      script: |
+        #!/bin/bash
+        # No -x here: avoid printing the URL with embedded credentials to logs.
+        set -e
+
+        DOCKERFILE="$(workspaces.output.path)/tools/ci/docker/tessia-server/Dockerfile"
+
+        # Inject the authenticated git_repo URL (contains secret — cannot live in the Dockerfile).
+        sed -i "s|ARG git_repo=file:///assets/tessia.git|ARG git_repo=https://${GIT_USERNAME}:${GIT_PASSWORD}@github.ibm.com/tessia-project/tessia.git|" \
+            "$DOCKERFILE"
+
+        echo "Server Dockerfile git_repo ARG updated with token."
+
+        # Inject the scheduler fork-patch RUN block into the Dockerfile.
+        # The patch logic lives in a separate script to keep quoting clean.
+        bash "$(workspaces.output.path)/.tekton/scripts/scheduler-patch.sh" "$DOCKERFILE"
+
+        # Print Dockerfile with the password masked so credentials are not exposed in logs.
+        sed 's|\(https://[^:]*:\)[^@]*@|\1***@|g' "$DOCKERFILE"

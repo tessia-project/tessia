@@ -31,10 +31,6 @@ spec:
           configMap:
             name: tessia-supervisor-config
             defaultMode: 420
-        - name: tessia-tls
-          secret:
-            secretName: tessia-server-tls
-            defaultMode: 420
       initContainers:
         - resources: {}
           terminationMessagePath: /dev/termination-log
@@ -48,6 +44,9 @@ spec:
               mountPath: /etc/tessia
             - name: tessia-server-config
               mountPath: /config
+            - name: tessia-server-jobs
+              mountPath: /var/tessia/jobs
+              subPath: var-tessia-jobs
             - name: tessia-server-jobs
               mountPath: /tmp/tessia
               subPath: tmp-tessia
@@ -63,7 +62,9 @@ spec:
             - |
               echo "Initializing Tessia config directory...";
               mkdir -p /etc/tessia /tmp/tessia /tmp/supervisor /tmp/tessia-logs;
-              mkdir -p /etc/tessia/tls
+              mkdir -p /etc/tessia/tls;
+              mkdir -p /var/tessia/jobs;
+              chmod 777 /var/tessia/jobs;
               echo "Copying config files...";
               cp /config/server.yaml /etc/tessia/server.yaml && chmod 644 /etc/tessia/server.yaml;
               cp /config/uwsgi.yaml /etc/tessia/uwsgi.yaml && chmod 644 /etc/tessia/uwsgi.yaml;
@@ -87,10 +88,19 @@ spec:
               value: 'redis://mediator.tessia.svc.cluster.local:6379/0'
             - name: TESSIA_DB_AUTOMANAGE
               value: "true"
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            failureThreshold: 6
           imagePullPolicy: Always
           volumeMounts:
             - name: tessia-server-etc
               mountPath: /etc/tessia
+            - name: tessia-server-jobs
+              mountPath: /var/tessia/jobs
+              subPath: var-tessia-jobs
             - name: tessia-server-jobs
               mountPath: /tmp/tessia
               subPath: tmp-tessia
@@ -105,16 +115,14 @@ spec:
             - name: supervisor-config
               mountPath: /etc/supervisord.conf
               subPath: supervisord.conf
-            - name: tessia-tls
-              readOnly: true
-              mountPath: /etc/tessia/tls
           terminationMessagePolicy: File
-          image: 'image-registry.openshift-image-registry.svc:5000/tessia/tessia-server:latest'
+          image: image-registry.openshift-image-registry.svc:5000/tessia/tessia-server:latest
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
       securityContext: {}
       schedulerName: default-scheduler
+  minReadySeconds: 5
   strategy:
     type: RollingUpdate
     rollingUpdate:

@@ -5,7 +5,7 @@ metadata:
 spec:
   params:
     - name: IMAGE_TAG
-      value: $(params.IMAGE_TAG)
+      type: string
   workspaces:
     - name: output
       description: Git repo workspace
@@ -14,7 +14,7 @@ spec:
       image: registry.redhat.io/ubi8/ubi-minimal
       script: |
         #!/bin/bash
-        set -e 
+        set -e
         echo "Changing PVCs tag"
 
         REDIS_PVC_YAML="$(workspaces.output.path)/.tekton/pvc/redis-pvc.yaml"
@@ -68,7 +68,7 @@ spec:
         SERVER_YAML="$(workspaces.output.path)/.tekton/deployments/tessia-server.yaml"
         sed -i "s/app: tessia-server/app: tessia-server-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
         sed -i "s/name:  tessia-server/name:  tessia-server-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
-        sed -i "s|image: .*|image: image-registry.openshift-image-registry.svc:5000/tessia/tessia-server:$(params.IMAGE_TAG)|g" "$SERVER_YAML"
+        sed -E -i "s|image: ['\"]?(image-registry\.openshift-image-registry\.svc:5000/tessia/tessia-server):[^'\" ]*['\"]?|image: \1:$(params.IMAGE_TAG)|g" "$SERVER_YAML"
         sed -i "s/tessia-server-config/tessia-server-config-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
         sed -i "s/tessia-supervisor-config/tessia-supervisor-config-$(params.IMAGE_TAG)/g" "$SERVER_YAML"
         sed -i "s/tessia-server-etc/tessia-server-etc-$(params.IMAGE_TAG)/g" "$SERVER_YAML"

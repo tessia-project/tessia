@@ -6,41 +6,151 @@ spec:
   params:
     - name: IMAGE_TAG
       type: string
+      description: Tag used for both tessia-cli and tessia-server images.
+    - name: API_URL
+      type: string
+      default: ""
+      description: |
+        Full URL of the tessia API. Leave empty to auto-derive from IMAGE_TAG
+        as http://tessia-server-<IMAGE_TAG>.tessia.svc.cluster.local:5000
+    - name: FAIL_FAST
+      type: string
+      default: "false"
+      description: |
+        When "true" exit immediately on the first failed testcase.
+
   workspaces:
     - name: source
+      description: Workspace containing the cloned tessia repository.
+
   steps:
-    - name: run-clitests
+    - name: run-cli-tests
       image: 'image-registry.openshift-image-registry.svc:5000/tessia/tessia-cli:$(params.IMAGE_TAG)'
+      workingDir: $(workspaces.source.path)/cli/tests
+      env:
+        - name: COVERAGE_FILE
+          value: $(workspaces.source.path)/.tessia.cli.coverage
+        - name: TESTS_DIR
+          value: $(workspaces.source.path)/cli/tests
+        - name: IMAGE_TAG
+          value: $(params.IMAGE_TAG)
       script: |
         #!/bin/bash
-        set -x
-        set +e
+        set -e
 
-        cd $(workspaces.source.path)/cli
-
-        cd tests
+        # ── 1. List available tests ───────────────────────────────────────────
+        echo "════════════════════════════════════════"
+        echo "  Available tests"
+        echo "════════════════════════════════════════"
         ./runner list
 
-        echo "Listing all clitests"
-        TESTS=$(./runner list --terse)
-
-        echo "Erasing the coverage data"
+        # ── 2. Erase stale coverage data ─────────────────────────────────────
+        echo "Erasing stale coverage data..."
         ./runner erase
+        echo "Coverage data erased."
 
-        SERVER_POD=$(oc get pods -l app=tessia-server-$(params.IMAGE_TAG) -o jsonpath='{.items[0].metadata.name}')
+        # ── 3. Resolve API URL ────────────────────────────────────────────────
+        if [ -n "$(params.API_URL)" ]; then
+          API_URL="$(params.API_URL)"
+        else
+          API_URL="http://tessia-server-${IMAGE_TAG}.tessia.svc.cluster.local:5000"
+        fi
+        echo "API URL: ${API_URL}"
 
-        for TEST in $TESTS; do
-          echo "Running clitest: $TEST"
-          ./runner exec --cov-erase=no --cov-report=no --name "$TEST" --api-url=http://tessia-server-$(params.IMAGE_TAG):5000
+        # ── 4. Locate the server pod (oc is on PATH — baked into this image) ─
+        SERVER_POD=$(oc get pods -n tessia \
+          -l "app=tessia-server-${IMAGE_TAG}" \
+          -o jsonpath='{.items[0].metadata.name}')
+        echo "Server pod: ${SERVER_POD}"
+
+        # ── 5. Copy the server's self-signed CA cert ──────────────────────────
+        # Mirrors tools/ci/lib/compose.py so the CLI uses the server CA
+        # exclusively.  This makes conf set-server on any public HTTPS URL fail
+        # with "SSL certificate validation failed", as conf-command_test expects.
+        mkdir -p /etc/tessia-cli
+        oc exec "${SERVER_POD}" -c tessia-server -- \
+          cat /etc/tessia/ca.crt > /etc/tessia-cli/ca.crt
+
+        # ── 6. Wait for the API to be reachable ───────────────────────────────
+        echo "Waiting for API at ${API_URL}..."
+        TIMEOUT=120
+        ELAPSED=0
+        until python3 -c "
+        import urllib.request, sys
+        try:
+            urllib.request.urlopen('${API_URL}/', timeout=5)
+        except urllib.error.HTTPError:
+            sys.exit(0)
+        except Exception:
+            sys.exit(1)
+        sys.exit(0)
+        " 2>/dev/null; do
+          if [ "${ELAPSED}" -ge "${TIMEOUT}" ]; then
+            echo "ERROR: API not reachable after ${TIMEOUT}s — aborting."
+            exit 1
+          fi
+          echo "  API not ready yet (${ELAPSED}/${TIMEOUT}s)..."
+          sleep 5
+          ELAPSED=$((ELAPSED + 10))
+        done
+        echo "API is reachable."
+
+        # ── 7. Run each test, reset DB between runs ───────────────────────────
+        TESTS=$(./runner list --terse)
+        echo "Tests to run:"
+        echo "${TESTS}"
+
+        FAILED_TESTS=""
+
+        for TEST in ${TESTS}; do
+          echo ""
+          echo "════════════════════════════════════════"
+          echo "  START: ${TEST}"
+          echo "════════════════════════════════════════"
+
+          ./runner exec \
+            --cov-erase=no \
+            --cov-report=no \
+            --name "${TEST}" \
+            --api-url "${API_URL}"
+
           TEST_EXIT=$?
 
-          if [[ $TEST_EXIT -ne 0 ]]; then
-            echo "WARNING: Test $TEST failed but continuing..."
+          if [ "${TEST_EXIT}" -ne 0 ]; then
+            echo "FAILED: ${TEST} (exit code ${TEST_EXIT})"
+            FAILED_TESTS="${FAILED_TESTS} ${TEST}"
+
+            if [ "$(params.FAIL_FAST)" = "true" ]; then
+              echo "FAIL_FAST=true — stopping after first failure."
+              exit 1
+            fi
+          else
+            echo "PASSED: ${TEST}"
           fi
 
-          echo "Resetting DB after $TEST"
-          oc exec "$SERVER_POD" -- bash -c "supervisorctl stop all && tess-dbmanage reset -y && tess-dbmanage init && supervisorctl start all"
+          echo "Resetting DB after ${TEST}..."
+          oc exec "${SERVER_POD}" -c tessia-server -- bash -c \
+            "supervisorctl --serverurl unix:///tmp/supervisor.sock stop all && \
+             tess-dbmanage reset -y && \
+             tess-dbmanage init && \
+             supervisorctl --serverurl unix:///tmp/supervisor.sock start all"
+          echo "DB reset complete."
         done
 
-        echo "Showing cli coverage report"
-        ./runner report
+        # ── 8. Summary ────────────────────────────────────────────────────────
+        if [ -n "${FAILED_TESTS}" ]; then
+          echo ""
+          echo "════════════════════════════════════════"
+          echo "  FAILED testcases:${FAILED_TESTS}"
+          echo "════════════════════════════════════════"
+          exit 1
+        fi
+
+        echo ""
+        echo "All CLI testcases passed."
+
+        # ── 9. Coverage report ────────────────────────────────────────────────
+        echo "════════════════════════════════════════"
+        echo "  CLI Test Coverage Report"
+        echo "════════════════════════════════════════"
+        ./runner report || true

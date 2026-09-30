@@ -337,17 +337,16 @@ class PowerManagerMachine(BaseMachine):
         return resources
     # _get_resources()
 
-    def _start_hypervisor_lpar(self, hyp_prof, guest_prof):
+    def _start_hypervisor_lpar(self, hyp_prof, guest_prof,
+                               noprofilemodify=False):
         """
         Define the parameters in baselib format to start a LPAR system
 
         Args:
             hyp_prof (SystemProfile): hypervisor profile db object
             guest_prof (SystemProfile): guest profile db object
-            cpu (int or None): CPU count to set HMC activation profile,
-            None to not change the current count
-            memory (int or None): Memory in MiB to set HMC activation
-            profile, None to not change the current
+            noprofilemodify (bool): Fasle to modify HMC activation
+            profile, True to not change the current profile
 
         Raises:
             ValueError: in case no root volume is defined
@@ -429,18 +428,27 @@ class PowerManagerMachine(BaseMachine):
 
         # pass processor type/mode when configured in the profile
         cpu = guest_prof.cpu
-        if guest_prof.cpu_type is not None:
-            if guest_prof.cpu_type.upper() == 'IFL':
-                params['cpus_ifl'] = cpu
-            else:
-                params['cpus_cp'] = cpu
-            cpu = 0
+        memory = guest_prof.memory
 
-        if guest_prof.cpu_mode is not None:
-            params['cpu_mode'] = guest_prof.cpu_mode
+        if noprofilemodify:
+            self._logger.info(
+                'noprofilemodify flag set, '
+                'skipping profile modification')
+            cpu = 0
+            memory = 0
+        else:
+            if guest_prof.cpu_type is not None:
+                if guest_prof.cpu_type.upper() == 'IFL':
+                    params['cpus_ifl'] = cpu
+                else:
+                    params['cpus_cp'] = cpu
+                cpu = 0
+
+            if guest_prof.cpu_mode is not None:
+                params['cpu_mode'] = guest_prof.cpu_mode
 
         baselib_hyp.start(guest_prof.system_rel.name, cpu,
-                          guest_prof.memory, params)
+                          memory, params)
 
         baselib_hyp.logoff()
     # _start_hypervisor_lpar()
@@ -876,12 +884,7 @@ class PowerManagerMachine(BaseMachine):
 
         system_type = guest_prof.system_rel.type.lower()
         if system_type == 'lpar':
-            if noprofilemodify:
-                guest_prof.cpu = None
-                guest_prof.memory = None
-                self._logger.info('noprofilemodify flag set, '
-                'skipping profile cpu and memory modification')
-            self._start_hypervisor_lpar(hyp_prof, guest_prof)
+            self._start_hypervisor_lpar(hyp_prof, guest_prof, noprofilemodify)
         elif system_type in ('kvm', 'kvma'):
             self._start_hypervisor_kvm(hyp_prof, guest_prof)
         elif system_type == 'zvm':

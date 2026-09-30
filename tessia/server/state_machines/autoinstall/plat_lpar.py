@@ -328,13 +328,6 @@ class PlatLpar(PlatBase):
         cpu = self._guest_prof.cpus
         memory = self._guest_prof.memory
 
-        # check if noprofilemodify flag is set
-        if self._model.noprofilemodify:
-            self._logger.info('noprofilemodify flag set, '
-                'skipping cpu and memory profile modification')
-            cpu = None
-            memory = None
-
         guest_name = self._hyp_system.boot_options['partition-name']
 
         # parameters argument, see baselib schema for details
@@ -345,17 +338,24 @@ class PlatLpar(PlatBase):
         if err:
             raise RuntimeError(err)
 
-        # pass processor type/mode when configured in the profile
-        # cpu_type maps to the baselib static fields cpus_cp / cpus_ifl;
-        # when static assignment is used the generic cpu arg must be 0
-        if self._guest_prof.cpu_type is not None:
-            if self._guest_prof.cpu_type.upper() == 'IFL':
-                params['cpus_ifl'] = cpu
-            else:
-                params['cpus_cp'] = cpu
+        # check if noprofilemodify flag is set
+        if self._model.noprofilemodify:
+            self._logger.info('noprofilemodify flag set, '
+                'skipping profile modification')
             cpu = 0
-        if self._guest_prof.cpu_mode is not None:
-            params['cpu_mode'] = self._guest_prof.cpu_mode
+            memory = 0
+        else:
+            # pass processor type/mode when configured in the profile
+            # cpu_type maps to the baselib static fields cpus_cp / cpus_ifl;
+            # when static assignment is used the generic cpu arg must be 0
+            if self._guest_prof.cpu_type is not None:
+                if self._guest_prof.cpu_type.upper() == 'IFL':
+                    params['cpus_ifl'] = cpu
+                else:
+                    params['cpus_cp'] = cpu
+                cpu = 0
+            if self._guest_prof.cpu_mode is not None:
+                params['cpu_mode'] = self._guest_prof.cpu_mode
 
         # call baselib to bring up the guest system
         self._hyp_obj.start(guest_name, cpu, memory, params)

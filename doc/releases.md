@@ -14,6 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 # Release notes
+## 2.2.3 (2026-10-07)
+
+- Fix [Tekton](https://gitlab.com/tessia-project/tessia/-/merge_requests/444) Pipeline to add CLI integration tests with DB reset.
+- Fix [Noprofilemodify](https://gitlab.com/tessia-project/tessia/-/merge_requests/445) option without modifying cpu type and mode configuration.
+
+tessia-baselib:
+- Fix [ipl_cms](https://gitlab.com/tessia-project/tessia-baselib/-/merge_requests/95) to handle z/VM 7.5 with UCENG language setting
 
 ## 2.2.2 (2026-09-01)
 
